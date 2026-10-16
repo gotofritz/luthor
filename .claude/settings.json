@@ -17,9 +17,5 @@
         ]
       }
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "bash .claude/hooks/caveman-statusline.sh"
   }
 }

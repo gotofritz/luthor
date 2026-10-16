@@ -110,15 +110,3 @@ if [ -f "$skill_path" ]; then
 else
     emit_fallback
 fi
-
-# Statusline setup nudge — best-effort. Silent on parse failure.
-if command -v jq >/dev/null 2>&1 && [ -f "$settings_path" ]; then
-    has_statusline=$(jq -r 'if .statusLine then "yes" else "no" end' "$settings_path" 2>/dev/null || printf 'yes')
-else
-    has_statusline=$(grep -q '"statusLine"' "$settings_path" 2>/dev/null && printf 'yes' || printf 'no')
-fi
-
-if [ "$has_statusline" != "yes" ]; then
-    statusline_cmd="bash \"$SCRIPT_DIR/caveman-statusline.sh\""
-    printf '\n\nSTATUSLINE SETUP NEEDED: caveman ships a badge showing the active mode (e.g. [CAVEMAN], [CAVEMAN:ULTRA]). It is not configured yet. To enable, add this to %s: "statusLine": { "type": "command", "command": "%s" }. Proactively offer to set this up for the user on first interaction.' "$settings_path" "$statusline_cmd"
-fi
