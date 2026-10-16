@@ -12,6 +12,7 @@ log through the Dropbox API. One user, built to last.
 
 - `README.md` — project overview
 - `docs/plans/20260512_initial_plan.md` — architecture, stack and phases
+- `docs/plans/20261016_incremental_roadmap.md` — build order, slice by slice
 - `docs/plans/*.md` — other active plans
 
 ## Project Rules
@@ -37,7 +38,7 @@ Layers, from the inside out:
 
 ```
 Domain       pure Swift: events, entities, GTD rules, reducers
-Store        append-only event log (canonical) + SQLite/GRDB projections (cache)
+Store        append-only event log (canonical) + projections (in memory; SQLite/GRDB only once replay is slow)
 Sync         transport adapter: Dropbox API now, CloudKit maybe later
 UI           SwiftUI, Mac first, iOS later
 ```
@@ -63,10 +64,14 @@ remote events → merge into log → deterministic replay → projection → UI
 
 ### Event-sourcing rules
 
-- Events are immutable and append-only. Never edit or delete a written event
-- Event types are a public, persisted format. Never rename a field or change
-  its meaning; add a new event type or a new optional field instead. Old logs
-  must always replay
+- Events are append-only. Code never edits or deletes a written event
+- The event format is soft until it is frozen (slice 9 of
+  `docs/plans/20261016_incremental_roadmap.md`). Until then a format change
+  may break old logs, provided it ships with a one-off migration script that
+  rewrites the log, or the change says the log is to be started afresh
+- Once frozen, event types are a public, persisted format. Never rename a
+  field or change its meaning; add a new event type or a new optional field
+  instead. Old logs must always replay, checked by golden-file tests
 - Each event carries a unique ID, the originating device ID and an ordering
   key. Replay of the same set of events in any arrival order produces the same
   state
@@ -109,7 +114,8 @@ Reference: `.claude/skills/tdd/SKILL.md`
 - **Domain and reducers**: the bulk of the tests. Given events → expect state.
   Table-style tests with `@Test(arguments:)` are preferred
 - **Replay and merge**: same events in shuffled orders produce identical state;
-  duplicate events are idempotent; old event formats still decode
+  duplicate events are idempotent; after the freeze, old event formats
+  still decode
 - **Projections**: GRDB against an in-memory `DatabaseQueue()`; projection
   built from events equals the reducer's state
 - **Sync**: against an in-memory fake transport conforming to the sync
@@ -143,7 +149,7 @@ Speed of capture and interaction is a feature: do not regress it.
 
 ### Commands
 
-The build entry point is created in Phase 0. Until then use the SwiftPM
+The build entry point is created in slice 1 of the roadmap. Until then use the SwiftPM
 commands directly:
 
 ```bash
@@ -242,6 +248,6 @@ commit to its branch instead of creating a new one.
 
 ## Enforcement
 
-- CI via GitHub Actions (to be set up in Phase 0): lint, format check, build,
+- CI via GitHub Actions (to be set up in slice 1): lint, format check, build,
   `swift test`
 - All checks must pass before merge

@@ -1,6 +1,6 @@
 # Incremental Roadmap
 
-Status: draft for discussion
+Status: agreed 2026-10-16
 
 Turns the broad phases of `20260512_initial_plan.md` into small slices. Each
 slice ends with something I can use every day, even if it is ugly or gets
@@ -131,14 +131,13 @@ Usable: the weekly review.
 - Notes field kept minimal (notes live in Joplin)
 - CloudKit transport, if ever
 
-## Open questions
+## Decisions (2026-10-16)
 
-1. **Soft event format until slice 9**: OK to bend the `AGENTS.md`
-   immutability rules until then, or keep them strict from day one?
-2. **CLI first**: worth it, or go straight to the Mac app in slice 1?
-3. **Dropbox folder sync (slice 6)** before the Dropbox API: acceptable as a
-   possibly permanent Mac solution?
-4. **Ordering key**: a Lamport counter per event plus device ID is enough for
-   one user; hybrid logical clocks only if timestamps matter for display.
-   Agree?
-5. **No SQLite until slice 10**: fine to drop it from the early slices?
+1. **Soft event format until slice 9.** `AGENTS.md` event rules updated to
+   match: format changes before the freeze ship with a migration script or a
+   fresh log
+2. **CLI first** in slice 1
+3. **Dropbox folder sync** in slice 6, possibly as the permanent Mac solution
+4. **Ordering key**: Lamport counter plus device ID (then event ID as the
+   tiebreak). Hybrid logical clocks only if timestamps matter for display
+5. **No SQLite until slice 10**, and only if replay is measurably slow
