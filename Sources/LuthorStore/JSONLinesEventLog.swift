@@ -10,7 +10,7 @@ import LuthorDomain
 public enum EventLogError: Error, Equatable {
   /// The 1-based line could not be decoded as an event.
   case unreadableLine(Int)
-  case io(String)
+  case ioFailure(String)
 }
 
 /// Encodes one event as one line of JSON:
@@ -20,65 +20,67 @@ public enum EventLine {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
     do {
-      return String(decoding: try encoder.encode(Line(event)), as: UTF8.self)
+      if let line = String(bytes: try encoder.encode(EventLineDTO(event)), encoding: .utf8) { return line }
     } catch {
-      throw .io("cannot encode event \(event.id.rawValue): \(error)")
+      throw .ioFailure("cannot encode event \(event.id.rawValue): \(error)")
     }
+    throw .ioFailure("cannot encode event \(event.id.rawValue) as UTF-8")
   }
 
   /// Throws `unreadableLine(0)`; callers that know the line number replace it.
   public static func decode(_ line: String) throws(EventLogError) -> EventEnvelope {
     do {
-      return try JSONDecoder().decode(Line.self, from: Data(line.utf8)).event
+      return try JSONDecoder().decode(EventLineDTO.self, from: Data(line.utf8)).event
     } catch {
       throw .unreadableLine(0)
     }
   }
+}
 
-  private struct Line: Codable {
-    let event: EventEnvelope
+/// The on-disk shape of one event line.
+private struct EventLineDTO: Codable {
+  let event: EventEnvelope
 
-    init(_ event: EventEnvelope) {
-      self.event = event
-    }
+  init(_ event: EventEnvelope) {
+    self.event = event
+  }
 
-    private enum CodingKeys: String, CodingKey {
-      case type, id, device, lamport, data
-    }
+  private enum CodingKeys: String, CodingKey {
+    case type, id, device, lamport, data
+  }
 
-    private enum EventType: String, Codable {
-      case taskCaptured = "TaskCaptured"
-      case taskCompleted = "TaskCompleted"
-    }
+  private enum EventType: String, Codable {
+    case taskCaptured = "TaskCaptured"
+    case taskCompleted = "TaskCompleted"
+  }
 
-    init(from decoder: any Decoder) throws {
-      let container = try decoder.container(keyedBy: CodingKeys.self)
-      let payload: EventPayload =
-        switch try container.decode(EventType.self, forKey: .type) {
-        case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
-        case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
-        }
-      event = EventEnvelope(
-        id: try container.decode(EventID.self, forKey: .id),
-        deviceID: try container.decode(DeviceID.self, forKey: .device),
-        lamport: try container.decode(UInt64.self, forKey: .lamport),
-        payload: payload
-      )
-    }
-
-    func encode(to encoder: any Encoder) throws {
-      var container = encoder.container(keyedBy: CodingKeys.self)
-      try container.encode(event.id, forKey: .id)
-      try container.encode(event.deviceID, forKey: .device)
-      try container.encode(event.lamport, forKey: .lamport)
-      switch event.payload {
-      case .taskCaptured(let data):
-        try container.encode(EventType.taskCaptured, forKey: .type)
-        try container.encode(data, forKey: .data)
-      case .taskCompleted(let data):
-        try container.encode(EventType.taskCompleted, forKey: .type)
-        try container.encode(data, forKey: .data)
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let payload: EventPayload =
+      switch try container.decode(EventType.self, forKey: .type) {
+      case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
+      case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
       }
+    event = EventEnvelope(
+      id: try container.decode(EventID.self, forKey: .id),
+      deviceID: try container.decode(DeviceID.self, forKey: .device),
+      lamport: try container.decode(UInt64.self, forKey: .lamport),
+      payload: payload
+    )
+  }
+
+  func encode(to encoder: any Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(event.id, forKey: .id)
+    try container.encode(event.deviceID, forKey: .device)
+    try container.encode(event.lamport, forKey: .lamport)
+    switch event.payload {
+    case .taskCaptured(let data):
+      try container.encode(EventType.taskCaptured, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .taskCompleted(let data):
+      try container.encode(EventType.taskCompleted, forKey: .type)
+      try container.encode(data, forKey: .data)
     }
   }
 }
@@ -98,7 +100,7 @@ public struct JSONLinesEventLog: Sendable {
     do {
       contents = try String(contentsOf: fileURL, encoding: .utf8)
     } catch {
-      throw .io("cannot read \(fileURL.path): \(error)")
+      throw .ioFailure("cannot read \(fileURL.path): \(error)")
     }
     var events: [EventEnvelope] = []
     for (index, line) in contents.split(separator: "\n", omittingEmptySubsequences: false).enumerated()
@@ -123,15 +125,15 @@ public struct JSONLinesEventLog: Sendable {
       try FileManager.default.createDirectory(
         at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
     } catch {
-      throw .io("cannot create directory for \(fileURL.path): \(error)")
+      throw .ioFailure("cannot create directory for \(fileURL.path): \(error)")
     }
     let descriptor = open(fileURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
-    guard descriptor >= 0 else { throw .io("cannot open \(fileURL.path): errno \(errno)") }
+    guard descriptor >= 0 else { throw .ioFailure("cannot open \(fileURL.path): errno \(errno)") }
     defer { close(descriptor) }
     let bytes = Array(text.utf8)
     let written = bytes.withUnsafeBytes { write(descriptor, $0.baseAddress, $0.count) }
     guard written == bytes.count else {
-      throw .io("short write to \(fileURL.path): \(written) of \(bytes.count) bytes, errno \(errno)")
+      throw .ioFailure("short write to \(fileURL.path): \(written) of \(bytes.count) bytes, errno \(errno)")
     }
   }
 }

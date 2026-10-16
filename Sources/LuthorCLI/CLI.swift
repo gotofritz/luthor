@@ -44,46 +44,75 @@ public struct CLI {
   public func run(_ arguments: [String]) -> CLIResult {
     guard let command = arguments.first else { return CLIResult(exitCode: Self.exitUsage, error: Self.usage) }
     let rest = Array(arguments.dropFirst())
-    if ["help", "--help", "-h"].contains(command) { return CLIResult(exitCode: 0, output: Self.usage) }
-    guard ["add", "list", "done"].contains(command) else {
+    let action: (Session) throws -> CLIResult
+    switch command {
+    case "help", "--help", "-h":
+      return CLIResult(exitCode: 0, output: Self.usage)
+    case "add":
+      action = { try add(title: rest.joined(separator: " "), $0) }
+    case "list" where rest.isEmpty:
+      action = { list($0) }
+    case "done" where rest.count == 1:
+      action = { try done(idPrefix: rest[0], $0) }
+    default:
       return CLIResult(exitCode: Self.exitUsage, error: Self.usage)
     }
     guard let path = environment["LUTHOR_LOG"], !path.isEmpty else {
       return failure(Self.exitConfig, "set LUTHOR_LOG to the path of the event log")
     }
-    let store = JSONLinesEventLog(fileURL: URL(fileURLWithPath: path))
-    let commands = Commands(deviceID: DeviceID(environment["LUTHOR_DEVICE_ID"] ?? "local"), ids: ids)
 
-    let log: [EventEnvelope]
+    let session: Session
     do {
-      log = try store.readAll()
+      session = try Session(path: path, deviceID: environment["LUTHOR_DEVICE_ID"] ?? "local", ids: ids)
     } catch {
       return report(error, path: path)
     }
-    let open = InboxState.replay(log).openTasks
+    return perform(action, session, path: path)
+  }
 
+  private func perform(_ action: (Session) throws -> CLIResult, _ session: Session, path: String) -> CLIResult {
     do {
-      switch command {
-      case "add":
-        let events = try commands.capture(title: rest.joined(separator: " "), log: log)
-        try store.append(events)
-        return CLIResult(exitCode: 0, output: events.compactMap(Self.capturedTask).map { "Captured " + Self.line($0) }.joined())
-      case "done":
-        guard rest.count == 1 else { return CLIResult(exitCode: Self.exitUsage, error: Self.usage) }
-        let events = try commands.complete(idPrefix: rest[0], log: log)
-        try store.append(events)
-        let done = events.compactMap(Self.completedTaskID).compactMap { id in open.first { $0.id == id } }
-        return CLIResult(exitCode: 0, output: done.map { "Completed " + Self.line($0) }.joined())
-      default:
-        return CLIResult(exitCode: 0, output: open.map(Self.line).joined())
-      }
+      return try action(session)
     } catch let error as CommandError {
-      return report(error, open: open)
+      return report(error, open: session.open)
     } catch let error as EventLogError {
       return report(error, path: path)
     } catch {
       return failure(Self.exitFailure, "\(error)")
     }
+  }
+
+  /// The log as read at the start of one command.
+  private struct Session {
+    let store: JSONLinesEventLog
+    let commands: Commands
+    let log: [EventEnvelope]
+    let open: [TaskItem]
+
+    init(path: String, deviceID: String, ids: any IDGenerator) throws(EventLogError) {
+      store = JSONLinesEventLog(fileURL: URL(fileURLWithPath: path))
+      commands = Commands(deviceID: DeviceID(deviceID), ids: ids)
+      log = try store.readAll()
+      open = InboxState.replay(log).openTasks
+    }
+  }
+
+  private func add(title: String, _ session: Session) throws -> CLIResult {
+    let events = try session.commands.capture(title: title, log: session.log)
+    try session.store.append(events)
+    let captured = events.compactMap(Self.capturedTask)
+    return CLIResult(exitCode: 0, output: captured.map { "Captured " + Self.line($0) }.joined())
+  }
+
+  private func list(_ session: Session) -> CLIResult {
+    CLIResult(exitCode: 0, output: session.open.map(Self.line).joined())
+  }
+
+  private func done(idPrefix: String, _ session: Session) throws -> CLIResult {
+    let events = try session.commands.complete(idPrefix: idPrefix, log: session.log)
+    try session.store.append(events)
+    let done = events.compactMap(Self.completedTaskID).compactMap { id in session.open.first { $0.id == id } }
+    return CLIResult(exitCode: 0, output: done.map { "Completed " + Self.line($0) }.joined())
   }
 
   private static func capturedTask(_ event: EventEnvelope) -> TaskItem? {
@@ -112,7 +141,7 @@ public struct CLI {
     switch error {
     case .unreadableLine(let number):
       failure(Self.exitFailure, "\(path) line \(number) is not a readable event")
-    case .io(let message):
+    case .ioFailure(let message):
       failure(Self.exitFailure, message)
     }
   }
