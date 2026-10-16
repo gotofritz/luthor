@@ -1,0 +1,18 @@
+# SwiftLint config. Version pinned in the Makefile (SWIFTLINT_VERSION).
+included:
+  - Sources
+  - Tests
+  - Package.swift
+excluded:
+  - .build
+opt_in_rules:
+  - force_unwrapping
+  - empty_count
+  - first_where
+  - sorted_first_last
+  - contains_over_filter_count
+# swift-format owns layout; avoid rules that fight it.
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - line_length
