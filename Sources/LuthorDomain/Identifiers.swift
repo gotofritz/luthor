@@ -31,3 +31,36 @@ public struct TaskID: Hashable, Codable, Sendable {
     self.rawValue = rawValue
   }
 }
+
+extension EventID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
+extension DeviceID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
+extension TaskID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
