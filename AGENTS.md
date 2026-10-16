@@ -1,0 +1,248 @@
+# AGENTS.md
+
+## What This Is
+
+Luthor is a personal, OmniFocus-like GTD task system: a **local-first,
+event-sourced** Swift app for Mac (iOS later) that syncs an append-only event
+log through the Dropbox API. One user, built to last.
+
+> Events are the source of truth, not the database.
+
+## Read First
+
+- `README.md` — project overview
+- `docs/plans/20260512_initial_plan.md` — architecture, stack and phases
+- `docs/plans/*.md` — other active plans
+
+## Project Rules
+
+- Use `gh` for GitHub operations when available; in environments without it
+  (e.g. remote agent sessions), use the GitHub MCP tools instead
+- Run commands from project root
+- Strictly task execution. Notes and knowledge management live in Joplin;
+  do not add note-taking features
+
+## Plans
+
+- Active: `docs/plans/`
+- Archive: `docs/archive/`
+- Plan filename format: `YYYYMMDD_name_of_plan.md`
+  Example: `20260512_initial_plan.md`
+- Archive completed plans in the same PR, with `git mv` and the same name.
+  Update links from `docs/plans/<name>` to `docs/archive/<name>` in that PR
+
+## Architecture
+
+Layers, from the inside out:
+
+```
+Domain       pure Swift: events, entities, GTD rules, reducers
+Store        append-only event log (canonical) + SQLite/GRDB projections (cache)
+Sync         transport adapter: Dropbox API now, CloudKit maybe later
+UI           SwiftUI, Mac first, iOS later
+```
+
+Data flow:
+
+```
+user action → command → new event(s) → append to log → reduce → projection → UI
+remote events → merge into log → deterministic replay → projection → UI
+```
+
+### Boundaries
+
+| Concern | Lives in | Never in |
+|---------|----------|----------|
+| Event definitions | Domain | UI, Sync |
+| GTD rules (defer, due, sequential projects, availability) | Domain, pure functions | views, SQL |
+| State from events | reducers (pure, deterministic) | views, sync code |
+| Fast queries | SQLite projections | — |
+| Canonical data | event log | SQLite |
+| Network, OAuth, file transfer | Sync adapter behind a protocol | Domain, UI |
+| Layout, colour, spacing | SwiftUI views | Domain |
+
+### Event-sourcing rules
+
+- Events are immutable and append-only. Never edit or delete a written event
+- Event types are a public, persisted format. Never rename a field or change
+  its meaning; add a new event type or a new optional field instead. Old logs
+  must always replay
+- Each event carries a unique ID, the originating device ID and an ordering
+  key. Replay of the same set of events in any arrival order produces the same
+  state
+- Reducers are pure: no I/O, no `Date()`, no `UUID()`, no randomness.
+  Inject clocks and ID generators
+- SQLite is disposable. Any projection must be rebuildable from the event log
+  alone; a schema change is handled by dropping and rebuilding the projection,
+  not by migrating it
+- The domain never imports GRDB, SwiftUI or Dropbox SDK code
+- Sync syncs event files, never the SQLite database
+
+Update `docs/plans/20260512_initial_plan.md` (or a successor architecture doc)
+before merging changes affecting architecture, boundaries or core patterns.
+
+## Workflow
+
+**MANDATORY TDD — no exceptions.** Every change to behaviour starts with a
+failing test. This applies to the domain, reducers, projections, sync and
+view models alike.
+
+1. Write a failing test FIRST
+2. Run it — confirm it fails for the expected reason (missing behaviour,
+   not a compile error or a typo)
+3. Write the minimal implementation to make it pass
+4. Run the whole suite — all green
+5. Refactor with tests green
+6. Run the full QA (see below) before opening a PR
+
+**Never write production code before a failing test for it exists.** Code
+written before its test is deleted and rewritten test-first. A test that
+passes the first time it runs proves nothing; fix the test until you have seen
+it fail.
+
+Bug fixes start with a test that reproduces the bug.
+
+Reference: `.claude/skills/tdd/SKILL.md` (its examples are Python; the rules
+apply unchanged to Swift)
+
+### What to test where
+
+- **Domain and reducers**: the bulk of the tests. Given events → expect state.
+  Table-style tests with `@Test(arguments:)` are preferred
+- **Replay and merge**: same events in shuffled orders produce identical state;
+  duplicate events are idempotent; old event formats still decode
+- **Projections**: GRDB against an in-memory `DatabaseQueue()`; projection
+  built from events equals the reducer's state
+- **Sync**: against an in-memory fake transport conforming to the sync
+  protocol. Two simulated devices writing concurrently converge
+- **UI**: keep views thin and test their view models. No snapshot or UI tests
+  unless a plan asks for them
+
+## Decision Order
+
+Prioritize:
+
+1. Correctness (and never losing user data)
+2. Passing tests
+3. Simplicity
+4. Existing patterns
+5. Minimal diffs
+
+Speed of capture and interaction is a feature: do not regress it.
+
+## Swift
+
+### Tooling
+
+- Swift 6 toolchain, strict concurrency on
+- Swift Package Manager. Domain, store and sync live in a Swift package so
+  they build and test with `swift test` without Xcode; the SwiftUI app target
+  depends on it
+- Swift Testing (`import Testing`, `@Test`, `#expect`) for new tests
+- `swift-format` for formatting, SwiftLint for linting
+- GRDB for SQLite
+
+### Commands
+
+The build entry point is created in Phase 0. Until then use the SwiftPM
+commands directly:
+
+```bash
+swift build
+swift test
+swift test --filter <TestName>   # run one test while doing red/green
+```
+
+Once a `Makefile` exists, prefer it: `make test`, `make lint`, `make check-ci`
+(lint + format check + build + tests). Keep these instructions in sync.
+
+### Rules
+
+- Value types (`struct`, `enum`) for events and domain state
+- Events are `Codable`, `Sendable`, `Equatable`
+- No force unwraps (`!`) or `try!` outside tests
+- No global mutable state, no singletons
+- Dependencies (clock, ID generator, store, transport) are injected through
+  initialisers or protocols
+- Errors are typed and thrown; do not swallow them with `try?` in the store
+  or sync layers
+- Concise doc comments for public, non-obvious declarations only
+- Minimise lint suppressions; document every one
+
+### Testing
+
+- Tests never touch the network, the real Dropbox account or the user's data
+- Use in-memory SQLite and in-memory fakes; no mocking frameworks
+- Fixed clocks and seeded ID generators for deterministic results
+- Shared fixtures (event builders) live in a test support target
+- One behaviour per test, named for the behaviour it checks
+
+## Data & Secrets
+
+- Never commit a database, an event log or Dropbox tokens
+- OAuth tokens go in the Keychain, never in files or `UserDefaults`
+- Secrets come from the environment or the Keychain, never from the repo
+- Any change that could lose or corrupt the event log needs a test proving
+  the log survives it
+
+## Commits & Branches
+
+### Commits
+
+- [Conventional Commits](https://www.conventionalcommits.org):
+  `<type>(<scope>): <subject>`, e.g. `feat(domain): add TaskDeferred event`
+- Common types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`,
+  `ci`, `chore`
+- Small, atomic commits
+- Imperative present tense
+- Subject ≤ 72 chars
+- Reference issues when relevant
+
+### Branches
+
+- `feature/<name>`
+- `fix/<name>`
+
+Work on the branch the user specifies. If their prompt names one, use it
+without asking.
+
+**Before creating a branch**, check for an existing open PR (`gh pr list
+--state open`, or the GitHub MCP tools). If an open PR covers the same area,
+commit to its branch instead of creating a new one.
+
+## Pull Requests
+
+- Keep PRs focused
+- Avoid unrelated refactors
+- Include tests for behaviour changes
+- Update relevant docs and plans
+- Ensure CI passes
+
+### Title & Body
+
+- Title: Conventional Commits format, ≤ 50 chars
+- Body: concise summary of changes, not implementation details
+- Body: reference issues with `Closes #N` when relevant
+
+## Failure Policy
+
+- Never ignore failing tests
+- Never disable, skip or delete tests to pass CI
+- Never bypass lint/type failures without explanation
+- Never merge broken builds
+- Surface blockers clearly
+
+## Agent Constraints
+
+- Prefer minimal diffs
+- Preserve existing architecture unless intentionally changing it
+- Reuse existing patterns
+- Avoid unnecessary dependencies; every new package needs a reason in the PR
+- Avoid rewriting working code without reason
+- Keep changes reviewable
+
+## Enforcement
+
+- CI via GitHub Actions (to be set up in Phase 0): lint, format check, build,
+  `swift test`
+- All checks must pass before merge
