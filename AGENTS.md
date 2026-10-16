@@ -102,8 +102,7 @@ it fail.
 
 Bug fixes start with a test that reproduces the bug.
 
-Reference: `.claude/skills/tdd/SKILL.md` (its examples are Python; the rules
-apply unchanged to Swift)
+Reference: `.claude/skills/tdd/SKILL.md`
 
 ### What to test where
 

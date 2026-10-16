@@ -73,62 +73,65 @@ digraph tdd_cycle {
 Write one minimal test showing what should happen.
 
 <Good>
-```python
-def test_slug_from_title_basic():
-    assert slug_from_title("Hello, World!") == "hello-world"
+```swift
+@Test func completingTaskMarksItCompleted() {
+    let state = reduce([.taskCreated(id: taskID, title: "Buy milk"), .taskCompleted(id: taskID)])
+    #expect(state.tasks[taskID]?.isCompleted == true)
+}
 ```
 Clear name, tests real behavior, one thing.
 </Good>
 
 <Bad>
-```python
-def test_slug(mocker):
-    mock_slugger = mocker.Mock()
-    mock_slugger.slug.return_value = "hello-world"
-    result = mock_slugger.slug("Hello, World!")
-    mock_slugger.slug.assert_called_once()
+```swift
+@Test func test1() {
+    let store = MockStore()
+    store.stubbedState = AppState(completed: [taskID])
+    _ = store.load()
+    #expect(store.loadCallCount == 1)
+}
 ```
 Vague name, tests mock not code.
 </Bad>
 
 **Requirements:**
 - One behavior per test
-- Clear name describing expected behavior: `test_<unit>_<scenario>_<expected>`
-- Real code (no mocks unless unavoidable — e.g., external HTTP calls)
+- Clear name describing expected behavior: a sentence in camelCase, e.g. `deferredTaskIsUnavailableBeforeDeferDate`
+- Real code (no mocks; use in-memory fakes only at boundaries such as Dropbox)
 
 ### Verify RED - Watch It Fail
 
 **MANDATORY. Never skip.**
 
 ```bash
-uv run pytest tests/recipes/test_models.py::test_slug_from_title_basic -v
+swift test --filter completingTaskMarksItCompleted
 ```
 
 Confirm:
-- Test fails (not import errors)
+- Test fails (not a compile error)
 - Failure message is what you expect
 - Fails because the feature is missing, not due to typos
 
 **Test passes?** You're testing existing behavior. Fix the test.
 
-**Test errors/won't import?** Fix the error, re-run until it fails correctly.
+**Test won't compile?** Fix the error, re-run until it fails correctly.
 
 ### GREEN - Minimal Code
 
 Write the simplest code that makes the test pass.
 
 <Good>
-```python
-def slug_from_title(title: str) -> str:
-    return title.lower().replace(", ", "-").replace("!", "")
+```swift
+case .taskCompleted(let id):
+    state.tasks[id]?.isCompleted = true
 ```
 Just enough to pass.
 </Good>
 
 <Bad>
-```python
-def slug_from_title(title: str, *, max_length: int = 50, separator: str = "-") -> str:
-    # normalize unicode, handle RTL, truncate, strip special chars...
+```swift
+case .taskCompleted(let id):
+    // also complete subtasks, advance sequential project, schedule repeat...
 ```
 Over-engineered before there are tests for those cases.
 </Bad>
@@ -140,7 +143,7 @@ Don't add features, refactor other code, or "improve" beyond what the failing te
 **MANDATORY.**
 
 ```bash
-uv run pytest tests/ -v
+swift test
 ```
 
 Confirm:
@@ -169,8 +172,8 @@ Next failing test for the next behavior.
 
 | Quality | Good | Bad |
 |---------|------|-----|
-| **Minimal** | One behavior. "and" in name? Split it. | `test_parse_article_and_strip_markdown_and_capitalize` |
-| **Clear** | Name describes expected behavior | `test_foo`, `test_1` |
+| **Minimal** | One behavior. "and" in name? Split it. | `completeTaskAndAdvanceProjectAndUpdateReview` |
+| **Clear** | Name describes expected behavior | `testReducer`, `test1` |
 | **Real** | Tests production code paths | Tests mock return values |
 
 ## Why Order Matters
@@ -219,37 +222,36 @@ The "waste" is keeping code you can't trust.
 
 ## Example: Bug Fix
 
-**Bug:** Empty title produces non-empty slug.
+**Bug:** Completing an already-completed task (a duplicate event from sync) changes its completion date.
 
 **RED**
-```python
-def test_slug_from_title_empty_input():
-    assert slug_from_title("") == ""
+```swift
+@Test func duplicateCompletionKeepsFirstCompletionDate() {
+    let state = reduce([created, completed(at: monday), completed(at: tuesday)])
+    #expect(state.tasks[taskID]?.completedAt == monday)
+}
 ```
 
 **Verify RED**
 ```bash
-$ uv run pytest tests/recipes/test_utils.py::test_slug_from_title_empty_input -v
-FAILED tests/recipes/test_utils.py::test_slug_from_title_empty_input
-AssertionError: assert "-" == ""
+$ swift test --filter duplicateCompletionKeepsFirstCompletionDate
+✘ Expectation failed: (state.tasks[taskID]?.completedAt → tuesday) == (monday → monday)
 ```
 
 **GREEN**
-```python
-def slug_from_title(title: str) -> str:
-    title = title.strip()
-    if not title:
-        return ""
-    # existing logic...
+```swift
+case .taskCompleted(let id, let at):
+    guard state.tasks[id]?.completedAt == nil else { break }
+    state.tasks[id]?.completedAt = at
 ```
 
 **Verify GREEN**
 ```bash
-$ uv run pytest tests/ -v
-PASSED tests/recipes/test_utils.py::test_slug_from_title_empty_input
+$ swift test
+✔ Test duplicateCompletionKeepsFirstCompletionDate() passed
 ```
 
-**REFACTOR** — extract strip to a shared helper if needed.
+**REFACTOR** — extract an idempotency guard if other events need it.
 
 ## Verification Checklist
 
@@ -259,8 +261,8 @@ Before marking work complete:
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for the expected reason (feature missing, not import error)
 - [ ] Wrote minimal code to pass each test
-- [ ] All tests pass: `uv run pytest tests/ -v`
-- [ ] Full QA passes: `task qa`
+- [ ] All tests pass: `swift test`
+- [ ] Full QA passes: `make check-ci` (once the Makefile exists)
 
 Can't check all boxes? You skipped TDD. Start over.
 
@@ -270,8 +272,8 @@ Can't check all boxes? You skipped TDD. Start over.
 |---------|----------|
 | Don't know how to test | Write the wished-for function call first. Write the assertion. Ask your human partner. |
 | Test too complicated | Design too complicated. Simplify the interface. |
-| Must mock everything | Code too coupled. Use dependency injection or extract an interface. |
-| Test setup is huge | Extract fixtures to `conftest.py`. Still complex? Simplify the design. |
+| Must mock everything | Code too coupled. Inject dependencies or extract a protocol. |
+| Test setup is huge | Extract event builders to the test support target. Still complex? Simplify the design. |
 
 ## Final Rule
 
