@@ -23,6 +23,53 @@ sync of event files) stays; the order and the amount of machinery change.
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
   the slice that freezes the format (slice 9)
 
+## CI/CD track
+
+Runs alongside the slices. Code quality comes first; building and shipping
+the app comes once there is an app to ship. Every check CI runs can also be
+run locally with the same command, so CI never surprises me.
+
+### CI-1. Code quality, local and CI (slice 1)
+
+- `Makefile` as the single entry point, used both locally and by CI:
+  - `make format`: apply `swift-format`
+  - `make lint`: `swift-format lint --strict` and SwiftLint
+  - `make test`: `swift test`
+  - `make check-ci`: lint + format check + build + tests, exactly what CI runs
+- Tool versions pinned in the repo (SwiftLint and swift-format config files,
+  versions in the `Makefile`), so local and CI results match
+- Git pre-commit hook (`make hooks` installs it) running format check and
+  lint on staged Swift files; fast enough not to slow commits down
+- GitHub Actions workflow on every PR and push to `main` that runs
+  `make check-ci` on a macOS runner
+- Branch protection on `main`: the check must pass to merge
+
+### CI-2. Build the Mac app (slice 2)
+
+- `make app`: `xcodebuild` the Mac app; added to `make check-ci`
+- View model tests run in CI alongside the package tests
+
+### CD-1. Ship the Mac app and CLI (slice 2 or 3)
+
+- On a version tag (`v0.x.y`): build the `.app` and the `luthor` CLI,
+  ad-hoc sign them (no Developer Program needed), zip and attach to a GitHub
+  Release
+- `make install` builds and installs both locally, for day-to-day use
+  between releases
+- Without notarisation, the first launch needs right-click → Open; fine for
+  one user
+
+### CI-3. Event format guard (slice 9)
+
+- Golden-file replay tests are part of `make check-ci`; a change that breaks
+  an old log fails CI
+
+### CD-2. iOS (slice 12)
+
+- `xcodebuild` the iOS target in CI
+- Distribution decided with slice 12: free 7-day provisioning from Xcode, or
+  TestFlight with the Developer Program
+
 ## Slices
 
 ### 1. Walking skeleton: CLI capture
@@ -31,7 +78,7 @@ sync of event files) stays; the order and the amount of machinery change.
 - Events: `TaskCaptured`, `TaskCompleted`
 - Store: one JSON-Lines file, append-only, path from an env var
 - CLI: `luthor add "buy milk"`, `luthor list`, `luthor done <id-prefix>`
-- `Makefile` (`test`, `lint`, `check-ci`) and GitHub Actions CI
+- Code quality gates, local and CI (stage CI-1 below)
 
 Usable: capture and tick off tasks from the terminal.
 Why a CLI first: it proves the domain, log and replay end to end with no UI

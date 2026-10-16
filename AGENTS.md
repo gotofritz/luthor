@@ -158,8 +158,9 @@ swift test
 swift test --filter <TestName>   # run one test while doing red/green
 ```
 
-Once a `Makefile` exists, prefer it: `make test`, `make lint`, `make check-ci`
-(lint + format check + build + tests). Keep these instructions in sync.
+Once a `Makefile` exists, prefer it: `make format`, `make lint`, `make test`,
+`make check-ci` (lint + format check + build + tests, exactly what CI runs).
+Run `make check-ci` locally before pushing. Keep these instructions in sync.
 
 ### Rules
 
@@ -248,6 +249,7 @@ commit to its branch instead of creating a new one.
 
 ## Enforcement
 
-- CI via GitHub Actions (to be set up in slice 1): lint, format check, build,
-  `swift test`
+- CI via GitHub Actions (to be set up in slice 1) runs `make check-ci`: lint,
+  format check, build, `swift test`. The same command runs locally, and a
+  pre-commit hook (`make hooks`) runs format check and lint
 - All checks must pass before merge
