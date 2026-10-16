@@ -38,11 +38,23 @@ run locally with the same command, so CI never surprises me.
   - `make check-ci`: lint + format check + build + tests, exactly what CI runs
 - Tool versions pinned in the repo (SwiftLint and swift-format config files,
   versions in the `Makefile`), so local and CI results match
-- Git pre-commit hook (`make hooks` installs it) running format check and
-  lint on staged Swift files; fast enough not to slow commits down
+- Git hooks for local development, plain shell scripts in `.githooks/`
+  (no hook framework to install); `make hooks` points
+  `core.hooksPath` at them:
+  - `pre-commit`: format check and lint on staged Swift files; fast enough
+    not to slow commits down
+  - `commit-msg`: rejects a message that is not a Conventional Commit
+- One script, `scripts/check-conventional-commit.sh`, decides what a valid
+  Conventional Commit header is (type list, optional scope, `!`, and a
+  maximum length passed in: 72 for commits, 50 for PR titles). The
+  `commit-msg` hook and CI both call it, so they never disagree
 - GitHub Actions workflow on every PR and push to `main` that runs
   `make check-ci` on a macOS runner
-- Branch protection on `main`: the check must pass to merge
+- PR title check: a workflow on `pull_request` (opened, edited,
+  synchronize) passes the title to the same script through an environment
+  variable (never interpolated into the shell) and fails if it is not a
+  Conventional Commit of at most 50 characters
+- Branch protection on `main`: both checks must pass to merge
 
 ### CI-2. Build the Mac app (slice 2)
 

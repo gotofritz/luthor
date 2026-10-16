@@ -226,7 +226,9 @@ commit to its branch instead of creating a new one.
 
 ### Title & Body
 
-- Title: Conventional Commits format, ≤ 50 chars
+- Title: Conventional Commits format, same rules and types as commits
+  (`<type>(<scope>): <subject>`), ≤ 50 chars. CI fails a PR whose title
+  does not match
 - Body: concise summary of changes, not implementation details
 - Body: reference issues with `Closes #N` when relevant
 
@@ -250,6 +252,9 @@ commit to its branch instead of creating a new one.
 ## Enforcement
 
 - CI via GitHub Actions (to be set up in slice 1) runs `make check-ci`: lint,
-  format check, build, `swift test`. The same command runs locally, and a
-  pre-commit hook (`make hooks`) runs format check and lint
+  format check, build, `swift test`. The same command runs locally
+- CI checks that PR titles are Conventional Commits
+- Git hooks for local development, installed with `make hooks`:
+  `pre-commit` runs format check and lint, `commit-msg` checks the message
+  is a Conventional Commit. Do not bypass them with `--no-verify`
 - All checks must pass before merge
