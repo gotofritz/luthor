@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+.DS_Store
+# never commit an event log
+*.jsonl
