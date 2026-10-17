@@ -31,7 +31,7 @@ public final class LibraryViewModel {
 
   private let log: any EventLog
   private let commands: Commands
-  private var state = LibraryState()
+  @ObservationIgnored private var state = LibraryState.replay([])
 
   public init(log: any EventLog, commands: Commands) {
     self.log = log
