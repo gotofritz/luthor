@@ -221,7 +221,7 @@ extension LibraryState {
   public func carryOver(in viewID: ViewID, today: CalendarDate) -> [CarryOverEntry] {
     let viewState = view(viewID)
     let defaultEstimate = settings(for: viewID).defaultEstimateMinutes
-    let ranking = PlanRanking(viewState)
+    let ranking = PlanRanking(viewState, deadlines: [:])
     let leftOver = viewState.openTasks.compactMap { task -> LeftOver? in
       guard let day = scheduledDates[task.id], day < today else { return nil }
       let manual = dayOrders[DayKey(viewID: viewID, date: day)]?.firstIndex(of: task.id)

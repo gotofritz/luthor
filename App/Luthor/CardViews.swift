@@ -4,9 +4,9 @@ import LuthorViewModels
 import SwiftUI
 
 /// The card of the task selected, in a column of its own after the list the task is in. It shows the day the
-/// task was created and its notes, and not the title, which the list before it already shows; the pencil
-/// turns it into the editor of the title, priority, estimate and notes, closed by OK or Cancel. A completed
-/// task shows its card too, with no pencil until it is reopened.
+/// task was created, its due date and its notes, and not the title, which the list before it already shows;
+/// the pencil turns it into the editor of the title, priority, estimate, due date and notes, closed by OK or
+/// Cancel. A completed task shows its card too, with no pencil until it is reopened.
 struct TaskCardColumn: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
@@ -36,6 +36,9 @@ struct TaskCardColumn: View {
       if isCompleted {
         completedLine
       }
+      if let due = library.dueDate(of: task.id) {
+        DueLine(due: due, today: library.today)
+      }
       NotesView(notes: task.notes)
     }
   }
@@ -63,6 +66,9 @@ private struct TaskCardEditor: View {
   @State private var title: String
   @State private var priority: Priority?
   @State private var estimate: Int?
+  @State private var hasDue: Bool
+  @State private var dueDay: Date
+  @State private var dueIsHard: Bool
   @State private var notes: String
 
   init(library: LibraryViewModel, task: TaskItem) {
@@ -71,6 +77,10 @@ private struct TaskCardEditor: View {
     _title = State(initialValue: task.title)
     _priority = State(initialValue: task.priority)
     _estimate = State(initialValue: task.estimate)
+    let due = library.dueDate(of: task.id)
+    _hasDue = State(initialValue: due != nil)
+    _dueDay = State(initialValue: due?.date.startOfDay ?? Date())
+    _dueIsHard = State(initialValue: due?.isHard ?? true)
     _notes = State(initialValue: task.notes ?? "")
   }
 
@@ -92,6 +102,15 @@ private struct TaskCardEditor: View {
           Text("\(minutes)m").tag(Int?.some(minutes))
         }
       }
+      Toggle("Due date", isOn: $hasDue)
+      if hasDue {
+        DatePicker("Due", selection: $dueDay, displayedComponents: .date)
+        Picker("Kind", selection: $dueIsHard) {
+          Text("Hard deadline").tag(true)
+          Text("Target date").tag(false)
+        }
+        .pickerStyle(.segmented)
+      }
       if let history = library.estimateHistory(ofTask: task.id) {
         LabeledContent("History", value: history.summary)
       }
@@ -103,7 +122,10 @@ private struct TaskCardEditor: View {
   }
 
   private func save() {
-    library.saveCard(ofTask: task.id, title: title, priority: priority, estimate: estimate, notes: notes)
+    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
+    library.saveCard(
+      ofTask: task.id,
+      TaskCardDraft(title: title, priority: priority, estimate: estimate, due: due, notes: notes))
   }
 
   /// The choices, plus the estimate the task has when it is none of them.
@@ -220,6 +242,35 @@ private struct CardToolbar: View {
         .accessibilityLabel("Edit")
       }
     }
+  }
+}
+
+/// When the task is due: a hard deadline or a target date, in red once the day has passed.
+private struct DueLine: View {
+  let due: DueDate
+  let today: CalendarDate
+
+  var body: some View {
+    Label(
+      "\(due.isHard ? "Deadline" : "Target date") \(due.date.isoString)",
+      systemImage: due.isHard ? "exclamationmark.circle" : "calendar"
+    )
+    .font(.callout)
+    .foregroundStyle(due.date < today ? Color.red : Color.primary)
+  }
+}
+
+extension CalendarDate {
+  /// The day of `date` by the system's calendar.
+  init?(dayOf date: Date) {
+    let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+    guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+    self.init(year: year, month: month, day: day)
+  }
+
+  /// The start of the day by the system's calendar.
+  var startOfDay: Date? {
+    Calendar.current.date(from: DateComponents(year: year, month: month, day: day))
   }
 }
 

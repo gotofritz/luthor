@@ -99,18 +99,6 @@ public struct Project: Equatable, Sendable {
   }
 }
 
-/// A task or project that is done, kept so it can be shown and reopened.
-public struct Completed<Item: Equatable & Sendable>: Equatable, Sendable {
-  public let item: Item
-  /// The project whose completion took it along; `nil` if it was completed itself.
-  public let completedWith: ProjectID?
-
-  /// Only what was completed itself can be reopened; what a project took along comes back with it.
-  public var isReopenable: Bool {
-    completedWith == nil
-  }
-}
-
 /// The state of every view. Tasks and projects are reachable only through `view(_:)`, which names the
 /// view: isolation between views is a rule of the domain, not a filter in the UI.
 public struct LibraryState: Equatable, Sendable {
@@ -135,6 +123,8 @@ public struct LibraryState: Equatable, Sendable {
   var scheduledDates: [TaskID: CalendarDate] = [:]
   /// The open tasks handed to someone else.
   var delegations: [TaskID: Delegation] = [:]
+  /// The due date of each task that has one. Completing a task keeps it, so reopening brings it back.
+  var dueDates: [TaskID: DueDate] = [:]
   /// The manual order of each view's plan for a day, as last set.
   var dayOrders: [DayKey: [TaskID]] = [:]
   /// The capacity set for single days, in place of the weekday's.
@@ -207,16 +197,14 @@ public struct LibraryState: Equatable, Sendable {
       schedule(scheduled)
     case .taskUnscheduled(let unscheduled):
       scheduledDates.removeValue(forKey: unscheduled.taskID)
-    case .dayPlanOrdered(let ordered):
-      order(ordered)
-    case .dayCapacitySet(let capacity):
-      setCapacity(capacity)
     case .taskDelegated(let delegated):
       delegate(delegated)
     case .taskReclaimed(let reclaimed):
       delegations.removeValue(forKey: reclaimed.taskID)
     case .taskDropped(let dropped):
       finish(dropped.taskID)
+    case .dayPlanOrdered, .dayCapacitySet, .taskDueSet:
+      applyPlanning(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
     }

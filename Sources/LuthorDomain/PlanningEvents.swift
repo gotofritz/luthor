@@ -88,3 +88,20 @@ public struct TaskDropped: Equatable, Codable, Sendable {
     self.taskID = taskID
   }
 }
+
+/// Gives an open task a due date, or with none clears it. A hard deadline surfaces in Today's candidates once
+/// it is due, ahead of tasks of its priority; a target date only shows on the task's card and the calendar.
+/// A due date never plans a task for a day.
+public struct TaskDueSet: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  /// The due date from now on; `nil` clears it.
+  public let date: CalendarDate?
+  /// Whether `date` is a hard deadline, not a target date; `false` when there is no date.
+  public let isHard: Bool
+
+  public init(taskID: TaskID, date: CalendarDate?, isHard: Bool) {
+    self.taskID = taskID
+    self.date = date
+    self.isHard = isHard
+  }
+}

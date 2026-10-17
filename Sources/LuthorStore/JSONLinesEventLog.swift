@@ -77,6 +77,7 @@ private struct EventLineDTO: Codable {
     case taskDelegated = "TaskDelegated"
     case taskReclaimed = "TaskReclaimed"
     case taskDropped = "TaskDropped"
+    case taskDueSet = "TaskDueSet"
     case taskTimeLogged = "TaskTimeLogged"
     case unplannedTimeLogged = "UnplannedTimeLogged"
     case dayReviewed = "DayReviewed"
@@ -115,6 +116,7 @@ private struct EventLineDTO: Codable {
       case .taskDelegated: .taskDelegated(try container.decode(TaskDelegated.self, forKey: .data))
       case .taskReclaimed: .taskReclaimed(try container.decode(TaskReclaimed.self, forKey: .data))
       case .taskDropped: .taskDropped(try container.decode(TaskDropped.self, forKey: .data))
+      case .taskDueSet: .taskDueSet(try container.decode(TaskDueSet.self, forKey: .data))
       case .taskTimeLogged: .taskTimeLogged(try container.decode(TaskTimeLogged.self, forKey: .data))
       case .unplannedTimeLogged:
         .unplannedTimeLogged(try container.decode(UnplannedTimeLogged.self, forKey: .data))
@@ -161,6 +163,7 @@ private struct EventLineDTO: Codable {
     case .taskDelegated(let data): try write(.taskDelegated, data, to: &container)
     case .taskReclaimed(let data): try write(.taskReclaimed, data, to: &container)
     case .taskDropped(let data): try write(.taskDropped, data, to: &container)
+    case .taskDueSet(let data): try write(.taskDueSet, data, to: &container)
     case .taskTimeLogged(let data): try write(.taskTimeLogged, data, to: &container)
     case .unplannedTimeLogged(let data): try write(.unplannedTimeLogged, data, to: &container)
     case .dayReviewed(let data): try write(.dayReviewed, data, to: &container)

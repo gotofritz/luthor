@@ -1,3 +1,15 @@
+/// A task or project that is done, kept so it can be shown and reopened.
+public struct Completed<Item: Equatable & Sendable>: Equatable, Sendable {
+  public let item: Item
+  /// The project whose completion took it along; `nil` if it was completed itself.
+  public let completedWith: ProjectID?
+
+  /// Only what was completed itself can be reopened; what a project took along comes back with it.
+  public var isReopenable: Bool {
+    completedWith == nil
+  }
+}
+
 extension LibraryState {
   /// Ignores a task that already exists, open or completed.
   mutating func capture(_ captured: TaskCaptured) {

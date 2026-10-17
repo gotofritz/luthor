@@ -19,15 +19,15 @@ extension LibraryViewModel {
 
   /// Keeps what was typed on a task's card and leaves edit mode. A blank title keeps the card in edit mode
   /// and writes nothing.
-  public func saveCard(
-    ofTask taskID: TaskID, title: String, priority: Priority?, estimate: Int?, notes: String
-  ) {
-    guard !title.allSatisfy(\.isWhitespace) else { return }
+  public func saveCard(ofTask taskID: TaskID, _ draft: TaskCardDraft) {
+    guard !draft.title.allSatisfy(\.isWhitespace) else { return }
     perform { (log) throws(CommandError) in
-      var events = try commands.rename(taskID: taskID, to: title, log: log)
-      events += try commands.prioritize(taskID: taskID, as: priority, log: log + events)
-      events += try commands.estimate(taskID: taskID, as: estimate, log: log + events)
-      events += try commands.setNotes(taskID: taskID, to: notes, log: log + events)
+      var events = try commands.rename(taskID: taskID, to: draft.title, log: log)
+      events += try commands.prioritize(taskID: taskID, as: draft.priority, log: log + events)
+      events += try commands.estimate(taskID: taskID, as: draft.estimate, log: log + events)
+      events += try commands.setDue(
+        taskID: taskID, to: draft.due?.date, isHard: draft.due?.isHard ?? false, log: log + events)
+      events += try commands.setNotes(taskID: taskID, to: draft.notes, log: log + events)
       return events
     }
     if errorMessage == nil { editingCard = nil }

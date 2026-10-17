@@ -16,6 +16,7 @@ public enum CardTarget: Hashable, Sendable {
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
   case today
+  case calendar
   case review
   case projects
   case priorities
@@ -48,5 +49,22 @@ public struct ProjectColumn: Equatable, Sendable, Identifiable {
 
   public var id: String {
     parentID.map { "project-\($0.rawValue)" } ?? "top"
+  }
+}
+
+/// What a task's card in edit mode holds until OK keeps it.
+public struct TaskCardDraft: Equatable, Sendable {
+  public var title: String
+  public var priority: Priority?
+  public var estimate: Int?
+  public var due: DueDate?
+  public var notes: String
+
+  public init(title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String) {
+    self.title = title
+    self.priority = priority
+    self.estimate = estimate
+    self.due = due
+    self.notes = notes
   }
 }

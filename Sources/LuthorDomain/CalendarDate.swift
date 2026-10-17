@@ -61,7 +61,7 @@ public struct CalendarDate: Hashable, Comparable, Sendable {
     (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
   }
 
-  private var daysSinceEpoch: Int {
+  var daysSinceEpoch: Int {
     let shiftedYear = month <= 2 ? year - 1 : year
     let era = shiftedYear / 400
     let yearOfEra = shiftedYear - era * 400
