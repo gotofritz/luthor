@@ -53,6 +53,11 @@ public final class LibraryViewModel {
   /// the top of Today until each is decided.
   public internal(set) var review: DayReview
   public internal(set) var carryOver: [CarryOverEntry] = []
+  /// The calendar's days around today with their marks, the day picked on it (`nil` until one is) and that
+  /// day's tasks: the ones planned for it, then those only due on it.
+  public internal(set) var calendarDays: [CalendarDay] = []
+  public internal(set) var calendarDate: CalendarDate?
+  public internal(set) var calendarEntries: [CalendarEntry] = []
   /// Whether completed tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }

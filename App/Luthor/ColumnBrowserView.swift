@@ -3,7 +3,8 @@ import LuthorViewModels
 import SwiftUI
 
 /// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. Today
-/// is the plan of a day, its candidates and the tasks waited for. Review is the day looked back on. The
+/// is the plan of a day, its candidates and the tasks waited for. The calendar is a list of days and the tasks
+/// of the one picked. Review is the day looked back on. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
 /// in the order they were added. The priorities are the four priorities and no priority, picked like the rows of any
 /// list, then the tasks that have one of the picked. Tasks that are not next actions are dimmed. Drag a task onto a
@@ -21,6 +22,9 @@ struct ColumnBrowserView: View {
           Divider()
         case .today:
           TodayColumnsView(library: library)
+          Divider()
+        case .calendar:
+          CalendarColumnsView(library: library)
           Divider()
         case .review:
           ReviewColumnsView(library: library)

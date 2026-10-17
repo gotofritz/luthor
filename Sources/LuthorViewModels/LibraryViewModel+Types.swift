@@ -16,6 +16,7 @@ public enum CardTarget: Hashable, Sendable {
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
   case today
+  case calendar
   case review
   case projects
   case priorities
