@@ -315,8 +315,8 @@ To settle before the slice they affect.
 3. ~~Weekly project review~~ Settled: kept, weekly by default, and the
    user can change the interval or turn it off, for all projects or one
    (slice 13)
-4. **Sync before deadlines?** Slice 9 (sync) sits before slice 10 (defer and
-   due) on the guess that using two Macs matters more. Swap if not
+4. ~~Sync before deadlines?~~ Settled: sync (slice 9) stays ahead of defer
+   and due (slice 10), because two Macs matter more
 5. **Delegate**: ALPEN's E includes delegating. A `@waiting` tag, or a
    proper waiting-for state?
 
