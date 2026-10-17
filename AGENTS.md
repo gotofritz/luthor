@@ -250,6 +250,10 @@ without asking.
 --state open`, or the GitHub MCP tools). If an open PR covers the same area,
 commit to its branch instead of creating a new one.
 
+**To bring in `main`**, rebase the branch onto it and force-push with
+`--force-with-lease`; do not merge `main` into it. Merge only when a rebase is
+too messy (many conflicting commits, or a branch others are also pushing to).
+
 ## Pull Requests
 
 - Keep PRs focused
