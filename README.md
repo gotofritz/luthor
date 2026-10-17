@@ -108,13 +108,9 @@ the apply fails for the ruleset.
    cd ..
    ```
 
-4. Preview, then apply (from the project root; both run `terraform init`
-   first):
-
-   ```bash
-   make infra-plan
-   make infra      # shows the plan again and asks for yes
-   ```
+4. From the project root, run `make infra`. It runs `terraform init`, shows
+   the plan and applies it only if you answer `yes`; anything else is a dry
+   run.
 
    Read the plan before applying: it should only change settings, never
    destroy the repository (`prevent_destroy` blocks that anyway).
@@ -127,7 +123,7 @@ imports in step 3 again.
 
 ### Changes later
 
-Edit the `.tf` files, then `make infra-plan` and `make infra`. A plan
+Edit the `.tf` files, then `make infra`. A plan
 with no edits shows drift, for example a setting changed in the GitHub UI.
 
 Apply the ruleset only once both checks have run on a PR to `main`, or PRs
