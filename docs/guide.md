@@ -85,6 +85,38 @@ The `luthor add` command understands the same syntax.
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
 
+A completed task or project disappears from the lists. The Completed toggle
+in the bar above the columns, between the search box and the view switcher,
+brings them back: they show after the open ones, dimmed and struck through,
+in the place they belong (the Inbox, their project's column, or the Prios
+that match). The toggle is off when the app opens.
+
+Reopen a completed task by clicking its tick or choosing Reopen in its
+context menu. It goes back into its project if that is still open, else it
+is loose, in the Inbox or the Prios. Reopen a completed project the same
+way: it comes back with the sub-projects and tasks that were completed along
+with it, but not tasks you had completed on their own before. What a project
+took along cannot be reopened by itself; reopen the project.
+
+## Cards
+
+Click a task and a card opens in the column after the list. It shows the
+task's title, priority, estimate and project, and its notes. Click a project
+and the column of its contents starts with the project's card: title, kind
+(parallel or sequential) and notes, with its sub-projects and tasks listed
+below it.
+
+- Change the title in the card's field and press Return
+- Priority and estimate are pickers, the same as the context menu's
+- A project's kind is switched in its card, or from Kind in its context menu.
+  A sequential project dims every child but its first open one, so the next
+  actions change at once
+- Notes are plain text. Edit opens a text field, Done saves; clearing the
+  text removes the notes. Web addresses in notes (`https://…` or `www.…`)
+  are clickable links
+- A completed task or project shows its card too, read-only; Reopen is on
+  the card
+
 ## Today
 
 Today plans one day of the current view. Its first column shows the day
@@ -143,7 +175,11 @@ appears to its right, and so on down the tree.
 - File a task by dragging it onto a project, or select it and press ⌥⌘1 to
   ⌥⌘9 for the first nine projects (Task → Move to Project)
 - Complete a project from the toolbar or its context menu. Its sub-projects
-  and their open tasks are completed with it, all the way down
+  and their open tasks are completed with it, all the way down. The Completed
+  toggle shows them again, and Reopen brings them back (see
+  [Completing a task](#completing-a-task))
+- Rename a project, switch it between parallel and sequential, or add notes
+  in its card (see [Cards](#cards))
 
 ## Priorities and estimates
 

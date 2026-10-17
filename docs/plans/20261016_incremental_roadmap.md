@@ -130,6 +130,18 @@ the tasks that have one of them. For Prios to have anything to list,
 `Priority` (A, B, C, someday) and a priority menu on tasks; nothing else of
 slice 6 did.
 
+### 5b. Cards and completed items ✅
+
+From issue #16. Completed tasks and projects are kept by the reducer (it used
+to throw them away) and listed behind a Completed toggle in the top bar,
+dimmed and struck through; `TaskReopened` and `ProjectReopened` bring them
+back. Clicking a task opens a card in the next column and a project's column
+starts with its card; both edit the title (`TaskRenamed`, `ProjectRenamed`)
+and plain-text notes (`TaskNoted`, `ProjectNoted`, links made clickable by
+`NoteLinks`), and a project's card switches it between sequential and
+parallel (`ProjectKindChanged`, also in its context menu). All events are
+additive, so old logs replay unchanged.
+
 ### 6. Priority and estimates (ALPEN: A, L) ✅
 
 `TaskEstimated` (minutes, clearable) joins `TaskPrioritized` from 5a.
@@ -328,7 +340,8 @@ Usable: the weekly review.
 - Perspectives as saved queries, scoped to a view
 - Per-device view lists: a work Mac that never shows (or never syncs)
   private views, if logical isolation turns out not to be enough
-- Notes field kept minimal (notes live in Joplin)
+- Richer notes (markdown, attachments): notes are plain text with clickable
+  links, and longer writing lives in Joplin
 - CloudKit transport, if ever
 
 ## Decisions (2026-10-16)
@@ -518,3 +531,26 @@ Usable: the weekly review.
 10. **No new settings this slice.** The default estimate, buffer percentage and
     weekday capacity from slice 7 are everything Today reads, so the settings
     panel is unchanged. Capacity for a single day is set from Today itself
+
+## Decisions (2026-10-17, cards and completed items)
+
+1. **Completed items are kept in the reducer, not recomputed.** `LibraryState`
+   holds completed tasks and projects beside the open ones; `ViewState`
+   exposes them per view. Dropped tasks are still gone for good
+2. **Reopen is an event, and only for what was completed itself.** A project's
+   completion takes its sub-projects and open tasks along; those come back
+   only with the project (`Completed.completedWith` says which), so reopening
+   never half-restores a tree. A reopened task returns to its project if that
+   is active, else it is loose; a reopened sub-project returns to its former
+   parent if that is active, else it is top-level
+3. **Notes are plain text, with clickable links.** The AGENTS rule against
+   note-taking features stands: no markdown, no attachments, one text field
+   per task or project. `NoteLinks` finds `http(s)://` and `www.` addresses
+   without Foundation's data detector, so it runs on Linux too
+4. **Task and project share one card style, not one type.** The domain keeps
+   `TaskItem` and `Project`; merging them is a larger change for a later slice
+5. **Edits apply to open tasks and active projects only.** Rename, notes and
+   kind events on something completed are ignored on replay, like every other
+   edit; the card of a completed item is read-only until it is reopened
+6. **Blank notes clear them; the same text writes nothing.** Commands trim
+   the text and compare, so tabbing through a card writes no events
