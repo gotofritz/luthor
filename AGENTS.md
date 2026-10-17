@@ -306,8 +306,23 @@ too messy (many conflicting commits, or a branch others are also pushing to).
 - Keep PRs focused
 - Avoid unrelated refactors
 - Include tests for behaviour changes
-- Update relevant docs and plans
+- Update relevant docs and plans (checklist below)
 - Ensure CI passes
+
+### Docs check, before every PR is ready for review
+
+Do this unasked, and again after any later push that changes behaviour,
+commands or setup. The user should never have to ask whether docs are current.
+
+- `README.md` describes what the app, the CLI and every `make` target do now:
+  new features, changed shortcuts, install paths, setup steps
+- The roadmap (`docs/plans/20261016_incremental_roadmap.md`) marks every slice
+  and CI/CD item this PR finishes with ✅, condensed to a short paragraph like
+  the earlier finished ones; decisions taken in the PR go under Decisions
+- A plan finished as a whole is archived (see [Plans](#plans))
+- The [Code map](#code-map) and [Commands](#commands) in this file match the
+  tree and the `Makefile`
+- Say in the PR, or the reply that asks for review, that these were checked
 
 ### Title & Body
 
