@@ -100,38 +100,21 @@ shows one view at a time (switcher in the sidebar header, ⌃⌘1–9, last view
 remembered per device); `luthor add|list|done` work in `--view` or
 `LUTHOR_VIEW`, else the default view.
 
-### 5. Nested projects
+### 5. Nested projects ✅
 
-A project can contain tasks and other projects, to any depth ("Home"
-contains "Kitchen", which contains "Replace tap"). It comes before the
-planning slices because their next-action rules read the whole tree.
-
-- `ProjectCreated` gains an optional `parentID`; `ProjectMovedToProject(
-  project, parent?)` nests or un-nests. A project and its parent are in the
-  same view: nesting across views is a `CommandError`, and
-  `ProjectMovedToView` moves the whole subtree. A project can never be nested under itself or one
-  of its own sub-projects (`CommandError`)
-- Projects with no parent are top-level, so today's log needs no migration
-- Next actions stay a pure function, now recursive. Parallel: every child,
-  task or sub-project, is active, and a sub-project contributes its own next
-  actions. Sequential: only the first open child is active, and when it is a
-  sub-project its next actions are the parent's; later children are dimmed.
-  A task is a next action only if every ancestor lets it be
-- Children are ordered as tasks are today, by when they were added to the
-  project; sequential projects mix tasks and sub-projects in that order.
-  Manual reordering waits until planning needs it
-- Completing a project completes its open tasks and sub-projects with it,
-  all the way down
-- The sidebar becomes a collapsible tree; drag a project onto another to nest
-  it, or drag it out to the top. A project's list shows its sub-projects as
-  groups next to its tasks. Capture goes into the project shown, as now
-- Later slices read the tree: Today shows each candidate with its project
-  path ("Home › Kitchen"); a project put on hold or dropped takes its
-  subtree with it; a sub-project follows its parent's review interval unless
-  it has its own
-
-Usable: break a big project into sub-projects and still see only what is
-next.
+A project contains tasks and other projects, to any depth. `ProjectCreated`
+gains an optional `parentID` and `ProjectMovedToProject(project, parent?)`
+nests or un-nests; old logs replay as top-level projects. Nesting across views
+or under the project's own subtree is a `CommandError`, and replay ignores
+such an event, so two devices nesting projects under each other converge.
+Next actions are a recursive pure function of the tree
+(`ViewState.nextActions(of:)`): a sequential project's first open child, task
+or sub-project, is active; a task is a next action only if every ancestor
+lets it be. Completing or moving a project to a view takes its subtree. The
+app shows projects in Miller columns instead of a sidebar tree; drag a
+project onto another or onto a column to nest it, and the new project field
+creates inside the project shown. Later slices read the tree: Today's
+project path, on hold and dropped subtrees, review intervals.
 
 ### 6. Priority and estimates (ALPEN: A, L)
 
@@ -399,3 +382,18 @@ Usable: the weekly review.
    and `done` also take `--view` or `LUTHOR_VIEW`, so `luthor list` at work
    never prints a private task. View names match ignoring case and must be
    unique
+
+## Decisions (2026-10-17, slice 5)
+
+1. **Miller columns, not a collapsible tree.** Each project opened adds a
+   column of its sub-projects and tasks, so the path to the project shown is
+   always on screen. Sub-projects are entries in their parent's column, not
+   groups in its task list
+2. **New projects go inside the project shown.** The new project field
+   creates a sub-project while a project is shown, and a top-level project
+   from the Inbox, as capture does for tasks
+3. **An empty sub-project holds back a sequential parent.** It is still an
+   open child, so the parent's later children wait until it is completed or
+   given tasks
+4. **A sub-project moved to another view alone is top-level there.** Its old
+   parent stays behind without it

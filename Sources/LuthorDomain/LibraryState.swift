@@ -80,22 +80,42 @@ public struct ViewState: Equatable, Sendable {
 
   /// Projects of the view that are nested in none, in creation order.
   public var topLevelProjects: [Project] {
-    projects
+    projects.filter { $0.parentID == nil }
   }
 
   /// The active sub-projects of a project, in the order they were added to it.
   public func subprojects(of projectID: ProjectID) -> [Project] {
-    []
+    guard let parent = project(projectID) else { return [] }
+    return parent.children.compactMap { child in
+      guard case .project(let id) = child else { return nil }
+      return project(id)
+    }
   }
 
-  /// The tasks of a project's subtree that the project hands out, as if it had no parent.
+  /// The tasks of a project's subtree that the project hands out, as if it had no parent. Parallel: every
+  /// child is active, a sub-project with its own next actions. Sequential: only the first child is.
   public func nextActions(of projectID: ProjectID) -> [TaskItem] {
-    []
+    guard let project = self.project(projectID) else { return [] }
+    let active =
+      switch project.kind {
+      case .parallel: project.children
+      case .sequential: Array(project.children.prefix(1))
+      }
+    return active.flatMap { child -> [TaskItem] in
+      switch child {
+      case .task(let task): [task]
+      case .project(let id): nextActions(of: id)
+      }
+    }
   }
 
   /// The tasks of the view's projects that can be worked on now: every ancestor lets them be.
   public var nextActions: [TaskItem] {
-    []
+    topLevelProjects.flatMap { nextActions(of: $0.id) }
+  }
+
+  private func project(_ projectID: ProjectID) -> Project? {
+    projects.first { $0.id == projectID }
   }
 }
 
@@ -141,13 +161,11 @@ public struct LibraryState: Equatable, Sendable {
       openTasks.removeAll { $0.id == completed.taskID }
       removeFromProjects(completed.taskID)
     case .projectCreated(let created):
-      guard !projects.contains(where: { $0.id == created.projectID }) else { return }
-      projects.append(Project(id: created.projectID, title: created.title, kind: created.kind, viewID: created.viewID))
+      create(created)
     case .taskMovedToProject(let moved):
       move(moved.taskID, to: moved.projectID)
     case .projectCompleted(let completed):
-      openTasks.removeAll { $0.projectID == completed.projectID }
-      projects.removeAll { $0.id == completed.projectID }
+      complete(completed.projectID)
     case .viewCreated(let created):
       create(created)
     case .viewRenamed(let renamed):
@@ -156,13 +174,77 @@ public struct LibraryState: Equatable, Sendable {
       move(moved.taskID, toView: moved.viewID)
     case .projectMovedToView(let moved):
       move(moved.projectID, toView: moved.viewID)
-    case .projectMovedToProject:
-      break
+    case .projectMovedToProject(let moved):
+      nest(moved.projectID, under: moved.parentID)
     }
   }
 
   func hasView(_ viewID: ViewID) -> Bool {
     views.contains { $0.id == viewID }
+  }
+
+  /// Ignores a project that already exists. Under a parent that is not active or is in another view, the
+  /// project is top-level.
+  private mutating func create(_ created: ProjectCreated) {
+    guard !projects.contains(where: { $0.id == created.projectID }) else { return }
+    let parent = created.parentID.flatMap { parentID in
+      projects.firstIndex { $0.id == parentID && $0.viewID == created.viewID }
+    }
+    projects.append(
+      Project(
+        id: created.projectID, title: created.title, kind: created.kind, viewID: created.viewID,
+        parentID: parent.map { projects[$0].id }))
+    if let parent { projects[parent].children.append(.project(created.projectID)) }
+  }
+
+  /// Completes a project with its open tasks and sub-projects, all the way down. Ignores a project that is
+  /// not active.
+  private mutating func complete(_ projectID: ProjectID) {
+    let completed = subtree(of: projectID)
+    detach(projectID)
+    openTasks.removeAll { task in task.projectID.map { completed.contains($0) } ?? false }
+    projects.removeAll { completed.contains($0.id) }
+  }
+
+  /// Nests a project under another of its view, or with no parent makes it top-level, at the end of its new
+  /// parent's children. Ignores a project or parent that is not active, a parent in another view, a parent
+  /// in the project's own subtree, and a project already there.
+  private mutating func nest(_ projectID: ProjectID, under parentID: ProjectID?) {
+    guard let index = projects.firstIndex(where: { $0.id == projectID }),
+      projects[index].parentID != parentID
+    else { return }
+    if let parentID {
+      guard let parent = projects.firstIndex(where: { $0.id == parentID }),
+        projects[parent].viewID == projects[index].viewID,
+        !subtree(of: projectID).contains(parentID)
+      else { return }
+      detach(projectID)
+      projects[index].parentID = parentID
+      projects[parent].children.append(.project(projectID))
+    } else {
+      detach(projectID)
+    }
+  }
+
+  /// The project and every active project nested in it, at any depth; empty for a project that is not
+  /// active.
+  func subtree(of projectID: ProjectID) -> Set<ProjectID> {
+    guard let project = projects.first(where: { $0.id == projectID }) else { return [] }
+    var found: Set<ProjectID> = [projectID]
+    for case .project(let child) in project.children {
+      found.formUnion(subtree(of: child))
+    }
+    return found
+  }
+
+  /// Takes a project out of its parent's children, making it top-level.
+  private mutating func detach(_ projectID: ProjectID) {
+    guard let index = projects.firstIndex(where: { $0.id == projectID }),
+      let parentID = projects[index].parentID
+    else { return }
+    projects[index].parentID = nil
+    guard let parent = projects.firstIndex(where: { $0.id == parentID }) else { return }
+    projects[parent].children.removeAll { $0 == .project(projectID) }
   }
 
   /// Ignores a view that already exists.
@@ -199,17 +281,25 @@ public struct LibraryState: Equatable, Sendable {
     removeFromProjects(taskID)
   }
 
-  /// Ignores a project that is not active and a view that does not exist.
+  /// Takes a project across with its sub-projects and their open tasks; a nested project leaves its
+  /// parent and is top-level there. Ignores a project that is not active and a view that does not exist.
   private mutating func move(_ projectID: ProjectID, toView viewID: ViewID) {
-    guard let target = projects.firstIndex(where: { $0.id == projectID }), hasView(viewID) else { return }
+    guard projects.contains(where: { $0.id == projectID }), hasView(viewID) else { return }
+    let moved = subtree(of: projectID)
     let reassign = { (task: TaskItem) in
       TaskItem(id: task.id, title: task.title, viewID: viewID, projectID: task.projectID)
     }
-    openTasks = openTasks.map { $0.projectID == projectID ? reassign($0) : $0 }
-    projects[target].viewID = viewID
-    projects[target].children = projects[target].children.map { child in
-      guard case .task(let task) = child else { return child }
-      return .task(reassign(task))
+    detach(projectID)
+    openTasks = openTasks.map { task in
+      let isMoved = task.projectID.map { moved.contains($0) } ?? false
+      return isMoved ? reassign(task) : task
+    }
+    for index in projects.indices where moved.contains(projects[index].id) {
+      projects[index].viewID = viewID
+      projects[index].children = projects[index].children.map { child in
+        guard case .task(let task) = child else { return child }
+        return .task(reassign(task))
+      }
     }
   }
 

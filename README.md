@@ -38,18 +38,23 @@ CLI makes. Type and press Return to capture; ↑ and ↓ select a task, ⌘Retur
 completes it, or click its circle.
 
 The app shows one view at a time, such as Work or Private, and nothing of
-another view leaks into it. The view switcher at the top of the sidebar
+another view leaks into it. The view switcher at the top of the window
 switches view (or ⌃⌘1 to ⌃⌘9), creates and renames views; the app reopens on
 the view last used on that Mac. Task → Move to View, or Move to View in a
 project's context menu, takes a task or a whole project across.
 
-The sidebar lists the current view's Inbox and active projects. Create a project with the
-field at the bottom of the sidebar, choosing parallel (every task is a next
-action) or sequential (only the first open task is; the others are dimmed).
-File a task by dragging it onto a project, or select it and press ⌥⌘1 to ⌥⌘9
-for the first nine projects (Task → Move to Project). Typing in a project's
-capture field adds the task straight to that project. Complete a project from
-the toolbar or its context menu in the sidebar; its open tasks go with it.
+Projects nest to any depth and show in Miller columns: the first column lists
+the Inbox and the top-level projects, and each project you open adds a column
+of its sub-projects and tasks. Create a project with the field at the bottom,
+choosing parallel (every child is active) or sequential (only the first open
+child is; the rest are dimmed); it goes inside the project shown, or top-level
+from the Inbox. Drag a project onto another to nest it, or onto the first
+column to make it top-level. File a task by dragging it onto a project, or
+select it and press ⌥⌘1 to ⌥⌘9 for the first nine projects (Task → Move to
+Project). Typing in the capture field adds the task straight to the project
+shown. Next actions follow the whole tree: a task is one only if every
+project above it lets it be. Complete a project from the toolbar or its
+context menu; its sub-projects and open tasks go with it.
 
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.

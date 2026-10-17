@@ -60,7 +60,7 @@ struct NestedColumnsViewModelTests {
     library.open(.project(ProjectID("p2")))
 
     #expect(library.path == [ProjectID("p1"), ProjectID("p2")])
-    #expect(library.columns.map(\.parentID) == [nil, ProjectID("p1"), ProjectID("p2")])
+    try #require(library.columns.map(\.parentID) == [nil, ProjectID("p1"), ProjectID("p2")])
     #expect(library.columns[1].entries == [.project(kitchen), .task(item("t2", "clear the attic", in: "p1"))])
     #expect(library.columns[2].entries == [.task(item("t1", "replace the tap", in: "p2")), .project(tap)])
   }

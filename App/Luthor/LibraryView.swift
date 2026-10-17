@@ -1,86 +1,100 @@
 import Foundation
 import LuthorDomain
+import LuthorStore
 import LuthorViewModels
 import SwiftUI
 
-/// The sidebar of inbox and projects next to the task list of the one selected.
+/// The window: the view switcher, the capture field, the projects in Miller columns and the new project
+/// field. The capture field keeps the focus: Return captures into the inbox or the project shown, ↑ and ↓
+/// select one of its tasks, ⌘Return completes it.
 struct LibraryView: View {
   @Bindable var library: LibraryViewModel
   let logURL: URL
-
-  var body: some View {
-    NavigationSplitView {
-      SidebarView(library: library)
-        .navigationSplitViewColumnWidth(min: 180, ideal: 220)
-    } detail: {
-      TaskListView(library: library, logURL: logURL)
-    }
-  }
-}
-
-/// The view switcher on top, then the current view's Inbox and active projects. A task dropped on a
-/// project is filed there; the field at the bottom creates a project of the kind picked next to it.
-private struct SidebarView: View {
-  @Bindable var library: LibraryViewModel
+  @FocusState private var captureFocused: Bool
   @State private var newProjectKind = ProjectKind.parallel
 
   var body: some View {
-    List(selection: sidebarSelection) {
-      Label("Inbox", systemImage: "tray")
-        .tag(SidebarItem.inbox)
-      Section("Projects") {
-        ForEach(library.projects, id: \.id) { project in
-          Label(project.title, systemImage: Self.symbol(for: project.kind))
-            .tag(SidebarItem.project(project.id))
-            .dropDestination(for: String.self) { taskIDs, _ in
-              for taskID in taskIDs {
-                library.file(TaskID(taskID), into: project.id)
-              }
-              return !taskIDs.isEmpty
-            }
-            .contextMenu {
-              Button("Complete Project") { library.completeProject(project.id) }
-              Menu("Move to View") {
-                ForEach(library.views.filter { $0.id != library.currentView }, id: \.id) { view in
-                  Button(view.name) { library.moveProject(project.id, toView: view.id) }
-                }
-              }
-              .disabled(library.views.count < 2)
-            }
-        }
-      }
-    }
-    .safeAreaInset(edge: .top) {
+    VStack(spacing: 0) {
       ViewSwitcher(library: library)
-    }
-    .safeAreaInset(edge: .bottom) {
-      HStack(spacing: 6) {
-        TextField("New project", text: $library.projectDraft)
-          .textFieldStyle(.roundedBorder)
-          .onSubmit { library.createProject(kind: newProjectKind) }
-        Picker("Kind", selection: $newProjectKind) {
-          Image(systemName: Self.symbol(for: .parallel)).help("Parallel").tag(ProjectKind.parallel)
-          Image(systemName: Self.symbol(for: .sequential)).help("Sequential").tag(ProjectKind.sequential)
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .fixedSize()
+      Divider()
+      captureField
+      if let message = library.errorMessage {
+        Text(message)
+          .foregroundStyle(.red)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding([.horizontal, .bottom], 12)
       }
-      .padding(8)
+      Divider()
+      ColumnBrowserView(library: library)
+      Divider()
+      newProjectField
     }
+    .navigationTitle(title)
+    .navigationSubtitle(logURL.path)
+    .toolbar {
+      if let projectID = shownProjectID {
+        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
+          .help("Complete this project, its sub-projects and their open tasks")
+      }
+    }
+    .defaultFocus($captureFocused, true)
+    .onAppear { captureFocused = true }
+    // Clicking a row or its checkbox would take the focus; hand it back to the capture field.
+    .onChange(of: library.selection) { captureFocused = true }
+    .onChange(of: library.tasks) { captureFocused = true }
+    .onChange(of: library.sidebarSelection) { captureFocused = true }
+    .task { await watchLog() }
   }
 
-  private var sidebarSelection: Binding<SidebarItem?> {
-    Binding(
-      get: { library.sidebarSelection },
-      set: { library.open($0 ?? .inbox) }
-    )
+  private var captureField: some View {
+    TextField("New task in \(title)", text: $library.draft)
+      .textFieldStyle(.plain)
+      .font(.title3)
+      .padding(12)
+      .focused($captureFocused)
+      .onSubmit { library.submit() }
+      .onKeyPress(.downArrow) {
+        library.moveSelection(by: 1)
+        return .handled
+      }
+      .onKeyPress(.upArrow) {
+        library.moveSelection(by: -1)
+        return .handled
+      }
   }
 
-  private static func symbol(for kind: ProjectKind) -> String {
-    switch kind {
-    case .parallel: "list.bullet"
-    case .sequential: "list.number"
+  /// Creates a project of the kind picked next to it, inside the project shown, or top-level from the inbox.
+  private var newProjectField: some View {
+    HStack(spacing: 6) {
+      TextField(shownProjectID == nil ? "New project" : "New project in \(title)", text: $library.projectDraft)
+        .textFieldStyle(.roundedBorder)
+        .onSubmit { library.createProject(kind: newProjectKind) }
+      Picker("Kind", selection: $newProjectKind) {
+        Image(systemName: ProjectKind.parallel.symbol).help("Parallel").tag(ProjectKind.parallel)
+        Image(systemName: ProjectKind.sequential.symbol).help("Sequential").tag(ProjectKind.sequential)
+      }
+      .pickerStyle(.segmented)
+      .labelsHidden()
+      .fixedSize()
+    }
+    .padding(8)
+  }
+
+  private var shownProjectID: ProjectID? {
+    guard case .project(let projectID) = library.sidebarSelection else { return nil }
+    return projectID
+  }
+
+  private var title: String {
+    library.projects.first { $0.id == shownProjectID }?.title ?? "Inbox"
+  }
+
+  /// Reloads when another process, such as the CLI, changes the log.
+  private func watchLog() async {
+    var monitor = FileChangeMonitor(fileURL: logURL)
+    while !Task.isCancelled {
+      try? await Task.sleep(for: .seconds(1))
+      if monitor.poll() { library.reload() }
     }
   }
 }

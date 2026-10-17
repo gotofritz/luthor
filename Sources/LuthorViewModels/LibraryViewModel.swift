@@ -116,18 +116,30 @@ public final class LibraryViewModel {
 
   /// What a project carries when dragged, so a drop can tell it from a task.
   public static func dragPayload(for projectID: ProjectID) -> String {
-    ""
+    projectPayloadPrefix + projectID.rawValue
   }
+
+  private static let projectPayloadPrefix = "project:"
 
   /// Handles payloads dropped on a project, or on the first column (`nil`): a project is nested there or
   /// made top-level, a task is filed into the project. Returns whether anything was dropped.
   @discardableResult
   public func drop(_ payloads: [String], on target: ProjectID?) -> Bool {
-    false
+    for payload in payloads {
+      if payload.hasPrefix(Self.projectPayloadPrefix) {
+        nest(ProjectID(String(payload.dropFirst(Self.projectPayloadPrefix.count))), under: target)
+      } else if let target {
+        file(TaskID(payload), into: target)
+      }
+    }
+    return !payloads.isEmpty
   }
 
-  /// Nests a project in another, or with no parent makes it top-level.
-  public func nest(_ projectID: ProjectID, under parentID: ProjectID?) {}
+  /// Nests a project in another, or with no parent makes it top-level. Nesting it under itself or one of
+  /// its own sub-projects changes nothing.
+  public func nest(_ projectID: ProjectID, under parentID: ProjectID?) {
+    perform { (log) throws(CommandError) in try commands.move(projectID: projectID, under: parentID, log: log) }
+  }
 
   public func reload() {
     do {
@@ -159,13 +171,18 @@ public final class LibraryViewModel {
     present()
   }
 
-  /// Creates a project titled by the project draft. A blank draft creates nothing; a failed write keeps
-  /// the draft.
+  /// Creates a project titled by the project draft, inside the project shown, or top-level while the
+  /// inbox is shown. A blank draft creates nothing; a failed write keeps the draft.
   public func createProject(kind: ProjectKind) {
     let title = projectDraft
     let viewID = currentView
+    let parentID = shownProjectID
     perform { (log) throws(CommandError) in
-      try commands.createProject(title: title, kind: kind, in: viewID, log: log)
+      if let parentID {
+        try commands.createProject(title: title, kind: kind, under: parentID, log: log)
+      } else {
+        try commands.createProject(title: title, kind: kind, in: viewID, log: log)
+      }
     }
     if errorMessage == nil { projectDraft = "" }
   }
@@ -261,14 +278,47 @@ public final class LibraryViewModel {
       // Completed here or elsewhere: there is nothing left to show.
       sidebarSelection = .inbox
     }
+    path = shownProjectID.map { ancestry(of: $0) } ?? []
+    var columns = [ProjectColumn(parentID: nil, entries: view.topLevelProjects.map { .project($0) })]
+    for projectID in path {
+      guard let project = projects.first(where: { $0.id == projectID }) else { continue }
+      columns.append(ProjectColumn(parentID: projectID, entries: project.children.compactMap { entry($0) }))
+    }
+    self.columns = columns
     if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
       tasks = project.tasks
-      nextActions = Set(view.nextActions(of: project.id).map(\.id))
+      let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
+        guard case .task(let task) = entry else { return nil }
+        return task.id
+      }
+      nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
     } else {
       tasks = view.inbox
       nextActions = Set(tasks.map(\.id))
     }
     if let selected = selection, index(of: selected) == nil { selection = nil }
+  }
+
+  /// The project and its ancestors, top-level first.
+  private func ancestry(of projectID: ProjectID) -> [ProjectID] {
+    var path: [ProjectID] = []
+    var current: ProjectID? = projectID
+    while let id = current, !path.contains(id), let project = projects.first(where: { $0.id == id }) {
+      path.insert(id, at: 0)
+      current = project.parentID
+    }
+    return path
+  }
+
+  /// A child as a column shows it; `nil` for a sub-project that is not in the view.
+  private func entry(_ child: ProjectChild) -> ColumnEntry? {
+    switch child {
+    case .task(let task):
+      return .task(task)
+    case .project(let projectID):
+      guard let project = projects.first(where: { $0.id == projectID }) else { return nil }
+      return .project(project)
+    }
   }
 
   private var shownProjectID: ProjectID? {

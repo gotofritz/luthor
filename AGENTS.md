@@ -101,8 +101,8 @@ Sources/
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
-                             only via view(id) → ViewState (open tasks, inbox, projects);
-                             Project.nextActions (parallel/sequential rule)
+                             only via view(id) → ViewState (open tasks, inbox, project tree,
+                             recursive next actions: parallel/sequential rule)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
@@ -112,10 +112,11 @@ Sources/
     UUIDGenerator.swift      production IDGenerator
   LuthorCLI/CLI.swift        `luthor add|list|done [--view]`, testable (returns CLIResult)
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
-  LuthorViewModels/          @Observable view models (LibraryViewModel: current view, sidebar,
-                             list), no SwiftUI
+  LuthorViewModels/          @Observable view models (LibraryViewModel: current view, project
+                             columns, list, drops), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
-  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView, TaskListView)
+  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView: window, capture,
+                             view switcher; ColumnBrowserView: projects in Miller columns)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
