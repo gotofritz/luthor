@@ -3,7 +3,8 @@ extension LibraryState {
   mutating func capture(_ captured: TaskCaptured) {
     guard captureOrder[captured.taskID] == nil else { return }
     captureOrder[captured.taskID] = captureOrder.count
-    openTasks.append(TaskItem(
+    openTasks.append(
+      TaskItem(
         id: captured.taskID, title: captured.title, viewID: captured.viewID, createdOn: captured.createdOn))
   }
 
