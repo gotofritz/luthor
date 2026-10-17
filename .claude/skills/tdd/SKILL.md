@@ -44,6 +44,15 @@ Write code before the test? Delete it. Start over.
 
 Implement fresh from tests. Period.
 
+## Start Outside-In
+
+Implementing a plan, or a slice of one? Before any unit test:
+
+1. Write the slice's acceptance tests in `Tests/LuthorAcceptanceTests`: one per user-visible flow, named BDD-style from the plan's wording
+2. Run `make test-acceptance`; watch each fail because the behaviour is missing
+3. Drive the implementation with the red-green-refactor loop below, one unit test at a time
+4. The slice is done when its acceptance tests pass. Until then they stay red; never skip them
+
 ## Red-Green-Refactor
 
 ```dot
@@ -74,9 +83,13 @@ Write one minimal test showing what should happen.
 
 <Good>
 ```swift
-@Test func completingTaskMarksItCompleted() {
+@Suite("Given a captured task")
+struct CapturedTaskTests {
+  @Test("completing it marks it completed")
+  func completingMarksItCompleted() {
     let state = reduce([.taskCreated(id: taskID, title: "Buy milk"), .taskCompleted(id: taskID)])
     #expect(state.tasks[taskID]?.isCompleted == true)
+  }
 }
 ```
 Clear name, tests real behavior, one thing.
@@ -96,7 +109,7 @@ Vague name, tests mock not code.
 
 **Requirements:**
 - One behavior per test
-- Clear name describing expected behavior: a sentence in camelCase, e.g. `deferredTaskIsUnavailableBeforeDeferDate`
+- Clear BDD-style name: the suite names the situation (`@Suite("Given a task deferred to tomorrow")`), the test names the outcome (`@Test("it is unavailable today")`), and the camelCase function name stays short for `--filter`
 - Real code (no mocks; use in-memory fakes only at boundaries such as Dropbox)
 
 ### Verify RED - Watch It Fail
@@ -173,7 +186,7 @@ Next failing test for the next behavior.
 | Quality | Good | Bad |
 |---------|------|-----|
 | **Minimal** | One behavior. "and" in name? Split it. | `completeTaskAndAdvanceProjectAndUpdateReview` |
-| **Clear** | Name describes expected behavior | `testReducer`, `test1` |
+| **Clear** | Suite names the situation, test names the outcome (Given/When/Then) | `testReducer`, `test1` |
 | **Real** | Tests production code paths | Tests mock return values |
 
 ## Why Order Matters
@@ -226,7 +239,8 @@ The "waste" is keeping code you can't trust.
 
 **RED**
 ```swift
-@Test func duplicateCompletionKeepsFirstCompletionDate() {
+@Test("a duplicate completion keeps the first completion date")
+func duplicateCompletionKeepsFirstCompletionDate() {
     let state = reduce([created, completed(at: monday), completed(at: tuesday)])
     #expect(state.tasks[taskID]?.completedAt == monday)
 }

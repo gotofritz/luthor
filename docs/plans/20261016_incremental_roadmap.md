@@ -138,6 +138,12 @@ Usable: contexts (`@home`, `@calls`, `@computer`).
   write the same file and Dropbox never makes conflict copies
 - Read = merge all device files, order by `(lamport, deviceID, eventID)`,
   replay. Shuffled-order and duplicate-event tests land here
+- Optional: split acceptance testing out of the TDD skill into its own
+  `acceptance` skill, linked from the TDD skill. Likely needed here, because
+  two-device flows need a shared harness (several simulated devices, an
+  injected clock from slice 4, fixture logs) and a way to turn a slice's
+  promises into scenarios. Do it only if that guidance outgrows a section of
+  the TDD skill
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
