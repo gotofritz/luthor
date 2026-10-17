@@ -105,13 +105,15 @@ the apply fails for the ruleset.
    terraform import github_repository.luthor luthor
    # only if a ruleset already exists; its ID is in the ruleset's URL
    terraform import github_repository_ruleset.main luthor:<ruleset-id>
+   cd ..
    ```
 
-4. Preview, then apply:
+4. Preview, then apply (from the project root; both run `terraform init`
+   first):
 
    ```bash
-   terraform plan
-   terraform apply
+   make infra-plan
+   make infra      # shows the plan again and asks for yes
    ```
 
    Read the plan before applying: it should only change settings, never
@@ -125,7 +127,7 @@ imports in step 3 again.
 
 ### Changes later
 
-Edit the `.tf` files, then `terraform plan` and `terraform apply`. A plan
+Edit the `.tf` files, then `make infra-plan` and `make infra`. A plan
 with no edits shows drift, for example a setting changed in the GitHub UI.
 
 Apply the ruleset only once both checks have run on a PR to `main`, or PRs

@@ -219,6 +219,8 @@ make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
 make cli        # release build of the luthor CLI, universal, ad-hoc signed
 make install    # build and install the app (~/Applications) and CLI (~/.local/bin)
 make dist       # zip the app and CLI into .build/dist, as a release does
+make infra-plan # preview Terraform changes to the GitHub repo settings (needs GITHUB_TOKEN)
+make infra      # apply them, after showing the plan and asking for yes
 make check-ci   # lint + build + coverage + app, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
 ```

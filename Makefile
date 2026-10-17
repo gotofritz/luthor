@@ -19,8 +19,9 @@ APP_INSTALL_DIR ?= $(HOME)/Applications
 # Release zips; named after the tag on a tagged commit.
 DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
+TERRAFORM ?= terraform
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app cli install dist check-ci hooks tools
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app cli install dist check-ci hooks tools infra-plan infra infra-token
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -106,3 +107,16 @@ tools:
 	unzip -o -q .tools/swiftlint.zip swiftlint -d .tools
 	rm .tools/swiftlint.zip
 	.tools/swiftlint version
+
+# Shows what `make infra` would change in the GitHub repo settings (infra/). Needs GITHUB_TOKEN; see README.
+infra-plan: infra-token
+	$(TERRAFORM) -chdir=infra init -input=false
+	$(TERRAFORM) -chdir=infra plan
+
+# Applies infra/ to the GitHub repo settings: shows the plan and asks for "yes" before changing anything.
+infra: infra-token
+	$(TERRAFORM) -chdir=infra init -input=false
+	$(TERRAFORM) -chdir=infra apply
+
+infra-token:
+	@if [ -z "$$GITHUB_TOKEN" ]; then echo "GITHUB_TOKEN not set: see 'Repository settings' in README.md"; exit 1; fi
