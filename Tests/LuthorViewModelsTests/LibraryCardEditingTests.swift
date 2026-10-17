@@ -130,7 +130,8 @@ struct TaskCardEditModeTests {
   func capturedTaskHasTheDayItWasCreated() {
     let (library, _) = makeLibrary([])
 
-    library.capture("call bank")
+    library.draft = "call bank"
+    library.submit()
 
     #expect(library.tasks.map(\.createdOn) == [date("2026-10-19")])
   }
