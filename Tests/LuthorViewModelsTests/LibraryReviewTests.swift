@@ -22,6 +22,7 @@ private func makeLibrary(
 private let plannedMonday = [
   captured("t1", "write report", lamport: 1), estimated("t1", as: 60, lamport: 2),
   captured("t2", "call bank", lamport: 3), estimated("t2", as: 30, lamport: 4),
+  prioritized("t2", as: .important, lamport: 4),
   captured("t3", "tidy desk", lamport: 5), prioritized("t3", as: .optional, lamport: 6),
   scheduled("t1", on: "2026-10-19", lamport: 7), scheduled("t2", on: "2026-10-19", lamport: 8),
   scheduled("t3", on: "2026-10-19", lamport: 9), completed("t1", lamport: 10),

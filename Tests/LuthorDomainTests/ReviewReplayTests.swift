@@ -4,11 +4,12 @@ import Testing
 
 private let monday = date("2026-10-19")
 
-/// "write report" (60m) was planned for Monday and completed, "call bank" (30m) and "tidy desk" (no
+/// "write report" (60m) was planned for Monday and completed, "call bank" (B, 30m) and "tidy desk" (C, no
 /// estimate) were planned for Monday and are open, and "read mail" was never planned.
 let plannedMonday = [
   captured("t1", "write report", lamport: 1), estimated("t1", as: 60, lamport: 2),
   captured("t2", "call bank", lamport: 3), estimated("t2", as: 30, lamport: 4),
+  prioritized("t2", as: .important, lamport: 4),
   captured("t3", "tidy desk", lamport: 5), prioritized("t3", as: .optional, lamport: 6),
   captured("t4", "read mail", lamport: 7), estimated("t4", as: 10, lamport: 8),
   scheduled("t1", on: "2026-10-19", lamport: 9), scheduled("t2", on: "2026-10-19", lamport: 10),
