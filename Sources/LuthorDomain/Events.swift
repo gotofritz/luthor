@@ -21,9 +21,11 @@ public struct TaskCaptured: Equatable, Codable, Sendable {
 public enum EventPayload: Equatable, Sendable {
   case taskCaptured(TaskCaptured)
   case taskCompleted(TaskCompleted)
+  case taskReopened(TaskReopened)
   case projectCreated(ProjectCreated)
   case taskMovedToProject(TaskMovedToProject)
   case projectCompleted(ProjectCompleted)
+  case projectReopened(ProjectReopened)
   case viewCreated(ViewCreated)
   case viewRenamed(ViewRenamed)
   case taskMovedToView(TaskMovedToView)
@@ -58,6 +60,15 @@ public struct EventEnvelope: Equatable, Sendable {
 }
 
 public struct TaskCompleted: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+
+  public init(taskID: TaskID) {
+    self.taskID = taskID
+  }
+}
+
+/// Brings a completed task back, into its project if that is still active, else loose.
+public struct TaskReopened: Equatable, Codable, Sendable {
   public let taskID: TaskID
 
   public init(taskID: TaskID) {
@@ -114,6 +125,15 @@ public struct TaskMovedToProject: Equatable, Codable, Sendable {
 
 /// Completes a project together with the tasks still open in it.
 public struct ProjectCompleted: Equatable, Codable, Sendable {
+  public let projectID: ProjectID
+
+  public init(projectID: ProjectID) {
+    self.projectID = projectID
+  }
+}
+
+/// Brings a completed project back with everything that was completed along with it.
+public struct ProjectReopened: Equatable, Codable, Sendable {
   public let projectID: ProjectID
 
   public init(projectID: ProjectID) {

@@ -12,46 +12,55 @@ import Observation
 @Observable
 public final class LibraryViewModel {
   /// Every view, the default one first.
-  public private(set) var views: [ViewItem] = []
+  public internal(set) var views: [ViewItem] = []
   /// The one view the window shows; nothing from another view is ever listed.
-  public private(set) var currentView: ViewID
+  public internal(set) var currentView: ViewID
   /// The place the navigation rail has picked.
-  public private(set) var section = NavigationSection.inbox
-  public private(set) var sidebarSelection: SidebarItem = .inbox
+  public internal(set) var section = NavigationSection.inbox
+  public internal(set) var sidebarSelection: SidebarItem = .inbox
   /// The priorities picked in the priorities section; they add up, so the list shows all of them.
-  public private(set) var selectedPriorities: Set<Priority> = []
+  public internal(set) var selectedPriorities: Set<Priority> = []
   /// Every active project of the view, nested or not, in creation order.
-  public private(set) var projects: [Project] = []
+  public internal(set) var projects: [Project] = []
   /// The project browser: the top-level projects, then one column for each project on the path.
-  public private(set) var columns: [ProjectColumn] = []
+  public internal(set) var columns: [ProjectColumn] = []
   /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
-  public private(set) var path: [ProjectID] = []
+  public internal(set) var path: [ProjectID] = []
   /// Open tasks of the inbox, of the project shown, or with a priority picked.
-  public private(set) var tasks: [TaskItem] = []
+  public internal(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
-  public private(set) var nextActions: Set<TaskID> = []
+  public internal(set) var nextActions: Set<TaskID> = []
   /// The settings with no per-view override applied.
-  public private(set) var globalSettings = LibraryState.replay([]).globalSettings
+  public internal(set) var globalSettings = LibraryState.replay([]).globalSettings
   /// The settings `currentView` plans with: its own overrides, then the global values.
-  public private(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
+  public internal(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
   /// The view `luthor add` and imports use when none is named.
-  public private(set) var defaultViewID = ViewID.default
+  public internal(set) var defaultViewID = ViewID.default
   /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned
   /// tasks, candidates, capacity) for the current view, and the view's delegated tasks, longest wait first.
-  public private(set) var today: CalendarDate
+  public internal(set) var today: CalendarDate
   public internal(set) var planDate: CalendarDate
-  public private(set) var plan: DayPlan
-  public private(set) var waiting: [WaitingItem] = []
+  public internal(set) var plan: DayPlan
+  public internal(set) var waiting: [WaitingItem] = []
+  /// Whether completed tasks and projects are listed too, dimmed, after the open ones.
+  public var showCompleted = false {
+    didSet { present() }
+  }
+  /// Of the completed items listed, those that can be reopened and those that came with their project.
+  public internal(set) var completedTaskIDs: Set<TaskID> = []
+  public internal(set) var completedProjectIDs: Set<ProjectID> = []
+  public internal(set) var reopenableTaskIDs: Set<TaskID> = []
+  public internal(set) var reopenableProjectIDs: Set<ProjectID> = []
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
   public var selection: TaskID?
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
-  public private(set) var errorMessage: String?
+  public internal(set) var errorMessage: String?
 
-  private let log: any EventLog
-  private let clock: () -> CalendarDate
+  let log: any EventLog
+  let clock: () -> CalendarDate
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
 
@@ -239,6 +248,16 @@ public final class LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.completeProject(projectID, log: log) }
   }
 
+  /// Opens a completed task again; a task that its project's completion took along stays completed.
+  public func reopen(_ taskID: TaskID) {
+    perform { (log) throws(CommandError) in try commands.reopen(taskID: taskID, log: log) }
+  }
+
+  /// Opens a completed project again, with what its completion took along.
+  public func reopenProject(_ projectID: ProjectID) {
+    perform { (log) throws(CommandError) in try commands.reopenProject(projectID, log: log) }
+  }
+
   public func complete(_ taskID: TaskID) {
     perform { (log) throws(CommandError) in try commands.complete(taskID: taskID, log: log) }
   }
@@ -256,144 +275,5 @@ public final class LibraryViewModel {
   /// Completes the selected task and selects the one that takes its place in the list.
   public func completeSelected() {
     replaceSelected(complete)
-  }
-}
-
-// Internals: reading and writing the log, and filling the published state from it. Split from the
-// class body above (SwiftLint type_body_length) rather than suppressed.
-extension LibraryViewModel {
-  /// Applies `action` to the selected task; if that takes it off the list, selects the task that takes
-  /// its place.
-  func replaceSelected(_ action: (TaskID) -> Void) {
-    guard let selected = selection, let position = index(of: selected) else { return }
-    action(selected)
-    guard !tasks.contains(where: { $0.id == selected }) else { return }
-    selection = tasks.isEmpty ? nil : tasks[min(position, tasks.count - 1)].id
-  }
-
-  /// Runs a command on the log as it is now and appends what it returns; returns the events written.
-  @discardableResult
-  func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
-    let current: [EventEnvelope]
-    do {
-      current = try log.readAll()
-    } catch {
-      errorMessage = Self.describe(error)
-      return []
-    }
-    let events: [EventEnvelope]
-    do {
-      events = try command(current)
-    } catch {
-      // A blank title, a view name already taken, or a task completed elsewhere since the last reload:
-      // nothing to write, and nothing the user needs to fix.
-      show(current)
-      return []
-    }
-    do {
-      try log.append(events)
-    } catch {
-      errorMessage = Self.describe(error)
-      return []
-    }
-    show(current + events)
-    return events
-  }
-
-  private func show(_ events: [EventEnvelope]) {
-    state = LibraryState.replay(events)
-    errorMessage = nil
-    present()
-  }
-
-  /// Fills the view switcher, the sidebar and the list from the current view of the last replayed state.
-  func present() {
-    views = state.views
-    if !views.contains(where: { $0.id == currentView }) {
-      // A remembered view this log does not have.
-      currentView = .default
-    }
-    globalSettings = state.globalSettings
-    viewSettings = state.settings(for: currentView)
-    defaultViewID = state.defaultViewID
-    let view = state.view(currentView)
-    projects = view.projects
-    if let projectID = shownProjectID, !projects.contains(where: { $0.id == projectID }) {
-      // Completed here or elsewhere: there is nothing left to show.
-      sidebarSelection = .inbox
-    }
-    path = shownProjectID.map { ancestry(of: $0) } ?? []
-    var columns = [ProjectColumn(parentID: nil, entries: view.topLevelProjects.map { .project($0) })]
-    for projectID in path {
-      guard let project = projects.first(where: { $0.id == projectID }) else { continue }
-      columns.append(ProjectColumn(parentID: projectID, entries: project.children.compactMap { entry($0) }))
-    }
-    self.columns = columns
-    today = clock()
-    plan = state.plan(for: currentView, on: planDate, today: today)
-    waiting = state.waitingFor(in: currentView, today: today)
-    presentTasks(of: view)
-    if let selected = selection, index(of: selected) == nil { selection = nil }
-  }
-
-  /// Fills the list of the place the rail has picked: the plan and its candidates, the tasks with a
-  /// priority picked, the project shown, or the inbox.
-  private func presentTasks(of view: ViewState) {
-    if section == .today {
-      tasks = (plan.entries + plan.candidates).map(\.task)
-      nextActions = Set(tasks.map(\.id))
-    } else if section == .priorities {
-      tasks = view.tasks(prioritised: selectedPriorities)
-      let actionable = Set(view.nextActions.map(\.id))
-      nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
-    } else if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
-      tasks = project.tasks
-      let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
-        guard case .task(let task) = entry else { return nil }
-        return task.id
-      }
-      nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
-    } else {
-      tasks = view.inbox
-      nextActions = Set(tasks.map(\.id))
-    }
-  }
-
-  /// The project and its ancestors, top-level first.
-  private func ancestry(of projectID: ProjectID) -> [ProjectID] {
-    var path: [ProjectID] = []
-    var current: ProjectID? = projectID
-    while let id = current, !path.contains(id), let project = projects.first(where: { $0.id == id }) {
-      path.insert(id, at: 0)
-      current = project.parentID
-    }
-    return path
-  }
-
-  /// A child as a column shows it; `nil` for a sub-project that is not in the view.
-  private func entry(_ child: ProjectChild) -> ColumnEntry? {
-    switch child {
-    case .task(let task):
-      return .task(task)
-    case .project(let projectID):
-      guard let project = projects.first(where: { $0.id == projectID }) else { return nil }
-      return .project(project)
-    }
-  }
-
-  private var shownProjectID: ProjectID? {
-    guard case .project(let projectID) = sidebarSelection else { return nil }
-    return projectID
-  }
-
-  private func index(of taskID: TaskID) -> Int? {
-    tasks.firstIndex { $0.id == taskID }
-  }
-
-  private static func describe(_ error: EventLogError) -> String {
-    switch error {
-    case .unreadableLine(let number): "Line \(number) of the event log is not a readable event."
-    case .ioFailure(let message): message
-    }
   }
 }

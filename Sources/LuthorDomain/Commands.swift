@@ -8,6 +8,10 @@ public enum CommandError: Error, Equatable {
   case noOpenTask(String)
   case ambiguousPrefix(String, matches: [TaskID])
   case noActiveProject(ProjectID)
+  /// The task is open, or was completed along with its project, so it cannot be reopened on its own.
+  case noCompletedTask(TaskID)
+  /// The project is active, or was completed along with another, so it cannot be reopened on its own.
+  case noCompletedProject(ProjectID)
   case noView(ViewID)
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.

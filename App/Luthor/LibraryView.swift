@@ -57,13 +57,18 @@ struct LibraryView: View {
     .task { await watchLog() }
   }
 
-  /// The search box, which waits for its slice, and the view switcher.
+  /// The search box, which waits for its slice, the toggle for completed items and the view switcher.
   private var topBar: some View {
     HStack(spacing: 12) {
       TextField("Search", text: .constant(""))
         .textFieldStyle(.roundedBorder)
         .disabled(true)
         .help("Search comes in a later slice")
+      Toggle(isOn: $library.showCompleted) {
+        Label("Completed", systemImage: "checkmark.circle")
+      }
+      .toggleStyle(.button)
+      .help("Show completed tasks and projects")
       ViewSwitcher(library: library)
     }
     .padding(.horizontal, 12)

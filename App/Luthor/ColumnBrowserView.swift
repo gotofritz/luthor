@@ -62,12 +62,8 @@ private struct ColumnView: View {
           ProjectRow(library: library, project: project)
             .tag(ColumnSelection.project(project.id))
         case .task(let task):
-          TaskRow(
-            task: task, isNextAction: library.nextActions.contains(task.id),
-            complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) },
-            setEstimate: { library.estimate(task.id, as: $0) }
-          )
-          .tag(ColumnSelection.task(task.id))
+          TaskRow(library: library, task: task)
+            .tag(ColumnSelection.task(task.id))
         }
       }
     }
@@ -130,12 +126,8 @@ private struct TaskListColumn: View {
   var body: some View {
     List(selection: $library.selection) {
       ForEach(library.tasks, id: \.id) { task in
-        TaskRow(
-          task: task, isNextAction: library.nextActions.contains(task.id),
-          complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) },
-          setEstimate: { library.estimate(task.id, as: $0) }
-        )
-        .tag(task.id)
+        TaskRow(library: library, task: task)
+          .tag(task.id)
       }
     }
     .frame(width: 320)
@@ -146,9 +138,15 @@ private struct ProjectRow: View {
   @Bindable var library: LibraryViewModel
   let project: Project
 
+  private var isCompleted: Bool {
+    library.completedProjectIDs.contains(project.id)
+  }
+
   var body: some View {
     HStack {
       Label(project.title, systemImage: project.kind.symbol)
+        .strikethrough(isCompleted)
+        .foregroundStyle(isCompleted ? .secondary : .primary)
       Spacer()
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
@@ -158,39 +156,47 @@ private struct ProjectRow: View {
       library.drop(payloads, on: project.id)
     }
     .contextMenu {
-      Button("Complete Project") { library.completeProject(project.id) }
-      if project.parentID != nil {
-        Button("Move to Top Level") { library.nest(project.id, under: nil) }
-      }
-      Menu("Move to View") {
-        ForEach(library.views.filter { $0.id != library.currentView }, id: \.id) { view in
-          Button(view.name) { library.moveProject(project.id, toView: view.id) }
+      if isCompleted {
+        if library.reopenableProjectIDs.contains(project.id) {
+          Button("Reopen Project") { library.reopenProject(project.id) }
         }
+      } else {
+        Button("Complete Project") { library.completeProject(project.id) }
+        if project.parentID != nil {
+          Button("Move to Top Level") { library.nest(project.id, under: nil) }
+        }
+        Menu("Move to View") {
+          ForEach(library.views.filter { $0.id != library.currentView }, id: \.id) { view in
+            Button(view.name) { library.moveProject(project.id, toView: view.id) }
+          }
+        }
+        .disabled(library.views.count < 2)
       }
-      .disabled(library.views.count < 2)
     }
   }
 }
 
 private struct TaskRow: View {
+  @Bindable var library: LibraryViewModel
   let task: TaskItem
-  let isNextAction: Bool
-  let complete: () -> Void
-  let setPriority: (Priority?) -> Void
-  let setEstimate: (Int?) -> Void
 
   /// Estimates offered on the context and Task menus, in minutes.
   static let estimateChoices = [5, 15, 30, 60]
 
+  private var isCompleted: Bool {
+    library.completedTaskIDs.contains(task.id)
+  }
+
+  private var isNextAction: Bool {
+    library.nextActions.contains(task.id)
+  }
+
   var body: some View {
     HStack(spacing: 8) {
-      Button(action: complete) {
-        Image(systemName: "circle")
-      }
-      .buttonStyle(.plain)
-      .help("Complete")
+      checkbox
       Text(task.title)
-        .foregroundStyle(isNextAction ? .primary : .secondary)
+        .strikethrough(isCompleted)
+        .foregroundStyle(isNextAction && !isCompleted ? .primary : .secondary)
       Spacer()
       if let estimate = task.estimate {
         Text("\(estimate)m")
@@ -204,20 +210,52 @@ private struct TaskRow: View {
       }
     }
     .draggable(task.id.rawValue)
-    .contextMenu {
+    .contextMenu { menu }
+  }
+
+  /// Completes the task; on a completed task that can be reopened, reopens it.
+  @ViewBuilder
+  private var checkbox: some View {
+    if isCompleted {
+      Button {
+        library.reopen(task.id)
+      } label: {
+        Image(systemName: "checkmark.circle.fill")
+      }
+      .buttonStyle(.plain)
+      .disabled(!library.reopenableTaskIDs.contains(task.id))
+      .help("Reopen")
+    } else {
+      Button {
+        library.complete(task.id)
+      } label: {
+        Image(systemName: "circle")
+      }
+      .buttonStyle(.plain)
+      .help("Complete")
+    }
+  }
+
+  @ViewBuilder
+  private var menu: some View {
+    if isCompleted {
+      if library.reopenableTaskIDs.contains(task.id) {
+        Button("Reopen") { library.reopen(task.id) }
+      }
+    } else {
       Menu("Priority") {
         ForEach(Priority.allCases, id: \.self) { priority in
-          Button(priority.title, systemImage: priority.symbol) { setPriority(priority) }
+          Button(priority.title, systemImage: priority.symbol) { library.prioritize(task.id, as: priority) }
         }
         Divider()
-        Button("None") { setPriority(nil) }
+        Button("None") { library.prioritize(task.id, as: nil) }
       }
       Menu("Estimate") {
         ForEach(Self.estimateChoices, id: \.self) { minutes in
-          Button("\(minutes)m") { setEstimate(minutes) }
+          Button("\(minutes)m") { library.estimate(task.id, as: minutes) }
         }
         Divider()
-        Button("None") { setEstimate(nil) }
+        Button("None") { library.estimate(task.id, as: nil) }
       }
     }
   }

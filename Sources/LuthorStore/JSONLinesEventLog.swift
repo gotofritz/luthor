@@ -52,9 +52,11 @@ private struct EventLineDTO: Codable {
   private enum EventType: String, Codable {
     case taskCaptured = "TaskCaptured"
     case taskCompleted = "TaskCompleted"
+    case taskReopened = "TaskReopened"
     case projectCreated = "ProjectCreated"
     case taskMovedToProject = "TaskMovedToProject"
     case projectCompleted = "ProjectCompleted"
+    case projectReopened = "ProjectReopened"
     case viewCreated = "ViewCreated"
     case viewRenamed = "ViewRenamed"
     case taskMovedToView = "TaskMovedToView"
@@ -78,9 +80,11 @@ private struct EventLineDTO: Codable {
       switch try container.decode(EventType.self, forKey: .type) {
       case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
       case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
+      case .taskReopened: .taskReopened(try container.decode(TaskReopened.self, forKey: .data))
       case .projectCreated: .projectCreated(try container.decode(ProjectCreated.self, forKey: .data))
       case .taskMovedToProject: .taskMovedToProject(try container.decode(TaskMovedToProject.self, forKey: .data))
       case .projectCompleted: .projectCompleted(try container.decode(ProjectCompleted.self, forKey: .data))
+      case .projectReopened: .projectReopened(try container.decode(ProjectReopened.self, forKey: .data))
       case .viewCreated: .viewCreated(try container.decode(ViewCreated.self, forKey: .data))
       case .viewRenamed: .viewRenamed(try container.decode(ViewRenamed.self, forKey: .data))
       case .taskMovedToView: .taskMovedToView(try container.decode(TaskMovedToView.self, forKey: .data))
@@ -114,9 +118,11 @@ private struct EventLineDTO: Codable {
     switch event.payload {
     case .taskCaptured(let data): try write(.taskCaptured, data, to: &container)
     case .taskCompleted(let data): try write(.taskCompleted, data, to: &container)
+    case .taskReopened(let data): try write(.taskReopened, data, to: &container)
     case .projectCreated(let data): try write(.projectCreated, data, to: &container)
     case .taskMovedToProject(let data): try write(.taskMovedToProject, data, to: &container)
     case .projectCompleted(let data): try write(.projectCompleted, data, to: &container)
+    case .projectReopened(let data): try write(.projectReopened, data, to: &container)
     case .viewCreated(let data): try write(.viewCreated, data, to: &container)
     case .viewRenamed(let data): try write(.viewRenamed, data, to: &container)
     case .taskMovedToView(let data): try write(.taskMovedToView, data, to: &container)

@@ -336,3 +336,25 @@ struct SettingLineTests {
     }
   }
 }
+
+@Suite("When reopen events are written as lines")
+struct ReopenEventLineFormatTests {
+  @Test("TaskReopened is one sorted JSON object")
+  func taskReopenedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(reopened("t1", id: "e1", lamport: 3))
+
+    #expect(line == #"{"data":{"taskID":"t1"},"device":"mac","id":"e1","lamport":3,"type":"TaskReopened"}"#)
+  }
+
+  @Test("ProjectReopened is one sorted JSON object")
+  func projectReopenedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(projectReopened("p1", id: "e2", lamport: 4))
+
+    #expect(line == #"{"data":{"projectID":"p1"},"device":"mac","id":"e2","lamport":4,"type":"ProjectReopened"}"#)
+  }
+
+  @Test(arguments: [reopened("t1"), projectReopened("p1")])
+  func reopenLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
