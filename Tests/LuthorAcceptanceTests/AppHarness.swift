@@ -9,9 +9,27 @@ import Testing
 /// a Monday).
 @MainActor
 func launchApp(on url: URL, view: ViewID = .default, today: CalendarDate = date("2026-10-19")) -> LibraryViewModel {
+  launchApp(log: JSONLinesEventLog(fileURL: url), device: "mac", view: view, today: today)
+}
+
+/// The Mac app of the device `device`, working in the shared folder `folder`, as when the folder is synced
+/// by Dropbox.
+@MainActor
+func launchApp(
+  sharing folder: URL, as device: String, view: ViewID = .default, today: CalendarDate = date("2026-10-19")
+) -> LibraryViewModel {
+  launchApp(
+    log: DeviceFilesEventLog(directory: folder, deviceID: DeviceID(device)), device: device, view: view,
+    today: today)
+}
+
+@MainActor
+private func launchApp(
+  log: any EventLog, device: String, view: ViewID, today: CalendarDate
+) -> LibraryViewModel {
   let library = LibraryViewModel(
-    log: JSONLinesEventLog(fileURL: url),
-    commands: Commands(deviceID: DeviceID("mac"), ids: UUIDGenerator()),
+    log: log,
+    commands: Commands(deviceID: DeviceID(device), ids: UUIDGenerator()),
     view: view,
     today: { today }
   )

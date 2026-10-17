@@ -14,11 +14,11 @@ struct LuthorApp: App {
 
   init() {
     let configuration = LuthorConfiguration(
-      environment: ProcessInfo.processInfo.environment,
+      environment: Self.environment(),
       home: FileManager.default.homeDirectoryForCurrentUser
     )
     let library = LibraryViewModel(
-      log: JSONLinesEventLog(fileURL: configuration.logURL),
+      log: configuration.makeEventLog(),
       commands: Commands(deviceID: configuration.deviceID, ids: UUIDGenerator()),
       view: UserDefaults.standard.string(forKey: Self.lastViewKey).map(ViewID.init) ?? .default
     )
@@ -27,9 +27,19 @@ struct LuthorApp: App {
     _library = State(initialValue: library)
   }
 
+  /// The process environment, with the settings a Mac app started from the Finder cannot get from a shell
+  /// read from the app's defaults instead: `defaults write com.gotofritz.luthor LUTHOR_SYNC_DIR <folder>`.
+  private static func environment() -> [String: String] {
+    var environment = ProcessInfo.processInfo.environment
+    for key in ["LUTHOR_LOG", "LUTHOR_SYNC_DIR", "LUTHOR_DEVICE_ID"] where environment[key] == nil {
+      environment[key] = UserDefaults.standard.string(forKey: key)
+    }
+    return environment
+  }
+
   var body: some Scene {
     Window("Luthor", id: "library") {
-      LibraryView(library: library, logURL: configuration.logURL)
+      LibraryView(library: library, configuration: configuration)
         .onChange(of: library.currentView, initial: true) { _, view in
           UserDefaults.standard.set(view.rawValue, forKey: Self.lastViewKey)
         }
