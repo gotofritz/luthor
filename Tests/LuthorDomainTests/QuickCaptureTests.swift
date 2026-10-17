@@ -10,18 +10,25 @@ struct QuickCaptureTests {
     #expect(parsed == QuickCapture.Parsed(title: "buy milk", priority: nil, estimateMinutes: nil))
   }
 
-  @Test("a priority tag is stripped from the title", arguments: [
-    ("call bank !a", Priority.critical),
-    ("call bank !A", Priority.critical),
-    ("call bank !b", Priority.important),
-    ("call bank !c", Priority.optional),
-    ("call bank !someday", Priority.someday),
-    ("call bank !SOMEDAY", Priority.someday),
-  ])
-  func priorityTagIsStripped(input: String, priority: Priority) {
-    let parsed = QuickCapture.parse(input)
+  @Test("!a, !b and !c are stripped as Critical, Important and Optional")
+  func abcTagsAreStripped() {
+    #expect(QuickCapture.parse("call bank !a").priority == .critical)
+    #expect(QuickCapture.parse("call bank !b").priority == .important)
+    #expect(QuickCapture.parse("call bank !c").priority == .optional)
+  }
 
-    #expect(parsed == QuickCapture.Parsed(title: "call bank", priority: priority, estimateMinutes: nil))
+  @Test("the tag is case-insensitive", arguments: ["!a", "!A"])
+  func priorityTagIsCaseInsensitive(tag: String) {
+    let parsed = QuickCapture.parse("call bank \(tag)")
+
+    #expect(parsed == QuickCapture.Parsed(title: "call bank", priority: .critical, estimateMinutes: nil))
+  }
+
+  @Test("!someday is stripped as the someday priority", arguments: ["!someday", "!SOMEDAY"])
+  func somedayTagIsStripped(tag: String) {
+    let parsed = QuickCapture.parse("call bank \(tag)")
+
+    #expect(parsed == QuickCapture.Parsed(title: "call bank", priority: .someday, estimateMinutes: nil))
   }
 
   @Test("an estimate tag is stripped from the title")
