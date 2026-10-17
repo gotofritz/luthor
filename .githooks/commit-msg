@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Rejects a commit message that is not a Conventional Commit. Installed with `make hooks`.
+set -euo pipefail
+
+exec "$(git rev-parse --show-toplevel)/scripts/check-conventional-commit.sh" 72 --file "$1"
