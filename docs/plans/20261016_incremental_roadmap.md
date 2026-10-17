@@ -116,14 +116,18 @@ Usable: contexts (`@home`, `@calls`, `@computer`).
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 7. iPhone capture without an iOS app (THROWAWAY)
+### 7. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
   file once imported (idempotent by line hash)
+- The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
+  stays, `list` and `done` go, and an Alfred workflow (keyword, then the
+  task title) calls it. Acceptance tests that relied on `luthor list` move
+  to the view models
 
 Usable: capture from the phone, lock screen and Siri included, months before
-an iOS app exists.
+an iOS app exists, and from Alfred on the Mac without switching to the app.
 
 ### 8. Review
 
@@ -175,3 +179,9 @@ Usable: the weekly review.
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
 5. **No SQLite until slice 10**, and only if replay is measurably slow
+
+## Decisions (2026-10-17)
+
+1. **CLI is capture only.** The app does everything the CLI does; the CLI
+   gains no project, defer or tag commands, and shrinks to `luthor add` for
+   Alfred in slice 7
