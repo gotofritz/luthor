@@ -120,10 +120,31 @@ public struct CarryOverEntry: Equatable, Sendable {
   }
 }
 
+/// A task planned for a day before today, with where it sits among the others of that day.
+private struct LeftOver {
+  let day: CalendarDate
+  let key: PlanKey
+  let task: TaskItem
+}
+
 // The daily review: how logging time and reviewing a day change the state, and the pure functions that turn
 // it into a review, the leftovers of earlier days and the history of estimates. In its own file (SwiftLint
 // file_length) rather than suppressed.
 extension LibraryState {
+  /// Applies the logging of time and the closing of a review; any other event changes nothing.
+  mutating func applyReview(_ payload: EventPayload) {
+    switch payload {
+    case .taskTimeLogged(let logged):
+      record(logged)
+    case .unplannedTimeLogged(let logged):
+      record(logged)
+    case .dayReviewed(let reviewed):
+      record(reviewed)
+    default:
+      break
+    }
+  }
+
   /// Logging nothing, or zero minutes, clears the day's time.
   mutating func record(_ logged: TaskTimeLogged) {
     let key = TaskDay(taskID: logged.taskID, date: logged.date)
@@ -201,10 +222,10 @@ extension LibraryState {
     let viewState = view(viewID)
     let defaultEstimate = settings(for: viewID).defaultEstimateMinutes
     let ranking = PlanRanking(viewState)
-    let leftOver = viewState.openTasks.compactMap { task -> (day: CalendarDate, key: PlanKey, task: TaskItem)? in
+    let leftOver = viewState.openTasks.compactMap { task -> LeftOver? in
       guard let day = scheduledDates[task.id], day < today else { return nil }
       let manual = dayOrders[DayKey(viewID: viewID, date: day)]?.firstIndex(of: task.id)
-      return (day, ranking.key(task, manual: manual), task)
+      return LeftOver(day: day, key: ranking.key(task, manual: manual), task: task)
     }
     return leftOver.sorted { ($0.day, $0.key) < ($1.day, $1.key) }.map { found in
       let entry = PlanEntry(

@@ -209,12 +209,8 @@ public struct LibraryState: Equatable, Sendable {
       delegations.removeValue(forKey: reclaimed.taskID)
     case .taskDropped(let dropped):
       finish(dropped.taskID)
-    case .taskTimeLogged(let logged):
-      record(logged)
-    case .unplannedTimeLogged(let logged):
-      record(logged)
-    case .dayReviewed(let reviewed):
-      record(reviewed)
+    case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
+      applyReview(payload)
     }
   }
 
