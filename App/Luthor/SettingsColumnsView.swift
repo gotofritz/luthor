@@ -159,7 +159,7 @@ private struct OverridableStepper: View {
     VStack(alignment: .leading, spacing: 2) {
       Toggle(
         "\(title): \(value)\(suffix)\(isOverridden ? "" : " (global)")",
-        isOn: Binding(get: { isOverridden }, set: { on in setOverride(on ? value : nil) })
+        isOn: Binding(get: { isOverridden }, set: { isOn in setOverride(isOn ? value : nil) })
       )
       if isOverridden {
         Stepper("", value: Binding(get: { value }, set: { setOverride($0) }), in: range, step: step)

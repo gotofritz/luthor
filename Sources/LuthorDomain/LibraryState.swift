@@ -164,9 +164,9 @@ public struct LibraryState: Equatable, Sendable {
   /// Every active project of every view, in creation order.
   private(set) var projects: [Project] = []
   /// Global setting values, by key; a key not here falls back to its built-in default.
-  private(set) var globalSettingValues: [SettingKey: String] = [:]
+  var globalSettingValues: [SettingKey: String] = [:]
   /// Per-view setting overrides; a key not here for a view falls back to the global value.
-  private(set) var viewSettingOverrides: [ViewID: [SettingKey: String]] = [:]
+  var viewSettingOverrides: [ViewID: [SettingKey: String]] = [:]
 
   /// The open tasks and active projects of one view; empty for a view that does not exist.
   public func view(_ viewID: ViewID) -> ViewState {
@@ -226,67 +226,6 @@ public struct LibraryState: Equatable, Sendable {
 
   func hasView(_ viewID: ViewID) -> Bool {
     views.contains { $0.id == viewID }
-  }
-
-  /// The settings the view `viewID` plans with: its own overrides, then the global values, then the
-  /// built-in defaults.
-  public func settings(for viewID: ViewID) -> Settings {
-    resolvedSettings(override: viewSettingOverrides[viewID] ?? [:])
-  }
-
-  /// The settings with no per-view override applied.
-  public var globalSettings: Settings {
-    resolvedSettings(override: [:])
-  }
-
-  /// Whether `key` is overridden for the view `viewID`, rather than inherited from the global value.
-  public func isOverridden(_ key: SettingKey, in viewID: ViewID) -> Bool {
-    viewSettingOverrides[viewID]?[key] != nil
-  }
-
-  /// The view `luthor add` and imports use when none is named: the one chosen in settings, or the
-  /// built-in default view if none was chosen or the one chosen no longer exists.
-  public var defaultViewID: ViewID {
-    let chosen = globalSettingValues[.defaultViewID].map(ViewID.init) ?? .default
-    return hasView(chosen) ? chosen : .default
-  }
-
-  func globalSettingValue(_ key: SettingKey) -> String? {
-    globalSettingValues[key]
-  }
-
-  func overrideValue(_ key: SettingKey, in viewID: ViewID) -> String? {
-    viewSettingOverrides[viewID]?[key]
-  }
-
-  private func resolvedSettings(override: [SettingKey: String]) -> Settings {
-    func value(_ key: SettingKey) -> String? { override[key] ?? globalSettingValues[key] }
-    let capacity = Dictionary(
-      uniqueKeysWithValues: Weekday.allCases.map { weekday in
-        (weekday, value(weekday.capacityKey).flatMap(Int.init) ?? weekday.builtInCapacityMinutes)
-      })
-    return Settings(
-      defaultEstimateMinutes: value(.defaultEstimateMinutes).flatMap(Int.init) ?? Settings.defaultEstimateMinutes,
-      bufferPercentage: value(.bufferPercentage).flatMap(Int.init) ?? Settings.defaultBufferPercentage,
-      capacity: capacity
-    )
-  }
-
-  /// Sets or, with no value, clears a global or per-view setting. Ignores a key this build does not
-  /// recognise.
-  private mutating func change(_ changed: SettingChanged) {
-    guard let key = SettingKey(rawValue: changed.key) else { return }
-    if let viewID = changed.viewID {
-      if let value = changed.value {
-        viewSettingOverrides[viewID, default: [:]][key] = value
-      } else {
-        viewSettingOverrides[viewID]?.removeValue(forKey: key)
-      }
-    } else if let value = changed.value {
-      globalSettingValues[key] = value
-    } else {
-      globalSettingValues.removeValue(forKey: key)
-    }
   }
 
   /// Ignores a project that already exists. Under a parent that is not active or is in another view, the

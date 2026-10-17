@@ -2,49 +2,6 @@ import LuthorDomain
 import LuthorStore
 import Observation
 
-/// What the sidebar can show: the inbox or one active project.
-public enum SidebarItem: Hashable, Sendable {
-  case inbox
-  case project(ProjectID)
-}
-
-/// The places the navigation rail leads to, in the order it lists them.
-public enum NavigationSection: Hashable, Sendable, CaseIterable {
-  case inbox
-  case projects
-  case priorities
-  case settings
-}
-
-/// One entry of a column: a sub-project to open, or a task.
-public enum ColumnEntry: Equatable, Sendable, Identifiable {
-  case project(Project)
-  case task(TaskItem)
-
-  public var id: String {
-    switch self {
-    case .project(let project): "project-\(project.id.rawValue)"
-    case .task(let task): "task-\(task.id.rawValue)"
-    }
-  }
-}
-
-/// One column of the project browser: the top-level projects, or the children of one project.
-public struct ProjectColumn: Equatable, Sendable, Identifiable {
-  /// The project whose children the column lists; `nil` for the first column, of top-level projects.
-  public let parentID: ProjectID?
-  public let entries: [ColumnEntry]
-
-  public init(parentID: ProjectID?, entries: [ColumnEntry]) {
-    self.parentID = parentID
-    self.entries = entries
-  }
-
-  public var id: String {
-    parentID.map { "project-\($0.rawValue)" } ?? "top"
-  }
-}
-
 /// The main window: one view at a time, with the sidebar of its inbox and projects, the open tasks of
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
@@ -86,8 +43,8 @@ public final class LibraryViewModel {
   public private(set) var errorMessage: String?
 
   private let log: any EventLog
-  private let commands: Commands
-  @ObservationIgnored private var state = LibraryState.replay([])
+  let commands: Commands
+  @ObservationIgnored var state = LibraryState.replay([])
 
   public init(log: any EventLog, commands: Commands, view: ViewID = .default) {
     self.log = log
@@ -282,47 +239,6 @@ public final class LibraryViewModel {
   }
 }
 
-// Settings: global values and per-view overrides. Split from the class body above (SwiftLint
-// type_body_length) rather than suppressed.
-extension LibraryViewModel {
-  /// Changes a global setting, or with `nil` clears it back to the built-in default.
-  public func changeGlobalSetting(_ key: SettingKey, to value: String?) {
-    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, log: log) }
-  }
-
-  /// Overrides a setting for the current view, or with `nil` clears the override back to the global
-  /// value.
-  public func changeSettingForCurrentView(_ key: SettingKey, to value: String?) {
-    let viewID = currentView
-    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, for: viewID, log: log) }
-  }
-
-  /// Changes the global capacity of a weekday, or with `nil` clears it back to the built-in default.
-  public func changeGlobalCapacity(_ weekday: Weekday, minutes: Int?) {
-    changeGlobalSetting(weekday.capacityKey, to: minutes.map(String.init))
-  }
-
-  /// Overrides the capacity of a weekday for the current view, or with `nil` clears the override.
-  public func changeCapacityForCurrentView(_ weekday: Weekday, minutes: Int?) {
-    changeSettingForCurrentView(weekday.capacityKey, to: minutes.map(String.init))
-  }
-
-  /// Whether `key` is overridden for the current view, rather than inherited from the global value.
-  public func isOverriddenForCurrentView(_ key: SettingKey) -> Bool {
-    state.isOverridden(key, in: currentView)
-  }
-
-  /// Whether a weekday's capacity is overridden for the current view.
-  public func isCapacityOverriddenForCurrentView(_ weekday: Weekday) -> Bool {
-    isOverriddenForCurrentView(weekday.capacityKey)
-  }
-
-  /// Sets the view `luthor add` and imports use when none is named.
-  public func setDefaultView(_ viewID: ViewID) {
-    perform { (log) throws(CommandError) in try commands.setDefaultView(viewID, log: log) }
-  }
-}
-
 // Internals: reading and writing the log, and filling the published state from it. Split from the
 // class body above (SwiftLint type_body_length) rather than suppressed.
 extension LibraryViewModel {
@@ -337,7 +253,7 @@ extension LibraryViewModel {
 
   /// Runs a command on the log as it is now and appends what it returns; returns the events written.
   @discardableResult
-  private func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
+  func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
     let current: [EventEnvelope]
     do {
       current = try log.readAll()
