@@ -236,7 +236,10 @@ struct SettingLineTests {
   func clearingHasNoValueField() throws {
     let line = try EventLine.encode(settingChanged(.bufferPercentage, to: nil, id: "e3", lamport: 3))
 
-    #expect(line == #"{"data":{"key":"bufferPercentage"},"device":"mac","id":"e3","lamport":3,"type":"SettingChanged"}"#)
+    #expect(
+      line
+        == #"{"data":{"key":"bufferPercentage"},"device":"mac","id":"e3","lamport":3,"type":"SettingChanged"}"#
+    )
   }
 
   @Test(
