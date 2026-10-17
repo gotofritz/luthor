@@ -19,6 +19,9 @@ sync of event files) stays; the order and the amount of machinery change.
   measurably slow; no Dropbox API until a Dropbox folder stops being enough
 - **TDD throughout** (see `AGENTS.md`). The domain is where the tests go;
   hacks at the edges get thin tests
+- **Documented as built.** `docs/guide.md` is the user guide. It describes
+  shipped behaviour only, and the PR that ships a slice adds or updates its
+  section, so the guide is never ahead of the app or behind it
 - **Pre-1.0 event format is soft.** While I am the only user, an event format
   change may be handled by a one-off migration script over the log, or by
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
@@ -357,3 +360,6 @@ To settle before the slice they affect.
    and weekday capacity are events with a per-view override, so they sync;
    per-device preferences stay local. The panel is its own slice (6), ahead
    of Today
+9. **A comprehensive user guide, kept current.** `docs/guide.md` starts with
+   what is shipped (slices 1 to 3) and grows with every slice, checked in the
+   docs check of `AGENTS.md`

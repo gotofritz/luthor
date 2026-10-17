@@ -2,7 +2,8 @@
 
 A task system built around the ALPEN daily-planning method, with OmniFocus as
 a reference: local-first and event-sourced.
-See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
+See `docs/guide.md` for how to use it, and `AGENTS.md` and `docs/plans/` for
+the architecture and roadmap.
 
 ## CLI
 
