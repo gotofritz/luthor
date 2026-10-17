@@ -82,3 +82,25 @@ struct PriorityFlowTests {
     #expect(library.tasks.map(\.title) == ["call mum"])
   }
 }
+
+@MainActor
+@Suite("Given tasks with priorities, when I click and modifier-click the priorities")
+struct PriorityClickFlowTests {
+  @Test("a plain click replaces the picked priorities, a command-click adds, and no priority lists the rest")
+  func clickingFollowsTheUsualModifiers() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let library = launchApp(on: dir.file("events.jsonl"))
+    for title in ["pay rent", "call mum", "learn Greek"] { library.capture(title) }
+    library.prioritize(try library.task("pay rent"), as: .critical)
+    library.prioritize(try library.task("call mum"), as: .important)
+    library.show(.priorities)
+
+    library.selectPriorities([.critical])
+    library.selectPriorities([.important])
+    #expect(library.tasks.map(\.title) == ["call mum"])
+
+    library.togglePriority(nil)
+    #expect(library.tasks.map(\.title) == ["call mum", "learn Greek"])
+  }
+}

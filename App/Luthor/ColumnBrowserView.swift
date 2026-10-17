@@ -5,8 +5,8 @@ import SwiftUI
 /// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. Today
 /// is the plan of a day, its candidates and the tasks waited for. The projects are the top-level projects
 /// first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
-/// in the order they were added. The priorities are the four priorities, which add up when clicked, then
-/// the tasks that have one of the picked. Tasks that are not next actions are dimmed. Drag a task onto a
+/// in the order they were added. The priorities are the four priorities and no priority, picked like the rows of any
+/// list, then the tasks that have one of the picked. Tasks that are not next actions are dimmed. Drag a task onto a
 /// project to file it, a project onto another to nest it, or onto a column to move it into that column's
 /// project; the first column makes it top-level.
 struct ColumnBrowserView: View {
@@ -110,23 +110,21 @@ private struct ColumnView: View {
   }
 }
 
-/// The priorities, each picked or not by a click. Unlike a list selection, a click adds to the picked
-/// priorities instead of replacing them, and clicking a picked one drops it.
+/// The priorities and, last, no priority. A plain list selection: a click picks one, a shift-click a range
+/// and a command-click adds a priority to the picked ones or drops it.
 private struct PriorityColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
-    List {
-      ForEach(Priority.allCases, id: \.self) { priority in
-        let picked = library.selectedPriorities.contains(priority)
-        Label(priority.title, systemImage: priority.symbol)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.vertical, 2)
-          .padding(.horizontal, 6)
-          .background(picked ? Color.accentColor.opacity(0.25) : .clear, in: .rect(cornerRadius: 5))
-          .contentShape(.rect)
-          .onTapGesture { library.togglePriority(priority) }
-          .accessibilityAddTraits(picked ? .isSelected : [])
+    List(
+      selection: Binding(
+        get: { library.selectedPriorities },
+        set: { library.selectPriorities($0) }
+      )
+    ) {
+      ForEach(LibraryViewModel.priorityRows, id: \.self) { priority in
+        Label(priority?.title ?? "No priority", systemImage: priority?.symbol ?? "circle.dashed")
+          .tag(priority)
       }
     }
     .frame(width: 200)

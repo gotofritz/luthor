@@ -140,9 +140,7 @@ extension LibraryViewModel {
     } else if section == .priorities {
       tasks =
         view.tasks(prioritised: selectedPriorities)
-        + completedItems.filter { task in
-          task.priority.map(selectedPriorities.contains) ?? false
-        }
+        + completedItems.filter { selectedPriorities.contains($0.priority) }
       let actionable = Set(view.nextActions.map(\.id))
       nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
     } else if let projectID = shownProjectID {

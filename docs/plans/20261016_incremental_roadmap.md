@@ -124,8 +124,8 @@ never expands: Inbox, Projects, Prios (a new place gets a new case in
 (disabled until the Search slice) and the view switcher, which has no
 shortcuts so it cannot be triggered by mistake. The first Miller column
 depends on the place: Inbox is its list of tasks, Projects the top-level
-projects, Prios the four priorities, which add up when clicked, followed by
-the tasks that have one of them. For Prios to have anything to list,
+projects, Prios the four priorities and no priority, picked like the rows of any
+list, followed by the tasks that have one of them. For Prios to have anything to list,
 `TaskPrioritized(task, priority?)` landed here, ahead of slice 6, with
 `Priority` (A, B, C, someday) and a priority menu on tasks; nothing else of
 slice 6 did.
@@ -434,8 +434,9 @@ Usable: the weekly review.
    theirs (Tags in slice 12)
 2. **The view switcher has no keyboard shortcut.** Switching view by mistake
    shows a different world; the ⌃⌘1–9 commands are gone
-3. **Prios are additive.** Clicking a priority adds it to the picked ones
-   instead of replacing them; with none picked the list is empty
+3. **Prios are picked like any list.** ~~Clicking a priority adds it to the
+   picked ones~~ Superseded (issue #17): a click picks one, shift-click a
+   range, command-click adds or drops one; with none picked the list is empty
 4. **`TaskPrioritized` ships before slice 6.** It is the minimal priority
    model: `Priority` (A critical, B important, C optional, someday, shown as
    "One day") and a clearable event, with no UI for it beyond a menu. The
@@ -554,3 +555,13 @@ Usable: the weekly review.
    edit; the card of a completed item is read-only until it is reopened
 6. **Blank notes clear them; the same text writes nothing.** Commands trim
    the text and compare, so tabbing through a card writes no events
+
+## Decisions (2026-10-17, priority picking, issue #17)
+
+1. **Prios use the platform's list selection.** The additive "sticky" clicks
+   were a mistake: a click picks one, shift-click a range, command-click adds
+   or drops one, all from the list itself. The view model only holds the set
+   (`selectPriorities`); `togglePriority` stays as the command-click
+2. **No priority is `nil` in the picked set.** `Set<Priority?>`, listed after
+   One day, covers open tasks with no priority wherever they are filed; no
+   new event or type
