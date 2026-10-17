@@ -92,8 +92,27 @@ CLI makes. Type
 and press Return to capture; ↑ and ↓ select a task, ⌘Return completes it, or
 click its circle.
 
+The sidebar lists the Inbox and the active projects. Create a project with the
+field at the bottom of the sidebar, choosing parallel (every task is a next
+action) or sequential (only the first open task is; the others are dimmed).
+File a task by dragging it onto a project, or select it and press ⌥⌘1 to ⌥⌘9
+for the first nine projects (Task → Move to Project). Typing in a project's
+capture field adds the task straight to that project. Complete a project from
+the toolbar or its context menu in the sidebar; its open tasks go with it.
+
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.
+
+## Install and releases
+
+```bash
+make install   # the app into ~/Applications, the CLI into ~/.local/bin
+```
+
+`PREFIX` and `APP_INSTALL_DIR` change where (`make install PREFIX=/usr/local`).
+Pushing a version tag (`git tag v0.1.0 && git push origin v0.1.0`) builds both
+on CI and attaches them, zipped, to a GitHub Release. `make dist` builds the
+same zips locally into `.build/dist/`.
 
 ## Development
 
