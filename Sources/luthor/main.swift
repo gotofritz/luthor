@@ -1,8 +1,13 @@
 import Foundation
 import LuthorCLI
+import LuthorStore
 
-let result = CLI(environment: ProcessInfo.processInfo.environment, ids: UUIDGenerator())
-  .run(Array(CommandLine.arguments.dropFirst()))
+let result = CLI(
+  environment: ProcessInfo.processInfo.environment,
+  home: FileManager.default.homeDirectoryForCurrentUser,
+  ids: UUIDGenerator()
+)
+.run(Array(CommandLine.arguments.dropFirst()))
 FileHandle.standardOutput.write(Data(result.output.utf8))
 FileHandle.standardError.write(Data(result.error.utf8))
 exit(result.exitCode)

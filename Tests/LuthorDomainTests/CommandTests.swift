@@ -87,4 +87,21 @@ import Testing
       try commands.complete(idPrefix: prefix, log: Self.log)
     }
   }
+
+  @Test func completeByTaskIDCompletesExactlyThatTask() throws {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    let events = try commands.complete(taskID: TaskID("abd456"), log: Self.log)
+
+    #expect(events == [completed("abd456", id: "id-1", lamport: 5)])
+  }
+
+  @Test(arguments: ["ffe789", "abc", "nope"])
+  func completeByTaskIDRejectsATaskThatIsNotOpen(taskID: String) {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    #expect(throws: CommandError.noOpenTask(taskID)) {
+      try commands.complete(taskID: TaskID(taskID), log: Self.log)
+    }
+  }
 }

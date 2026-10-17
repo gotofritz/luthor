@@ -7,14 +7,20 @@ let package = Package(
   products: [
     .library(name: "LuthorDomain", targets: ["LuthorDomain"]),
     .library(name: "LuthorStore", targets: ["LuthorStore"]),
+    .library(name: "LuthorViewModels", targets: ["LuthorViewModels"]),
     .executable(name: "luthor", targets: ["luthor"]),
   ],
   targets: [
     .target(name: "LuthorDomain"),
     .target(name: "LuthorStore", dependencies: ["LuthorDomain"]),
     .target(name: "LuthorCLI", dependencies: ["LuthorDomain", "LuthorStore"]),
-    .executableTarget(name: "luthor", dependencies: ["LuthorCLI"]),
-    .target(name: "LuthorTestSupport", dependencies: ["LuthorDomain"], path: "Tests/LuthorTestSupport"),
+    .target(name: "LuthorViewModels", dependencies: ["LuthorDomain", "LuthorStore"]),
+    .executableTarget(name: "luthor", dependencies: ["LuthorCLI", "LuthorStore"]),
+    .target(
+      name: "LuthorTestSupport",
+      dependencies: ["LuthorDomain", "LuthorStore"],
+      path: "Tests/LuthorTestSupport"
+    ),
     .testTarget(name: "LuthorDomainTests", dependencies: ["LuthorDomain", "LuthorTestSupport"]),
     .testTarget(
       name: "LuthorStoreTests",
@@ -23,6 +29,10 @@ let package = Package(
     .testTarget(
       name: "LuthorCLITests",
       dependencies: ["LuthorCLI", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
+    ),
+    .testTarget(
+      name: "LuthorViewModelsTests",
+      dependencies: ["LuthorViewModels", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
     ),
   ]
 )

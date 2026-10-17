@@ -38,6 +38,14 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: match)), log: log)]
   }
 
+  /// Completes the open task with exactly this ID.
+  public func complete(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    guard InboxState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
+      throw .noOpenTask(taskID.rawValue)
+    }
+    return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
+  }
+
   private func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
     EventEnvelope(id: id, deviceID: deviceID, lamport: (log.map(\.lamport).max() ?? 0) + 1, payload: payload)
   }

@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
-        run: swift --version
+        run: |
+          swift --version
+          xcodebuild -version
       - name: Install pinned tools
         run: make tools
       - name: Check

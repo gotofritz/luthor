@@ -70,7 +70,7 @@ See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
 
 ```bash
 swift build -c release
-export LUTHOR_LOG=~/.luthor/events.jsonl           # the event log; created on first add
+export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
 export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
 
 .build/release/luthor add "buy milk"
@@ -78,9 +78,34 @@ export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
 .build/release/luthor done 9afc                    # any unique prefix of a task ID
 ```
 
-## Development
+## Mac app
 
 ```bash
-make tools hooks   # once
-make check-ci      # what CI runs
+make app
+open .build/xcode/Build/Products/Release/Luthor.app
+```
+
+Or open `App/Luthor.xcodeproj` in Xcode and run. Like the CLI, the app
+reads and writes `$LUTHOR_LOG` when it is set (launched from a shell, or from
+Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
+CLI makes. Type
+and press Return to capture; ↑ and ↓ select a task, ⌘Return completes it, or
+click its circle.
+
+The build is ad-hoc signed: the first launch of a copied app needs
+right-click → Open.
+
+## Development
+
+Needs Xcode (for `make app`). Once per checkout:
+
+```bash
+make tools   # download the pinned SwiftLint into .tools/; make lint and make check-ci need it
+make hooks   # run format, lint and commit-message checks on every commit
+```
+
+Then:
+
+```bash
+make check-ci   # lint, build, tests and the Mac app: exactly what CI runs
 ```
