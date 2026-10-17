@@ -112,7 +112,7 @@ struct ViewSettingOverrideReplayTests {
 }
 
 @Suite("When the default view is changed")
-struct DefaultViewReplayTests {
+struct DefaultViewSettingReplayTests {
   @Test("the library resolves to it")
   func libraryResolvesToIt() {
     let state = LibraryState.replay([
