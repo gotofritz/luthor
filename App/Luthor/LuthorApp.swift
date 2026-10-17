@@ -19,6 +19,9 @@ struct LuthorApp: App {
   /// The `UserDefaults` keys of the place chosen for the log, per device, so they stay out of the log too.
   private static let storageKindKey = "logStorageKind"
   private static let storageFolderKey = "logStorageDropboxFolder"
+  /// The `UserDefaults` key of this Mac's own ID, made on first start; it names this Mac's file in the shared
+  /// folder, since two Macs can have the same host name.
+  private static let machineIDKey = "machineID"
 
   private let home = FileManager.default.homeDirectoryForCurrentUser
   private let environment: [String: String]
@@ -34,7 +37,7 @@ struct LuthorApp: App {
       dropboxFolderPath: UserDefaults.standard.string(forKey: Self.storageFolderKey), home: home)
     // The device ID is the same wherever the log lives; Dropbox needs it to name this Mac's file.
     let deviceID = LuthorConfiguration(
-      environment: environment, home: home,
+      environment: environment, home: home, machineID: Self.machineID(),
       storage: LogStorage(kind: .dropbox, dropboxFolder: LogStorage.defaultDropboxFolder(home: home))
     ).deviceID
     let controller = StorageController(
@@ -44,7 +47,8 @@ struct LuthorApp: App {
       UserDefaults.standard.set(choice.kindName, forKey: Self.storageKindKey)
       UserDefaults.standard.set(choice.dropboxFolder.path, forKey: Self.storageFolderKey)
     }
-    let configuration = LuthorConfiguration(environment: environment, home: home, storage: saved)
+    let configuration = LuthorConfiguration(
+      environment: environment, home: home, machineID: Self.machineID(), storage: saved)
     self.environment = environment
     _storageController = State(initialValue: controller)
     _configuration = State(initialValue: configuration)
@@ -65,6 +69,13 @@ struct LuthorApp: App {
     return environment
   }
 
+  /// The ID of this Mac, made on first start and kept in the app's defaults, which are not synced.
+  private static func machineID() -> String {
+    MachineID.current(
+      saved: UserDefaults.standard.string(forKey: machineIDKey), make: { UUID().uuidString },
+      save: { UserDefaults.standard.set($0, forKey: machineIDKey) })
+  }
+
   private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {
     let library = LibraryViewModel(
       log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view)
@@ -74,7 +85,8 @@ struct LuthorApp: App {
 
   /// Opens the log in the place now chosen, staying in the view shown.
   private func openChosenPlace() {
-    let configuration = LuthorConfiguration(environment: environment, home: home, storage: storageController.storage)
+    let configuration = LuthorConfiguration(
+      environment: environment, home: home, machineID: Self.machineID(), storage: storageController.storage)
     self.configuration = configuration
     library = Self.makeLibrary(
       log: configuration.makeEventLog(), deviceID: configuration.deviceID, view: library.currentView)

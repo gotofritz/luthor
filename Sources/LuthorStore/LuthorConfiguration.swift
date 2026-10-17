@@ -15,12 +15,13 @@ public struct LuthorConfiguration: Equatable, Sendable {
   public let syncDirectory: URL?
   public let deviceID: DeviceID
 
-  /// `hostName` names the device in a shared folder when `LUTHOR_DEVICE_ID` does not: two devices must
-  /// never write the same file. `storage`, the place the user chose, applies unless the environment sets the
+  /// `hostName` and `machineID` name the device in a shared folder when `LUTHOR_DEVICE_ID` does not: two
+  /// devices must never write the same file, and two Macs can share a host name, so the name ends with the
+  /// start of the machine ID. `storage`, the place the user chose, applies unless the environment sets the
   /// location itself.
   public init(
     environment: [String: String], home: URL, hostName: String = LuthorConfiguration.systemHostName(),
-    storage: LogStorage? = nil
+    machineID: String? = nil, storage: LogStorage? = nil
   ) {
     var environment = environment
     if let storage, !Self.environmentSetsLocation(environment) {
@@ -34,7 +35,14 @@ public struct LuthorConfiguration: Equatable, Sendable {
     let shared = environment["LUTHOR_SYNC_DIR"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
     syncDirectory = shared
     let named = environment["LUTHOR_DEVICE_ID"].flatMap { $0.isEmpty ? nil : $0 }
-    deviceID = DeviceID(named ?? (shared == nil || hostName.isEmpty ? "local" : hostName))
+    deviceID = DeviceID(named ?? (shared == nil ? "local" : Self.sharedName(host: hostName, machineID: machineID)))
+  }
+
+  /// The host name and the first eight characters of the machine ID, joined by a dash; whichever is missing
+  /// is left out, and with neither the device is "local".
+  private static func sharedName(host: String, machineID: String?) -> String {
+    let name = [host, String((machineID ?? "").prefix(8))].filter { !$0.isEmpty }.joined(separator: "-")
+    return name.isEmpty ? "local" : name
   }
 
   /// `~/.luthor/events.jsonl`.

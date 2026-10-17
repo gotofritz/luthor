@@ -58,6 +58,45 @@ import Testing
     #expect(config.deviceID == DeviceID("work"))
   }
 
+  @Test func deviceNameInASharedFolderEndsWithAPartOfTheMachineID() {
+    let config = LuthorConfiguration(
+      environment: ["LUTHOR_SYNC_DIR": "/d"], home: Self.home, hostName: "MacBook", machineID: "3f9a2c1b-77aa-4e0f")
+
+    #expect(config.deviceID == DeviceID("MacBook-3f9a2c1b"))
+  }
+
+  @Test func twoMacsWithTheSameHostNameGetDifferentDevices() {
+    let environment = ["LUTHOR_SYNC_DIR": "/d"]
+    let work = LuthorConfiguration(
+      environment: environment, home: Self.home, hostName: "MacBook", machineID: "aaaaaaaa-1111")
+    let home = LuthorConfiguration(
+      environment: environment, home: Self.home, hostName: "MacBook", machineID: "bbbbbbbb-2222")
+
+    #expect(work.deviceID != home.deviceID)
+  }
+
+  @Test func machineIDAloneNamesTheDeviceWithoutAHostName() {
+    let config = LuthorConfiguration(
+      environment: ["LUTHOR_SYNC_DIR": "/d"], home: Self.home, hostName: "", machineID: "3f9a2c1b-77aa-4e0f")
+
+    #expect(config.deviceID == DeviceID("3f9a2c1b"))
+  }
+
+  @Test func deviceIDFromTheEnvironmentWinsOverTheMachineID() {
+    let config = LuthorConfiguration(
+      environment: ["LUTHOR_SYNC_DIR": "/d", "LUTHOR_DEVICE_ID": "work"], home: Self.home, hostName: "MacBook",
+      machineID: "3f9a2c1b-77aa-4e0f")
+
+    #expect(config.deviceID == DeviceID("work"))
+  }
+
+  @Test func deviceStaysLocalWithoutASharedFolderWhateverTheMachineID() {
+    let config = LuthorConfiguration(
+      environment: [:], home: Self.home, hostName: "MacBook", machineID: "3f9a2c1b-77aa-4e0f")
+
+    #expect(config.deviceID == DeviceID("local"))
+  }
+
   @Test func deviceStaysLocalWithoutASharedFolder() {
     let config = LuthorConfiguration(environment: [:], home: Self.home, hostName: "Fritz's MacBook")
 
