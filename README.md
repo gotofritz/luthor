@@ -45,8 +45,8 @@ and renames views; the app reopens on the view last used on that Mac. Task → M
 project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
-to look at: Inbox (a list of its tasks), Projects or Prios, with Settings
-pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
+to look at: Inbox (a list of its tasks), Today, Projects or Prios, with
+Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
 (not working yet) and the view switcher.
 
 Prios lists the priorities Critical, Important, Optional and One day. Click
@@ -70,6 +70,18 @@ Project). Typing in the capture field adds the task straight to the project
 shown. Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
+
+Today is the morning plan, one per view and day: a capacity meter (the day's
+minutes less the protected buffer, what is planned and what is left, red and
+informing when overloaded, never refusing), the ordered plan, the candidates
+to pull in, and Waiting for. Add a task to the plan with ⌘T or its context
+menu; it keeps its place in the order you choose (⌥⌘↑ and ⌥⌘↓) and otherwise
+follows A before B before C, then project order, each place explained under
+the task. Decide on a task in one chord: Defer to Tomorrow (⌘D), Delegate…
+(⌘L, with an optional follow-up day), Send to Someday (⌘Y), Drop Task
+(⇧⌘⌫). A delegated task leaves the plan and its totals and waits in Waiting
+for until reclaimed or its follow-up day. ⌘[ and ⌘] move to the previous and
+next day, ⇧⌘T returns to today (Plan menu).
 
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to

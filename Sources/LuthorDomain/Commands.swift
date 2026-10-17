@@ -16,6 +16,8 @@ public enum CommandError: Error, Equatable {
   case projectInOtherView(ProjectID, parent: ProjectID)
   /// A project cannot be nested under itself or one of its own sub-projects.
   case nestedUnderItself(ProjectID)
+  /// A someday task is not committed to; give it another priority before planning it for a day.
+  case someday(TaskID)
 }
 
 /// Turns user intentions into new events, given the current log.
@@ -247,7 +249,7 @@ public struct Commands {
     return project
   }
 
-  private func requireView(_ viewID: ViewID, in state: LibraryState) throws(CommandError) {
+  func requireView(_ viewID: ViewID, in state: LibraryState) throws(CommandError) {
     guard state.hasView(viewID) else { throw .noView(viewID) }
   }
 
@@ -280,13 +282,13 @@ public struct Commands {
   }
 
   /// The title or name without surrounding whitespace; throws if nothing is left.
-  private static func named(_ title: String) throws(CommandError) -> String {
+  static func named(_ title: String) throws(CommandError) -> String {
     let trimmed = String(title.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
     guard !trimmed.isEmpty else { throw .blankTitle }
     return trimmed
   }
 
-  private func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
+  func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
     EventEnvelope(id: id, deviceID: deviceID, lamport: (log.map(\.lamport).max() ?? 0) + 1, payload: payload)
   }
 }

@@ -44,6 +44,9 @@ struct LibraryView: View {
           .help("Complete this project, its sub-projects and their open tasks")
       }
     }
+    .sheet(isPresented: isDelegating) {
+      DelegateSheet(library: library)
+    }
     .defaultFocus($captureFocused, true)
     .onAppear { captureFocused = true }
     // Clicking a row or its checkbox would take the focus; hand it back to the capture field.
@@ -101,6 +104,10 @@ struct LibraryView: View {
     .padding(8)
   }
 
+  private var isDelegating: Binding<Bool> {
+    Binding(get: { library.delegatingTaskID != nil }, set: { if !$0 { library.delegatingTaskID = nil } })
+  }
+
   private var shownProjectID: ProjectID? {
     guard case .project(let projectID) = library.sidebarSelection else { return nil }
     return projectID
@@ -113,6 +120,7 @@ struct LibraryView: View {
   private var title: String {
     switch library.section {
     case .inbox: "Inbox"
+    case .today: "Today"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
     case .settings: "Settings"

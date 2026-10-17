@@ -37,7 +37,7 @@ public struct TaskItem: Equatable, Sendable {
   }
 
   /// Not yet clarified: no priority, no estimate and no project.
-  fileprivate var isClarified: Bool {
+  var isClarified: Bool {
     priority != nil || estimate != nil || projectID != nil
   }
 
@@ -91,69 +91,6 @@ public struct Project: Equatable, Sendable {
   }
 }
 
-/// What one view holds. Everything a list shows comes from here, so nothing of another view can reach it.
-public struct ViewState: Equatable, Sendable {
-  public let id: ViewID
-  /// Every open task of the view, in the inbox or in a project, in capture order.
-  public let openTasks: [TaskItem]
-  /// Active projects of the view in creation order.
-  public let projects: [Project]
-
-  /// Open tasks of the view not yet clarified: no priority, no estimate and no project, in capture order.
-  public var inbox: [TaskItem] {
-    openTasks.filter { !$0.isClarified }
-  }
-
-  /// Projects of the view that are nested in none, in creation order.
-  public var topLevelProjects: [Project] {
-    projects.filter { $0.parentID == nil }
-  }
-
-  /// The open tasks of the view with one of these priorities, the most urgent priority first and each in
-  /// capture order. No priority lists nothing.
-  public func tasks(prioritised priorities: Set<Priority>) -> [TaskItem] {
-    Priority.allCases.filter(priorities.contains).flatMap { priority in
-      openTasks.filter { $0.priority == priority }
-    }
-  }
-
-  /// The active sub-projects of a project, in the order they were added to it.
-  public func subprojects(of projectID: ProjectID) -> [Project] {
-    guard let parent = project(projectID) else { return [] }
-    return parent.children.compactMap { child in
-      guard case .project(let id) = child else { return nil }
-      return project(id)
-    }
-  }
-
-  /// The tasks of a project's subtree that the project hands out, as if it had no parent. Parallel: every
-  /// child is active, a sub-project with its own next actions. Sequential: only the first child is.
-  public func nextActions(of projectID: ProjectID) -> [TaskItem] {
-    guard let project = self.project(projectID) else { return [] }
-    let active =
-      switch project.kind {
-      case .parallel: project.children
-      case .sequential: Array(project.children.prefix(1))
-      }
-    return active.flatMap { child -> [TaskItem] in
-      switch child {
-      // A someday task is kept out of next actions until it is promoted to another priority.
-      case .task(let task): task.priority == .someday ? [] : [task]
-      case .project(let id): nextActions(of: id)
-      }
-    }
-  }
-
-  /// The tasks of the view's projects that can be worked on now: every ancestor lets them be.
-  public var nextActions: [TaskItem] {
-    topLevelProjects.flatMap { nextActions(of: $0.id) }
-  }
-
-  private func project(_ projectID: ProjectID) -> Project? {
-    projects.first { $0.id == projectID }
-  }
-}
-
 /// The state of every view. Tasks and projects are reachable only through `view(_:)`, which names the
 /// view: isolation between views is a rule of the domain, not a filter in the UI.
 public struct LibraryState: Equatable, Sendable {
@@ -167,6 +104,14 @@ public struct LibraryState: Equatable, Sendable {
   var globalSettingValues: [SettingKey: String] = [:]
   /// Per-view setting overrides; a key not here for a view falls back to the global value.
   var viewSettingOverrides: [ViewID: [SettingKey: String]] = [:]
+  /// The day each open task is planned for; a task not here is planned for no day.
+  var scheduledDates: [TaskID: CalendarDate] = [:]
+  /// The open tasks handed to someone else.
+  var delegations: [TaskID: Delegation] = [:]
+  /// The manual order of each view's plan for a day, as last set.
+  var dayOrders: [DayKey: [TaskID]] = [:]
+  /// The capacity set for single days, in place of the weekday's.
+  var dayCapacities: [DayKey: Int] = [:]
 
   /// The open tasks and active projects of one view; empty for a view that does not exist.
   public func view(_ viewID: ViewID) -> ViewState {
@@ -197,8 +142,7 @@ public struct LibraryState: Equatable, Sendable {
     case .taskCaptured(let captured):
       openTasks.append(TaskItem(id: captured.taskID, title: captured.title, viewID: captured.viewID))
     case .taskCompleted(let completed):
-      openTasks.removeAll { $0.id == completed.taskID }
-      removeFromProjects(completed.taskID)
+      finish(completed.taskID)
     case .projectCreated(let created):
       create(created)
     case .taskMovedToProject(let moved):
@@ -221,7 +165,28 @@ public struct LibraryState: Equatable, Sendable {
       estimate(estimated.taskID, as: estimated.minutes)
     case .settingChanged(let changed):
       change(changed)
+    case .taskScheduled(let scheduled):
+      schedule(scheduled)
+    case .taskUnscheduled(let unscheduled):
+      scheduledDates.removeValue(forKey: unscheduled.taskID)
+    case .dayPlanOrdered(let ordered):
+      order(ordered)
+    case .dayCapacitySet(let capacity):
+      setCapacity(capacity)
+    case .taskDelegated(let delegated):
+      delegate(delegated)
+    case .taskReclaimed(let reclaimed):
+      delegations.removeValue(forKey: reclaimed.taskID)
+    case .taskDropped(let dropped):
+      finish(dropped.taskID)
     }
+  }
+
+  /// Takes a task out of every list for good, completed or dropped. Ignores a task that is not open.
+  private mutating func finish(_ taskID: TaskID) {
+    openTasks.removeAll { $0.id == taskID }
+    removeFromProjects(taskID)
+    forgetPlanning(of: taskID)
   }
 
   func hasView(_ viewID: ViewID) -> Bool {
@@ -328,6 +293,7 @@ public struct LibraryState: Equatable, Sendable {
     openTasks[index] = TaskItem(
       id: taskID, title: task.title, viewID: viewID, priority: task.priority, estimate: task.estimate)
     removeFromProjects(taskID)
+    forgetPlanning(of: taskID)
   }
 
   /// Takes a project across with its sub-projects and their open tasks; a nested project leaves its

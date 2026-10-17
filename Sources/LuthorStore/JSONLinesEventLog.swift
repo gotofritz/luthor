@@ -63,6 +63,13 @@ private struct EventLineDTO: Codable {
     case taskPrioritized = "TaskPrioritized"
     case taskEstimated = "TaskEstimated"
     case settingChanged = "SettingChanged"
+    case taskScheduled = "TaskScheduled"
+    case taskUnscheduled = "TaskUnscheduled"
+    case dayPlanOrdered = "DayPlanOrdered"
+    case dayCapacitySet = "DayCapacitySet"
+    case taskDelegated = "TaskDelegated"
+    case taskReclaimed = "TaskReclaimed"
+    case taskDropped = "TaskDropped"
   }
 
   init(from decoder: any Decoder) throws {
@@ -83,6 +90,13 @@ private struct EventLineDTO: Codable {
       case .taskPrioritized: .taskPrioritized(try container.decode(TaskPrioritized.self, forKey: .data))
       case .taskEstimated: .taskEstimated(try container.decode(TaskEstimated.self, forKey: .data))
       case .settingChanged: .settingChanged(try container.decode(SettingChanged.self, forKey: .data))
+      case .taskScheduled: .taskScheduled(try container.decode(TaskScheduled.self, forKey: .data))
+      case .taskUnscheduled: .taskUnscheduled(try container.decode(TaskUnscheduled.self, forKey: .data))
+      case .dayPlanOrdered: .dayPlanOrdered(try container.decode(DayPlanOrdered.self, forKey: .data))
+      case .dayCapacitySet: .dayCapacitySet(try container.decode(DayCapacitySet.self, forKey: .data))
+      case .taskDelegated: .taskDelegated(try container.decode(TaskDelegated.self, forKey: .data))
+      case .taskReclaimed: .taskReclaimed(try container.decode(TaskReclaimed.self, forKey: .data))
+      case .taskDropped: .taskDropped(try container.decode(TaskDropped.self, forKey: .data))
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -98,46 +112,37 @@ private struct EventLineDTO: Codable {
     try container.encode(event.deviceID, forKey: .device)
     try container.encode(event.lamport, forKey: .lamport)
     switch event.payload {
-    case .taskCaptured(let data):
-      try container.encode(EventType.taskCaptured, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .taskCompleted(let data):
-      try container.encode(EventType.taskCompleted, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .projectCreated(let data):
-      try container.encode(EventType.projectCreated, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .taskMovedToProject(let data):
-      try container.encode(EventType.taskMovedToProject, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .projectCompleted(let data):
-      try container.encode(EventType.projectCompleted, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .viewCreated(let data):
-      try container.encode(EventType.viewCreated, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .viewRenamed(let data):
-      try container.encode(EventType.viewRenamed, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .taskMovedToView(let data):
-      try container.encode(EventType.taskMovedToView, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .projectMovedToView(let data):
-      try container.encode(EventType.projectMovedToView, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .projectMovedToProject(let data):
-      try container.encode(EventType.projectMovedToProject, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .taskPrioritized(let data):
-      try container.encode(EventType.taskPrioritized, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .taskEstimated(let data):
-      try container.encode(EventType.taskEstimated, forKey: .type)
-      try container.encode(data, forKey: .data)
-    case .settingChanged(let data):
-      try container.encode(EventType.settingChanged, forKey: .type)
-      try container.encode(data, forKey: .data)
+    case .taskCaptured(let data): try write(.taskCaptured, data, to: &container)
+    case .taskCompleted(let data): try write(.taskCompleted, data, to: &container)
+    case .projectCreated(let data): try write(.projectCreated, data, to: &container)
+    case .taskMovedToProject(let data): try write(.taskMovedToProject, data, to: &container)
+    case .projectCompleted(let data): try write(.projectCompleted, data, to: &container)
+    case .viewCreated(let data): try write(.viewCreated, data, to: &container)
+    case .viewRenamed(let data): try write(.viewRenamed, data, to: &container)
+    case .taskMovedToView(let data): try write(.taskMovedToView, data, to: &container)
+    case .projectMovedToView(let data): try write(.projectMovedToView, data, to: &container)
+    case .projectMovedToProject(let data): try write(.projectMovedToProject, data, to: &container)
+    case .taskPrioritized(let data): try write(.taskPrioritized, data, to: &container)
+    case .taskEstimated(let data): try write(.taskEstimated, data, to: &container)
+    case .settingChanged(let data): try write(.settingChanged, data, to: &container)
+    case .taskScheduled(let data): try write(.taskScheduled, data, to: &container)
+    case .taskUnscheduled(let data): try write(.taskUnscheduled, data, to: &container)
+    case .dayPlanOrdered(let data): try write(.dayPlanOrdered, data, to: &container)
+    case .dayCapacitySet(let data): try write(.dayCapacitySet, data, to: &container)
+    case .taskDelegated(let data): try write(.taskDelegated, data, to: &container)
+    case .taskReclaimed(let data): try write(.taskReclaimed, data, to: &container)
+    case .taskDropped(let data): try write(.taskDropped, data, to: &container)
     }
+  }
+
+  /// Writes the event's type and its payload.
+  private func write(
+    _ type: EventType,
+    _ data: some Encodable,
+    to container: inout KeyedEncodingContainer<CodingKeys>
+  ) throws {
+    try container.encode(type, forKey: .type)
+    try container.encode(data, forKey: .data)
   }
 }
 

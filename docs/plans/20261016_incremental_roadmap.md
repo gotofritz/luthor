@@ -168,31 +168,29 @@ a catch-all added at the end.
 Usable: the numbers Today will plan with are already set, globally and per
 view.
 
-### 8. Today: plan the day (ALPEN: P, E)
+### 8. Today: plan the day (ALPEN: P, E) ✅
 
-- `TaskScheduled(date)`, `TaskUnscheduled`, `DayPlanOrdered(date, taskIDs)`.
-  Rescheduling keeps the task's identity; nothing is ever duplicated
-- Day capacity per view: `DayCapacitySet(date, minutes)` overrides the
-  weekday default from Settings (slice 7); the buffer percentage is a setting
-  too, default 40%
-- A task without an estimate is never refused: it counts at the default
-  estimate from Settings (5 minutes) and is flagged "unestimated", in the
-  plan and in the totals
-- Capacity is a pure function of events and the injected clock: buffer,
-  usable, planned and remaining minutes, and an overloaded flag when planned
-  exceeds usable. The buffer is protected capacity, never a task
-- Suggested order is deterministic and explained: A before B before C, then
-  hard deadlines, then project sequence. A manual order always wins and is
-  kept
-- Today view: capacity meter with the buffer shown, the ordered plan,
-  candidates to pull in, and an overload warning that informs rather than
-  blocks. Defer, delegate, drop or send to someday from the plan in one key
-- Delegating: `TaskDelegated(to, followUpDate?)` and `TaskReclaimed`. A
-  delegated task leaves Today's candidates and the capacity totals, and
-  shows in a Waiting for list in the current view with who and since when.
-  On its follow-up date (or when reclaimed) it returns to the candidates, so
-  nothing delegated is forgotten. Delegating never completes or drops it
-- One plan per view and day: the work day and the evening are planned apart
+Today is a place on the rail, one plan per view and day. `TaskScheduled(task,
+date)` and `TaskUnscheduled` plan a task for a day (scheduling it again moves
+it: the task keeps its identity, nothing is duplicated), `DayPlanOrdered(view,
+date, tasks)` keeps the order the user chose, and `DayCapacitySet(view, date,
+minutes?)` overrides the weekday capacity from Settings for one day. Days are a
+pure `CalendarDate` in the domain (no time zone, no system calendar); the view
+model's injected clock says which day it is. Capacity is a pure function of
+events and that date: buffer percentage of the day's capacity, usable, planned
+and remaining minutes, and an overloaded flag that warns and never refuses. A
+task without an estimate counts at the default estimate and is flagged in the
+plan and the totals. The suggested order is deterministic and explained under
+each task: A before B before C, then the order of the tasks in their projects,
+then capture order; a manual order always wins and tasks added later follow
+it. Candidates are the clarified open tasks that could be pulled in (no
+someday task, none held back by a sequential project, no delegated task before
+its follow-up date). Defer (to tomorrow), delegate, drop and send to someday
+are one chord each from the plan or the candidates. `TaskDelegated(task, to,
+since, followUpDate?)` and `TaskReclaimed` make delegating a real state: the
+task leaves Today and the totals, waits in Waiting for with who and since
+when, and returns to the candidates on its follow-up date. `TaskDropped` ships
+here, ahead of slice 9, because dropping from the plan needs it.
 
 Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
@@ -473,3 +471,50 @@ Usable: the weekly review.
 6. **Settings does not duplicate view management.** Create and rename
    already work from the view switcher; Settings only adds choosing the
    default view, which is new here
+
+## Decisions (2026-10-17, slice 8)
+
+1. **Dates are a domain type, today is an input.** `CalendarDate` is plain
+   arithmetic over year, month and day, written to the log as `2026-10-19`. The
+   domain never reads a clock: `LibraryState.plan(for:on:today:)` and
+   `waitingFor(in:today:)` take today as a parameter, the view model owns the
+   injected clock (the system's by default), and a command that needs "since
+   when" gets the date from its caller
+2. **Plans and capacity overrides carry a `viewID`.** The roadmap sketch of
+   `DayPlanOrdered` and `DayCapacitySet` had only a date; decision 7 of
+   2026-10-17 (plans are per view) needs the view in both. A task's own day
+   needs none: the task knows its view. A plan is the tasks of the view
+   scheduled for the date, so a task scheduled in one view never shows in
+   another
+3. **The plan is derived, only decisions are events.** Membership is "scheduled
+   for this date"; `DayPlanOrdered` stores only the user's order. Tasks it
+   names that are no longer scheduled that day are skipped, and tasks added
+   afterwards follow it in suggested order. A manual order is kept per view and
+   day and is never rewritten by the suggestion
+4. **No deadline step in the suggestion yet.** The ordering rule is priority,
+   then project order, then capture order; "hard deadlines" slot in after
+   priority in slice 11, when tasks have them. The doc comment of `plan(for:)`
+   says so
+5. **Clarified tasks only are candidates.** A task still in the Inbox has to
+   be clarified (a priority, an estimate or a project) before it can be pulled
+   in; planning is for clarified work. A task in a project is a candidate only
+   if it is a next action. The scheduling command does not enforce this (that
+   is slice 11's availability rule); Today just does not offer such tasks
+6. **Delegating clears the day; scheduling a delegated task reclaims it.** A
+   delegated task cannot also be planned, so `TaskDelegated` removes its day on
+   replay, and the schedule command writes `TaskReclaimed` before
+   `TaskScheduled` when the task is delegated, so the reducer stays a plain
+   state machine. A delegated task never completes or drops by itself
+7. **Someday cannot be scheduled.** `Commands.schedule` throws
+   `CommandError.someday` until the task is promoted; "send to someday" writes
+   `TaskUnscheduled` and `TaskPrioritized(someday)`. Nothing in the reducer
+   enforces it, so a log that disagrees still replays
+8. **`TaskDropped` arrives in slice 8.** The slice promises dropping from the
+   plan in one key; slice 9's review reuses the same event rather than adding
+   another
+9. **The event field is `to`, the code's is `person`.** The log keeps the
+   roadmap's `to`; the Swift property is `person`, to keep clear of a
+   two-letter identifier (SwiftLint `identifier_name`)
+10. **No new settings this slice.** The default estimate, buffer percentage and
+    weekday capacity from slice 7 are everything Today reads, so the settings
+    panel is unchanged. Capacity for a single day is set from Today itself

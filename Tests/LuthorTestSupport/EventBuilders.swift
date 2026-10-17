@@ -249,3 +249,123 @@ public func settingChanged(
     payload: .settingChanged(SettingChanged(key: key, value: value, viewID: view.map(ViewID.init)))
   )
 }
+
+/// A `CalendarDate` from `"2026-10-19"`; stops the test run on a string that is not a date.
+public func date(_ iso: String) -> CalendarDate {
+  guard let parsed = CalendarDate(isoString: iso) else { fatalError("not a calendar date: \(iso)") }
+  return parsed
+}
+
+/// Builds a `TaskScheduled` envelope with short, readable defaults.
+public func scheduled(
+  _ task: String,
+  on day: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "schedule-\(task)-\(day)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskScheduled(TaskScheduled(taskID: TaskID(task), date: date(day)))
+  )
+}
+
+/// Builds a `TaskUnscheduled` envelope with short, readable defaults.
+public func unscheduled(
+  _ task: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 3
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "unschedule-\(task)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskUnscheduled(TaskUnscheduled(taskID: TaskID(task)))
+  )
+}
+
+/// Builds a `DayPlanOrdered` envelope with short, readable defaults.
+public func planOrdered(
+  _ tasks: [String],
+  on day: String,
+  view: String = "default",
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 3
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "order-\(view)-\(day)-\(tasks.joined(separator: ","))"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .dayPlanOrdered(DayPlanOrdered(viewID: ViewID(view), date: date(day), taskIDs: tasks.map(TaskID.init)))
+  )
+}
+
+/// Builds a `DayCapacitySet` envelope with short, readable defaults; `nil` minutes clears it.
+public func dayCapacitySet(
+  _ minutes: Int?,
+  on day: String,
+  view: String = "default",
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "capacity-\(view)-\(day)-\(minutes.map(String.init) ?? "clear")"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .dayCapacitySet(DayCapacitySet(viewID: ViewID(view), date: date(day), minutes: minutes))
+  )
+}
+
+/// Builds a `TaskDelegated` envelope with short, readable defaults.
+public func delegated(
+  _ task: String,
+  to name: String,
+  since: String = "2026-10-19",
+  followUp: String? = nil,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 3
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "delegate-\(task)-\(name)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskDelegated(
+      TaskDelegated(taskID: TaskID(task), to: name, since: date(since), followUpDate: followUp.map(date)))
+  )
+}
+
+/// Builds a `TaskReclaimed` envelope with short, readable defaults.
+public func reclaimed(
+  _ task: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 4
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "reclaim-\(task)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskReclaimed(TaskReclaimed(taskID: TaskID(task)))
+  )
+}
+
+/// Builds a `TaskDropped` envelope with short, readable defaults.
+public func dropped(
+  _ task: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 3
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "drop-\(task)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskDropped(TaskDropped(taskID: TaskID(task)))
+  )
+}

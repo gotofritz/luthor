@@ -1,16 +1,19 @@
 import Foundation
 import LuthorDomain
 import LuthorStore
+import LuthorTestSupport
 import LuthorViewModels
 import Testing
 
-/// The Mac app's window as it is after a launch on the log at `url`.
+/// The Mac app's window as it is after a launch on the log at `url`, on a day that is `today` (by default
+/// a Monday).
 @MainActor
-func launchApp(on url: URL, view: ViewID = .default) -> LibraryViewModel {
+func launchApp(on url: URL, view: ViewID = .default, today: CalendarDate = date("2026-10-19")) -> LibraryViewModel {
   let library = LibraryViewModel(
     log: JSONLinesEventLog(fileURL: url),
     commands: Commands(deviceID: DeviceID("mac"), ids: UUIDGenerator()),
-    view: view
+    view: view,
+    today: { today }
   )
   library.reload()
   return library

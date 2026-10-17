@@ -58,13 +58,16 @@ struct ViewLaunchViewModelTests {
 
 /// Every list the window shows, as task or project IDs, so each can be checked for leaks.
 enum WindowList: String, CaseIterable, Sendable {
-  case inbox, projects, projectTasks, nextActions
+  case inbox, today, projects, projectTasks, nextActions
 
   @MainActor
   func ids(in library: LibraryViewModel) -> Set<String> {
     switch self {
     case .inbox:
       library.open(.inbox)
+      return Set(library.tasks.map(\.id.rawValue))
+    case .today:
+      library.show(.today)
       return Set(library.tasks.map(\.id.rawValue))
     case .projects:
       return Set(library.projects.map(\.id.rawValue))
