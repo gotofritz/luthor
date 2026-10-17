@@ -281,6 +281,7 @@ struct DecideActionViewModelTests {
   @Test("sending the selected task to someday")
   func sendingTheSelectedTaskToSomeday() {
     let (library, _) = makeLibrary(Self.planned)
+    library.show(.today)
     library.selection = TaskID("t1")
 
     library.sendSelectedToSomeday()

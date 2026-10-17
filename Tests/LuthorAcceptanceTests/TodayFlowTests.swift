@@ -202,7 +202,8 @@ struct DelegationFlowTests {
 
     let onFollowUpDay = launchApp(on: url, today: date("2026-10-21"))
     onFollowUpDay.show(.today)
-    #expect(onFollowUpDay.plan.candidates.map(\.task.title) == ["get quote"])
+    // "write report", still open, is a candidate on the new day too; "get quote" is back beside it.
+    #expect(onFollowUpDay.plan.candidates.map(\.task.title) == ["write report", "get quote"])
     #expect(onFollowUpDay.waiting.map(\.isFollowUpDue) == [true])
   }
 
