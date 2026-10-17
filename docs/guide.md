@@ -233,9 +233,6 @@ luthor done 9afc         # any unique prefix of a task ID in the view
 Set `LUTHOR_VIEW=Work` on the work Mac, and `luthor` never shows or touches a
 private task there.
 
-It shrinks to `luthor add` later, for launchers such as Alfred (see the
-roadmap).
-
 ## Where your data lives
 
 Everything is one append-only event log, `~/.luthor/events.jsonl` by default.

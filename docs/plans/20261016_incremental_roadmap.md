@@ -262,20 +262,11 @@ Usable: deadlines feed the plan without taking it over.
 
 Usable: contexts (`@home`, `@calls`, `@deep-work`).
 
-### 13. Capture without the app: iPhone (THROWAWAY) and Alfred
+### 13. ~~Capture without the app: iPhone and Alfred~~ (dropped)
 
-- An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
-- The Mac app imports new lines as `TaskCaptured` events and truncates the
-  file once imported (idempotent by line hash); lines use the quick-capture
-  syntax of slice 6
-- One inbox file per view (`inbox-<view>.txt`), one Shortcut per view
-- The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
-  stays, `list` and `done` go, and an Alfred workflow (keyword, then the
-  task title) calls it. Acceptance tests that relied on `luthor list` move
-  to the view models
-
-Usable: capture from the phone, lock screen and Siri included, months before
-an iOS app exists, and from Alfred on the Mac without switching to the app.
+Dropped 2026-10-17: the Shortcut inbox file and the Alfred workflow are not
+needed. The number stays so later slices keep theirs. The CLI stays as it is
+(see Decisions 2026-10-17, slice 13 dropped).
 
 ### 14. Weekly project review
 
@@ -358,8 +349,8 @@ Usable: the weekly review.
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
-   gains no project, defer or tag commands, and shrinks to `luthor add` for
-   Alfred in slice 13
+   gains no project, defer or tag commands. (It was to shrink to `luthor add`
+   for Alfred in slice 13; slice 13 is dropped, so it stays as it is)
 2. **Views are logical, in one log.** Work and private live in the same
    event log and sync together; isolation is enforced by the domain (every
    query names a view), not by separate files. Separate logs per view stay
@@ -565,3 +556,10 @@ Usable: the weekly review.
 2. **No priority is `nil` in the picked set.** `Set<Priority?>`, listed after
    One day, covers open tasks with no priority wherever they are filed; no
    new event or type
+
+## Decisions (2026-10-17, slice 13 dropped)
+
+1. **Slice 13 is dropped.** Phone capture through a Dropbox inbox file and
+   the Alfred workflow are not needed. Slice numbers are not renumbered
+2. **The CLI is left as it is.** It no longer shrinks to `luthor add`; it
+   gains nothing and may be removed later
