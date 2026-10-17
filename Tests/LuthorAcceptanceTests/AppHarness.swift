@@ -23,6 +23,14 @@ func launchApp(
     today: today)
 }
 
+/// The Mac app as it opens with `configuration`, the way `LuthorApp` builds it.
+@MainActor
+func launchApp(configuration: LuthorConfiguration, view: ViewID = .default) -> LibraryViewModel {
+  launchApp(
+    log: configuration.makeEventLog(), device: configuration.deviceID.rawValue, view: view,
+    today: date("2026-10-19"))
+}
+
 @MainActor
 private func launchApp(
   log: any EventLog, device: String, view: ViewID, today: CalendarDate

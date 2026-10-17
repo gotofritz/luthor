@@ -16,17 +16,35 @@ public struct LuthorConfiguration: Equatable, Sendable {
   public let deviceID: DeviceID
 
   /// `hostName` names the device in a shared folder when `LUTHOR_DEVICE_ID` does not: two devices must
-  /// never write the same file.
-  public init(environment: [String: String], home: URL, hostName: String = LuthorConfiguration.systemHostName()) {
+  /// never write the same file. `storage`, the place the user chose, applies unless the environment sets the
+  /// location itself.
+  public init(
+    environment: [String: String], home: URL, hostName: String = LuthorConfiguration.systemHostName(),
+    storage: LogStorage? = nil
+  ) {
+    var environment = environment
+    if let storage, !Self.environmentSetsLocation(environment) {
+      environment.merge(storage.settings) { _, chosen in chosen }
+    }
     if let path = environment["LUTHOR_LOG"], !path.isEmpty {
       logURL = URL(fileURLWithPath: path)
     } else {
-      logURL = home.appendingPathComponent(".luthor/events.jsonl")
+      logURL = Self.defaultLogURL(home: home)
     }
     let shared = environment["LUTHOR_SYNC_DIR"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
     syncDirectory = shared
     let named = environment["LUTHOR_DEVICE_ID"].flatMap { $0.isEmpty ? nil : $0 }
     deviceID = DeviceID(named ?? (shared == nil || hostName.isEmpty ? "local" : hostName))
+  }
+
+  /// `~/.luthor/events.jsonl`.
+  public static func defaultLogURL(home: URL) -> URL {
+    home.appendingPathComponent(".luthor/events.jsonl")
+  }
+
+  /// Whether `LUTHOR_LOG` or `LUTHOR_SYNC_DIR` is set, which then wins over the place the user chose.
+  public static func environmentSetsLocation(_ environment: [String: String]) -> Bool {
+    ["LUTHOR_LOG", "LUTHOR_SYNC_DIR"].contains { !(environment[$0] ?? "").isEmpty }
   }
 
   /// The file, or the shared folder, the log lives in.

@@ -232,8 +232,9 @@ Usable: the ALPEN loop is closed, and estimates improve with feedback.
 
 ### 10. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate) ✅
 
-The log lives in a folder the Dropbox desktop app syncs (`LUTHOR_SYNC_DIR`;
-for the app, `defaults write com.gotofritz.luthor LUTHOR_SYNC_DIR <folder>`).
+The log lives in a folder the Dropbox desktop app syncs, chosen in a
+first-start modal and later in Settings → This Mac (`LUTHOR_SYNC_DIR` does the
+same from a shell).
 `DeviceFilesEventLog` appends only to `events-<device>.jsonl`, so two Macs
 never write the same file and Dropbox never makes a conflict copy, and reads
 the merge of every `events-*.jsonl`; replay already orders by `(lamport,
@@ -630,14 +631,17 @@ Usable: the weekly review.
 
 ## Decisions (2026-10-17, slice 10)
 
-1. **Sync is an environment setting, not a new mode.** `LUTHOR_SYNC_DIR`
-   switches the log from one file to a folder of device files; unset, nothing
-   changes. The old `~/.luthor/events.jsonl` is not migrated by code: it is
-   copied into the folder once, under one Mac's device name (README)
-2. **A Finder-launched app reads the same keys from `UserDefaults`.** It gets
-   no shell variables, so `LUTHOR_LOG`, `LUTHOR_SYNC_DIR` and
-   `LUTHOR_DEVICE_ID` fall back to `defaults write com.gotofritz.luthor …`. A
-   folder picker in Settings is a later nicety
-3. **Distribution stays ad-hoc signed.** A release zip is fetched with
+1. **Where the log lives is a per-device choice, not an event.** The log has
+   to be found before it can be read, so the choice sits in `UserDefaults`
+   next to the last view shown. A first-start modal asks (radio buttons
+   Dropbox, defaulting to `~/Dropbox/backups/Luthor`, and Home Folder,
+   `~/.luthor/events.jsonl`); Settings → This Mac changes it, live
+2. **Moving to Dropbox copies, never moves.** The Home Folder log is copied in
+   as this Mac's device file the first time, if that file does not exist; the
+   original stays. Moving back copies nothing
+3. **The environment still wins.** `LUTHOR_LOG` or `LUTHOR_SYNC_DIR` decide
+   the place, with no modal and a read-only note in Settings. Without
+   `LUTHOR_DEVICE_ID` a shared folder names the device after the host name
+4. **Distribution stays ad-hoc signed.** A release zip is fetched with
    `gh release download`, which sets no quarantine flag, so Gatekeeper does
    not block it; notarising (Developer ID, $99 a year) is not set up

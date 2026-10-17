@@ -4,42 +4,90 @@ import LuthorStore
 import LuthorViewModels
 import SwiftUI
 
+/// The log of a window that has not yet been told where the tasks live: the first-start modal covers it.
+private struct NoEventLog: EventLog {
+  func readAll() throws(EventLogError) -> [EventEnvelope] { [] }
+  func append(_ events: [EventEnvelope]) throws(EventLogError) {
+    throw .ioFailure("no place for the log has been chosen")
+  }
+}
+
 @main
 struct LuthorApp: App {
   /// The `UserDefaults` key of the view shown last; per device, so it stays out of the log.
   private static let lastViewKey = "lastViewID"
+  /// The `UserDefaults` keys of the place chosen for the log, per device, so they stay out of the log too.
+  private static let storageKindKey = "logStorageKind"
+  private static let storageFolderKey = "logStorageDropboxFolder"
 
-  private let configuration: LuthorConfiguration
+  private let home = FileManager.default.homeDirectoryForCurrentUser
+  private let environment: [String: String]
+  @State private var storageController: StorageController
+  @State private var configuration: LuthorConfiguration
   @State private var library: LibraryViewModel
 
   init() {
-    let configuration = LuthorConfiguration(
-      environment: Self.environment(),
-      home: FileManager.default.homeDirectoryForCurrentUser
-    )
-    let library = LibraryViewModel(
-      log: configuration.makeEventLog(),
-      commands: Commands(deviceID: configuration.deviceID, ids: UUIDGenerator()),
-      view: UserDefaults.standard.string(forKey: Self.lastViewKey).map(ViewID.init) ?? .default
-    )
-    library.reload()
-    self.configuration = configuration
-    _library = State(initialValue: library)
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    let environment = Self.environment()
+    let saved = LogStorage(
+      kindName: UserDefaults.standard.string(forKey: Self.storageKindKey),
+      dropboxFolderPath: UserDefaults.standard.string(forKey: Self.storageFolderKey), home: home)
+    // The device ID is the same wherever the log lives; Dropbox needs it to name this Mac's file.
+    let deviceID = LuthorConfiguration(
+      environment: environment, home: home,
+      storage: LogStorage(kind: .dropbox, dropboxFolder: LogStorage.defaultDropboxFolder(home: home))
+    ).deviceID
+    let controller = StorageController(
+      saved: saved, home: home, deviceID: deviceID,
+      lockedByEnvironment: LuthorConfiguration.environmentSetsLocation(environment)
+    ) { choice in
+      UserDefaults.standard.set(choice.kindName, forKey: Self.storageKindKey)
+      UserDefaults.standard.set(choice.dropboxFolder.path, forKey: Self.storageFolderKey)
+    }
+    let configuration = LuthorConfiguration(environment: environment, home: home, storage: saved)
+    self.environment = environment
+    _storageController = State(initialValue: controller)
+    _configuration = State(initialValue: configuration)
+    _library = State(
+      initialValue: Self.makeLibrary(
+        log: controller.needsSetup ? NoEventLog() : configuration.makeEventLog(),
+        deviceID: configuration.deviceID,
+        view: UserDefaults.standard.string(forKey: Self.lastViewKey).map(ViewID.init) ?? .default))
   }
 
-  /// The process environment, with the settings a Mac app started from the Finder cannot get from a shell
-  /// read from the app's defaults instead: `defaults write com.gotofritz.luthor LUTHOR_SYNC_DIR <folder>`.
+  /// The process environment, with the device name a Mac app started from the Finder cannot get from a
+  /// shell read from the app's defaults instead: `defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID desk`.
   private static func environment() -> [String: String] {
     var environment = ProcessInfo.processInfo.environment
-    for key in ["LUTHOR_LOG", "LUTHOR_SYNC_DIR", "LUTHOR_DEVICE_ID"] where environment[key] == nil {
-      environment[key] = UserDefaults.standard.string(forKey: key)
+    if environment["LUTHOR_DEVICE_ID"] == nil {
+      environment["LUTHOR_DEVICE_ID"] = UserDefaults.standard.string(forKey: "LUTHOR_DEVICE_ID")
     }
     return environment
+  }
+
+  private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {
+    let library = LibraryViewModel(
+      log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view)
+    library.reload()
+    return library
+  }
+
+  /// Opens the log in the place now chosen, staying in the view shown.
+  private func openChosenPlace() {
+    let configuration = LuthorConfiguration(environment: environment, home: home, storage: storageController.storage)
+    self.configuration = configuration
+    library = Self.makeLibrary(
+      log: configuration.makeEventLog(), deviceID: configuration.deviceID, view: library.currentView)
   }
 
   var body: some Scene {
     Window("Luthor", id: "library") {
       LibraryView(library: library, configuration: configuration)
+        .environment(storageController)
+        .sheet(isPresented: .constant(storageController.needsSetup)) {
+          StorageSetupSheet(controller: storageController)
+        }
+        .onChange(of: storageController.storage) { openChosenPlace() }
         .onChange(of: library.currentView, initial: true) { _, view in
           UserDefaults.standard.set(view.rawValue, forKey: Self.lastViewKey)
         }

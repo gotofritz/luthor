@@ -54,7 +54,7 @@ struct LibraryView: View {
     .onChange(of: library.tasks) { captureFocused = true }
     .onChange(of: library.sidebarSelection) { captureFocused = true }
     .onChange(of: library.section) { captureFocused = true }
-    .task { await watchLog() }
+    .task(id: configuration.location) { await watchLog() }
   }
 
   /// The search box, which waits for its slice, the toggle for completed items and the view switcher.

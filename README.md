@@ -87,46 +87,43 @@ view currently shown): Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
 weekday) and a default view;
 Local overrides the buffer and capacity for the current view only, and
-follows the global value until switched on.
+follows the global value until switched on. A third family, This Mac, chooses
+where the tasks live (see below).
 
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.
 
-## Sync between Macs
+## Where the tasks live, and sync between Macs
 
-The same tasks on every Mac, through a folder the Dropbox desktop app syncs.
-Luthor has no sync code of its own: each Mac appends only to its own file in
-the folder, `events-<device>.jsonl`, so two Macs never write the same file and
-Dropbox never makes a conflict copy. Every Mac reads all the files, merges
-the events and replays them in one order, so all Macs end with the same state.
+The first time you start the app, a window asks where to keep the tasks:
 
-Do this once on each Mac, with a different device name on each:
+- **Dropbox**, the default: a folder the Dropbox desktop app syncs
+  (`~/Dropbox/backups/Luthor`; type another folder if yours is elsewhere).
+  The folders are created if they are not there. Use it on every Mac and all
+  of them show the same tasks.
+- **Home Folder**: `~/.luthor/events.jsonl`, on this Mac only.
 
-```bash
-mkdir -p ~/Dropbox/Luthor
-# the app, which a Finder launch gives no shell variables:
-defaults write com.gotofritz.luthor LUTHOR_SYNC_DIR "$HOME/Dropbox/Luthor"
-defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID desk    # laptop on the other Mac
-# the CLI: put the same two in your shell profile
-export LUTHOR_SYNC_DIR=~/Dropbox/Luthor
-export LUTHOR_DEVICE_ID=desk
-```
+Change the choice later in Settings → This Mac. Moving to Dropbox copies the
+tasks of the Home Folder in the first time, so none are lost; moving back
+copies nothing, and the Home Folder keeps the tasks it had.
 
-Without `LUTHOR_DEVICE_ID` the device is named after the Mac's host name,
-which is also fine as long as it differs between Macs.
+How the sync works: Luthor has no sync code of its own. Each Mac appends only
+to its own file in the folder, `events-<device>.jsonl`, so two Macs never
+write the same file and Dropbox never makes a conflict copy. Every Mac reads
+all the files, merges the events and replays them in one order, so all Macs
+end with the same state. The app picks up what Dropbox delivers within a
+second or two. Wait for Dropbox to finish syncing before you quit a Mac, or
+the other Mac sees your latest changes only when that Mac next syncs; nothing
+is lost either way.
 
-To bring the tasks you already have, on one Mac only, copy the old log into
-the folder under that Mac's device name, then relaunch the app:
+A Mac is named in the folder after its host name, so each Mac must have a
+different one. To name it yourself, `defaults write com.gotofritz.luthor
+LUTHOR_DEVICE_ID desk` and restart the app.
 
-```bash
-cp ~/.luthor/events.jsonl ~/Dropbox/Luthor/events-desk.jsonl
-```
-
-The app picks up what Dropbox delivers within a second or two. Wait for
-Dropbox to finish syncing before you quit a Mac, or the other Mac sees your
-latest changes only when that Mac next syncs; nothing is lost either way.
-With `LUTHOR_SYNC_DIR` set, `LUTHOR_LOG` and `~/.luthor/events.jsonl` are not
-used.
+Environment variables override the choice, and are for running the app from a
+shell or Xcode: `LUTHOR_SYNC_DIR` (a shared folder), `LUTHOR_LOG` (a single
+file) and `LUTHOR_DEVICE_ID`. While one of the first two is set, Settings
+shows that it decides.
 
 ## Install and releases
 
@@ -149,8 +146,7 @@ publishes that version instead. `make dist` builds the same zip locally into
 
 ### On another Mac, without compiling
 
-Every release has `Luthor-<version>.zip` (the app) and `luthor-cli-<version>.zip`
-attached. Fetch the latest with the GitHub CLI (`brew install gh`, then
+Every release has `Luthor-<version>.zip` attached. Fetch the latest with the GitHub CLI (`brew install gh`, then
 `gh auth login` once; the repo is private, so a browser would need a login
 too):
 
