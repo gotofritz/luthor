@@ -56,10 +56,10 @@ Completed tasks and projects disappear, but the Completed toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
 its column starts with a card, with its children below. A card is read-only:
-it shows the title, the day it was created and the notes (web addresses are
-clickable). The pencil next to the title opens it for editing (title, priority,
-estimate and notes for a task; title, kind and notes for a project), and OK
-keeps the changes or Cancel drops them.
+it shows the day it was created and the notes (web addresses are clickable),
+not the title, which is in the column before. The pencil opens it for editing
+(title, priority, estimate and notes for a task; title, kind and notes for a
+project), and OK keeps the changes or Cancel drops them.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
 minutes less the protected buffer, what is planned and what is left, red and

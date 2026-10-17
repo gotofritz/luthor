@@ -144,7 +144,7 @@ and plain-text notes (`TaskNoted`, `ProjectNoted`, links made clickable by
 `NoteLinks`), and a project's card switches it between sequential and
 parallel (`ProjectKindChanged`, also in its context menu). All events are
 additive, so old logs replay unchanged. From issue #24 the cards are
-read-only (title, creation day, notes) until the pencil opens them for
+read-only (creation day and notes) until the pencil opens them for
 editing, closed by OK or Cancel; see the Decisions at the end.
 
 ### 6. Priority and estimates (ALPEN: A, L) ✅
@@ -704,7 +704,7 @@ Usable: the weekly review.
 ## Decisions (2026-10-17, read-only cards, issue #24)
 
 1. **A card is read-only until the pencil.** The view model holds
-   `editingCard`; the card shows the title, the creation day and the notes,
+   `editingCard`; the card shows the creation day and the notes,
    and the pencil (no text) turns it into the editor. Showing another task,
    project, place or view leaves edit mode. A completed item has no pencil
 2. **Nothing is written until OK.** The editor keeps its own draft of the
@@ -718,6 +718,7 @@ Usable: the weekly review.
    ISO text in the log), set from the view model's clock. Optional and
    absent in old logs, so they replay unchanged and their cards show no day.
    No wall-clock time: the domain stays free of `Date()`
-4. **The read-only card shows only title, day and notes**, as the issue
-   asks. Priority, estimate, project, kind and the estimate history are in
-   the editor
+4. **The read-only card shows only the day and the notes**, as the issue
+   asks. The title is left out because the column before the card already
+   shows it. Priority, estimate, project, kind and the estimate history are
+   in the editor, with the title field

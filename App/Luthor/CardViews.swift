@@ -3,10 +3,10 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The card of the task selected, in a column of its own after the list the task is in. It shows the title,
-/// the day the task was created and its notes; the pencil turns it into the editor of the title, priority,
-/// estimate and notes, closed by OK or Cancel. A completed task shows its card too, with no pencil until it
-/// is reopened.
+/// The card of the task selected, in a column of its own after the list the task is in. It shows the day the
+/// task was created and its notes, and not the title, which the list before it already shows; the pencil
+/// turns it into the editor of the title, priority, estimate and notes, closed by OK or Cancel. A completed
+/// task shows its card too, with no pencil until it is reopened.
 struct TaskCardColumn: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
@@ -32,11 +32,10 @@ struct TaskCardColumn: View {
 
   private var readOnlyCard: some View {
     VStack(alignment: .leading, spacing: 12) {
-      CardHeader(title: task.title, canEdit: !isCompleted) { library.editCard(.task(task.id)) }
+      CardToolbar(day: task.createdOn, canEdit: !isCompleted) { library.editCard(.task(task.id)) }
       if isCompleted {
         completedLine
       }
-      CreatedLine(day: task.createdOn)
       NotesView(notes: task.notes)
     }
   }
@@ -118,8 +117,9 @@ private struct TaskCardEditor: View {
 }
 
 /// The card of the project whose column it heads, above its tasks and sub-projects. Like a task card it
-/// shows the title, the day the project was created and its notes until the pencil opens the editor of the
-/// title, kind and notes. A completed project shows its card too, with no pencil until it is reopened.
+/// shows the day the project was created and its notes, not the title the column before it shows, until the
+/// pencil opens the editor of the title, kind and notes. A completed project shows its card too, with no
+/// pencil until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
   let project: Project
@@ -142,7 +142,7 @@ struct ProjectCard: View {
 
   private var readOnlyCard: some View {
     VStack(alignment: .leading, spacing: 10) {
-      CardHeader(title: project.title, canEdit: !isCompleted) { library.editCard(.project(project.id)) }
+      CardToolbar(day: project.createdOn, canEdit: !isCompleted) { library.editCard(.project(project.id)) }
       if isCompleted {
         HStack {
           Label("Completed", systemImage: "checkmark.circle.fill")
@@ -153,7 +153,6 @@ struct ProjectCard: View {
           }
         }
       }
-      CreatedLine(day: project.createdOn)
       NotesView(notes: project.notes)
     }
   }
@@ -201,19 +200,17 @@ private struct ProjectCardEditor: View {
   }
 }
 
-/// The title of a card, with the pencil that opens the editor beside it. No text on the button, as the
-/// pencil says it; a completed card has none.
-private struct CardHeader: View {
-  let title: String
+/// The top line of a read-only card: the day it was created, with the pencil that opens the editor beside
+/// it. No text on the button, as the pencil says it; a completed card has none.
+private struct CardToolbar: View {
+  let day: CalendarDate?
   let canEdit: Bool
   let edit: () -> Void
 
   var body: some View {
     HStack(alignment: .firstTextBaseline) {
-      Text(title)
-        .font(.title3)
-        .textSelection(.enabled)
-        .frame(maxWidth: .infinity, alignment: .leading)
+      CreatedLine(day: day)
+      Spacer()
       if canEdit {
         Button(action: edit) {
           Image(systemName: "pencil")

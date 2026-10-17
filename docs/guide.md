@@ -108,13 +108,14 @@ Click a task and a card opens in the column after the list. Click a project
 and the column of its contents starts with the project's card, with its
 sub-projects and tasks listed below it.
 
-A card is read-only. It shows the title, the day the task or project was
-created ("Created 2026-10-19", left out for what was created before the app
-kept the day) and the notes ("No notes" if there are none). Web addresses in
-notes (`https://…` or `www.…`) are clickable links.
+A card is read-only. It shows the day the task or project was created
+("Created 2026-10-19", left out for what was created before the app kept the
+day) and the notes ("No notes" if there are none). It does not repeat the
+title, which is in the column before it. Web addresses in notes
+(`https://…` or `www.…`) are clickable links.
 
-The pencil button next to the title opens the card for editing; nothing is
-written until OK:
+The pencil button at the top right of the card opens it for editing; nothing
+is written until OK:
 
 - A task's card then has the title field, the priority and estimate pickers,
   its project, the estimate history if there is one, and the notes in a text
