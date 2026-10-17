@@ -29,38 +29,19 @@ Runs alongside the slices. Code quality comes first; building and shipping
 the app comes once there is an app to ship. Every check CI runs can also be
 run locally with the same command, so CI never surprises me.
 
-### CI-1. Code quality, local and CI (slice 1)
+### CI-1. Code quality, local and CI (slice 1) ✅
 
-- `Makefile` as the single entry point, used both locally and by CI:
-  - `make format`: apply `swift-format`
-  - `make lint`: `swift-format lint --strict` and SwiftLint
-  - `make test`: `swift test`
-  - `make check-ci`: lint + format check + build + tests, exactly what CI runs
-- Tool versions pinned in the repo (SwiftLint and swift-format config files,
-  versions in the `Makefile`), so local and CI results match
-- Git hooks for local development, plain shell scripts in `.githooks/`
-  (no hook framework to install); `make hooks` points
-  `core.hooksPath` at them:
-  - `pre-commit`: format check and lint on staged Swift files; fast enough
-    not to slow commits down
-  - `commit-msg`: rejects a message that is not a Conventional Commit
-- One script, `scripts/check-conventional-commit.sh`, decides what a valid
-  Conventional Commit header is (type list, optional scope, `!`, and a
-  maximum length passed in: 72 for commits, 50 for PR titles). The
-  `commit-msg` hook and CI both call it, so they never disagree
-- GitHub Actions workflow on every PR and push to `main` that runs
-  `make check-ci` on a macOS runner
-- PR title check: a workflow on `pull_request` (opened, edited,
-  synchronize) passes the title to the same script through an environment
-  variable (never interpolated into the shell) and fails if it is not a
-  Conventional Commit of at most 50 characters
-- Branch protection on `main`: both checks must pass to merge (Terraform in
-  `infra/`, see README)
+`make check-ci` runs format check, SwiftLint, build and tests, locally and on
+a macOS runner for every PR and push to `main`; tool versions pinned in the
+repo. Git hooks (`make hooks`) check format, lint and Conventional Commit
+messages; one script decides what a Conventional Commit is for hooks and the
+PR title check. Branch protection on `main` via Terraform in `infra/`. CI also
+fails under 90% line coverage of `Sources/` (`make coverage`).
 
-### CI-2. Build the Mac app (slice 2)
+### CI-2. Build the Mac app (slice 2) ✅
 
-- `make app`: `xcodebuild` the Mac app; added to `make check-ci`
-- View model tests run in CI alongside the package tests
+`make app` builds the Mac app in `make check-ci`; view model tests run with the
+package tests.
 
 ### CD-1. Ship the Mac app and CLI (slice 2 or 3)
 
@@ -85,27 +66,16 @@ run locally with the same command, so CI never surprises me.
 
 ## Slices
 
-### 1. Walking skeleton: CLI capture
+### 1. Walking skeleton: CLI capture ✅
 
-- Swift package: `LuthorDomain`, `LuthorStore`, `luthor` CLI target
-- Events: `TaskCaptured`, `TaskCompleted`
-- Store: one JSON-Lines file, append-only, path from an env var
-- CLI: `luthor add "buy milk"`, `luthor list`, `luthor done <id-prefix>`
-- Code quality gates, local and CI (stage CI-1 below)
+`luthor add`, `list` and `done <id-prefix>` over a JSON-Lines log
+(`TaskCaptured`, `TaskCompleted`), path from an env var. Proves domain, log and
+replay end to end with no UI.
 
-Usable: capture and tick off tasks from the terminal.
-Why a CLI first: it proves the domain, log and replay end to end with no UI
-work, and stays useful later for scripting.
+### 2. Mac app: Inbox ✅
 
-### 2. Mac app: Inbox
-
-- SwiftUI app reading and writing the same log file
-- Inbox list, an always-focused add field (Return to capture), complete with
-  a click or a key
-- Replay the whole log into memory on launch; watch the file for changes so
-  the CLI and app stay in step
-
-Usable: a real window for the inbox.
+SwiftUI inbox on the same log: always-focused add field, complete by click or
+key, full replay on launch, file watching keeps CLI and app in step.
 
 ### 3. Projects
 
