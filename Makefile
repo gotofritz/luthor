@@ -11,8 +11,10 @@ APP_DERIVED_DATA := .build/xcode
 COVERAGE_MIN := 90
 COVERAGE_REPORT := .build/coverage.txt
 APP_BUILD := $(APP_DERIVED_DATA)/Build/Products/Release/Luthor.app
-# Universal (arm64 and x86_64) release build of the CLI; `swift build` puts multi-arch output here.
-CLI_BUILD := .build/apple/Products/Release/luthor
+# Universal (arm64 and x86_64) release build of the CLI. Where SwiftPM puts multi-arch output depends on
+# the toolchain, so ask it; `=` defers the call until a recipe needs the path.
+CLI_ARCHS := --arch arm64 --arch x86_64
+CLI_BUILD = $(shell swift build -c release $(CLI_ARCHS) --show-bin-path)/luthor
 # Where `make install` puts the CLI and the app.
 PREFIX ?= $(HOME)/.local
 APP_INSTALL_DIR ?= $(HOME)/Applications
@@ -77,7 +79,7 @@ app:
 
 # Builds the luthor CLI for release, universal and ad-hoc signed, into $(CLI_BUILD).
 cli:
-	swift build -c release --arch arm64 --arch x86_64 --product luthor
+	swift build -c release $(CLI_ARCHS) --product luthor
 	codesign --force --sign - $(CLI_BUILD)
 
 # Builds both and installs them: the CLI into $(PREFIX)/bin, the app into $(APP_INSTALL_DIR).
