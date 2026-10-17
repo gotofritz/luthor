@@ -253,26 +253,22 @@ name. Acceptance flows simulate two Macs on one folder. The optional
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 11. Due dates and the calendar
+### 11. Due dates and the calendar ✅
 
-- `TaskDueSet(task, date?, hard)` sets a due date, a hard deadline or a
-  target date, and clears it when the date is missing. A due date never
-  schedules a task by itself
-- Due and overdue hard deadlines surface in Today's candidates, ahead of
-  their priority peers
-- Due date field on the task card, next to priority and estimate
-- Calendar, a new place on the rail (new case in `NavigationSection`, calendar
-  icon). Its first Miller column is a scrolling list of days, one row per day
-  across the whole column, starting at today with earlier days reachable by
-  scrolling up. Sundays have a different background, today is marked, and a
-  mark on a row shows the day has tasks: one for tasks planned for it
-  (`TaskScheduled`), another for tasks due on it, so a deadline looks
-  different from a plan. Picking a day lists all its tasks in the next
-  column, planned and due; picking a task opens its card in the column after
-  that, as everywhere else. Per view, like Today. Read-only: planning,
-  rescheduling and deciding stay in Today and Review
-- The day-to-tasks lookup is a pure function in `LibraryState`, taking the
-  range of days and today as parameters like `plan(for:on:today:)`
+`TaskDueSet(task, date?, isHard)` gives an open task a due date, a hard
+deadline or a target date, and clears it when the date is missing; it is set
+on the task card and never plans the task by itself. A hard deadline that is
+due on the day Today shows, or overdue, ranks after priority and ahead of the
+priority's peers, in the plan and the candidates, and the entry says so; an
+unclarified task with such a deadline is a candidate too. A target date only
+shows. Calendar is a new place on the rail (⇧⌘C): its first Miller column is
+a scrolling list of days, one row across the column each, from 60 days back
+to a year ahead, Sundays tinted, with one mark for tasks planned for a day
+and another for tasks due on it; picking a day lists its tasks (planned ones
+in plan order, then those only due) in the next column, and a task opens its
+card in the one after. Per view and read-only: planning stays in Today and
+Review. Which days have tasks, and which tasks a day has, are pure functions
+of the state (`calendar(for:from:days:)`, `calendarEntries(for:on:today:)`).
 
 Dropped from this slice (see Decisions, slice 11): defer dates and the
 availability rule, Upcoming, Forecast.
@@ -686,6 +682,24 @@ Usable: the weekly review.
 5. **Two marks, planned and due.** A day with tasks scheduled for it and a day
    with a task due on it look different. Both read from existing and new
    events only; the calendar stores nothing of its own
+6. **A hard deadline outranks only within its priority.** An A task without a
+   deadline still comes before a B task whose deadline is due: priority is
+   importance and stays the first key. A deadline counts from the day the
+   plan shows, so looking at tomorrow's plan ranks what falls due by then.
+   A manual order still wins over all of it
+7. **A due deadline reaches the candidates unclarified.** A due date does not
+   clarify a task (slice 6, decision 1), but a hard deadline that is due
+   makes the task a candidate even in the Inbox, so it cannot be missed.
+   Someday tasks stay out, whatever their deadline
+8. **The calendar lists a fixed window.** 60 days before today to 365 after,
+   re-read on every refresh, so it follows the clock without a setting.
+   Earlier days than that are reached through Today and Review
+9. **Due dates survive completion.** Completing a task keeps its due date, so
+   reopening it brings the deadline back; the calendar lists open tasks only
+10. **The read-only card shows the due date too.** It was the day created and
+    the notes only (issue #24); a deadline is something to see without
+    opening the editor, so it joins them, in red once the day has passed.
+    The editor has a Due date switch, a day and hard or target
 
 ## Decisions (2026-10-17, device IDs)
 

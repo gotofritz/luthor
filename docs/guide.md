@@ -29,6 +29,10 @@ does updates this guide in the same PR (see the docs check in
 - **Plan**: the tasks you decided to do on one day in one view, in order. The
   work day and the evening are planned apart. A task keeps its identity when
   moved from day to day: rescheduling never duplicates it
+- **Due date**: when a task is due, set on its card. A *hard deadline* puts
+  the task ahead of the other tasks of its priority in Today's candidates
+  once it is due; a *target date* is only shown. A due date never plans a
+  task for a day by itself
 - **Leftover**: an open task planned for a day before today. Nothing moves it
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
@@ -51,6 +55,7 @@ It does not expand. Click a place to look at it:
 
 - **Inbox**: your inbox tasks, as a list
 - **Today**: the plan of a day, with its capacity (see Today)
+- **Calendar**: the days, and the tasks of the one you pick (see Calendar)
 - **Review**: the day looked back on (see Review)
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
@@ -110,7 +115,9 @@ sub-projects and tasks listed below it.
 
 A card is read-only. It shows the day the task or project was created
 ("Created 2026-10-19", left out for what was created before the app kept the
-day) and the notes ("No notes" if there are none). It does not repeat the
+day), for a task its due date ("Deadline 2026-10-23" or "Target date
+2026-10-23", in red once the day has passed) and the notes ("No notes" if
+there are none). It does not repeat the
 title, which is in the column before it. Web addresses in notes
 (`https://…` or `www.…`) are clickable links.
 
@@ -118,8 +125,9 @@ The pencil button at the top right of the card opens it for editing; nothing
 is written until OK:
 
 - A task's card then has the title field, the priority and estimate pickers,
-  its project, the estimate history if there is one, and the notes in a text
-  field. A project's card has the title field, the kind (parallel or
+  the Due date switch (a day to pick, and whether it is a hard deadline or a
+  target date), its project, the estimate history if there is one, and the
+  notes in a text field. A project's card has the title field, the kind (parallel or
   sequential), the estimate history and the notes
 - A sequential project dims every child but its first open one, so the next
   actions change at once. The kind can also be switched from Kind in the
@@ -148,16 +156,19 @@ the task is still planned. To change one day's capacity, set it for that day
 (the weekday capacity from Settings applies otherwise).
 
 **Pulling tasks in.** Candidates are the open tasks of the view that are
-clarified (they have a priority, an estimate or a project), not someday, not
+clarified (they have a priority, an estimate or a project) or whose hard
+deadline is due, so a deadline is not missed in the Inbox; not someday, not
 held back by a sequential project, and not delegated until their follow-up
 day. A task planned for a later day is a candidate too, so you can pull it
 forward. Select one and press ⌘T, or use Add to Plan in its context menu.
 Remove from Plan (⌥⌘T) returns it to the candidates.
 
 **Order.** The plan is in a suggested order unless you set your own: A before
-B before C, then the order of the tasks in their projects, then the order they
-were captured. Each task says why it sits where it does ("A priority, in
-project Move house"). Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
+B before C, then hard deadlines that are due on the day shown (the earliest
+first, overdue ones included), then the order of the tasks in their projects,
+then the order they were captured. Each task says why it sits where it does
+("A priority, in project Move house, deadline 2026-10-19"). A target date, or a
+hard deadline still ahead, changes nothing. Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
 menu): from then on the order is yours, tasks you add later follow it, and it
 survives a relaunch.
 
@@ -184,6 +195,23 @@ next few days.
 first, with who and since when. On the follow-up day the task is a candidate
 again and the entry says to follow up. Reclaim (context menu) takes it back
 at any time; planning a delegated task also takes it back.
+
+## Calendar
+
+The Calendar shows days, and what is on them, for the current view. Its first
+column is a list of days, one row across the column each, from 60 days back
+to a year ahead; it opens scrolled to today, which is in bold. Sundays have a
+tinted row. A filled circle with a number on a row means that many tasks are
+planned for the day; an orange diamond with a number means that many are due
+on it (hard deadline or target date). A day with neither has no mark.
+Completed and dropped tasks leave their days.
+
+Click a day and the next column lists its tasks: the ones planned for it, in
+the order of its plan, then the ones that are only due on it. Each says why
+it is there, "Planned", "Deadline" or "Target date". Click a task and its card
+opens in the column after, as everywhere else. The calendar only shows:
+planning, rescheduling and deciding on tasks are done in Today and Review. ⇧⌘C
+(Plan menu) opens it.
 
 ## Review
 

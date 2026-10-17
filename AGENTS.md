@@ -101,7 +101,7 @@ Sources/
                              TaskCaptured and ProjectCreated carry the optional day created (`createdOn`);
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
-                             TaskDelegated/Reclaimed, TaskDropped
+                             TaskDelegated/Reclaimed, TaskDropped, TaskDueSet
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
@@ -109,14 +109,19 @@ Sources/
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed task or project
+    Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
                              only via view(id); holds the raw global/per-view setting values, the
-                             day each task is scheduled for, delegations, plan orders and day capacities
-    LibraryState+Completion.swift  keeping completed tasks and projects, and reopening them
+                             day each task is scheduled for, due dates, delegations, plan orders and
+                             day capacities
+    LibraryState+Completion.swift  Completed<Item>; keeping completed tasks and projects, and reopening them
+    LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:)
+    LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
+                             counts per day) and calendarEntries(for:on:today:) → CalendarEntry (a day's tasks)
     LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
@@ -125,8 +130,8 @@ Sources/
                              unclarified tasks, project tree, recursive next actions excluding
                              someday; tasks by priority
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:) →
-                             DayPlan (ordered entries with reasons, candidates, DayCapacity),
-                             waitingFor(in:today:)
+                             DayPlan (ordered entries with reasons, candidates, DayCapacity; due hard
+                             deadlines rank after priority), waitingFor(in:today:)
     Settings.swift           SettingKey, Weekday, Settings (typed planning numbers); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
@@ -152,7 +157,8 @@ Sources/
                              (`editingCard`), with edit, cancel and save in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
-                             delegation actions in LibraryViewModel+Today.swift, logging time and
+                             delegation actions in LibraryViewModel+Today.swift, the calendar's days,
+                             the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
                              reviewing a day in LibraryViewModel+Review.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
@@ -167,6 +173,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan,
                              capacity meter, leftovers, candidates, Waiting for, delegate dialog;
+                             CalendarView: the list of days and the tasks of the one picked;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              StorageSetupView: the first-start modal and the This Mac settings)
 Tests/
