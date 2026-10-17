@@ -1,18 +1,27 @@
 name: Release
 
-# A version tag (v0.x.y) builds the Mac app and attaches it to a GitHub Release. On a PR
-# that changes the release build, the same build runs without publishing, so a broken release shows up
-# before the tag.
+# A push to main that carries a release (a feat, a fix or a perf commit, or a breaking change since the
+# last tag) works out the next version from the Conventional Commits, builds the Mac app and publishes it
+# in a GitHub Release, which also creates the tag. Pushing a version tag by hand (v0.x.y) publishes that
+# version instead. On a PR that changes the release build, the same build runs without publishing, so a
+# broken release shows up before it matters.
 on:
   push:
+    branches: [main]
     tags: ['v*']
   pull_request:
     paths:
       - Makefile
       - .github/workflows/release.yml
+      - scripts/next-version.sh
 
 permissions:
   contents: write
+
+# One release at a time, so two merges in a row cannot both pick the same version.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -31,15 +40,40 @@ jobs:
         run: |
           swift --version
           xcodebuild -version
+      - name: Work out the version
+        id: version
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*) next="$GITHUB_REF_NAME" ;;
+            refs/heads/main)
+              latest="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+              next="$(git log --format=%s ${latest:+"$latest..HEAD"} | scripts/next-version.sh "$latest")"
+              ;;
+            *) next="" ;; # a PR: build, do not publish
+          esac
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+          echo "Next version: ${next:-none}"
       - name: Build
-        run: make dist
+        if: github.event_name == 'pull_request' || steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: make dist ${VERSION:+VERSION=$VERSION}
       - name: Keep the zips
+        if: github.event_name == 'pull_request' || steps.version.outputs.version != ''
         uses: actions/upload-artifact@v4
         with:
           name: luthor-dist
           path: .build/dist/*.zip
-      - name: Publish GitHub Release
+      - name: Publish GitHub Release for a tag
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" .build/dist/*.zip --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "$VERSION" .build/dist/*.zip --title "$VERSION" --generate-notes --verify-tag
+      - name: Publish GitHub Release for main
+        if: github.ref == 'refs/heads/main' && steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        # Creates the tag at this commit; a tag made with the workflow token does not start another run.
+        run: gh release create "$VERSION" .build/dist/*.zip --title "$VERSION" --generate-notes --target "$GITHUB_SHA"

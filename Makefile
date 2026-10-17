@@ -51,6 +51,7 @@ test:
 	swift test $(SWIFT_TEST_FLAGS)
 	scripts/test-check-conventional-commit.sh
 	scripts/test-check-coverage.sh
+	scripts/test-next-version.sh
 
 # Runs the tests with coverage on and fails below COVERAGE_MIN percent line coverage of Sources/.
 coverage:

@@ -161,9 +161,10 @@ Tests/
   Luthor<Module>Tests/       unit tests, one target per module
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
-scripts/                     commit-message and coverage checks, with their shell tests
+scripts/                     commit-message and coverage checks, and next-version.sh (release tag
+                             from Conventional Commits), with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
-.github/workflows/           CI (make check-ci), PR title check, release on v* tags
+.github/workflows/           CI (make check-ci), PR title check, release (on main pushes, and v* tags)
 ```
 
 Dependencies point inwards: `LuthorStore` and `LuthorViewModels` depend on
@@ -403,9 +404,12 @@ commands or setup. The user should never have to ask whether docs are current.
   `Sources/` (`COVERAGE_MIN` in the `Makefile`), Mac app build. The same
   command runs locally
 - CI checks that PR titles are Conventional Commits
-- A version tag (`v0.x.y`) runs `make dist` on CI and attaches the zips to a
-  GitHub Release; PRs that change the `Makefile` or that workflow run the same
-  build without publishing
+- A merge to `main` with a `feat`, `fix`, `perf` or breaking (`!`) commit since
+  the last tag runs `make dist` on CI and publishes a GitHub Release at the
+  version `scripts/next-version.sh` works out from the Conventional Commit
+  titles (this is why PR titles must be exact). A hand-pushed version tag
+  (`v0.x.y`) publishes that version instead; PRs that change the `Makefile`,
+  that script or that workflow run the same build without publishing
 - Git hooks for local development, installed with `make hooks`:
   `pre-commit` runs format check and lint, `commit-msg` checks the message
   is a Conventional Commit. Do not bypass them with `--no-verify`

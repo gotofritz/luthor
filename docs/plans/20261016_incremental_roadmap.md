@@ -49,9 +49,10 @@ package tests.
 
 ### CD-1. Ship the Mac app (slice 3) ✅
 
-A version tag (`v0.x.y`) runs `make dist` on CI: the `.app`, ad-hoc signed,
-zipped and attached to a GitHub Release. PRs that change the release build
-run it without publishing. `make install` puts it in `/Applications` between
+A merge to `main` that carries a release runs `make dist` on CI (see Decisions,
+automatic releases): the `.app`, ad-hoc signed, zipped and attached to a
+GitHub Release. A version tag pushed by hand (`v0.x.y`) still does the same.
+PRs that change the release build run it without publishing. `make install` puts it in `/Applications` between
 releases. Not notarised: the first launch needs right-click → Open. The
 universal `luthor` CLI shipped alongside until it was removed (see Decisions
 2026-10-17, slice 13 dropped).
@@ -609,3 +610,17 @@ Usable: the weekly review.
    reads it to change an estimate
 7. **⇧⌘N for Show Review.** N for Nachkontrolle, the ALPEN step. ⇧⌘R stays free
    for slice 14's project review
+
+## Decisions (2026-10-17, automatic releases)
+
+1. **CI cuts the release, from the Conventional Commits.** Every push to
+   `main` since the last tag is read by `scripts/next-version.sh`: `feat` bumps
+   the minor version, `fix` and `perf` the patch, `!` any type a breaking
+   change. The other types release nothing, so docs and chore merges stay quiet.
+   The first release is `v0.1.0`
+2. **No automatic 1.0.0.** While the major version is 0, a breaking change
+   bumps the minor one; going to 1.0.0 is a hand-pushed tag
+3. **The release workflow makes the tag.** `gh release create --target <sha>`
+   creates it, so no second workflow is needed (a tag pushed with the workflow
+   token would not start one). A build that fails after a merge makes no
+   release; the next merge works from the same last tag and tries again
