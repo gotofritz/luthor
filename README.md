@@ -107,5 +107,5 @@ make hooks   # run format, lint and commit-message checks on every commit
 Then:
 
 ```bash
-make check-ci   # lint, build, tests and the Mac app: exactly what CI runs
+make check-ci   # lint, build, tests with a 90% coverage gate, and the Mac app: exactly what CI runs
 ```

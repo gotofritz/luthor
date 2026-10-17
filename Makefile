@@ -7,8 +7,11 @@ SWIFTLINT ?= $(if $(wildcard .tools/swiftlint),.tools/swiftlint,swiftlint)
 SWIFT_PATHS := Package.swift Sources Tests App
 # The Mac app's Xcode build output; under .build so it is ignored like SwiftPM's.
 APP_DERIVED_DATA := .build/xcode
+# Lowest line coverage of Sources/ that `make coverage` (and so CI) accepts, in percent.
+COVERAGE_MIN := 90
+COVERAGE_REPORT := .build/coverage.txt
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test test-unit test-acceptance app check-ci hooks tools
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app check-ci hooks tools
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -38,8 +41,16 @@ build:
 	swift build
 
 test:
-	swift test
+	swift test $(SWIFT_TEST_FLAGS)
 	scripts/test-check-conventional-commit.sh
+	scripts/test-check-coverage.sh
+
+# Runs the tests with coverage on and fails below COVERAGE_MIN percent line coverage of Sources/.
+coverage:
+	$(MAKE) test SWIFT_TEST_FLAGS=--enable-code-coverage
+	scripts/coverage-report.sh >$(COVERAGE_REPORT)
+	@cat $(COVERAGE_REPORT)
+	scripts/check-coverage.sh $(COVERAGE_MIN) $(COVERAGE_REPORT)
 
 # Fast unit tests only: every test target except the acceptance tests.
 test-unit:
@@ -54,7 +65,7 @@ app:
 	xcodebuild -project App/Luthor.xcodeproj -scheme Luthor -configuration Release \
 	  -destination 'generic/platform=macOS' -derivedDataPath $(APP_DERIVED_DATA) -quiet build
 
-check-ci: lint build test app
+check-ci: lint build coverage app
 
 hooks:
 	git config core.hooksPath .githooks

@@ -169,10 +169,11 @@ make hooks      # once: point git at .githooks/
 make format     # apply swift-format
 make lint       # swift-format lint --strict + SwiftLint
 make test       # swift test + script tests
+make coverage   # make test with coverage; fails under 90% line coverage of Sources/
 make test-unit  # unit tests only (skips LuthorAcceptanceTests)
 make test-acceptance  # end-to-end acceptance tests only
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
-make check-ci   # lint + build + test + app, exactly what CI runs
+make check-ci   # lint + build + coverage + app, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
 ```
 
@@ -285,8 +286,9 @@ commit to its branch instead of creating a new one.
 ## Enforcement
 
 - CI via GitHub Actions runs `make check-ci`: lint,
-  format check, build, `swift test`, Mac app build. The same command runs
-  locally
+  format check, build, `swift test` with a 90% line-coverage gate on
+  `Sources/` (`COVERAGE_MIN` in the `Makefile`), Mac app build. The same
+  command runs locally
 - CI checks that PR titles are Conventional Commits
 - Git hooks for local development, installed with `make hooks`:
   `pre-commit` runs format check and lint, `commit-msg` checks the message
