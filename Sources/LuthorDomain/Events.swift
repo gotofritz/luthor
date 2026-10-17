@@ -32,6 +32,13 @@ public enum EventPayload: Equatable, Sendable {
   case taskPrioritized(TaskPrioritized)
   case taskEstimated(TaskEstimated)
   case settingChanged(SettingChanged)
+  case taskScheduled(TaskScheduled)
+  case taskUnscheduled(TaskUnscheduled)
+  case dayPlanOrdered(DayPlanOrdered)
+  case dayCapacitySet(DayCapacitySet)
+  case taskDelegated(TaskDelegated)
+  case taskReclaimed(TaskReclaimed)
+  case taskDropped(TaskDropped)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.

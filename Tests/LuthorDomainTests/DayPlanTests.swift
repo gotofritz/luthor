@@ -291,7 +291,7 @@ struct WaitingForTests {
     let waiting = LibraryState.replay(Self.log).waitingFor(in: .default, today: date("2026-10-19"))
 
     #expect(waiting.map(\.task.title) == ["book venue", "get quote"])
-    #expect(waiting.map(\.delegation.to) == ["Kim", "Sam"])
+    #expect(waiting.map(\.delegation.person) == ["Kim", "Sam"])
     #expect(waiting.map(\.delegation.since) == [date("2026-10-18"), date("2026-10-19")])
   }
 

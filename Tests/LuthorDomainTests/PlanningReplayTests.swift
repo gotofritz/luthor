@@ -114,7 +114,7 @@ struct DelegationReplayTests {
     let state = LibraryState.replay(
       Self.base + [delegated("t1", to: "Sam", lamport: 3), delegated("t1", to: "Kim", lamport: 4)])
 
-    #expect(state.delegation(of: TaskID("t1"))?.to == "Kim")
+    #expect(state.delegation(of: TaskID("t1"))?.person == "Kim")
   }
 
   @Test("reclaiming it ends the delegation")
@@ -209,7 +209,7 @@ struct PlanningReplayOrderTests {
 
     #expect(state == LibraryState.replay(Self.log))
     #expect(state.scheduledDate(of: TaskID("t1")) == date("2026-10-19"))
-    #expect(state.delegation(of: TaskID("t2"))?.to == "Sam")
+    #expect(state.delegation(of: TaskID("t2"))?.person == "Sam")
   }
 
   @Test func duplicateEventsAreAppliedOnce() {

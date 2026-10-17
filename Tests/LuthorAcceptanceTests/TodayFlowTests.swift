@@ -196,7 +196,7 @@ struct DelegationFlowTests {
     #expect(library.plan.entries.map(\.task.title) == ["write report"])
     #expect(library.plan.candidates.isEmpty)
     #expect(library.plan.capacity.plannedMinutes == 60)
-    #expect(library.waiting.map(\.delegation.to) == ["Sam"])
+    #expect(library.waiting.map(\.delegation.person) == ["Sam"])
     #expect(library.waiting.map(\.delegation.since) == [date("2026-10-19")])
     #expect(library.waiting.map(\.isFollowUpDue) == [false])
 
