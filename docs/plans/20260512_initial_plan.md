@@ -2,6 +2,10 @@
 
 A personal GTD-style task system (OmniFocus-like) with these constraints:
 
+> Update 2026-10-17: Luthor is now an ALPEN daily-planning app, with OmniFocus
+> as a reference. See `20261015_alpen.md` for the product spec and
+> `20261016_incremental_roadmap.md` for the build order.
+
 * Primary goal: **fast, reliable personal execution system**
 * Must support:
 
@@ -9,6 +13,8 @@ A personal GTD-style task system (OmniFocus-like) with these constraints:
   * extremely fast capture and interaction
   * sophisticated GTD workflows (projects, tags, defer/due, review, etc.)
   * views that keep work and private tasks strictly apart
+  * ALPEN daily planning: estimates, capacity with a protected buffer,
+    priorities A/B/C, and an end-of-day review
 * Must be **forever software** (long-term personal system)
 * You want:
 

@@ -2,7 +2,8 @@
 
 Status: agreed 2026-10-16
 
-Turns the broad phases of `20260512_initial_plan.md` into small slices. Each
+Turns the broad phases of `20260512_initial_plan.md` and the ALPEN product
+spec in `20261015_alpen.md` into small slices. Each
 slice ends with something I can use every day, even if it is ugly or gets
 thrown away later. The architecture (event log as truth, pure reducers,
 sync of event files) stays; the order and the amount of machinery change.
@@ -21,7 +22,7 @@ sync of event files) stays; the order and the amount of machinery change.
 - **Pre-1.0 event format is soft.** While I am the only user, an event format
   change may be handled by a one-off migration script over the log, or by
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
-  the slice that freezes the format (slice 10)
+  the slice that freezes the format (slice 13)
 
 ## CI/CD track
 
@@ -51,15 +52,15 @@ change the release build run it without publishing. `make install` puts both
 in `/Applications` and `~/.local/bin` between releases. Not notarised: the
 first launch needs right-click → Open.
 
-### CI-3. Event format guard (slice 10)
+### CI-3. Event format guard (slice 13)
 
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 13)
+### CD-2. iOS (slice 16)
 
 - `xcodebuild` the iOS target in CI
-- Distribution decided with slice 13: free 7-day provisioning from Xcode, or
+- Distribution decided with slice 16: free 7-day provisioning from Xcode, or
   TestFlight with the Developer Program
 
 ## Slices
@@ -108,25 +109,56 @@ never show up at work, nor a work task at home.
 
 Usable: one Luthor for work and home, with no leaks either way.
 
-### 5. Defer and due, Today
+### 5. Priority and estimates (ALPEN: A, L)
 
-- `TaskDeferred`, `TaskDueSet` (and clearing both)
-- Availability rule (deferred, blocked by sequence, completed) in the domain,
-  clock injected
-- Lists in the current view: Available, Today (due or overdue),
-  Forecast-lite
+- `TaskPrioritized` (A, B, C or someday) and `TaskEstimated` (minutes), each
+  clearable. Priority is importance only: never order, deadline or day
+- Clarifying a task means giving it a priority, an estimate or a project;
+  the Inbox holds only unclarified tasks
+- Someday list: someday tasks, kept out of next actions and planning until
+  promoted
+- Quick-capture syntax, parsed by a pure domain function: `call bank !a 15m`
+  captures with priority A and a 15-minute estimate; the CLI and the app
+  share it
 
-Usable: the daily "what can I do now" view.
+Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
-### 6. Tags
+### 6. Today: plan the day (ALPEN: P, E)
 
-- `TagCreated`, `TaskTagged`, `TaskUntagged`
-- Filter any list by tag
-- Tags belong to a view, so `@calls` at work and at home are different tags
+- `TaskScheduled(date)`, `TaskUnscheduled`, `DayPlanOrdered(date, taskIDs)`.
+  Rescheduling keeps the task's identity; nothing is ever duplicated
+- Day capacity per view: `DayCapacitySet(date, minutes)` over a default per
+  weekday; `BufferSet(percent)`, default 40%
+- Capacity is a pure function of events and the injected clock: buffer,
+  usable, planned and remaining minutes, and an overloaded flag when planned
+  exceeds usable. The buffer is protected capacity, never a task
+- Suggested order is deterministic and explained: A before B before C, then
+  hard deadlines, then project sequence. A manual order always wins and is
+  kept
+- Today view: capacity meter with the buffer shown, the ordered plan,
+  candidates to pull in, and an overload warning that informs rather than
+  blocks. Defer, drop or send to someday from the plan in one key
+- One plan per view and day: the work day and the evening are planned apart
 
-Usable: contexts (`@home`, `@calls`, `@computer`).
+Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
-### 7. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
+### 7. Daily review and carry-over (ALPEN: N)
+
+- Review of the day in the current view: done and not done, estimated
+  against actual minutes, unplanned minutes
+- `TaskTimeLogged(minutes)` entered by hand; `UnplannedTimeLogged(date,
+  minutes)`; `DayReviewed(date, note)` with a one-line note (long reflection
+  belongs in Joplin)
+- Each unfinished task gets a decision: tomorrow, another day, back to the
+  list, someday, or dropped (`TaskDropped`). No per-task carry-over policy:
+  the review decides, and an unreviewed day's leftovers show at the top of
+  the next Today until decided
+- Estimate history per task and project is shown, never applied: the user's
+  estimate is never changed silently
+
+Usable: the ALPEN loop is closed, and estimates improve with feedback.
+
+### 8. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
 
 - Log lives in the Dropbox folder, synced by the Dropbox desktop app
 - One file per device (`events-<deviceID>.jsonl`), so two machines never
@@ -136,18 +168,42 @@ Usable: contexts (`@home`, `@calls`, `@computer`).
 - Optional: split acceptance testing out of the TDD skill into its own
   `acceptance` skill, linked from the TDD skill. Likely needed here, because
   two-device flows need a shared harness (several simulated devices, an
-  injected clock from slice 5, fixture logs) and a way to turn a slice's
+  injected clock from slice 6, fixture logs) and a way to turn a slice's
   promises into scenarios. Do it only if that guidance outgrows a section of
   the TDD skill
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 8. Capture without the app: iPhone (THROWAWAY) and Alfred
+### 9. Defer and due, Upcoming and Forecast
+
+- `TaskDeferred` (available from), `TaskDueSet` (hard deadline or target
+  date), and clearing both
+- Availability rule (deferred, blocked by sequence, completed, dropped) in
+  the domain. Scheduling before a task is available is a `CommandError`; a
+  due date never schedules a task by itself
+- Due and overdue hard deadlines surface in Today's candidates, ahead of
+  their priority peers
+- Upcoming (days ahead and their plans) and Forecast (deadlines and planned
+  minutes per day, overloaded days flagged)
+
+Usable: deadlines feed the plan without taking it over.
+
+### 10. Tags
+
+- `TagCreated`, `TaskTagged`, `TaskUntagged`
+- Filter any list, Today's candidates included, by tag; also by priority,
+  project and deadline
+- Tags belong to a view, so `@calls` at work and at home are different tags
+
+Usable: contexts (`@home`, `@calls`, `@deep-work`).
+
+### 11. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
-  file once imported (idempotent by line hash)
+  file once imported (idempotent by line hash); lines use the quick-capture
+  syntax of slice 5
 - One inbox file per view (`inbox-<view>.txt`), one Shortcut per view
 - The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
   stays, `list` and `done` go, and an Alfred workflow (keyword, then the
@@ -157,79 +213,108 @@ reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 Usable: capture from the phone, lock screen and Siri included, months before
 an iOS app exists, and from Alfred on the Mac without switching to the app.
 
-### 9. Review
+### 12. Weekly project review
 
-OmniFocus-style review: every project comes up on a schedule, so nothing
-goes stale unnoticed.
+The daily review (slice 7) looks at the day; this one keeps projects from
+going stale.
 
 - `ProjectReviewIntervalSet` (default one week, set per project);
   `ProjectReviewed` sets the next review date to the review date plus the
   interval. Next review date is a pure function of events and the injected
   clock
 - Project status: `ProjectPutOnHold`, `ProjectResumed`, `ProjectDropped`.
-  Review is where projects get parked or dropped; on-hold and dropped
-  projects yield no next actions, and dropped ones skip review
+  On-hold and dropped projects yield no next actions or plan candidates, and
+  dropped ones skip review
 - Review list in the current view: projects whose next review date has
   passed, oldest first. Mark reviewed (⌘⇧R) moves to the next one; the
   project's tasks are shown and editable in place
-- Review is per view: reviewing Work never shows a Private project
 
 Usable: the weekly review.
 
-### 10. Freeze the event format
+### 13. Freeze the event format
 
 - Write down every event type and field as v1
 - Golden-file tests: a checked-in fixture log must always replay to the same
   state
 - From here, `AGENTS.md` event rules are strict
 
-### 11. Speed pass
+### 14. Speed pass
 
 - Measure launch replay time and capture latency on the real log
 - Only if needed: GRDB projections, snapshotting, global capture hotkey,
   command palette
 
-### 12. Dropbox API sync
+### 15. Dropbox API sync
 
 - OAuth, token in Keychain, sync of the same per-device files over the API
 - Sync behind a `Transport` protocol; in-memory fake for tests; two-device
   convergence tests
 - Required for iOS, which has no Dropbox folder to watch
 
-### 13. iOS app
+### 16. iOS app
 
-- Same package; inbox, Today, Available, capture first
+- Same package; capture, Inbox and Today first, then the daily review
 - Without the Apple Developer Program, a free provisioning profile expires
   every 7 days; decide then whether to pay
 
 ### Later
 
+- Repeating tasks
+- Timer for actual minutes, and an in-progress state with it
+- Estimate suggestions from history, offered and never applied silently
+- Calendar integration: fixed commitments reduce a day's capacity
+- Delegation as waiting-for, if tags are not enough
 - Perspectives as saved queries, scoped to a view
 - Per-device view lists: a work Mac that never shows (or never syncs)
   private views, if logical isolation turns out not to be enough
-- Repeating tasks
 - Notes field kept minimal (notes live in Joplin)
 - CloudKit transport, if ever
 
+## Open questions (ALPEN)
+
+To settle before the slice they affect.
+
+1. **Unestimated tasks in a plan** (slice 6): refuse to schedule them, as
+   the ALPEN spec says, or count them at a default (say 15 minutes) and flag
+   them?
+2. **Day capacity** (slice 6): typed each morning, or a default per weekday
+   and view that the morning plan adjusts?
+3. **Weekly project review** (slice 12): keep it next to the daily review,
+   or drop it?
+4. **Sync before deadlines?** Slice 8 (sync) sits before slice 9 (defer and
+   due) on the guess that using two Macs matters more. Swap if not
+5. **Delegate**: ALPEN's E includes delegating. A `@waiting` tag, or a
+   proper waiting-for state?
+
 ## Decisions (2026-10-16)
 
-1. **Soft event format until slice 10.** `AGENTS.md` event rules updated to
+1. **Soft event format until slice 13.** `AGENTS.md` event rules updated to
    match: format changes before the freeze ship with a migration script or a
    fresh log
 2. **CLI first** in slice 1
-3. **Dropbox folder sync** in slice 7, possibly as the permanent Mac solution
+3. **Dropbox folder sync** in slice 8, possibly as the permanent Mac solution
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
-5. **No SQLite until slice 11**, and only if replay is measurably slow
+5. **No SQLite until slice 14**, and only if replay is measurably slow
 
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
    gains no project, defer or tag commands, and shrinks to `luthor add` for
-   Alfred in slice 8
+   Alfred in slice 11
 2. **Views are logical, in one log.** Work and private live in the same
    event log and sync together; isolation is enforced by the domain (every
    query names a view), not by separate files. Separate logs per view stay
    an option under Later if a work machine must not hold private data
-3. **Views come before defer and due** (new slice 4), because without them
-   I cannot use Luthor at work. Later slices renumbered by one
+3. **Views come next** (slice 4), because without them I cannot use
+   Luthor at work
+4. **Luthor is an ALPEN app**, with OmniFocus as a reference rather than
+   the goal. `20261015_alpen.md` is the product spec; this roadmap puts it
+   in order (slices 5 to 7 are A-L-P-E-N) and records where it deviates
+5. **State is derived, not stored.** The spec's `status`, `planned_minutes`,
+   `updated_at` and the like are computed by the reducer from events; only
+   decisions are events
+6. **No per-task carry-over policy.** The daily review decides what happens
+   to each unfinished task
+7. **Day plans are per view.** The work day and the evening have their own
+   capacity, buffer and plan
