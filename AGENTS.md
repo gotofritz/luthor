@@ -122,6 +122,11 @@ Reference: `.claude/skills/tdd/SKILL.md`
   protocol. Two simulated devices writing concurrently converge
 - **UI**: keep views thin and test their view models. No snapshot or UI tests
   unless a plan asks for them
+- **Acceptance**: end-to-end user flows (capture, list, complete…) driven
+  through the CLI or the view models against a real log in a temporary
+  directory. They live in `Tests/LuthorAcceptanceTests`, apart from the fast
+  unit tests in the per-module targets, and run on their own with
+  `make test-acceptance`. Keep them few: one per user-visible flow
 
 ## Decision Order
 
@@ -157,6 +162,8 @@ make hooks      # once: point git at .githooks/
 make format     # apply swift-format
 make lint       # swift-format lint --strict + SwiftLint
 make test       # swift test + script tests
+make test-unit  # unit tests only (skips LuthorAcceptanceTests)
+make test-acceptance  # end-to-end acceptance tests only
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
 make check-ci   # lint + build + test + app, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
@@ -186,6 +193,21 @@ Keep these instructions in sync.
 - Fixed clocks and seeded ID generators for deterministic results
 - Shared fixtures (event builders) live in a test support target
 - One behaviour per test, named for the behaviour it checks
+- Name suites and tests BDD-style, so they read as Given/When/Then specs. The
+  suite names the situation, the test names the outcome, and together they
+  read as a sentence. Function names stay short camelCase for `--filter`:
+
+  ```swift
+  @Suite("When the inbox is empty")
+  struct EmptyInboxTests {
+    @Test("adding a task shows it in the list")
+    func addingATaskShowsIt() { … }
+  }
+  ```
+
+  Applies to unit and acceptance tests alike, with Swift Testing only (no
+  Quick, Nimble or Gherkin). Existing tests are renamed when next touched,
+  not en masse
 
 ## Data & Secrets
 

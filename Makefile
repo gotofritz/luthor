@@ -8,7 +8,7 @@ SWIFT_PATHS := Package.swift Sources Tests App
 # The Mac app's Xcode build output; under .build so it is ignored like SwiftPM's.
 APP_DERIVED_DATA := .build/xcode
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test app check-ci hooks tools
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test test-unit test-acceptance app check-ci hooks tools
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -40,6 +40,14 @@ build:
 test:
 	swift test
 	scripts/test-check-conventional-commit.sh
+
+# Fast unit tests only: every test target except the acceptance tests.
+test-unit:
+	swift test --skip LuthorAcceptanceTests
+
+# End-to-end behaviour tests only.
+test-acceptance:
+	swift test --filter LuthorAcceptanceTests
 
 # Builds the Mac app, ad-hoc signed, into $(APP_DERIVED_DATA)/Build/Products/Release/Luthor.app.
 app:
