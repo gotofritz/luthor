@@ -157,22 +157,27 @@ func makeInbox(_ events: [EventEnvelope] = []) -> (InboxViewModel, InMemoryEvent
     captured("t3", "pay rent", lamport: 3),
   ]
 
-  @Test(
-    arguments: [
-      (nil, 1, "t1"),
-      (nil, -1, "t3"),
-      ("t1", 1, "t2"),
-      ("t2", -1, "t1"),
-      ("t3", 1, "t3"),
-      ("t1", -1, "t1"),
-    ] as [(String?, Int, String)])
-  func moveSelectionStepsThroughTheListAndStopsAtTheEnds(start: String?, offset: Int, expected: String) {
+  struct Step: Sendable {
+    let start: String?
+    let offset: Int
+    let expected: String
+  }
+
+  @Test(arguments: [
+    Step(start: nil, offset: 1, expected: "t1"),
+    Step(start: nil, offset: -1, expected: "t3"),
+    Step(start: "t1", offset: 1, expected: "t2"),
+    Step(start: "t2", offset: -1, expected: "t1"),
+    Step(start: "t3", offset: 1, expected: "t3"),
+    Step(start: "t1", offset: -1, expected: "t1"),
+  ])
+  func moveSelectionStepsThroughTheListAndStopsAtTheEnds(step: Step) {
     let (inbox, _) = makeInbox(Self.log)
-    inbox.selection = start.map(TaskID.init)
+    inbox.selection = step.start.map(TaskID.init)
 
-    inbox.moveSelection(by: offset)
+    inbox.moveSelection(by: step.offset)
 
-    #expect(inbox.selection == TaskID(expected))
+    #expect(inbox.selection == TaskID(step.expected))
   }
 
   @Test func moveSelectionInAnEmptyInboxSelectsNothing() {
