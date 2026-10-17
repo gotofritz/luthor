@@ -2,7 +2,8 @@
 
 ## What This Is
 
-Luthor is a personal, OmniFocus-like GTD task system: a **local-first,
+Luthor is a personal task system built around the ALPEN daily-planning
+method, with OmniFocus as a reference: a **local-first,
 event-sourced** Swift app for Mac (iOS later) that syncs an append-only event
 log through the Dropbox API. One user, built to last.
 
@@ -12,6 +13,8 @@ log through the Dropbox API. One user, built to last.
 
 - `README.md` — project overview
 - `docs/plans/20260512_initial_plan.md` — architecture, stack and phases
+- `docs/guide.md` — user guide, describes shipped behaviour
+- `docs/plans/20261015_alpen.md` — product spec: the ALPEN method
 - `docs/plans/20261016_incremental_roadmap.md` — build order, slice by slice
 - `docs/plans/*.md` — other active plans
 
@@ -65,7 +68,7 @@ remote events → merge into log → deterministic replay → projection → UI
 ### Event-sourcing rules
 
 - Events are append-only. Code never edits or deletes a written event
-- The event format is soft until it is frozen (slice 9 of
+- The event format is soft until it is frozen (slice 15 of
   `docs/plans/20261016_incremental_roadmap.md`). Until then a format change
   may break old logs, provided it ships with a one-off migration script that
   rewrites the log, or the change says the log is to be started afresh
@@ -316,6 +319,8 @@ commands or setup. The user should never have to ask whether docs are current.
 
 - `README.md` describes what the app, the CLI and every `make` target do now:
   new features, changed shortcuts, install paths, setup steps
+- `docs/guide.md` (the user guide) covers every user-visible feature and
+  shortcut this PR adds or changes, and nothing that is not shipped yet
 - The roadmap (`docs/plans/20261016_incremental_roadmap.md`) marks every slice
   and CI/CD item this PR finishes with ✅, condensed to a short paragraph like
   the earlier finished ones; decisions taken in the PR go under Decisions

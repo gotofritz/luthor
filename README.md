@@ -1,13 +1,15 @@
 # Luthor
 
-A GTD system loosely inspired by OmniFocus: local-first and event-sourced.
-See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
+A task system built around the ALPEN daily-planning method, with OmniFocus as
+a reference: local-first and event-sourced.
+See `docs/guide.md` for how to use it, and `AGENTS.md` and `docs/plans/` for
+the architecture and roadmap.
 
 ## CLI
 
 A quick way to capture from the shell. It knows only tasks, not projects:
 `list` shows every open task, filed or not. The app does everything it does
-and more; from slice 7 of the roadmap it shrinks to `luthor add`, for Alfred.
+and more; from slice 13 of the roadmap it shrinks to `luthor add`, for Alfred.
 
 ```bash
 swift build -c release                             # or `make install`, below, to put luthor on PATH
