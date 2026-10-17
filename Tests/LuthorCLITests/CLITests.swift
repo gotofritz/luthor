@@ -55,6 +55,21 @@ final class CLIHarness {
       ])
   }
 
+  @Test("add understands the quick-capture syntax, same as the app")
+  func addParsesTheQuickCaptureSyntax() throws {
+    let cli = try CLIHarness()
+
+    let result = cli.run("add", "call", "bank", "!a", "15m")
+
+    #expect(result == CLIResult(exitCode: 0, output: "Captured id-2  call bank\n"))
+    #expect(
+      try cli.log().map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "call bank", viewID: .default)),
+        .taskPrioritized(TaskPrioritized(taskID: TaskID("id-2"), priority: .critical)),
+        .taskEstimated(TaskEstimated(taskID: TaskID("id-2"), minutes: 15)),
+      ])
+  }
+
   @Test func addWithoutATitleIsAUsageError() throws {
     let cli = try CLIHarness()
 

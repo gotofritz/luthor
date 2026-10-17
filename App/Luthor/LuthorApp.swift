@@ -48,6 +48,14 @@ struct LuthorApp: App {
           Button("None") { library.prioritizeSelected(as: nil) }
         }
         .disabled(library.selection == nil)
+        Menu("Estimate") {
+          ForEach([5, 15, 30, 60], id: \.self) { minutes in
+            Button("\(minutes)m") { library.estimateSelected(as: minutes) }
+          }
+          Divider()
+          Button("None") { library.estimateSelected(as: nil) }
+        }
+        .disabled(library.selection == nil)
         Divider()
         // ⌥⌘1 to ⌥⌘9 file the selected task into the first nine projects.
         Menu("Move to Project") {

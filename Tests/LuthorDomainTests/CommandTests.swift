@@ -49,6 +49,68 @@ import Testing
   }
 }
 
+@Suite("When captured text carries the quick-capture syntax")
+struct QuickCaptureCommandTests {
+  @Test func priorityAndEstimateTagsEachWriteTheirOwnEvent() throws {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    let events = try commands.capture(title: "call bank !a 15m", in: .default, log: [])
+
+    #expect(
+      events.map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "call bank", viewID: .default)),
+        .taskPrioritized(TaskPrioritized(taskID: TaskID("id-2"), priority: .critical)),
+        .taskEstimated(TaskEstimated(taskID: TaskID("id-2"), minutes: 15)),
+      ])
+    #expect(events.map(\.lamport) == [1, 2, 3])
+  }
+
+  @Test func onlyAnEstimateTagWritesOneExtraEvent() throws {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    let events = try commands.capture(title: "call bank 15m", in: .default, log: [])
+
+    #expect(
+      events.map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "call bank", viewID: .default)),
+        .taskEstimated(TaskEstimated(taskID: TaskID("id-2"), minutes: 15)),
+      ])
+  }
+
+  @Test func plainTextWritesOnlyTaskCaptured() throws {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    let events = try commands.capture(title: "buy milk", in: .default, log: [])
+
+    #expect(
+      events.map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk", viewID: .default))
+      ])
+  }
+
+  @Test func textThatIsOnlyTagsIsABlankTitle() {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+
+    #expect(throws: CommandError.blankTitle) {
+      try commands.capture(title: "!a 15m", in: .default, log: [])
+    }
+  }
+
+  @Test func captureIntoAProjectAlsoParsesTheSyntax() throws {
+    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
+    let created = try commands.createProject(title: "Home", kind: .parallel, in: .default, log: [])
+
+    let events = try commands.capture(title: "call bank !b", into: ProjectID("id-2"), log: created)
+
+    #expect(
+      events.map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-4"), title: "call bank", viewID: .default)),
+        .taskPrioritized(TaskPrioritized(taskID: TaskID("id-4"), priority: .important)),
+        .taskMovedToProject(TaskMovedToProject(taskID: TaskID("id-4"), projectID: ProjectID("id-2"))),
+      ])
+  }
+}
+
 @Suite struct CompleteCommandTests {
   static let log = [
     captured("abc123", "buy milk", lamport: 1),

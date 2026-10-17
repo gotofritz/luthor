@@ -182,15 +182,33 @@ public func prioritized(
   )
 }
 
+/// Builds a `TaskEstimated` envelope with short, readable defaults; a `nil` estimate clears it.
+public func estimated(
+  _ task: String,
+  as minutes: Int?,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "estimate-\(task)-\(minutes.map(String.init) ?? "none")"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskEstimated(TaskEstimated(taskID: TaskID(task), minutes: minutes))
+  )
+}
+
 public func item(
   _ task: String,
   _ title: String,
   in project: String? = nil,
   view: String = "default",
-  priority: Priority? = nil
+  priority: Priority? = nil,
+  estimate: Int? = nil
 ) -> TaskItem {
   TaskItem(
-    id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init), priority: priority)
+    id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init),
+    priority: priority, estimate: estimate)
 }
 
 /// A project as replay lists it. `tasks` are its children; `children` replaces them where sub-projects

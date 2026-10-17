@@ -30,6 +30,7 @@ public enum EventPayload: Equatable, Sendable {
   case projectMovedToView(ProjectMovedToView)
   case projectMovedToProject(ProjectMovedToProject)
   case taskPrioritized(TaskPrioritized)
+  case taskEstimated(TaskEstimated)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.
@@ -187,6 +188,18 @@ public struct TaskPrioritized: Equatable, Codable, Sendable {
   public init(taskID: TaskID, priority: Priority?) {
     self.taskID = taskID
     self.priority = priority
+  }
+}
+
+/// Gives an open task an estimate in minutes, or with none clears it.
+public struct TaskEstimated: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  /// Minutes the task is expected to take; `nil` clears it.
+  public let minutes: Int?
+
+  public init(taskID: TaskID, minutes: Int?) {
+    self.taskID = taskID
+    self.minutes = minutes
   }
 }
 

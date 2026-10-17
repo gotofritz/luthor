@@ -12,17 +12,23 @@ CLI does updates this guide in the same PR (see the docs check in
   from another view ever shows up in it. A log starts with one view, Default
 - **Task**: one thing to do. Captured in the Inbox, optionally filed into a
   project, completed when done
-- **Inbox**: tasks of the current view not filed into a project yet
+- **Inbox**: tasks of the current view not yet clarified. Clarifying means
+  giving a task a priority, an estimate or a project; once you do, it leaves
+  the Inbox
 - **Priority**: how much a task matters: Critical (A), Important (B),
-  Optional (C) or One day. It says nothing about order or deadline. A task
-  has none until you give it one
+  Optional (C) or One day (someday). It says nothing about order or deadline.
+  A task has none until you give it one
+- **Estimate**: how many minutes a task is expected to take. A task has none
+  until you give it one
+- **Someday**: a task given the One day priority. It is kept out of next
+  actions until promoted to another priority
 - **Project**: a group of tasks and other projects, its sub-projects, to any
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
   children are in the order they were added. *Parallel*: every child is
   active. *Sequential*: only the first open child is; the others are dimmed
 - **Next action**: a task you can do now. A task is one only if every project
-  above it lets it be: an active sub-project hands out its own next actions,
-  one held back by a sequential parent hands out none
+  above it lets it be, and it is not someday: an active sub-project hands out
+  its own next actions, one held back by a sequential parent hands out none
 
 ## Finding your way around
 
@@ -57,6 +63,11 @@ Type in the capture field and press Return. The field is always focused, so
 capture needs no click. With a project shown, the task goes straight into
 that project; otherwise it goes to the Inbox of the current view.
 
+Add `!a`, `!b`, `!c` or `!someday` for a priority and `<n>m` for an estimate
+in minutes, anywhere in what you type: `call bank !a 15m` captures "call
+bank" with priority Critical and a 15-minute estimate, already clarified.
+The `luthor add` command understands the same syntax.
+
 ## Completing a task
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
@@ -79,17 +90,23 @@ appears to its right, and so on down the tree.
 - Complete a project from the toolbar or its context menu. Its sub-projects
   and their open tasks are completed with it, all the way down
 
-## Priorities
+## Priorities and estimates
 
 Give a task a priority from its context menu (Priority) or, with the task
-selected, from Task → Priority. None clears it. A task keeps its priority
-when filed into a project or taken to another view.
+selected, from Task → Priority; an estimate the same way, from Estimate (5,
+15, 30 or 60 minutes). None clears either. Giving a task a priority or an
+estimate clarifies it: it leaves the Inbox, same as filing it into a
+project. A task keeps its priority and estimate when filed into a project or
+taken to another view.
 
 Prios lists Critical, Important, Optional and One day. Click one to list its
 tasks. Click another to add it: the picked priorities add up, and the list
 shows the tasks of all of them, the most urgent first. Click a picked
 priority again to drop it. With none picked, the list is empty. You can
 complete a task from the list like anywhere else.
+
+A task given One day (someday) is kept out of next actions, wherever it is
+filed, until you give it another priority.
 
 ## The luthor command
 
@@ -99,6 +116,7 @@ Default. View names ignore case.
 
 ```bash
 luthor add "buy milk"
+luthor add "call bank !a 15m"   # priority Critical, 15-minute estimate
 luthor add --view Work "write the report"
 luthor list              # every open task of the view, filed or not
 luthor done 9afc         # any unique prefix of a task ID in the view
