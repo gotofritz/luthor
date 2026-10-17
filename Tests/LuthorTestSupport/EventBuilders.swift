@@ -243,7 +243,7 @@ public func settingChanged(
   lamport: UInt64 = 1
 ) -> EventEnvelope {
   EventEnvelope(
-    id: EventID(id ?? "setting-\(key.rawValue)-\(view ?? "global")"),
+    id: EventID(id ?? "setting-\(key.rawValue)-\(view ?? "global")-\(value ?? "clear")"),
     deviceID: DeviceID(device),
     lamport: lamport,
     payload: .settingChanged(SettingChanged(key: key, value: value, viewID: view.map(ViewID.init)))
