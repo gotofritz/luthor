@@ -22,6 +22,9 @@ public struct CLI {
            luthor list [--view <name>]              show the view's open tasks
            luthor done [--view <name>] <id-prefix>  complete the view's open task whose ID starts with <id-prefix>
 
+    <title> may carry !a, !b, !c or !someday for a priority and <n>m for an estimate in minutes, e.g.
+    "call bank !a 15m"; both are stripped from the title.
+
     environment:
       LUTHOR_LOG        path of the event log (default: ~/.luthor/events.jsonl)
       LUTHOR_DEVICE_ID  name of this device in the log (default: local)

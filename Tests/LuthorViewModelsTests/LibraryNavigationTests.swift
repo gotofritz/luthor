@@ -69,7 +69,8 @@ struct NavigationSectionTests {
     library.show(.inbox)
 
     #expect(library.sidebarSelection == .inbox)
-    #expect(library.tasks == [item("t1", "buy milk", priority: .critical)])
+    // t1 is prioritised and t2 is filed: both are clarified, so neither is in the inbox any more.
+    #expect(library.tasks == [])
   }
 
   @Test("the selection is cleared")
@@ -187,13 +188,16 @@ struct PriorityPickTests {
 @MainActor
 @Suite("When a task is given a priority")
 struct PrioritizeViewModelTests {
-  @Test("it carries the priority, and the event is written")
+  @Test("it carries the priority, and the event is written; the task leaves the inbox, clarified")
   func prioritizeWritesTheEvent() {
     let (library, log) = makeInbox([captured("t1", "buy milk", lamport: 1)])
 
     library.prioritize(TaskID("t1"), as: .important)
 
     #expect(log.events.last == prioritized("t1", as: .important, id: "id-1", lamport: 2))
+    #expect(library.tasks == [])
+    library.show(.priorities)
+    library.togglePriority(.important)
     #expect(library.tasks == [item("t1", "buy milk", priority: .important)])
   }
 
@@ -204,6 +208,8 @@ struct PrioritizeViewModelTests {
 
     library.prioritizeSelected(as: .critical)
 
+    library.show(.priorities)
+    library.togglePriority(.critical)
     #expect(library.tasks.first?.priority == .critical)
   }
 
@@ -234,5 +240,47 @@ struct PrioritizeViewModelTests {
     library.prioritize(TaskID("t1"), as: .optional)
 
     #expect(library.tasks == [])
+  }
+}
+
+@MainActor
+@Suite("When a task is given an estimate")
+struct EstimateViewModelTests {
+  @Test("it carries the estimate, and the event is written; the task leaves the inbox, clarified")
+  func estimateWritesTheEvent() {
+    let (library, log) = makeInbox([captured("t1", "buy milk", lamport: 1)])
+
+    library.estimate(TaskID("t1"), as: 15)
+
+    #expect(log.events.last == estimated("t1", as: 15, id: "id-1", lamport: 2))
+    #expect(library.tasks == [])
+  }
+
+  @Test("the selected task takes it")
+  func estimateSelectedUsesTheSelection() {
+    let (library, log) = makeInbox([captured("t1", "buy milk", lamport: 1)])
+    library.selection = TaskID("t1")
+
+    library.estimateSelected(as: 30)
+
+    #expect(log.events.last == estimated("t1", as: 30, id: "id-1", lamport: 2))
+  }
+
+  @Test("with nothing selected nothing is written")
+  func estimateSelectedWithoutSelectionWritesNothing() {
+    let (library, log) = makeInbox([captured("t1", "buy milk", lamport: 1)])
+
+    library.estimateSelected(as: 30)
+
+    #expect(log.events == [captured("t1", "buy milk", lamport: 1)])
+  }
+
+  @Test("clearing it removes the estimate, and returns an unfiled task to the inbox")
+  func clearingRemovesTheEstimate() {
+    let (library, _) = makeInbox([captured("t1", "buy milk", lamport: 1), estimated("t1", as: 15)])
+
+    library.estimate(TaskID("t1"), as: nil)
+
+    #expect(library.tasks == [item("t1", "buy milk")])
   }
 }

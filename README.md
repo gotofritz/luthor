@@ -19,6 +19,7 @@ export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
 export LUTHOR_VIEW=Work                            # optional, default: the Default view
 
 .build/release/luthor add "buy milk"
+.build/release/luthor add "call bank !a 15m"        # priority Critical, 15-minute estimate
 .build/release/luthor add --view Private "call mum" # --view wins over LUTHOR_VIEW
 .build/release/luthor list
 .build/release/luthor done 9afc                    # any unique prefix of a task ID
@@ -50,7 +51,11 @@ area is a bar with a search box (not working yet) and the view switcher.
 Prios lists the priorities Critical, Important, Optional and One day. Click
 one to list its tasks, click another to add it: the picked priorities add up,
 the most urgent first; click a picked one again to drop it. Give a task a
-priority from its context menu or Task → Priority.
+priority from its context menu or Task → Priority, and an estimate in
+minutes from Estimate. Either clarifies a task out of the Inbox, same as
+filing it into a project; a task given One day is kept out of next actions
+until promoted. The quick-capture syntax does both at once:
+`call bank !a 15m`.
 
 Projects nest to any depth and show in Miller columns: the first column lists
 the top-level projects, and each project you open adds a column

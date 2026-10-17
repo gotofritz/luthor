@@ -130,18 +130,17 @@ the tasks that have one of them. For Prios to have anything to list,
 `Priority` (A, B, C, someday) and a priority menu on tasks; nothing else of
 slice 6 did.
 
-### 6. Priority and estimates (ALPEN: A, L)
+### 6. Priority and estimates (ALPEN: A, L) ✅
 
-- `TaskPrioritized` (A, B, C or someday; shipped with the rail, see 5a) and
-  `TaskEstimated` (minutes), each clearable. Priority is importance only:
-  never order, deadline or day
-- Clarifying a task means giving it a priority, an estimate or a project;
-  the Inbox holds only unclarified tasks
-- Someday list: someday tasks, kept out of next actions and planning until
-  promoted
-- Quick-capture syntax, parsed by a pure domain function: `call bank !a 15m`
-  captures with priority A and a 15-minute estimate; the CLI and the app
-  share it
+`TaskEstimated` (minutes, clearable) joins `TaskPrioritized` from 5a.
+Clarifying a task means giving it a priority, an estimate or a project;
+`ViewState.inbox` now lists only unclarified tasks, and a someday task
+(`Priority.someday`) is excluded from `ViewState.nextActions(of:)` until
+given another priority. `QuickCapture.parse`, a pure function in
+`LuthorDomain`, strips `!a`/`!b`/`!c`/`!someday` and `<n>m` tags out of
+captured text; `Commands.capture` calls it, so the CLI and the app share the
+syntax with no code of their own. The app's Estimate menu (context menu and
+Task menu) offers 5/15/30/60-minute presets and None, next to Priority.
 
 Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
@@ -433,3 +432,22 @@ Usable: the weekly review.
    event format is still soft
 5. **Search and keyboard navigation are deferred** to their own slices (see
    Later)
+
+## Decisions (2026-10-17, slice 6)
+
+1. **Clarified leaves the Inbox, for good until cleared.** A task is
+   clarified by a priority, an estimate or a project (any one, not all
+   three); `ViewState.inbox` filters on that, so giving a task a priority
+   from the Inbox removes it from the list immediately, same as filing it.
+   Clearing every clarifying field returns it
+2. **Someday is excluded inside `nextActions(of:)`, not by a separate
+   list.** It already had a "list" via Prios → One day (slice 5a); slice 6
+   only had to keep it out of the recursive next-actions function, so a
+   someday task never blocks a sequential project or counts as workable
+3. **The quick-capture syntax lives inside `Commands.capture`, not in the
+   CLI or the view model.** Both already call `Commands.capture` with the
+   raw typed text, so parsing it there is what "the CLI and the app share
+   it" means in practice: neither needs its own parsing code
+4. **Minutes only, no hours shorthand.** `<n>m` is the one estimate tag;
+   `1h30m` or similar is left for a later slice if it turns out to be
+   wanted

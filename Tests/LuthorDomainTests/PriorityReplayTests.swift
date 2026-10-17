@@ -9,11 +9,13 @@ struct PriorityReplayTests {
     captured("t2", "call mum", lamport: 2),
   ]
 
-  @Test("the task carries the priority")
+  @Test("the task carries the priority, and leaves the inbox: it is clarified now")
   func prioritisedTaskCarriesIt() {
     let state = LibraryState.replay(Self.base + [prioritized("t1", as: .critical, lamport: 3)])
 
-    #expect(state.view(.default).inbox == [item("t1", "pay rent", priority: .critical), item("t2", "call mum")])
+    #expect(
+      state.view(.default).openTasks == [item("t1", "pay rent", priority: .critical), item("t2", "call mum")])
+    #expect(state.view(.default).inbox == [item("t2", "call mum")])
   }
 
   @Test("the last priority wins")
@@ -21,7 +23,7 @@ struct PriorityReplayTests {
     let state = LibraryState.replay(
       Self.base + [prioritized("t1", as: .critical, lamport: 3), prioritized("t1", as: .optional, lamport: 4)])
 
-    #expect(state.view(.default).inbox.first?.priority == .optional)
+    #expect(state.view(.default).openTasks.first?.priority == .optional)
   }
 
   @Test("clearing it leaves the task without a priority")
@@ -62,7 +64,8 @@ struct PriorityReplayTests {
         movedToView("t1", toView: "v1", lamport: 5),
       ])
 
-    #expect(state.view(ViewID("v1")).inbox == [item("t1", "pay rent", view: "v1", priority: .important)])
+    #expect(state.view(ViewID("v1")).openTasks == [item("t1", "pay rent", view: "v1", priority: .important)])
+    #expect(state.view(ViewID("v1")).inbox == [])
   }
 
   @Test("the priority of a task in a project survives taking the project to another view")

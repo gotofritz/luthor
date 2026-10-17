@@ -184,6 +184,32 @@ struct PriorityLineTests {
   }
 }
 
+@Suite("When an estimate is written to the log")
+struct EstimateLineTests {
+  @Test("TaskEstimated is one sorted JSON object")
+  func taskEstimatedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(estimated("t1", as: 15, id: "e6", lamport: 6))
+
+    #expect(
+      line
+        == #"{"data":{"minutes":15,"taskID":"t1"},"device":"mac","id":"e6","lamport":6,"type":"TaskEstimated"}"#)
+  }
+
+  @Test("clearing an estimate has no minutes field")
+  func clearingHasNoMinutesField() throws {
+    let line = try EventLine.encode(estimated("t1", as: nil, id: "e7", lamport: 7))
+
+    #expect(line == #"{"data":{"taskID":"t1"},"device":"mac","id":"e7","lamport":7,"type":"TaskEstimated"}"#)
+  }
+
+  @Test(
+    "each decodes back to the same event",
+    arguments: [estimated("t1", as: 5), estimated("t1", as: 90), estimated("t1", as: nil)])
+  func estimateLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
+
 @Suite struct JSONLinesEventLogTests {
   @Test func missingFileReadsAsEmptyLog() throws {
     let dir = try TemporaryDirectory()

@@ -213,6 +213,17 @@ public final class LibraryViewModel {
     prioritize(selected, as: priority)
   }
 
+  /// Gives a task an estimate in minutes, or with `nil` clears it.
+  public func estimate(_ taskID: TaskID, as minutes: Int?) {
+    perform { (log) throws(CommandError) in try commands.estimate(taskID: taskID, as: minutes, log: log) }
+  }
+
+  /// Gives the selected task an estimate in minutes, or with `nil` clears it.
+  public func estimateSelected(as minutes: Int?) {
+    guard let selected = selection else { return }
+    estimate(selected, as: minutes)
+  }
+
   /// Creates a project titled by the project draft, inside the project shown, or top-level while the
   /// inbox is shown. A blank draft creates nothing; a failed write keeps the draft.
   public func createProject(kind: ProjectKind) {

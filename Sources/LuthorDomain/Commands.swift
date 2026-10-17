@@ -28,23 +28,23 @@ public struct Commands {
     self.ids = ids
   }
 
-  /// Captures a task into the inbox of the view `viewID`.
+  /// Captures a task into the inbox of the view `viewID`. `title` may carry the quick-capture syntax
+  /// (`call bank !a 15m`); its priority and estimate land on the task, same as setting them by hand.
   public func capture(title: String, in viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let title = try Self.named(title)
     try requireView(viewID, in: LibraryState.replay(log))
-    return [captureEvent(title: title, viewID: viewID, log: log).event]
+    return try captureEvents(title: title, viewID: viewID, log: log).events
   }
 
-  /// Captures a task straight into the active project `projectID`, in the project's view.
+  /// Captures a task straight into the active project `projectID`, in the project's view. `title` may
+  /// carry the quick-capture syntax, as `capture(title:in:log:)` does.
   public func capture(
     title: String,
     into projectID: ProjectID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let title = try Self.named(title)
     let project = try activeProject(projectID, in: LibraryState.replay(log))
-    let (capture, taskID) = captureEvent(title: title, viewID: project.viewID, log: log)
-    return try [capture] + move(taskID: taskID, to: projectID, log: log + [capture])
+    let (events, taskID) = try captureEvents(title: title, viewID: project.viewID, log: log)
+    return try events + move(taskID: taskID, to: projectID, log: log + events)
   }
 
   /// Completes the one open task of the view `viewID` whose ID starts with `idPrefix`, ignoring case.
@@ -189,6 +189,19 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskPrioritized(prioritized), log: log)]
   }
 
+  /// Gives the open task `taskID` an estimate in minutes, or with `nil` clears it. Giving a task the
+  /// estimate it has writes nothing.
+  public func estimate(taskID: TaskID, as minutes: Int?, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    guard let task = LibraryState.replay(log).openTasks.first(where: { $0.id == taskID }) else {
+      throw .noOpenTask(taskID.rawValue)
+    }
+    guard task.estimate != minutes else { return [] }
+    let estimated = TaskEstimated(taskID: taskID, minutes: minutes)
+    return [envelope(EventID(ids.next()), .taskEstimated(estimated), log: log)]
+  }
+
   public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     try requireActive(projectID, log: log)
     return [envelope(EventID(ids.next()), .projectCompleted(ProjectCompleted(projectID: projectID)), log: log)]
@@ -213,13 +226,26 @@ public struct Commands {
     if let existing = state.view(named: name), existing.id != viewID { throw .duplicateViewName(name) }
   }
 
-  private func captureEvent(title: String, viewID: ViewID, log: [EventEnvelope]) -> (
-    event: EventEnvelope, taskID: TaskID
-  ) {
+  /// Captures `raw` (parsed for its quick-capture tags) into `viewID`, with a `TaskPrioritized` and/or a
+  /// `TaskEstimated` event appended when the tags carry one.
+  private func captureEvents(
+    title raw: String,
+    viewID: ViewID,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> (events: [EventEnvelope], taskID: TaskID) {
+    let parsed = QuickCapture.parse(raw)
+    let title = try Self.named(parsed.title)
     let eventID = EventID(ids.next())
     let taskID = TaskID(ids.next())
     let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID)
-    return (envelope(eventID, .taskCaptured(captured), log: log), taskID)
+    var events = [envelope(eventID, .taskCaptured(captured), log: log)]
+    if let priority = parsed.priority {
+      events += try prioritize(taskID: taskID, as: priority, log: log + events)
+    }
+    if let minutes = parsed.estimateMinutes {
+      events += try estimate(taskID: taskID, as: minutes, log: log + events)
+    }
+    return (events, taskID)
   }
 
   /// The title or name without surrounding whitespace; throws if nothing is left.

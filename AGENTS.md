@@ -98,12 +98,14 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
-                             Priority (A, B, C, someday) and TaskPrioritized
+                             Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
+    QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
+                             used by Commands.capture; shared by the CLI and the app
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
-                             only via view(id) → ViewState (open tasks, inbox, project tree,
-                             recursive next actions: parallel/sequential rule; tasks by priority)
+                             only via view(id) → ViewState (open tasks, inbox of unclarified tasks,
+                             project tree, recursive next actions excluding someday; tasks by priority)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)

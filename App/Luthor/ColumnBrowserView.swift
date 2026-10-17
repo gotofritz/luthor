@@ -57,7 +57,8 @@ private struct ColumnView: View {
         case .task(let task):
           TaskRow(
             task: task, isNextAction: library.nextActions.contains(task.id),
-            complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) }
+            complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) },
+            setEstimate: { library.estimate(task.id, as: $0) }
           )
           .tag(ColumnSelection.task(task.id))
         }
@@ -124,7 +125,8 @@ private struct TaskListColumn: View {
       ForEach(library.tasks, id: \.id) { task in
         TaskRow(
           task: task, isNextAction: library.nextActions.contains(task.id),
-          complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) }
+          complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) },
+          setEstimate: { library.estimate(task.id, as: $0) }
         )
         .tag(task.id)
       }
@@ -168,6 +170,10 @@ private struct TaskRow: View {
   let isNextAction: Bool
   let complete: () -> Void
   let setPriority: (Priority?) -> Void
+  let setEstimate: (Int?) -> Void
+
+  /// Estimates offered on the context and Task menus, in minutes.
+  static let estimateChoices = [5, 15, 30, 60]
 
   var body: some View {
     HStack(spacing: 8) {
@@ -178,8 +184,13 @@ private struct TaskRow: View {
       .help("Complete")
       Text(task.title)
         .foregroundStyle(isNextAction ? .primary : .secondary)
+      Spacer()
+      if let estimate = task.estimate {
+        Text("\(estimate)m")
+          .foregroundStyle(.secondary)
+          .help("Estimate")
+      }
       if let priority = task.priority {
-        Spacer()
         Image(systemName: priority.symbol)
           .foregroundStyle(.secondary)
           .help(priority.title)
@@ -193,6 +204,13 @@ private struct TaskRow: View {
         }
         Divider()
         Button("None") { setPriority(nil) }
+      }
+      Menu("Estimate") {
+        ForEach(Self.estimateChoices, id: \.self) { minutes in
+          Button("\(minutes)m") { setEstimate(minutes) }
+        }
+        Divider()
+        Button("None") { setEstimate(nil) }
       }
     }
   }
