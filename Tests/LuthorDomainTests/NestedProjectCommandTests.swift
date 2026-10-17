@@ -76,10 +76,11 @@ struct NestProjectCommandTests {
 
   @Test("nesting it under a project of another view is refused")
   func nestingAcrossViewsIsRefused() {
-    let log = Self.log + [
-      viewCreated("v1", "Work", lamport: 4),
-      projectCreated("p4", "Q4 plan", view: "v1", lamport: 5),
-    ]
+    let log =
+      Self.log + [
+        viewCreated("v1", "Work", lamport: 4),
+        projectCreated("p4", "Q4 plan", view: "v1", lamport: 5),
+      ]
 
     #expect(throws: CommandError.projectInOtherView(ProjectID("p2"), parent: ProjectID("p4"))) {
       try makeCommands().move(projectID: ProjectID("p2"), under: ProjectID("p4"), log: log)

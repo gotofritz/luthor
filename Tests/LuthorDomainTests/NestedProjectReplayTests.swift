@@ -84,10 +84,11 @@ struct NestingReplayTests {
 
   @Test("nesting it again under the same parent keeps its place")
   func renestingUnderTheSameParentChangesNothing() {
-    let log = Self.log + [
-      nested("p3", under: "p1", lamport: 5),
-      nested("p2", under: "p1", id: "again", lamport: 6),
-    ]
+    let log =
+      Self.log + [
+        nested("p3", under: "p1", lamport: 5),
+        nested("p2", under: "p1", id: "again", lamport: 6),
+      ]
 
     let view = LibraryState.replay(log).view(.default)
 
@@ -116,10 +117,11 @@ struct IgnoredNestingReplayTests {
 
   @Test("a parent in another view is ignored")
   func nestingAcrossViewsIsIgnored() {
-    let log = Self.log + [
-      viewCreated("v1", "Work", lamport: 3),
-      projectCreated("p3", "Q4 plan", view: "v1", lamport: 4),
-    ]
+    let log =
+      Self.log + [
+        viewCreated("v1", "Work", lamport: 3),
+        projectCreated("p3", "Q4 plan", view: "v1", lamport: 4),
+      ]
 
     #expect(LibraryState.replay(log + [nested("p3", under: "p1", lamport: 5)]) == LibraryState.replay(log))
   }
