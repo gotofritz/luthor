@@ -95,9 +95,10 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order
-    Identifiers.swift        EventID, DeviceID, TaskID
+    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID
     Commands.swift           command → new events; IDGenerator protocol, CommandError
-    InboxState.swift         reducer: InboxState.replay(events) → open tasks
+    LibraryState.swift       reducer: LibraryState.replay(events) → open tasks, inbox, projects;
+                             Project.nextActions (parallel/sequential rule)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
@@ -106,16 +107,17 @@ Sources/
     UUIDGenerator.swift      production IDGenerator
   LuthorCLI/CLI.swift        `luthor add|list|done`, testable (returns CLIResult)
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
-  LuthorViewModels/          @Observable view models (InboxViewModel), no SwiftUI
+  LuthorViewModels/          @Observable view models (LibraryViewModel: sidebar, list), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
-  Luthor/                    LuthorApp (wiring) + thin views (InboxView)
+  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView, TaskListView)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
   Luthor<Module>Tests/       unit tests, one target per module
   LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`)
 scripts/                     commit-message and coverage checks, with their shell tests
-.githooks/  .github/workflows/  infra/ (Terraform for the GitHub repo settings)
+.githooks/  infra/ (Terraform for the GitHub repo settings)
+.github/workflows/           CI (make check-ci), PR title check, release on v* tags
 ```
 
 Dependencies point inwards: `LuthorStore`, `LuthorCLI` and `LuthorViewModels`

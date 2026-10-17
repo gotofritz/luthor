@@ -5,10 +5,10 @@ A GTD system loosely inspired by OmniFocus
 GitHub settings for this repo live in Terraform, in `infra/`:
 
 - squash merge only, with the PR title as the commit title; auto-merge allowed
-- head branches deleted after merge
+- head branches deleted after merge; PRs behind `main` offer "Update branch"
 - a ruleset on `main`: changes go through a PR, no force pushes or
   deletion, and the `make check-ci` and `Conventional Commit title` checks
-  must pass
+  must pass on a branch that is up to date with `main`
 
 Rulesets on a private repo need GitHub Pro (or a paid plan); on GitHub Free
 the apply fails for the ruleset.
