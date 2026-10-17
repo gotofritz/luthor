@@ -13,6 +13,7 @@ public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
   case projects
   case priorities
+  case settings
 }
 
 /// One entry of a column: a sub-project to open, or a task.
@@ -72,6 +73,12 @@ public final class LibraryViewModel {
   public private(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
   public private(set) var nextActions: Set<TaskID> = []
+  /// The settings with no per-view override applied.
+  public private(set) var globalSettings = LibraryState.replay([]).globalSettings
+  /// The settings `currentView` plans with: its own overrides, then the global values.
+  public private(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
+  /// The view `luthor add` and imports use when none is named.
+  public private(set) var defaultViewID = ViewID.default
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
@@ -275,6 +282,47 @@ public final class LibraryViewModel {
   }
 }
 
+// Settings: global values and per-view overrides. Split from the class body above (SwiftLint
+// type_body_length) rather than suppressed.
+extension LibraryViewModel {
+  /// Changes a global setting, or with `nil` clears it back to the built-in default.
+  public func changeGlobalSetting(_ key: SettingKey, to value: String?) {
+    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, log: log) }
+  }
+
+  /// Overrides a setting for the current view, or with `nil` clears the override back to the global
+  /// value.
+  public func changeSettingForCurrentView(_ key: SettingKey, to value: String?) {
+    let viewID = currentView
+    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, for: viewID, log: log) }
+  }
+
+  /// Changes the global capacity of a weekday, or with `nil` clears it back to the built-in default.
+  public func changeGlobalCapacity(_ weekday: Weekday, minutes: Int?) {
+    changeGlobalSetting(weekday.capacityKey, to: minutes.map(String.init))
+  }
+
+  /// Overrides the capacity of a weekday for the current view, or with `nil` clears the override.
+  public func changeCapacityForCurrentView(_ weekday: Weekday, minutes: Int?) {
+    changeSettingForCurrentView(weekday.capacityKey, to: minutes.map(String.init))
+  }
+
+  /// Whether `key` is overridden for the current view, rather than inherited from the global value.
+  public func isOverriddenForCurrentView(_ key: SettingKey) -> Bool {
+    state.isOverridden(key, in: currentView)
+  }
+
+  /// Whether a weekday's capacity is overridden for the current view.
+  public func isCapacityOverriddenForCurrentView(_ weekday: Weekday) -> Bool {
+    isOverriddenForCurrentView(weekday.capacityKey)
+  }
+
+  /// Sets the view `luthor add` and imports use when none is named.
+  public func setDefaultView(_ viewID: ViewID) {
+    perform { (log) throws(CommandError) in try commands.setDefaultView(viewID, log: log) }
+  }
+}
+
 // Internals: reading and writing the log, and filling the published state from it. Split from the
 // class body above (SwiftLint type_body_length) rather than suppressed.
 extension LibraryViewModel {
@@ -329,6 +377,9 @@ extension LibraryViewModel {
       // A remembered view this log does not have.
       currentView = .default
     }
+    globalSettings = state.globalSettings
+    viewSettings = state.settings(for: currentView)
+    defaultViewID = state.defaultViewID
     let view = state.view(currentView)
     projects = view.projects
     if let projectID = shownProjectID, !projects.contains(where: { $0.id == projectID }) {

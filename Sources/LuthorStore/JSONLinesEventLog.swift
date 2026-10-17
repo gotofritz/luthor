@@ -62,6 +62,7 @@ private struct EventLineDTO: Codable {
     case projectMovedToProject = "ProjectMovedToProject"
     case taskPrioritized = "TaskPrioritized"
     case taskEstimated = "TaskEstimated"
+    case settingChanged = "SettingChanged"
   }
 
   init(from decoder: any Decoder) throws {
@@ -81,6 +82,7 @@ private struct EventLineDTO: Codable {
         .projectMovedToProject(try container.decode(ProjectMovedToProject.self, forKey: .data))
       case .taskPrioritized: .taskPrioritized(try container.decode(TaskPrioritized.self, forKey: .data))
       case .taskEstimated: .taskEstimated(try container.decode(TaskEstimated.self, forKey: .data))
+      case .settingChanged: .settingChanged(try container.decode(SettingChanged.self, forKey: .data))
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -131,6 +133,9 @@ private struct EventLineDTO: Codable {
       try container.encode(data, forKey: .data)
     case .taskEstimated(let data):
       try container.encode(EventType.taskEstimated, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .settingChanged(let data):
+      try container.encode(EventType.settingChanged, forKey: .type)
       try container.encode(data, forKey: .data)
     }
   }

@@ -105,7 +105,11 @@ Sources/
                              used by Commands.capture; shared by the CLI and the app
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
                              only via view(id) → ViewState (open tasks, inbox of unclarified tasks,
-                             project tree, recursive next actions excluding someday; tasks by priority)
+                             project tree, recursive next actions excluding someday; tasks by priority);
+                             also resolves Settings (global, then per-view override, then built-in
+                             default) and the default view
+    Settings.swift           SettingKey, Weekday, Settings (typed planning numbers); SettingChanged
+                             event lives in Events.swift, resolution in LibraryState
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
@@ -118,9 +122,11 @@ Sources/
   LuthorViewModels/          @Observable view models (LibraryViewModel: current view, navigation
                              section, picked priorities, project columns, list, drops), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
-  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView: window, top bar
+  Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
-                             rail; ColumnBrowserView: the columns of the place picked)
+                             rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
+                             the place picked; SettingsColumnsView: Global/Local setting families,
+                             then the individual settings of the one picked)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory

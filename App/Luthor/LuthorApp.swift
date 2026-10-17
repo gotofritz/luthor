@@ -36,6 +36,10 @@ struct LuthorApp: App {
     }
     .defaultSize(width: 760, height: 640)
     .commands {
+      CommandGroup(replacing: .appSettings) {
+        Button("Settings…") { library.show(.settings) }
+          .keyboardShortcut(",", modifiers: .command)
+      }
       CommandMenu("Task") {
         Button("Complete") { library.completeSelected() }
           .keyboardShortcut(.return, modifiers: .command)

@@ -210,6 +210,61 @@ struct EstimateLineTests {
   }
 }
 
+@Suite("When a setting is written to the log")
+struct SettingLineTests {
+  @Test("a global SettingChanged is one sorted JSON object")
+  func globalSettingChangedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(settingChanged(.bufferPercentage, to: "20", id: "e1", lamport: 1))
+
+    #expect(
+      line
+        == #"{"data":{"key":"bufferPercentage","value":"20"},"device":"mac","id":"e1","lamport":1,"type":"SettingChanged"}"#
+    )
+  }
+
+  @Test("an override for a view carries its viewID")
+  func overrideCarriesViewID() throws {
+    let line = try EventLine.encode(settingChanged(.bufferPercentage, to: "5", view: "work", id: "e2", lamport: 2))
+
+    #expect(
+      line
+        == #"{"data":{"key":"bufferPercentage","value":"5","viewID":"work"},"device":"mac","id":"e2","lamport":2,"type":"SettingChanged"}"#
+    )
+  }
+
+  @Test("clearing a setting has no value field")
+  func clearingHasNoValueField() throws {
+    let line = try EventLine.encode(settingChanged(.bufferPercentage, to: nil, id: "e3", lamport: 3))
+
+    #expect(line == #"{"data":{"key":"bufferPercentage"},"device":"mac","id":"e3","lamport":3,"type":"SettingChanged"}"#)
+  }
+
+  @Test(
+    "each decodes back to the same event",
+    arguments: [
+      settingChanged(.bufferPercentage, to: "20"), settingChanged(.bufferPercentage, to: "5", view: "work"),
+      settingChanged(.defaultViewID, to: "work"), settingChanged(.bufferPercentage, to: nil),
+    ])
+  func settingLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+
+  @Test("a key this build does not recognise decodes, and is ignored on replay")
+  func unrecognisedKeyDecodesAndIsIgnoredOnReplay() throws {
+    let line =
+      #"{"data":{"key":"someFutureSetting","value":"1"},"device":"mac","id":"e9","lamport":9,"type":"SettingChanged"}"#
+
+    let event = try EventLine.decode(line)
+
+    guard case .settingChanged(let changed) = event.payload else {
+      Issue.record("expected a SettingChanged")
+      return
+    }
+    #expect(changed.key == "someFutureSetting")
+    #expect(LibraryState.replay([event]).globalSettings.bufferPercentage == 40)
+  }
+}
+
 @Suite struct JSONLinesEventLogTests {
   @Test func missingFileReadsAsEmptyLog() throws {
     let dir = try TemporaryDirectory()

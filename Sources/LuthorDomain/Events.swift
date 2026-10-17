@@ -31,6 +31,7 @@ public enum EventPayload: Equatable, Sendable {
   case projectMovedToProject(ProjectMovedToProject)
   case taskPrioritized(TaskPrioritized)
   case taskEstimated(TaskEstimated)
+  case settingChanged(SettingChanged)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.
@@ -200,6 +201,22 @@ public struct TaskEstimated: Equatable, Codable, Sendable {
   public init(taskID: TaskID, minutes: Int?) {
     self.taskID = taskID
     self.minutes = minutes
+  }
+}
+
+/// Changes one setting: global with no `viewID`, or an override for one view's `viewID`. `value` of
+/// `nil` clears it, falling back to the global value (or, globally, to the built-in default).
+public struct SettingChanged: Equatable, Codable, Sendable {
+  /// The setting's raw key, as written to the log. A key `LibraryState.apply(_:)` does not recognise is
+  /// ignored rather than failing the line, so an old build survives a log a newer one wrote.
+  public let key: String
+  public let value: String?
+  public let viewID: ViewID?
+
+  public init(key: SettingKey, value: String?, viewID: ViewID? = nil) {
+    self.key = key.rawValue
+    self.value = value
+    self.viewID = viewID
   }
 }
 
