@@ -48,7 +48,7 @@ package tests.
 A version tag (`v0.x.y`) runs `make dist` on CI: the `.app` and the universal
 `luthor` CLI, ad-hoc signed, zipped and attached to a GitHub Release. PRs that
 change the release build run it without publishing. `make install` puts both
-in `~/Applications` and `~/.local/bin` between releases. Not notarised: the
+in `/Applications` and `~/.local/bin` between releases. Not notarised: the
 first launch needs right-click → Open.
 
 ### CI-3. Event format guard (slice 9)

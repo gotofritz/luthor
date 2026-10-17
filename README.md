@@ -46,7 +46,7 @@ right-click → Open.
 ## Install and releases
 
 ```bash
-make install   # the app into ~/Applications, the CLI into ~/.local/bin
+make install   # the app into /Applications, the CLI into ~/.local/bin
 ```
 
 `PREFIX` and `APP_INSTALL_DIR` change where (`make install PREFIX=/usr/local`).

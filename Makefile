@@ -17,7 +17,7 @@ CLI_ARCHS := --arch arm64 --arch x86_64
 CLI_BUILD = $(shell swift build -c release $(CLI_ARCHS) --show-bin-path)/luthor
 # Where `make install` puts the CLI and the app.
 PREFIX ?= $(HOME)/.local
-APP_INSTALL_DIR ?= $(HOME)/Applications
+APP_INSTALL_DIR ?= /Applications
 # Release zips; named after the tag on a tagged commit.
 DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
