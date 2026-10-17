@@ -5,6 +5,24 @@ public struct ViewState: Equatable, Sendable {
   public let openTasks: [TaskItem]
   /// Active projects of the view in creation order.
   public let projects: [Project]
+  /// Completed tasks of the view, in the order they were completed.
+  public let completedTasks: [Completed<TaskItem>]
+  /// Completed projects of the view, in the order they were completed.
+  public let completedProjects: [Completed<Project>]
+
+  init(
+    id: ViewID,
+    openTasks: [TaskItem],
+    projects: [Project],
+    completedTasks: [Completed<TaskItem>] = [],
+    completedProjects: [Completed<Project>] = []
+  ) {
+    self.id = id
+    self.openTasks = openTasks
+    self.projects = projects
+    self.completedTasks = completedTasks
+    self.completedProjects = completedProjects
+  }
 
   /// Open tasks of the view not yet clarified: no priority, no estimate and no project, in capture order.
   public var inbox: [TaskItem] {

@@ -8,6 +8,10 @@ public enum CommandError: Error, Equatable {
   case noOpenTask(String)
   case ambiguousPrefix(String, matches: [TaskID])
   case noActiveProject(ProjectID)
+  /// The task is open, or was completed along with its project, so it cannot be reopened on its own.
+  case noCompletedTask(TaskID)
+  /// The project is active, or was completed along with another, so it cannot be reopened on its own.
+  case noCompletedProject(ProjectID)
   case noView(ViewID)
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.
@@ -244,7 +248,7 @@ public struct Commands {
     _ = try activeProject(projectID, in: LibraryState.replay(log))
   }
 
-  private func activeProject(_ projectID: ProjectID, in state: LibraryState) throws(CommandError) -> Project {
+  func activeProject(_ projectID: ProjectID, in state: LibraryState) throws(CommandError) -> Project {
     guard let project = state.projects.first(where: { $0.id == projectID }) else { throw .noActiveProject(projectID) }
     return project
   }
@@ -283,9 +287,14 @@ public struct Commands {
 
   /// The title or name without surrounding whitespace; throws if nothing is left.
   static func named(_ title: String) throws(CommandError) -> String {
-    let trimmed = String(title.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
+    let trimmed = trimmed(title)
     guard !trimmed.isEmpty else { throw .blankTitle }
     return trimmed
+  }
+
+  /// The text without surrounding whitespace.
+  static func trimmed(_ text: String) -> String {
+    String(text.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
   }
 
   func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {

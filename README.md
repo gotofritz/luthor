@@ -71,6 +71,14 @@ shown. Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
 
+Completed tasks and projects disappear, but the Completed toggle in the top
+bar lists them again, dimmed after the open ones, and Reopen brings one
+back. Click a task and a card opens in the next column with its title,
+priority, estimate, project and notes; click a project and its column starts
+with a card for its title, kind (parallel or sequential, also in its context
+menu) and notes, with its children below. Notes are plain text, with web
+addresses made clickable.
+
 Today is the morning plan, one per view and day: a capacity meter (the day's
 minutes less the protected buffer, what is planned and what is left, red and
 informing when overloaded, never refusing), the ordered plan, the candidates

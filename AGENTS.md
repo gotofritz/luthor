@@ -106,13 +106,18 @@ Sources/
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
+    Commands+Completion.swift  reopen a completed task or project
+    Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture; shared by the CLI and the app
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, delegations, plan orders and day capacities
-    ViewState.swift          one view's open tasks, inbox of unclarified tasks, project tree,
-                             recursive next actions excluding someday; tasks by priority
+    LibraryState+Completion.swift  keeping completed tasks and projects, and reopening them
+    LibraryState+Cards.swift  applying rename, notes and kind events
+    ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
+                             unclarified tasks, project tree, recursive next actions excluding
+                             someday; tasks by priority
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity),
                              waitingFor(in:today:)
@@ -134,12 +139,16 @@ Sources/
                              project columns, list, drops, injected clock; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
-                             delegation actions in LibraryViewModel+Today.swift (split for file_length)
+                             delegation actions in LibraryViewModel+Today.swift, reading the log and
+                             filling the published state (columns, lists, completed items) in
+                             LibraryViewModel+Presenting.swift (split for file_length)
+    NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
-                             the place picked; SettingsColumnsView: Global/Local setting families,
+                             the place picked; CardViews: the task card column, the project card above
+                             its column, notes with clickable links; SettingsColumnsView: Global/Local setting families,
                              then the individual settings of the one picked; TodayView: the day's plan,
                              capacity meter, candidates, Waiting for, delegate dialog)
 Tests/
