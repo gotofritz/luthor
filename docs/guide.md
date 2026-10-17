@@ -26,6 +26,16 @@ CLI does updates this guide in the same PR (see the docs check in
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
   children are in the order they were added. *Parallel*: every child is
   active. *Sequential*: only the first open child is; the others are dimmed
+- **Plan**: the tasks you decided to do on one day in one view, in order. The
+  work day and the evening are planned apart. A task keeps its identity when
+  moved from day to day: rescheduling never duplicates it
+- **Capacity**: the minutes a view has on a day. The weekday's capacity from
+  Settings applies unless you set one for that day. The **buffer** is a
+  percentage of it held back for interruptions; it is protected time, never a
+  task. What is left is the **usable** time
+- **Delegated**: handed to someone else. A delegated task leaves the plan and
+  the totals and waits in Waiting for; it stays open, neither completed nor
+  dropped
 - **Next action**: a task you can do now. A task is one only if every project
   above it lets it be, and it is not someday: an active sub-project hands out
   its own next actions, one held back by a sequential parent hands out none
@@ -36,6 +46,7 @@ A narrow rail on the left lists the places, an icon with its name underneath.
 It does not expand. Click a place to look at it:
 
 - **Inbox**: your inbox tasks, as a list
+- **Today**: the plan of a day, with its capacity (see Today)
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
@@ -73,6 +84,48 @@ The `luthor add` command understands the same syntax.
 ## Completing a task
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
+
+## Today
+
+Today plans one day of the current view. Its first column shows the day
+(◀ and ▶, or ⌘[ and ⌘], move to the previous and next day; the Today button or
+⇧⌘T in the Plan menu comes back to today), the capacity meter and the plan.
+The second column lists candidates, the third what you are waiting for.
+
+**Capacity.** The meter shows the usable time, what is planned and what is
+left, with the buffer as its own grey segment. A task with no estimate is
+never refused: it counts at the default estimate from Settings and shows
+"~5m"; the meter says how many are unestimated. When more is planned than is
+usable the meter turns red and says by how much. It informs and never blocks:
+the task is still planned. To change one day's capacity, set it for that day
+(the weekday capacity from Settings applies otherwise).
+
+**Pulling tasks in.** Candidates are the open tasks of the view that are
+clarified (they have a priority, an estimate or a project), not someday, not
+held back by a sequential project, and not delegated until their follow-up
+day. A task planned for another day is a candidate too, so you can pull it
+forward. Select one and press ⌘T, or use Add to Plan in its context menu.
+Remove from Plan (⌥⌘T) returns it to the candidates.
+
+**Order.** The plan is in a suggested order unless you set your own: A before
+B before C, then the order of the tasks in their projects, then the order they
+were captured. Each task says why it sits where it does ("A priority, in
+project Move house"). Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
+menu): from then on the order is yours, tasks you add later follow it, and it
+survives a relaunch.
+
+**Deciding.** From the plan, or from the candidates, with the task selected:
+
+- Defer to Tomorrow (⌘D) plans it for the day after the one shown
+- Delegate… (⌘L) asks whom, and optionally a follow-up day. It leaves the
+  plan and the totals, and shows in Waiting for with who has it and since when
+- Send to Someday (⌘Y) takes it off its day and gives it the One day priority
+- Drop Task (⇧⌘⌫) gives it up: it leaves every list, without being completed
+
+**Waiting for.** Lists the delegated tasks of the view, the longest wait
+first, with who and since when. On the follow-up day the task is a candidate
+again and the entry says to follow up. Reclaim (context menu) takes it back
+at any time; planning a delegated task also takes it back.
 
 ## Projects
 
@@ -124,8 +177,7 @@ Settings shows two families in its first column: Global and Local.
   (shown greyed with "(global)"); on, it shows its own value to change.
   Switching it off returns to following the global value
 
-These numbers do not yet change anything else in the app; Today (a later
-slice) plans the day with them.
+Today plans the day with these numbers.
 
 ## The luthor command
 

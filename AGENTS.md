@@ -99,14 +99,23 @@ Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
+    PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
+                             TaskDelegated/Reclaimed, TaskDropped
+    CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
+                             never reads a clock, callers pass today in
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
+    Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture; shared by the CLI and the app
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
-                             only via view(id) → ViewState (open tasks, inbox of unclarified tasks,
-                             project tree, recursive next actions excluding someday; tasks by priority);
-                             holds the raw global/per-view setting values and applies SettingChanged
+                             only via view(id); holds the raw global/per-view setting values, the
+                             day each task is scheduled for, delegations, plan orders and day capacities
+    ViewState.swift          one view's open tasks, inbox of unclarified tasks, project tree,
+                             recursive next actions excluding someday; tasks by priority
+    LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:) →
+                             DayPlan (ordered entries with reasons, candidates, DayCapacity),
+                             waitingFor(in:today:)
     Settings.swift           SettingKey, Weekday, Settings (typed planning numbers); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
@@ -122,15 +131,17 @@ Sources/
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
-                             project columns, list, drops; SidebarItem/NavigationSection/ColumnEntry/
-                             ProjectColumn types live in LibraryViewModel+Types.swift, settings
-                             methods in LibraryViewModel+Settings.swift (split for file_length)
+                             project columns, list, drops, injected clock; SidebarItem/NavigationSection/
+                             ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
+                             methods in LibraryViewModel+Settings.swift, the day shown, plan and
+                             delegation actions in LibraryViewModel+Today.swift (split for file_length)
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; SettingsColumnsView: Global/Local setting families,
-                             then the individual settings of the one picked)
+                             then the individual settings of the one picked; TodayView: the day's plan,
+                             capacity meter, candidates, Waiting for, delegate dialog)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
