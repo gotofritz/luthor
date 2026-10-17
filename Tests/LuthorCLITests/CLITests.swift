@@ -18,11 +18,14 @@ final class CLIHarness {
     environment = ["LUTHOR_LOG": logURL.path, "LUTHOR_DEVICE_ID": "mac"]
   }
 
+  /// The home directory the CLI is told about; inside the temporary directory.
+  var home: URL { dir.file("home") }
+
   deinit { dir.remove() }
 
   @discardableResult
   func run(_ arguments: String...) -> CLIResult {
-    CLI(environment: environment, ids: ids).run(arguments)
+    CLI(environment: environment, home: home, ids: ids).run(arguments)
   }
 
   func seed(_ events: [EventEnvelope]) throws {
@@ -135,7 +138,7 @@ final class CLIHarness {
   func unknownOrMissingCommandPrintsUsage(arguments: [String]) throws {
     let cli = try CLIHarness()
 
-    let result = CLI(environment: cli.environment, ids: cli.ids).run(arguments)
+    let result = CLI(environment: cli.environment, home: cli.home, ids: cli.ids).run(arguments)
 
     #expect(result.exitCode == 64)
     #expect(result.error.hasPrefix("usage: luthor"))
@@ -151,13 +154,14 @@ final class CLIHarness {
     #expect(result.output.hasPrefix("usage: luthor"))
   }
 
-  @Test func missingLogPathIsAConfigurationError() throws {
+  @Test func logDefaultsToDotLuthorInHome() throws {
     let cli = try CLIHarness()
     cli.environment["LUTHOR_LOG"] = nil
 
-    let result = cli.run("list")
+    cli.run("add", "buy milk")
 
-    #expect(result == CLIResult(exitCode: 78, error: "luthor: set LUTHOR_LOG to the path of the event log\n"))
+    let log = JSONLinesEventLog(fileURL: cli.home.appendingPathComponent(".luthor/events.jsonl"))
+    #expect(try log.readAll().count == 1)
   }
 
   @Test func deviceIDDefaultsToLocal() throws {

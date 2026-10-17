@@ -1,16 +1,15 @@
 import Foundation
 import LuthorDomain
 import LuthorStore
-import LuthorViewModels
 import SwiftUI
 
 @main
 struct LuthorApp: App {
-  private let configuration: AppConfiguration
+  private let configuration: LuthorConfiguration
   @State private var inbox: InboxViewModel
 
   init() {
-    let configuration = AppConfiguration(
+    let configuration = LuthorConfiguration(
       environment: ProcessInfo.processInfo.environment,
       home: FileManager.default.homeDirectoryForCurrentUser
     )

@@ -22,7 +22,7 @@ public struct CLI {
            luthor done <id-prefix> complete the open task whose ID starts with <id-prefix>
 
     environment:
-      LUTHOR_LOG        path of the event log (required)
+      LUTHOR_LOG        path of the event log (default: ~/.luthor/events.jsonl)
       LUTHOR_DEVICE_ID  name of this device in the log (default: local)
 
     """
@@ -30,14 +30,12 @@ public struct CLI {
   private static let exitFailure: Int32 = 1
   /// `EX_USAGE` from sysexits.h.
   private static let exitUsage: Int32 = 64
-  /// `EX_CONFIG` from sysexits.h.
-  private static let exitConfig: Int32 = 78
 
-  private let environment: [String: String]
+  private let configuration: LuthorConfiguration
   private let ids: any IDGenerator
 
-  public init(environment: [String: String], ids: any IDGenerator) {
-    self.environment = environment
+  public init(environment: [String: String], home: URL, ids: any IDGenerator) {
+    configuration = LuthorConfiguration(environment: environment, home: home)
     self.ids = ids
   }
 
@@ -57,13 +55,10 @@ public struct CLI {
     default:
       return CLIResult(exitCode: Self.exitUsage, error: Self.usage)
     }
-    guard let path = environment["LUTHOR_LOG"], !path.isEmpty else {
-      return failure(Self.exitConfig, "set LUTHOR_LOG to the path of the event log")
-    }
-
+    let path = configuration.logURL.path
     let session: Session
     do {
-      session = try Session(path: path, deviceID: environment["LUTHOR_DEVICE_ID"] ?? "local", ids: ids)
+      session = try Session(path: path, deviceID: configuration.deviceID, ids: ids)
     } catch {
       return report(error, path: path)
     }
@@ -89,9 +84,9 @@ public struct CLI {
     let log: [EventEnvelope]
     let open: [TaskItem]
 
-    init(path: String, deviceID: String, ids: any IDGenerator) throws(EventLogError) {
+    init(path: String, deviceID: DeviceID, ids: any IDGenerator) throws(EventLogError) {
       store = JSONLinesEventLog(fileURL: URL(fileURLWithPath: path))
-      commands = Commands(deviceID: DeviceID(deviceID), ids: ids)
+      commands = Commands(deviceID: deviceID, ids: ids)
       log = try store.readAll()
       open = InboxState.replay(log).openTasks
     }

@@ -70,7 +70,7 @@ See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
 
 ```bash
 swift build -c release
-export LUTHOR_LOG=~/.luthor/events.jsonl           # the event log; created on first add
+export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
 export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
 
 .build/release/luthor add "buy milk"
@@ -85,9 +85,10 @@ make app
 open .build/xcode/Build/Products/Release/Luthor.app
 ```
 
-Or open `App/Luthor.xcodeproj` in Xcode and run. The app reads and writes
-`$LUTHOR_LOG` when it is set (launched from a shell, or from Xcode's scheme),
-otherwise `~/.luthor/events.jsonl`, and picks up changes the CLI makes. Type
+Or open `App/Luthor.xcodeproj` in Xcode and run. Like the CLI, the app
+reads and writes `$LUTHOR_LOG` when it is set (launched from a shell, or from
+Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
+CLI makes. Type
 and press Return to capture; ↑ and ↓ select a task, ⌘Return completes it, or
 click its circle.
 
