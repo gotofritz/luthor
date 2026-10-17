@@ -24,28 +24,43 @@ public struct TaskItem: Equatable, Sendable {
   }
 }
 
+/// What a project holds: an open task, or an active sub-project.
+public enum ProjectChild: Equatable, Sendable {
+  case task(TaskItem)
+  case project(ProjectID)
+}
+
 public struct Project: Equatable, Sendable {
   public let id: ProjectID
   public let title: String
   public let kind: ProjectKind
   public fileprivate(set) var viewID: ViewID
-  /// Open tasks in the order they were filed.
-  public fileprivate(set) var tasks: [TaskItem]
+  /// The project it is nested in; `nil` for a top-level project.
+  public fileprivate(set) var parentID: ProjectID?
+  /// Open tasks and active sub-projects, in the order they were added to the project.
+  public fileprivate(set) var children: [ProjectChild]
 
-  public init(id: ProjectID, title: String, kind: ProjectKind, viewID: ViewID, tasks: [TaskItem] = []) {
+  public init(
+    id: ProjectID,
+    title: String,
+    kind: ProjectKind,
+    viewID: ViewID,
+    parentID: ProjectID? = nil,
+    children: [ProjectChild] = []
+  ) {
     self.id = id
     self.title = title
     self.kind = kind
     self.viewID = viewID
-    self.tasks = tasks
+    self.parentID = parentID
+    self.children = children
   }
 
-  /// The tasks that can be worked on now: every open task of a parallel project, the first of a
-  /// sequential one.
-  public var nextActions: [TaskItem] {
-    switch kind {
-    case .parallel: tasks
-    case .sequential: Array(tasks.prefix(1))
+  /// Open tasks filed straight into the project, in the order they were filed.
+  public var tasks: [TaskItem] {
+    children.compactMap { child in
+      guard case .task(let task) = child else { return nil }
+      return task
     }
   }
 }
@@ -61,6 +76,26 @@ public struct ViewState: Equatable, Sendable {
   /// Open tasks of the view not yet filed into a project, in capture order.
   public var inbox: [TaskItem] {
     openTasks.filter { $0.projectID == nil }
+  }
+
+  /// Projects of the view that are nested in none, in creation order.
+  public var topLevelProjects: [Project] {
+    projects
+  }
+
+  /// The active sub-projects of a project, in the order they were added to it.
+  public func subprojects(of projectID: ProjectID) -> [Project] {
+    []
+  }
+
+  /// The tasks of a project's subtree that the project hands out, as if it had no parent.
+  public func nextActions(of projectID: ProjectID) -> [TaskItem] {
+    []
+  }
+
+  /// The tasks of the view's projects that can be worked on now: every ancestor lets them be.
+  public var nextActions: [TaskItem] {
+    []
   }
 }
 
@@ -121,6 +156,8 @@ public struct LibraryState: Equatable, Sendable {
       move(moved.taskID, toView: moved.viewID)
     case .projectMovedToView(let moved):
       move(moved.projectID, toView: moved.viewID)
+    case .projectMovedToProject:
+      break
     }
   }
 
@@ -152,7 +189,7 @@ public struct LibraryState: Equatable, Sendable {
     let filed = TaskItem(id: taskID, title: task.title, viewID: task.viewID, projectID: projectID)
     openTasks[index] = filed
     removeFromProjects(taskID)
-    projects[target].tasks.append(filed)
+    projects[target].children.append(.task(filed))
   }
 
   /// Ignores a task that is not open and a view that does not exist.
@@ -170,12 +207,18 @@ public struct LibraryState: Equatable, Sendable {
     }
     openTasks = openTasks.map { $0.projectID == projectID ? reassign($0) : $0 }
     projects[target].viewID = viewID
-    projects[target].tasks = projects[target].tasks.map(reassign)
+    projects[target].children = projects[target].children.map { child in
+      guard case .task(let task) = child else { return child }
+      return .task(reassign(task))
+    }
   }
 
   private mutating func removeFromProjects(_ taskID: TaskID) {
     for index in projects.indices {
-      projects[index].tasks.removeAll { $0.id == taskID }
+      projects[index].children.removeAll { child in
+        guard case .task(let task) = child else { return false }
+        return task.id == taskID
+      }
     }
   }
 }

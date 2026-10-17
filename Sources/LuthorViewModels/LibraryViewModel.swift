@@ -8,6 +8,35 @@ public enum SidebarItem: Hashable, Sendable {
   case project(ProjectID)
 }
 
+/// One entry of a column: a sub-project to open, or a task.
+public enum ColumnEntry: Equatable, Sendable, Identifiable {
+  case project(Project)
+  case task(TaskItem)
+
+  public var id: String {
+    switch self {
+    case .project(let project): "project-\(project.id.rawValue)"
+    case .task(let task): "task-\(task.id.rawValue)"
+    }
+  }
+}
+
+/// One column of the project browser: the top-level projects, or the children of one project.
+public struct ProjectColumn: Equatable, Sendable, Identifiable {
+  /// The project whose children the column lists; `nil` for the first column, of top-level projects.
+  public let parentID: ProjectID?
+  public let entries: [ColumnEntry]
+
+  public init(parentID: ProjectID?, entries: [ColumnEntry]) {
+    self.parentID = parentID
+    self.entries = entries
+  }
+
+  public var id: String {
+    parentID.map { "project-\($0.rawValue)" } ?? "top"
+  }
+}
+
 /// The main window: one view at a time, with the sidebar of its inbox and projects, the open tasks of
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
@@ -22,8 +51,12 @@ public final class LibraryViewModel {
   /// The one view the window shows; nothing from another view is ever listed.
   public private(set) var currentView: ViewID
   public private(set) var sidebarSelection: SidebarItem = .inbox
-  /// Active projects in creation order.
+  /// Every active project of the view, nested or not, in creation order.
   public private(set) var projects: [Project] = []
+  /// The project browser: the top-level projects, then one column for each project on the path.
+  public private(set) var columns: [ProjectColumn] = []
+  /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
+  public private(set) var path: [ProjectID] = []
   /// Open tasks of the inbox, or of the project the sidebar shows.
   public private(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
@@ -80,6 +113,21 @@ public final class LibraryViewModel {
   public func moveProject(_ projectID: ProjectID, toView viewID: ViewID) {
     perform { (log) throws(CommandError) in try commands.move(projectID: projectID, toView: viewID, log: log) }
   }
+
+  /// What a project carries when dragged, so a drop can tell it from a task.
+  public static func dragPayload(for projectID: ProjectID) -> String {
+    ""
+  }
+
+  /// Handles payloads dropped on a project, or on the first column (`nil`): a project is nested there or
+  /// made top-level, a task is filed into the project. Returns whether anything was dropped.
+  @discardableResult
+  public func drop(_ payloads: [String], on target: ProjectID?) -> Bool {
+    false
+  }
+
+  /// Nests a project in another, or with no parent makes it top-level.
+  public func nest(_ projectID: ProjectID, under parentID: ProjectID?) {}
 
   public func reload() {
     do {
@@ -215,7 +263,7 @@ public final class LibraryViewModel {
     }
     if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
       tasks = project.tasks
-      nextActions = Set(project.nextActions.map(\.id))
+      nextActions = Set(view.nextActions(of: project.id).map(\.id))
     } else {
       tasks = view.inbox
       nextActions = Set(tasks.map(\.id))
