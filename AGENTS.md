@@ -155,7 +155,7 @@ Sources/
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
                              project columns, list, drops, injected clock; the card being edited
                              (`editingCard`), with edit, cancel and save in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
-                             ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
+                             ColumnEntry/ProjectColumn/TaskCardDraft types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
