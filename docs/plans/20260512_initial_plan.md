@@ -52,6 +52,9 @@ SQLite is a performance layer, not the canonical store.
 
 * Swift
 * SwiftUI (Mac first, iOS later)
+* Thin views over view models (`LuthorViewModels` in the Swift package), so
+  UI behaviour is tested with `swift test`; the Xcode project in `App/` holds
+  only the SwiftUI views and links the package
 
 ### Domain layer
 

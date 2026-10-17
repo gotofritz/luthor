@@ -78,6 +78,22 @@ export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
 .build/release/luthor done 9afc                    # any unique prefix of a task ID
 ```
 
+## Mac app
+
+```bash
+make app
+open .build/xcode/Build/Products/Release/Luthor.app
+```
+
+Or open `App/Luthor.xcodeproj` in Xcode and run. The app reads and writes
+`$LUTHOR_LOG` when it is set (launched from a shell, or from Xcode's scheme),
+otherwise `~/.luthor/events.jsonl`, and picks up changes the CLI makes. Type
+and press Return to capture; ↑ and ↓ select a task, ⌘Return completes it, or
+click its circle.
+
+The build is ad-hoc signed: the first launch of a copied app needs
+right-click → Open.
+
 ## Development
 
 ```bash
