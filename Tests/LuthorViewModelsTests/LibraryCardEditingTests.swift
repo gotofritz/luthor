@@ -60,7 +60,8 @@ struct TaskCardEditModeTests {
     library.editCard(.task(TaskID("t1")))
 
     library.saveCard(
-      ofTask: TaskID("t1"), title: "book trains", priority: .critical, estimate: 15, due: nil, notes: "not planes")
+      ofTask: TaskID("t1"),
+      TaskCardDraft(title: "book trains", priority: .critical, estimate: 15, due: nil, notes: "not planes"))
 
     #expect(library.editingCard == nil)
     #expect(
@@ -76,7 +77,8 @@ struct TaskCardEditModeTests {
     library.selection = TaskID("t2")
     library.editCard(.task(TaskID("t2")))
 
-    library.saveCard(ofTask: TaskID("t2"), title: "buy milk", priority: nil, estimate: nil, due: nil, notes: "")
+    library.saveCard(
+      ofTask: TaskID("t2"), TaskCardDraft(title: "buy milk", priority: nil, estimate: nil, due: nil, notes: ""))
 
     #expect(library.editingCard == nil)
     #expect(log.events == editLog)
@@ -88,7 +90,8 @@ struct TaskCardEditModeTests {
     library.selection = TaskID("t2")
     library.editCard(.task(TaskID("t2")))
 
-    library.saveCard(ofTask: TaskID("t2"), title: "  ", priority: .critical, estimate: nil, due: nil, notes: "")
+    library.saveCard(
+      ofTask: TaskID("t2"), TaskCardDraft(title: "  ", priority: .critical, estimate: nil, due: nil, notes: ""))
 
     #expect(library.editingCard == .task(TaskID("t2")))
     #expect(log.events == editLog)

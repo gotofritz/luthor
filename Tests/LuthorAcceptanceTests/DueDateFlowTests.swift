@@ -103,16 +103,16 @@ struct DueDateCardFlowTests {
     #expect(library.dueDate(of: tax) == nil)
 
     library.editCard(.task(tax))
-    library.saveCard(
-      ofTask: tax, title: "pay tax", priority: nil, estimate: nil,
-      due: DueDate(date: date("2026-10-30"), isHard: true), notes: "")
+    let due = DueDate(date: date("2026-10-30"), isHard: true)
+    library.saveCard(ofTask: tax, TaskCardDraft(title: "pay tax", priority: nil, estimate: nil, due: due, notes: ""))
 
     let relaunched = launchApp(on: url)
     let again = try relaunched.task("pay tax")
-    #expect(relaunched.dueDate(of: again) == DueDate(date: date("2026-10-30"), isHard: true))
+    #expect(relaunched.dueDate(of: again) == due)
 
     relaunched.editCard(.task(again))
-    relaunched.saveCard(ofTask: again, title: "pay tax", priority: nil, estimate: nil, due: nil, notes: "")
+    relaunched.saveCard(
+      ofTask: again, TaskCardDraft(title: "pay tax", priority: nil, estimate: nil, due: nil, notes: ""))
     #expect(relaunched.dueDate(of: again) == nil)
   }
 

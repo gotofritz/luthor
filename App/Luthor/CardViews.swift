@@ -123,7 +123,9 @@ private struct TaskCardEditor: View {
 
   private func save() {
     let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
-    library.saveCard(ofTask: task.id, title: title, priority: priority, estimate: estimate, due: due, notes: notes)
+    library.saveCard(
+      ofTask: task.id,
+      TaskCardDraft(title: title, priority: priority, estimate: estimate, due: due, notes: notes))
   }
 
   /// The choices, plus the estimate the task has when it is none of them.

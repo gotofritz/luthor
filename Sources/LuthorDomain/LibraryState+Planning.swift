@@ -116,6 +116,21 @@ public struct WaitingItem: Equatable, Sendable {
 // Planning: how scheduling, delegating and dropping change the state, and the pure functions that turn it
 // into a day's plan. In its own file (SwiftLint file_length) rather than suppressed.
 extension LibraryState {
+  /// Applies the events that set a day's order or capacity and a task's due date; any other event changes
+  /// nothing.
+  mutating func applyPlanning(_ payload: EventPayload) {
+    switch payload {
+    case .dayPlanOrdered(let ordered):
+      order(ordered)
+    case .dayCapacitySet(let capacity):
+      setCapacity(capacity)
+    case .taskDueSet(let due):
+      setDue(due)
+    default:
+      break
+    }
+  }
+
   /// Ignores a task that is not open and a task that is delegated, which has to be reclaimed first.
   mutating func schedule(_ scheduled: TaskScheduled) {
     guard openTasks.contains(where: { $0.id == scheduled.taskID }), delegations[scheduled.taskID] == nil else { return }

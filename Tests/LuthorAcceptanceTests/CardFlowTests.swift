@@ -79,7 +79,8 @@ struct EditCardFlowTests {
     #expect(library.selectedTask?.title == "buy mlik")
 
     library.editCard(.task(milk))
-    library.saveCard(ofTask: milk, title: "buy milk", priority: .critical, estimate: 15, due: nil, notes: "oat")
+    library.saveCard(
+      ofTask: milk, TaskCardDraft(title: "buy milk", priority: .critical, estimate: 15, due: nil, notes: "oat"))
 
     let relaunched = launchApp(on: dir.file("events.jsonl"))
     relaunched.open(.project(shop))

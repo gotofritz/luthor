@@ -197,18 +197,14 @@ public struct LibraryState: Equatable, Sendable {
       schedule(scheduled)
     case .taskUnscheduled(let unscheduled):
       scheduledDates.removeValue(forKey: unscheduled.taskID)
-    case .dayPlanOrdered(let ordered):
-      order(ordered)
-    case .dayCapacitySet(let capacity):
-      setCapacity(capacity)
     case .taskDelegated(let delegated):
       delegate(delegated)
     case .taskReclaimed(let reclaimed):
       delegations.removeValue(forKey: reclaimed.taskID)
     case .taskDropped(let dropped):
       finish(dropped.taskID)
-    case .taskDueSet(let due):
-      setDue(due)
+    case .dayPlanOrdered, .dayCapacitySet, .taskDueSet:
+      applyPlanning(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
     }

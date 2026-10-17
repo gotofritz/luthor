@@ -46,17 +46,20 @@ struct LibraryDueDateTests {
     let due = DueDate(date: date("2026-10-23"), isHard: true)
 
     library.editCard(.task(TaskID("t1")))
-    library.saveCard(ofTask: TaskID("t1"), title: "pay tax", priority: nil, estimate: nil, due: due, notes: "")
+    library.saveCard(
+      ofTask: TaskID("t1"), TaskCardDraft(title: "pay tax", priority: nil, estimate: nil, due: due, notes: ""))
     #expect(library.dueDate(of: TaskID("t1")) == due)
     #expect(library.editingCard == nil)
 
     let written = log.events.count
     library.editCard(.task(TaskID("t1")))
-    library.saveCard(ofTask: TaskID("t1"), title: "pay tax", priority: nil, estimate: nil, due: due, notes: "")
+    library.saveCard(
+      ofTask: TaskID("t1"), TaskCardDraft(title: "pay tax", priority: nil, estimate: nil, due: due, notes: ""))
     #expect(log.events.count == written)
 
     library.editCard(.task(TaskID("t1")))
-    library.saveCard(ofTask: TaskID("t1"), title: "pay tax", priority: nil, estimate: nil, due: nil, notes: "")
+    library.saveCard(
+      ofTask: TaskID("t1"), TaskCardDraft(title: "pay tax", priority: nil, estimate: nil, due: nil, notes: ""))
     #expect(library.dueDate(of: TaskID("t1")) == nil)
   }
 
