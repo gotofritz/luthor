@@ -143,7 +143,9 @@ starts with its card; both edit the title (`TaskRenamed`, `ProjectRenamed`)
 and plain-text notes (`TaskNoted`, `ProjectNoted`, links made clickable by
 `NoteLinks`), and a project's card switches it between sequential and
 parallel (`ProjectKindChanged`, also in its context menu). All events are
-additive, so old logs replay unchanged.
+additive, so old logs replay unchanged. From issue #24 the cards are
+read-only (title, creation day, notes) until the pencil opens them for
+editing, closed by OK or Cancel; see the Decisions at the end.
 
 ### 6. Priority and estimates (ALPEN: A, L) ✅
 
@@ -698,3 +700,24 @@ Usable: the weekly review.
    folder and are still read; the Mac simply writes a new file from now on.
    If the defaults are wiped the Mac becomes a new device, which is harmless
    because events merge by ID
+
+## Decisions (2026-10-17, read-only cards, issue #24)
+
+1. **A card is read-only until the pencil.** The view model holds
+   `editingCard`; the card shows the title, the creation day and the notes,
+   and the pencil (no text) turns it into the editor. Showing another task,
+   project, place or view leaves edit mode. A completed item has no pencil
+2. **Nothing is written until OK.** The editor keeps its own draft of the
+   fields; OK hands them to `saveCard` which writes the events that differ
+   (the commands already write nothing for unchanged values), Cancel drops
+   the draft. Priority and estimate used to be written on each pick, so
+   they are drafts now too. A blank title writes nothing and keeps the card
+   open
+3. **The creation day is an optional field on the creating events.**
+   `TaskCaptured` and `ProjectCreated` gain `createdOn` (a `CalendarDate`,
+   ISO text in the log), set from the view model's clock. Optional and
+   absent in old logs, so they replay unchanged and their cards show no day.
+   No wall-clock time: the domain stays free of `Date()`
+4. **The read-only card shows only title, day and notes**, as the issue
+   asks. Priority, estimate, project, kind and the estimate history are in
+   the editor

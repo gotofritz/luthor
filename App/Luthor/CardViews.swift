@@ -3,16 +3,13 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The card of the task selected: its title, priority, estimate, project and notes, in a column of its own
-/// after the list the task is in. A completed task shows its card too, read-only until it is reopened.
+/// The card of the task selected, in a column of its own after the list the task is in. It shows the title,
+/// the day the task was created and its notes; the pencil turns it into the editor of the title, priority,
+/// estimate and notes, closed by OK or Cancel. A completed task shows its card too, with no pencil until it
+/// is reopened.
 struct TaskCardColumn: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
-
-  /// Estimates offered next to the one the task has, in minutes.
-  private static let estimateChoices = [5, 15, 30, 60]
-
-  @State private var title = ""
 
   private var isCompleted: Bool {
     library.completedTaskIDs.contains(task.id)
@@ -20,41 +17,28 @@ struct TaskCardColumn: View {
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 12) {
-        TextField("Title", text: $title)
-          .textFieldStyle(.roundedBorder)
-          .font(.title3)
-          .onSubmit { library.rename(task.id, to: title) }
-          .disabled(isCompleted)
-        if isCompleted {
-          completedLine
+      Group {
+        if library.editingCard == .task(task.id) {
+          TaskCardEditor(library: library, task: task)
+        } else {
+          readOnlyCard
         }
-        Picker("Priority", selection: priority) {
-          Text("None").tag(Priority?.none)
-          ForEach(Priority.allCases, id: \.self) { priority in
-            Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
-          }
-        }
-        .disabled(isCompleted)
-        Picker("Estimate", selection: estimate) {
-          Text("None").tag(Int?.none)
-          ForEach(estimateChoices, id: \.self) { minutes in
-            Text("\(minutes)m").tag(Int?.some(minutes))
-          }
-        }
-        .disabled(isCompleted)
-        if let history = library.estimateHistory(ofTask: task.id) {
-          LabeledContent("History", value: history.summary)
-        }
-        LabeledContent("Project", value: projectTitle)
-        NotesView(notes: task.notes, isEditable: !isCompleted) { library.setNotes(task.id, to: $0) }
       }
       .padding(12)
     }
     .frame(width: 300)
     .id(task.id)
-    .onAppear { title = task.title }
-    .onChange(of: task.title) { _, newTitle in title = newTitle }
+  }
+
+  private var readOnlyCard: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      CardHeader(title: task.title, canEdit: !isCompleted) { library.editCard(.task(task.id)) }
+      if isCompleted {
+        completedLine
+      }
+      CreatedLine(day: task.createdOn)
+      NotesView(notes: task.notes)
+    }
   }
 
   private var completedLine: some View {
@@ -67,13 +51,60 @@ struct TaskCardColumn: View {
       }
     }
   }
+}
 
-  private var priority: Binding<Priority?> {
-    Binding(get: { task.priority }, set: { library.prioritize(task.id, as: $0) })
+/// A task card in edit mode. What is typed stays here until OK hands it to the view model; Cancel drops it.
+private struct TaskCardEditor: View {
+  let library: LibraryViewModel
+  let task: TaskItem
+
+  /// Estimates offered next to the one the task has, in minutes.
+  private static let estimateChoices = [5, 15, 30, 60]
+
+  @State private var title: String
+  @State private var priority: Priority?
+  @State private var estimate: Int?
+  @State private var notes: String
+
+  init(library: LibraryViewModel, task: TaskItem) {
+    self.library = library
+    self.task = task
+    _title = State(initialValue: task.title)
+    _priority = State(initialValue: task.priority)
+    _estimate = State(initialValue: task.estimate)
+    _notes = State(initialValue: task.notes ?? "")
   }
 
-  private var estimate: Binding<Int?> {
-    Binding(get: { task.estimate }, set: { library.estimate(task.id, as: $0) })
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      TextField("Title", text: $title)
+        .textFieldStyle(.roundedBorder)
+        .font(.title3)
+        .onSubmit(save)
+      Picker("Priority", selection: $priority) {
+        Text("None").tag(Priority?.none)
+        ForEach(Priority.allCases, id: \.self) { priority in
+          Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
+        }
+      }
+      Picker("Estimate", selection: $estimate) {
+        Text("None").tag(Int?.none)
+        ForEach(estimateChoices, id: \.self) { minutes in
+          Text("\(minutes)m").tag(Int?.some(minutes))
+        }
+      }
+      if let history = library.estimateHistory(ofTask: task.id) {
+        LabeledContent("History", value: history.summary)
+      }
+      LabeledContent("Project", value: projectTitle)
+      CreatedLine(day: task.createdOn)
+      NotesEditor(notes: $notes)
+      EditButtons(save: save) { library.cancelCardEdit() }
+    }
+  }
+
+  private func save() {
+    library.saveCard(ofTask: task.id, title: title, priority: priority, estimate: estimate, notes: notes)
   }
 
   /// The choices, plus the estimate the task has when it is none of them.
@@ -86,25 +117,32 @@ struct TaskCardColumn: View {
   }
 }
 
-/// The card of the project whose column it heads: title, kind, notes. Its tasks and sub-projects are the
-/// list below it. A completed project shows its card too, read-only until it is reopened.
+/// The card of the project whose column it heads, above its tasks and sub-projects. Like a task card it
+/// shows the title, the day the project was created and its notes until the pencil opens the editor of the
+/// title, kind and notes. A completed project shows its card too, with no pencil until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
   let project: Project
-
-  @State private var title = ""
 
   private var isCompleted: Bool {
     library.completedProjectIDs.contains(project.id)
   }
 
   var body: some View {
+    Group {
+      if library.editingCard == .project(project.id) {
+        ProjectCardEditor(library: library, project: project)
+      } else {
+        readOnlyCard
+      }
+    }
+    .padding(12)
+    .id(project.id)
+  }
+
+  private var readOnlyCard: some View {
     VStack(alignment: .leading, spacing: 10) {
-      TextField("Title", text: $title)
-        .textFieldStyle(.roundedBorder)
-        .font(.title3)
-        .onSubmit { library.renameProject(project.id, to: title) }
-        .disabled(isCompleted)
+      CardHeader(title: project.title, canEdit: !isCompleted) { library.editCard(.project(project.id)) }
       if isCompleted {
         HStack {
           Label("Completed", systemImage: "checkmark.circle.fill")
@@ -115,54 +153,115 @@ struct ProjectCard: View {
           }
         }
       }
-      Picker("Kind", selection: kind) {
+      CreatedLine(day: project.createdOn)
+      NotesView(notes: project.notes)
+    }
+  }
+}
+
+/// A project card in edit mode. What is typed stays here until OK hands it to the view model; Cancel drops it.
+private struct ProjectCardEditor: View {
+  let library: LibraryViewModel
+  let project: Project
+
+  @State private var title: String
+  @State private var kind: ProjectKind
+  @State private var notes: String
+
+  init(library: LibraryViewModel, project: Project) {
+    self.library = library
+    self.project = project
+    _title = State(initialValue: project.title)
+    _kind = State(initialValue: project.kind)
+    _notes = State(initialValue: project.notes ?? "")
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      TextField("Title", text: $title)
+        .textFieldStyle(.roundedBorder)
+        .font(.title3)
+        .onSubmit(save)
+      Picker("Kind", selection: $kind) {
         Label("Parallel", systemImage: ProjectKind.parallel.symbol).tag(ProjectKind.parallel)
         Label("Sequential", systemImage: ProjectKind.sequential.symbol).tag(ProjectKind.sequential)
       }
       .pickerStyle(.segmented)
-      .disabled(isCompleted)
       if let history = library.estimateHistory(ofProject: project.id) {
         LabeledContent("History", value: history.summary)
       }
-      NotesView(notes: project.notes, isEditable: !isCompleted) { library.setNotes(ofProject: project.id, to: $0) }
+      CreatedLine(day: project.createdOn)
+      NotesEditor(notes: $notes)
+      EditButtons(save: save) { library.cancelCardEdit() }
     }
-    .padding(12)
-    .id(project.id)
-    .onAppear { title = project.title }
-    .onChange(of: project.title) { _, newTitle in title = newTitle }
   }
 
-  private var kind: Binding<ProjectKind> {
-    Binding(get: { project.kind }, set: { library.setKind(of: project.id, to: $0) })
+  private func save() {
+    library.saveCard(ofProject: project.id, title: title, kind: kind, notes: notes)
   }
 }
 
-/// Plain-text notes with their web addresses made clickable. Edit swaps in a text editor; Done saves.
+/// The title of a card, with the pencil that opens the editor beside it. No text on the button, as the
+/// pencil says it; a completed card has none.
+private struct CardHeader: View {
+  let title: String
+  let canEdit: Bool
+  let edit: () -> Void
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(title)
+        .font(.title3)
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      if canEdit {
+        Button(action: edit) {
+          Image(systemName: "pencil")
+        }
+        .buttonStyle(.borderless)
+        .help("Edit")
+        .accessibilityLabel("Edit")
+      }
+    }
+  }
+}
+
+/// The day a card's task or project was created; nothing for one created before the day was kept.
+private struct CreatedLine: View {
+  let day: CalendarDate?
+
+  var body: some View {
+    if let day {
+      Text("Created \(day.isoString)")
+        .font(.callout)
+        .foregroundStyle(.secondary)
+    }
+  }
+}
+
+/// OK keeps what was typed on a card, Cancel drops it.
+private struct EditButtons: View {
+  let save: () -> Void
+  let cancel: () -> Void
+
+  var body: some View {
+    HStack {
+      Spacer()
+      Button("Cancel", action: cancel)
+      Button("OK", action: save)
+    }
+  }
+}
+
+/// Plain-text notes with their web addresses made clickable, or "No notes".
 private struct NotesView: View {
   let notes: String?
-  let isEditable: Bool
-  let save: (String) -> Void
-
-  @State private var isEditing = false
-  @State private var draft = ""
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      HStack {
-        Text("Notes")
-          .font(.headline)
-        Spacer()
-        if isEditable {
-          Button(isEditing ? "Done" : "Edit") { toggle() }
-            .buttonStyle(.borderless)
-        }
-      }
-      if isEditing {
-        TextEditor(text: $draft)
-          .font(.body)
-          .frame(minHeight: 120)
-          .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.4)))
-      } else if let notes {
+      Text("Notes")
+        .font(.headline)
+      if let notes {
         Text(Self.linkified(notes))
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,18 +270,6 @@ private struct NotesView: View {
           .foregroundStyle(.secondary)
       }
     }
-    .onDisappear {
-      if isEditing { save(draft) }
-    }
-  }
-
-  private func toggle() {
-    if isEditing {
-      save(draft)
-    } else {
-      draft = notes ?? ""
-    }
-    isEditing.toggle()
   }
 
   /// The notes with each web address a link.
@@ -193,5 +280,21 @@ private struct NotesView: View {
       text[range].link = link.url
     }
     return text
+  }
+}
+
+/// The notes of a card in edit mode: a text editor that is open from the start, with no Edit of its own.
+private struct NotesEditor: View {
+  @Binding var notes: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Notes")
+        .font(.headline)
+      TextEditor(text: $notes)
+        .font(.body)
+        .frame(minHeight: 120)
+        .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.4)))
+    }
   }
 }

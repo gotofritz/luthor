@@ -104,22 +104,32 @@ took along cannot be reopened by itself; reopen the project.
 
 ## Cards
 
-Click a task and a card opens in the column after the list. It shows the
-task's title, priority, estimate and project, and its notes. Click a project
-and the column of its contents starts with the project's card: title, kind
-(parallel or sequential) and notes, with its sub-projects and tasks listed
-below it.
+Click a task and a card opens in the column after the list. Click a project
+and the column of its contents starts with the project's card, with its
+sub-projects and tasks listed below it.
 
-- Change the title in the card's field and press Return
-- Priority and estimate are pickers, the same as the context menu's
-- A project's kind is switched in its card, or from Kind in its context menu.
-  A sequential project dims every child but its first open one, so the next
-  actions change at once
-- Notes are plain text. Edit opens a text field, Done saves; clearing the
-  text removes the notes. Web addresses in notes (`https://…` or `www.…`)
-  are clickable links
-- A completed task or project shows its card too, read-only; Reopen is on
-  the card
+A card is read-only. It shows the title, the day the task or project was
+created ("Created 2026-10-19", left out for what was created before the app
+kept the day) and the notes ("No notes" if there are none). Web addresses in
+notes (`https://…` or `www.…`) are clickable links.
+
+The pencil button next to the title opens the card for editing; nothing is
+written until OK:
+
+- A task's card then has the title field, the priority and estimate pickers,
+  its project, the estimate history if there is one, and the notes in a text
+  field. A project's card has the title field, the kind (parallel or
+  sequential), the estimate history and the notes
+- A sequential project dims every child but its first open one, so the next
+  actions change at once. The kind can also be switched from Kind in the
+  project's context menu
+- OK (or Return in the title field) keeps what you changed; Cancel drops it.
+  A blank title is not kept: the card stays open so you can fix it. Clearing
+  the notes removes them
+- Showing another task, project or place closes the card without keeping
+  anything
+- A completed task or project shows its card too, with no pencil; Reopen is
+  on the card
 
 ## Today
 
