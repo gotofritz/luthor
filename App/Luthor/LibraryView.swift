@@ -115,6 +115,7 @@ struct LibraryView: View {
     case .inbox: "Inbox"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
+    case .settings: "Settings"
     }
   }
 

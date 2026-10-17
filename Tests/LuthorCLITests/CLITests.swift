@@ -273,3 +273,43 @@ struct CLIViewTests {
         == CLIResult(exitCode: 0, output: "Completed w1aaaaaa  write the report\n"))
   }
 }
+
+@Suite("Given a default view chosen in settings")
+struct CLIDefaultViewTests {
+  @Test("add without --view or LUTHOR_VIEW captures into it")
+  func addWithoutAViewUsesIt() throws {
+    let cli = try CLIHarness()
+    try cli.seed([
+      viewCreated("work", "Work", lamport: 1),
+      settingChanged(.defaultViewID, to: "work", lamport: 2),
+    ])
+
+    let result = cli.run("add", "book a room")
+
+    #expect(result == CLIResult(exitCode: 0, output: "Captured id-2  book a room\n"))
+    #expect(try cli.log().last == captured("id-2", "book a room", id: "id-1", view: "work", lamport: 3))
+  }
+
+  @Test("--view still wins over it")
+  func explicitViewStillWins() throws {
+    let cli = try CLIHarness()
+    try cli.seed([
+      viewCreated("work", "Work", lamport: 1),
+      settingChanged(.defaultViewID, to: "work", lamport: 2),
+    ])
+
+    cli.run("add", "--view", "Default", "buy milk")
+
+    #expect(try cli.log().last == captured("id-2", "buy milk", id: "id-1", lamport: 3))
+  }
+
+  @Test("a default view that no longer exists falls back to the built-in default view")
+  func unknownDefaultViewFallsBack() throws {
+    let cli = try CLIHarness()
+    try cli.seed([settingChanged(.defaultViewID, to: "gone", lamport: 1)])
+
+    cli.run("add", "buy milk")
+
+    #expect(try cli.log().last == captured("id-2", "buy milk", id: "id-1", lamport: 2))
+  }
+}

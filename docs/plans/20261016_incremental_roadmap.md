@@ -144,30 +144,29 @@ Task menu) offers 5/15/30/60-minute presets and None, next to Priority.
 
 Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
-### 7. Settings
+### 7. Settings ✅
 
-Planning only works if its numbers are mine: how big the buffer is, what an
-unestimated task counts as, how many hours a Friday has. A settings panel
-(⌘,) comes before the slices that use them.
+A rail icon pinned to the bottom (or ⌘,) opens Settings: two Miller columns,
+the families Global and Local in the first, the individual settings of the
+one picked in the second. `SettingChanged(key, value, viewID?)` is the one
+event for all of them; `LibraryState` resolves a setting from its per-view
+override, then the global value, then the built-in default. `key` is a raw
+string rather than a closed enum, so a key this build does not recognise is
+ignored on replay instead of failing the line, the forward-compatibility the
+plan called for. Global sets the default estimate for an unestimated task
+(5 minutes), the buffer percentage (40%) and the capacity per weekday (8
+hours on weekdays, none at the weekend), plus the default view `luthor add`
+and imports use when none is named. Local overrides the buffer and the
+capacity for the view shown, each a toggle between following the global
+value and its own. Per-device preferences (last view shown, window state)
+stay out of the log, in `UserDefaults`. View management (create, rename)
+stays where it already was, in the view switcher, rather than duplicating
+it here; only choosing the default view belongs in Settings. Each later
+slice adds its own settings to the panel in the same PR; the panel is never
+a catch-all added at the end.
 
-- `SettingChanged(key, value, viewID?)`. Settings are events, so they sync
-  and replay like everything else; a setting resolves per-view override,
-  then global, then the built-in default. Domain code reads a typed
-  `Settings` value; an unknown key is ignored on replay, so an old build
-  survives a newer log
-- Settings that live in the log: default estimate for unestimated tasks
-  (5 minutes), buffer percentage (40%), default capacity per weekday, default
-  project review interval or off (slice 14). Capacity and buffer differ
-  between a work view and a private one, hence the per-view override
-- Per-device preferences (last view shown, window state) stay out of the
-  log, in `UserDefaults`
-- The panel also manages views: create, rename, choose the default view
-  that `luthor add` and imports use
-- Each later slice adds its own settings to the panel in the same PR; the
-  panel is never a catch-all added at the end
-
-Usable: views managed in the app, and the numbers Today will plan with are
-already set.
+Usable: the numbers Today will plan with are already set, globally and per
+view.
 
 ### 8. Today: plan the day (ALPEN: P, E)
 
@@ -451,3 +450,26 @@ Usable: the weekly review.
 4. **Minutes only, no hours shorthand.** `<n>m` is the one estimate tag;
    `1h30m` or similar is left for a later slice if it turns out to be
    wanted
+
+## Decisions (2026-10-17, slice 7)
+
+1. **One event for every setting**, `SettingChanged(key, value, viewID?)`,
+   rather than one event type per setting. A setting is a key/value pair the
+   domain resolves, not a distinct kind of thing that happened
+2. **`key` is a raw string on the wire, not a closed enum.** Decoding never
+   fails on a key this build does not recognise; `LibraryState.apply`
+   ignores it instead, so an old build survives a log a newer one wrote.
+   `Commands` and the view model still use the typed `SettingKey` enum, so
+   callers cannot typo a key
+3. **Two families in the settings place, Global and Local**, as suggested:
+   Global is what every view falls back to; Local is the current view's
+   overrides, each a toggle between following the global value and its own
+4. **Capacity per weekday is seven keys, not one key holding seven values.**
+   A flat `SettingKey` case per weekday keeps the event format simple (no
+   nested value) and lets a weekday be overridden on its own
+5. **The default view is a global setting, not a new kind of event.** It is
+   `SettingKey.defaultViewID`, always global: a view cannot override which
+   view is the default
+6. **Settings does not duplicate view management.** Create and rename
+   already work from the view switcher; Settings only adds choosing the
+   default view, which is new here

@@ -231,3 +231,21 @@ public func project(
 public func sub(_ project: String) -> ProjectChild {
   .project(ProjectID(project))
 }
+
+/// Builds a `SettingChanged` envelope with short, readable defaults; a `nil` value clears it, and a
+/// `nil` view makes it global.
+public func settingChanged(
+  _ key: SettingKey,
+  to value: String?,
+  view: String? = nil,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 1
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "setting-\(key.rawValue)-\(view ?? "global")-\(value ?? "clear")"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .settingChanged(SettingChanged(key: key, value: value, viewID: view.map(ViewID.init)))
+  )
+}

@@ -16,7 +16,7 @@ and more; from slice 13 of the roadmap it shrinks to `luthor add`, for Alfred.
 swift build -c release                             # or `make install`, below, to put luthor on PATH
 export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
 export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
-export LUTHOR_VIEW=Work                            # optional, default: the Default view
+export LUTHOR_VIEW=Work                            # optional, default: the view chosen in Settings
 
 .build/release/luthor add "buy milk"
 .build/release/luthor add "call bank !a 15m"        # priority Critical, 15-minute estimate
@@ -45,8 +45,9 @@ and renames views; the app reopens on the view last used on that Mac. Task → M
 project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
-to look at: Inbox (a list of its tasks), Projects or Prios. Above the main
-area is a bar with a search box (not working yet) and the view switcher.
+to look at: Inbox (a list of its tasks), Projects or Prios, with Settings
+pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
+(not working yet) and the view switcher.
 
 Prios lists the priorities Critical, Important, Optional and One day. Click
 one to list its tasks, click another to add it: the picked priorities add up,
@@ -69,6 +70,13 @@ Project). Typing in the capture field adds the task straight to the project
 shown. Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
+
+Settings has two families of settings, Global and Local (overrides for the
+view currently shown): Global sets the numbers every view falls back to
+(default estimate for an unestimated task, buffer percentage, capacity per
+weekday) and which view `luthor add` and imports use when none is named;
+Local overrides the buffer and capacity for the current view only, and
+follows the global value until switched on.
 
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.

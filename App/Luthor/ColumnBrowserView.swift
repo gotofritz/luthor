@@ -28,6 +28,9 @@ struct ColumnBrowserView: View {
           Divider()
           TaskListColumn(library: library)
           Divider()
+        case .settings:
+          SettingsColumnsView(library: library)
+          Divider()
         }
       }
     }

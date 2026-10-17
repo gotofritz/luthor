@@ -39,6 +39,8 @@ It does not expand. Click a place to look at it:
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
+- **Settings**, pinned to the bottom of the rail (or ⌘,): the planning
+  numbers (see Settings)
 
 Above the main area is a bar with a search box and the view switcher. Search
 does not work yet. Navigating by keyboard alone is not possible yet either.
@@ -108,11 +110,28 @@ complete a task from the list like anywhere else.
 A task given One day (someday) is kept out of next actions, wherever it is
 filed, until you give it another priority.
 
+## Settings
+
+Settings shows two families in its first column: Global and Local.
+
+- **Global** sets the numbers every view falls back to: the default estimate
+  for a task given no estimate (5 minutes), the buffer percentage held back
+  from each day's capacity (40%), and the capacity of each weekday in
+  minutes (8 hours on weekdays, none at the weekend). It also picks the
+  default view: the one `luthor add` and imports use when none is named
+- **Local** overrides the buffer and the weekday capacity for the view
+  currently shown. Each is a toggle: off, it follows the global value
+  (shown greyed with "(global)"); on, it shows its own value to change.
+  Switching it off returns to following the global value
+
+These numbers do not yet change anything else in the app; Today (a later
+slice) plans the day with them.
+
 ## The luthor command
 
 A quick way to capture from a terminal. It knows tasks only, not projects,
 and works in one view: the one named with `--view`, else `LUTHOR_VIEW`, else
-Default. View names ignore case.
+the view chosen in Settings. View names ignore case.
 
 ```bash
 luthor add "buy milk"

@@ -28,7 +28,7 @@ public struct CLI {
     environment:
       LUTHOR_LOG        path of the event log (default: ~/.luthor/events.jsonl)
       LUTHOR_DEVICE_ID  name of this device in the log (default: local)
-      LUTHOR_VIEW       name of the view to use without --view (default: the default view)
+      LUTHOR_VIEW       name of the view to use without --view (default: the view chosen in Settings)
 
     """
 
@@ -111,9 +111,10 @@ public struct CLI {
     /// The open tasks of the session's view.
     var open: [TaskItem] { state.view(viewID).openTasks }
 
-    /// The view with this name, ignoring case; the default view for `nil`.
+    /// The view with this name, ignoring case; the view chosen in settings (or the default view) for
+    /// `nil`.
     func view(named name: String?) -> ViewID? {
-      guard let name else { return .default }
+      guard let name else { return state.defaultViewID }
       return state.view(named: name)?.id
     }
 

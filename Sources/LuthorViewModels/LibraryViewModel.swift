@@ -2,48 +2,6 @@ import LuthorDomain
 import LuthorStore
 import Observation
 
-/// What the sidebar can show: the inbox or one active project.
-public enum SidebarItem: Hashable, Sendable {
-  case inbox
-  case project(ProjectID)
-}
-
-/// The places the navigation rail leads to, in the order it lists them.
-public enum NavigationSection: Hashable, Sendable, CaseIterable {
-  case inbox
-  case projects
-  case priorities
-}
-
-/// One entry of a column: a sub-project to open, or a task.
-public enum ColumnEntry: Equatable, Sendable, Identifiable {
-  case project(Project)
-  case task(TaskItem)
-
-  public var id: String {
-    switch self {
-    case .project(let project): "project-\(project.id.rawValue)"
-    case .task(let task): "task-\(task.id.rawValue)"
-    }
-  }
-}
-
-/// One column of the project browser: the top-level projects, or the children of one project.
-public struct ProjectColumn: Equatable, Sendable, Identifiable {
-  /// The project whose children the column lists; `nil` for the first column, of top-level projects.
-  public let parentID: ProjectID?
-  public let entries: [ColumnEntry]
-
-  public init(parentID: ProjectID?, entries: [ColumnEntry]) {
-    self.parentID = parentID
-    self.entries = entries
-  }
-
-  public var id: String {
-    parentID.map { "project-\($0.rawValue)" } ?? "top"
-  }
-}
-
 /// The main window: one view at a time, with the sidebar of its inbox and projects, the open tasks of
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
@@ -72,6 +30,12 @@ public final class LibraryViewModel {
   public private(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
   public private(set) var nextActions: Set<TaskID> = []
+  /// The settings with no per-view override applied.
+  public private(set) var globalSettings = LibraryState.replay([]).globalSettings
+  /// The settings `currentView` plans with: its own overrides, then the global values.
+  public private(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
+  /// The view `luthor add` and imports use when none is named.
+  public private(set) var defaultViewID = ViewID.default
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
@@ -79,8 +43,8 @@ public final class LibraryViewModel {
   public private(set) var errorMessage: String?
 
   private let log: any EventLog
-  private let commands: Commands
-  @ObservationIgnored private var state = LibraryState.replay([])
+  let commands: Commands
+  @ObservationIgnored var state = LibraryState.replay([])
 
   public init(log: any EventLog, commands: Commands, view: ViewID = .default) {
     self.log = log
@@ -289,7 +253,7 @@ extension LibraryViewModel {
 
   /// Runs a command on the log as it is now and appends what it returns; returns the events written.
   @discardableResult
-  private func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
+  func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
     let current: [EventEnvelope]
     do {
       current = try log.readAll()
@@ -329,6 +293,9 @@ extension LibraryViewModel {
       // A remembered view this log does not have.
       currentView = .default
     }
+    globalSettings = state.globalSettings
+    viewSettings = state.settings(for: currentView)
+    defaultViewID = state.defaultViewID
     let view = state.view(currentView)
     projects = view.projects
     if let projectID = shownProjectID, !projects.contains(where: { $0.id == projectID }) {

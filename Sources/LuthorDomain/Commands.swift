@@ -202,6 +202,37 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskEstimated(estimated), log: log)]
   }
 
+  /// Changes a global setting, or with `nil` clears it back to the built-in default. Setting it to the
+  /// value it already has writes nothing.
+  public func changeSetting(_ key: SettingKey, to value: String?, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    guard LibraryState.replay(log).globalSettingValue(key) != value else { return [] }
+    let changed = SettingChanged(key: key, value: value)
+    return [envelope(EventID(ids.next()), .settingChanged(changed), log: log)]
+  }
+
+  /// Overrides a setting for the view `viewID`, or with `nil` clears the override back to the global
+  /// value. Setting it to the value it already has writes nothing.
+  public func changeSetting(
+    _ key: SettingKey,
+    to value: String?,
+    for viewID: ViewID,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    let state = LibraryState.replay(log)
+    try requireView(viewID, in: state)
+    guard state.overrideValue(key, in: viewID) != value else { return [] }
+    let changed = SettingChanged(key: key, value: value, viewID: viewID)
+    return [envelope(EventID(ids.next()), .settingChanged(changed), log: log)]
+  }
+
+  /// Sets the view `luthor add` and imports use when none is named. The view must exist.
+  public func setDefaultView(_ viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    try requireView(viewID, in: LibraryState.replay(log))
+    return try changeSetting(.defaultViewID, to: viewID.rawValue, log: log)
+  }
+
   public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     try requireActive(projectID, log: log)
     return [envelope(EventID(ids.next()), .projectCompleted(ProjectCompleted(projectID: projectID)), log: log)]

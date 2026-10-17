@@ -163,6 +163,10 @@ public struct LibraryState: Equatable, Sendable {
   private(set) var openTasks: [TaskItem] = []
   /// Every active project of every view, in creation order.
   private(set) var projects: [Project] = []
+  /// Global setting values, by key; a key not here falls back to its built-in default.
+  var globalSettingValues: [SettingKey: String] = [:]
+  /// Per-view setting overrides; a key not here for a view falls back to the global value.
+  var viewSettingOverrides: [ViewID: [SettingKey: String]] = [:]
 
   /// The open tasks and active projects of one view; empty for a view that does not exist.
   public func view(_ viewID: ViewID) -> ViewState {
@@ -215,6 +219,8 @@ public struct LibraryState: Equatable, Sendable {
       prioritize(prioritized.taskID, as: prioritized.priority)
     case .taskEstimated(let estimated):
       estimate(estimated.taskID, as: estimated.minutes)
+    case .settingChanged(let changed):
+      change(changed)
     }
   }
 
