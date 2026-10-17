@@ -22,7 +22,7 @@ sync of event files) stays; the order and the amount of machinery change.
 - **Pre-1.0 event format is soft.** While I am the only user, an event format
   change may be handled by a one-off migration script over the log, or by
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
-  the slice that freezes the format (slice 13)
+  the slice that freezes the format (slice 14)
 
 ## CI/CD track
 
@@ -52,15 +52,15 @@ change the release build run it without publishing. `make install` puts both
 in `/Applications` and `~/.local/bin` between releases. Not notarised: the
 first launch needs right-click → Open.
 
-### CI-3. Event format guard (slice 13)
+### CI-3. Event format guard (slice 14)
 
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 16)
+### CD-2. iOS (slice 17)
 
 - `xcodebuild` the iOS target in CI
-- Distribution decided with slice 16: free 7-day provisioning from Xcode, or
+- Distribution decided with slice 17: free 7-day provisioning from Xcode, or
   TestFlight with the Developer Program
 
 ## Slices
@@ -123,12 +123,41 @@ Usable: one Luthor for work and home, with no leaks either way.
 
 Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
-### 6. Today: plan the day (ALPEN: P, E)
+### 6. Settings
+
+Planning only works if its numbers are mine: how big the buffer is, what an
+unestimated task counts as, how many hours a Friday has. A settings panel
+(⌘,) comes before the slices that use them.
+
+- `SettingChanged(key, value, viewID?)`. Settings are events, so they sync
+  and replay like everything else; a setting resolves per-view override,
+  then global, then the built-in default. Domain code reads a typed
+  `Settings` value; an unknown key is ignored on replay, so an old build
+  survives a newer log
+- Settings that live in the log: default estimate for unestimated tasks
+  (5 minutes), buffer percentage (40%), default capacity per weekday, default
+  project review interval or off (slice 13). Capacity and buffer differ
+  between a work view and a private one, hence the per-view override
+- Per-device preferences (last view shown, window state) stay out of the
+  log, in `UserDefaults`
+- The panel also manages views: create, rename, choose the default view
+  that `luthor add` and imports use
+- Each later slice adds its own settings to the panel in the same PR; the
+  panel is never a catch-all added at the end
+
+Usable: views managed in the app, and the numbers Today will plan with are
+already set.
+
+### 7. Today: plan the day (ALPEN: P, E)
 
 - `TaskScheduled(date)`, `TaskUnscheduled`, `DayPlanOrdered(date, taskIDs)`.
   Rescheduling keeps the task's identity; nothing is ever duplicated
-- Day capacity per view: `DayCapacitySet(date, minutes)` over a default per
-  weekday; `BufferSet(percent)`, default 40%
+- Day capacity per view: `DayCapacitySet(date, minutes)` overrides the
+  weekday default from Settings (slice 6); the buffer percentage is a setting
+  too, default 40%
+- A task without an estimate is never refused: it counts at the default
+  estimate from Settings (5 minutes) and is flagged "unestimated", in the
+  plan and in the totals
 - Capacity is a pure function of events and the injected clock: buffer,
   usable, planned and remaining minutes, and an overloaded flag when planned
   exceeds usable. The buffer is protected capacity, never a task
@@ -142,7 +171,7 @@ Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
 Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
-### 7. Daily review and carry-over (ALPEN: N)
+### 8. Daily review and carry-over (ALPEN: N)
 
 - Review of the day in the current view: done and not done, estimated
   against actual minutes, unplanned minutes
@@ -158,7 +187,7 @@ Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
 Usable: the ALPEN loop is closed, and estimates improve with feedback.
 
-### 8. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
+### 9. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
 
 - Log lives in the Dropbox folder, synced by the Dropbox desktop app
 - One file per device (`events-<deviceID>.jsonl`), so two machines never
@@ -168,14 +197,14 @@ Usable: the ALPEN loop is closed, and estimates improve with feedback.
 - Optional: split acceptance testing out of the TDD skill into its own
   `acceptance` skill, linked from the TDD skill. Likely needed here, because
   two-device flows need a shared harness (several simulated devices, an
-  injected clock from slice 6, fixture logs) and a way to turn a slice's
+  injected clock from slice 7, fixture logs) and a way to turn a slice's
   promises into scenarios. Do it only if that guidance outgrows a section of
   the TDD skill
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 9. Defer and due, Upcoming and Forecast
+### 10. Defer and due, Upcoming and Forecast
 
 - `TaskDeferred` (available from), `TaskDueSet` (hard deadline or target
   date), and clearing both
@@ -189,7 +218,7 @@ reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
 Usable: deadlines feed the plan without taking it over.
 
-### 10. Tags
+### 11. Tags
 
 - `TagCreated`, `TaskTagged`, `TaskUntagged`
 - Filter any list, Today's candidates included, by tag; also by priority,
@@ -198,7 +227,7 @@ Usable: deadlines feed the plan without taking it over.
 
 Usable: contexts (`@home`, `@calls`, `@deep-work`).
 
-### 11. Capture without the app: iPhone (THROWAWAY) and Alfred
+### 12. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
@@ -213,9 +242,9 @@ Usable: contexts (`@home`, `@calls`, `@deep-work`).
 Usable: capture from the phone, lock screen and Siri included, months before
 an iOS app exists, and from Alfred on the Mac without switching to the app.
 
-### 12. Weekly project review
+### 13. Weekly project review
 
-The daily review (slice 7) looks at the day; this one keeps projects from
+The daily review (slice 8) looks at the day; this one keeps projects from
 going stale.
 
 - On by default, weekly, and the user can change both. `ReviewDefaultSet`
@@ -236,27 +265,27 @@ going stale.
 
 Usable: the weekly review.
 
-### 13. Freeze the event format
+### 14. Freeze the event format
 
 - Write down every event type and field as v1
 - Golden-file tests: a checked-in fixture log must always replay to the same
   state
 - From here, `AGENTS.md` event rules are strict
 
-### 14. Speed pass
+### 15. Speed pass
 
 - Measure launch replay time and capture latency on the real log
 - Only if needed: GRDB projections, snapshotting, global capture hotkey,
   command palette
 
-### 15. Dropbox API sync
+### 16. Dropbox API sync
 
 - OAuth, token in Keychain, sync of the same per-device files over the API
 - Sync behind a `Transport` protocol; in-memory fake for tests; two-device
   convergence tests
 - Required for iOS, which has no Dropbox folder to watch
 
-### 16. iOS app
+### 17. iOS app
 
 - Same package; capture, Inbox and Today first, then the daily review
 - Without the Apple Developer Program, a free provisioning profile expires
@@ -279,35 +308,34 @@ Usable: the weekly review.
 
 To settle before the slice they affect.
 
-1. **Unestimated tasks in a plan** (slice 6): refuse to schedule them, as
-   the ALPEN spec says, or count them at a default (say 15 minutes) and flag
-   them?
-2. **Day capacity** (slice 6): typed each morning, or a default per weekday
-   and view that the morning plan adjusts?
+1. ~~Unestimated tasks in a plan~~ Settled: they count at a configurable
+   default (5 minutes) and are flagged, never refused (slices 6 and 7)
+2. ~~Day capacity~~ Settled: a default per weekday and view (a setting),
+   which the morning plan can adjust for that day (slices 6 and 7)
 3. ~~Weekly project review~~ Settled: kept, weekly by default, and the
    user can change the interval or turn it off, for all projects or one
-   (slice 12)
-4. **Sync before deadlines?** Slice 8 (sync) sits before slice 9 (defer and
+   (slice 13)
+4. **Sync before deadlines?** Slice 9 (sync) sits before slice 10 (defer and
    due) on the guess that using two Macs matters more. Swap if not
 5. **Delegate**: ALPEN's E includes delegating. A `@waiting` tag, or a
    proper waiting-for state?
 
 ## Decisions (2026-10-16)
 
-1. **Soft event format until slice 13.** `AGENTS.md` event rules updated to
+1. **Soft event format until slice 14.** `AGENTS.md` event rules updated to
    match: format changes before the freeze ship with a migration script or a
    fresh log
 2. **CLI first** in slice 1
-3. **Dropbox folder sync** in slice 8, possibly as the permanent Mac solution
+3. **Dropbox folder sync** in slice 9, possibly as the permanent Mac solution
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
-5. **No SQLite until slice 14**, and only if replay is measurably slow
+5. **No SQLite until slice 15**, and only if replay is measurably slow
 
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
    gains no project, defer or tag commands, and shrinks to `luthor add` for
-   Alfred in slice 11
+   Alfred in slice 12
 2. **Views are logical, in one log.** Work and private live in the same
    event log and sync together; isolation is enforced by the domain (every
    query names a view), not by separate files. Separate logs per view stay
@@ -316,7 +344,8 @@ To settle before the slice they affect.
    Luthor at work
 4. **Luthor is an ALPEN app**, with OmniFocus as a reference rather than
    the goal. `20261015_alpen.md` is the product spec; this roadmap puts it
-   in order (slices 5 to 7 are A-L-P-E-N) and records where it deviates
+   in order (slices 5, 7 and 8 are A-L-P-E-N, with Settings in between) and
+   records where it deviates
 5. **State is derived, not stored.** The spec's `status`, `planned_minutes`,
    `updated_at` and the like are computed by the reducer from events; only
    decisions are events
@@ -324,3 +353,7 @@ To settle before the slice they affect.
    to each unfinished task
 7. **Day plans are per view.** The work day and the evening have their own
    capacity, buffer and plan
+8. **Planning numbers are settings, in the log.** Default estimate, buffer
+   and weekday capacity are events with a per-view override, so they sync;
+   per-device preferences stay local. The panel is its own slice (6), ahead
+   of Today
