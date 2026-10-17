@@ -68,9 +68,10 @@ struct DueDateReplayTests {
 
   @Test("the same events in any arrival order give the same state")
   func theSameEventsInAnyArrivalOrderGiveTheSameState() {
-    let events = Self.base + [
-      dueSet("t1", on: "2026-10-23", lamport: 2), dueSet("t1", on: "2026-10-30", hard: false, lamport: 3),
-    ]
+    let events =
+      Self.base + [
+        dueSet("t1", on: "2026-10-23", lamport: 2), dueSet("t1", on: "2026-10-30", hard: false, lamport: 3),
+      ]
 
     #expect(LibraryState.replay(events) == LibraryState.replay(events.reversed()))
   }
