@@ -273,7 +273,11 @@ public final class LibraryViewModel {
   public func completeSelected() {
     replaceSelected(complete)
   }
+}
 
+// Internals: reading and writing the log, and filling the published state from it. Split from the
+// class body above (SwiftLint type_body_length) rather than suppressed.
+extension LibraryViewModel {
   /// Applies `action` to the selected task; if that takes it off the list, selects the task that takes
   /// its place.
   private func replaceSelected(_ action: (TaskID) -> Void) {
