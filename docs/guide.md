@@ -190,10 +190,11 @@ estimate clarifies it: it leaves the Inbox, same as filing it into a
 project. A task keeps its priority and estimate when filed into a project or
 taken to another view.
 
-Prios lists Critical, Important, Optional and One day. Click one to list its
-tasks. Click another to add it: the picked priorities add up, and the list
-shows the tasks of all of them, the most urgent first. Click a picked
-priority again to drop it. With none picked, the list is empty. You can
+Prios lists Critical, Important, Optional, One day and No priority. It
+behaves like any Mac list. Click one to list its tasks. Shift-click to pick
+the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
+The list shows the tasks of all the picked priorities, the most urgent first
+and those with no priority last. With none picked, the list is empty. You can
 complete a task from the list like anywhere else.
 
 A task given One day (someday) is kept out of next actions, wherever it is

@@ -35,9 +35,9 @@ public struct ViewState: Equatable, Sendable {
   }
 
   /// The open tasks of the view with one of these priorities, the most urgent priority first and each in
-  /// capture order. No priority lists nothing.
-  public func tasks(prioritised priorities: Set<Priority>) -> [TaskItem] {
-    Priority.allCases.filter(priorities.contains).flatMap { priority in
+  /// capture order. `nil` stands for no priority, listed last. An empty set lists nothing.
+  public func tasks(prioritised priorities: Set<Priority?>) -> [TaskItem] {
+    (Priority.allCases.map { Optional($0) } + [nil]).filter(priorities.contains).flatMap { priority in
       openTasks.filter { $0.priority == priority }
     }
   }

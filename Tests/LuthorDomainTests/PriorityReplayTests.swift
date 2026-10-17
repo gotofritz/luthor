@@ -117,6 +117,20 @@ struct TasksByPriorityTests {
     #expect(tasks.map(\.id.rawValue) == ["t2", "t4", "t5", "t1"])
   }
 
+  @Test("no priority lists the open tasks that have none")
+  func noPriorityListsTheUnprioritised() {
+    let tasks = Self.state.view(.default).tasks(prioritised: [nil])
+
+    #expect(tasks.map(\.id.rawValue) == ["t3"])
+  }
+
+  @Test("no priority comes after every priority")
+  func noPriorityComesLast() {
+    let tasks = Self.state.view(.default).tasks(prioritised: [nil, .important, .critical])
+
+    #expect(tasks.map(\.id.rawValue) == ["t2", "t4", "t5", "t3"])
+  }
+
   @Test("a task of another view is never listed")
   func otherViewsAreNotListed() {
     let state = LibraryState.replay([

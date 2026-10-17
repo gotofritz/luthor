@@ -49,9 +49,10 @@ to look at: Inbox (a list of its tasks), Today, Projects or Prios, with
 Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
 (not working yet) and the view switcher.
 
-Prios lists the priorities Critical, Important, Optional and One day. Click
-one to list its tasks, click another to add it: the picked priorities add up,
-the most urgent first; click a picked one again to drop it. Give a task a
+Prios lists the priorities Critical, Important, Optional and One day, and No
+priority. It picks like any Mac list: click one, shift-click for a range,
+⌘-click to add or drop one; the tasks of all picked are listed, the most
+urgent first. Give a task a
 priority from its context menu or Task → Priority, and an estimate in
 minutes from Estimate. Either clarifies a task out of the Inbox, same as
 filing it into a project; a task given One day is kept out of next actions

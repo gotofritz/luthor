@@ -153,6 +153,60 @@ struct PriorityPickTests {
     #expect(library.tasks.map(\.id.rawValue) == ["t2"])
   }
 
+  @Test("selecting priorities replaces the ones picked, as a plain click does")
+  func selectingReplacesThePicked() {
+    let (library, _) = makeInbox(Self.log)
+    library.show(.priorities)
+    library.togglePriority(.optional)
+    library.togglePriority(.critical)
+
+    library.selectPriorities([.someday])
+
+    #expect(library.selectedPriorities == [.someday])
+    #expect(library.tasks.map(\.id.rawValue) == ["t3"])
+  }
+
+  @Test("selecting a range picks all of it, as a shift-click does")
+  func selectingARangePicksAllOfIt() {
+    let (library, _) = makeInbox(Self.log)
+    library.show(.priorities)
+
+    library.selectPriorities([.critical, .important, .optional])
+
+    #expect(library.tasks.map(\.id.rawValue) == ["t2", "t1"])
+  }
+
+  @Test("selecting nothing lists nothing")
+  func selectingNothingListsNothing() {
+    let (library, _) = makeInbox(Self.log)
+    library.show(.priorities)
+    library.togglePriority(.critical)
+
+    library.selectPriorities([])
+
+    #expect(library.tasks == [])
+  }
+
+  @Test("no priority lists the tasks that have none, after the others")
+  func noPriorityListsTheUnprioritised() {
+    let (library, _) = makeInbox(Self.log)
+    library.show(.priorities)
+
+    library.togglePriority(nil)
+
+    #expect(library.selectedPriorities == [nil])
+    #expect(library.tasks == [item("t4", "unranked")])
+
+    library.togglePriority(.critical)
+
+    #expect(library.tasks.map(\.id.rawValue) == ["t2", "t4"])
+  }
+
+  @Test("the rows are the priorities, most urgent first, then no priority")
+  func rowsEndWithNoPriority() {
+    #expect(LibraryViewModel.priorityRows == [.critical, .important, .optional, .someday, nil])
+  }
+
   @Test("the tasks are next actions unless a project holds them back")
   func priorityTasksKnowTheirNextActions() {
     let (library, _) = makeInbox(

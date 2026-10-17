@@ -18,8 +18,9 @@ public final class LibraryViewModel {
   /// The place the navigation rail has picked.
   public internal(set) var section = NavigationSection.inbox
   public internal(set) var sidebarSelection: SidebarItem = .inbox
-  /// The priorities picked in the priorities section; they add up, so the list shows all of them.
-  public internal(set) var selectedPriorities: Set<Priority> = []
+  /// The priorities picked in the priorities section, `nil` being no priority; the list shows the tasks of
+  /// all of them.
+  public internal(set) var selectedPriorities: Set<Priority?> = []
   /// Every active project of the view, nested or not, in creation order.
   public internal(set) var projects: [Project] = []
   /// The active projects of the view and, while completed items are listed, the completed ones: whatever a
@@ -195,8 +196,18 @@ public final class LibraryViewModel {
     present()
   }
 
+  /// The rows of the priorities section: the priorities, most urgent first, then no priority (`nil`).
+  public static let priorityRows: [Priority?] = Priority.allCases.map { Optional($0) } + [nil]
+
+  /// Picks exactly these priorities, as the list does for a click (one), a shift-click (a range) or a
+  /// command-click (one added or dropped).
+  public func selectPriorities(_ priorities: Set<Priority?>) {
+    selectedPriorities = priorities
+    present()
+  }
+
   /// Picks a priority or, if it is picked, drops it. The others stay as they are.
-  public func togglePriority(_ priority: Priority) {
+  public func togglePriority(_ priority: Priority?) {
     if !selectedPriorities.insert(priority).inserted { selectedPriorities.remove(priority) }
     present()
   }
