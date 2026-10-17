@@ -159,8 +159,20 @@ an iOS app exists, and from Alfred on the Mac without switching to the app.
 
 ### 9. Review
 
-- `ProjectReviewed`, per-project review interval
-- Review view: projects due for review, mark reviewed, next one
+OmniFocus-style review: every project comes up on a schedule, so nothing
+goes stale unnoticed.
+
+- `ProjectReviewIntervalSet` (default one week, set per project);
+  `ProjectReviewed` sets the next review date to the review date plus the
+  interval. Next review date is a pure function of events and the injected
+  clock
+- Project status: `ProjectPutOnHold`, `ProjectResumed`, `ProjectDropped`.
+  Review is where projects get parked or dropped; on-hold and dropped
+  projects yield no next actions, and dropped ones skip review
+- Review list in the current view: projects whose next review date has
+  passed, oldest first. Mark reviewed (⌘⇧R) moves to the next one; the
+  project's tasks are shown and editable in place
+- Review is per view: reviewing Work never shows a Private project
 
 Usable: the weekly review.
 
