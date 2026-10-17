@@ -6,36 +6,6 @@ import LuthorTestSupport
 import LuthorViewModels
 import Testing
 
-/// The Mac app's window as it is after a launch on the log at `url`.
-@MainActor
-private func launchApp(on url: URL) -> LibraryViewModel {
-  let library = LibraryViewModel(
-    log: JSONLinesEventLog(fileURL: url),
-    commands: Commands(deviceID: DeviceID("mac"), ids: UUIDGenerator())
-  )
-  library.reload()
-  return library
-}
-
-extension LibraryViewModel {
-  /// Types a title into the capture field of the list shown and presses Return.
-  fileprivate func capture(_ title: String) {
-    draft = title
-    submit()
-  }
-
-  /// Types a title into the new project field and creates the project.
-  fileprivate func createProject(_ title: String, kind: ProjectKind) throws -> ProjectID {
-    projectDraft = title
-    createProject(kind: kind)
-    return try #require(projects.first { $0.title == title }).id
-  }
-
-  fileprivate func task(_ title: String) throws -> TaskID {
-    try #require(tasks.first { $0.title == title }).id
-  }
-}
-
 @MainActor
 @Suite("Given tasks in the inbox, when one is filed into a new project")
 struct InboxProcessingFlowTests {

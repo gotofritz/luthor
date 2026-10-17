@@ -6,7 +6,7 @@ import Testing
   @Test func captureOnEmptyLogStartsLamportAtOne() throws {
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 
-    let events = try commands.capture(title: "buy milk", log: [])
+    let events = try commands.capture(title: "buy milk", in: .default, log: [])
 
     #expect(
       events == [
@@ -14,7 +14,7 @@ import Testing
           id: EventID("id-1"),
           deviceID: DeviceID("mac"),
           lamport: 1,
-          payload: .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk"))
+          payload: .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk", viewID: .default))
         )
       ])
   }
@@ -23,7 +23,7 @@ import Testing
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
     let log = [captured("t1", "a", lamport: 7), captured("t2", "b", lamport: 3)]
 
-    let events = try commands.capture(title: "c", log: log)
+    let events = try commands.capture(title: "c", in: .default, log: log)
 
     #expect(events.map(\.lamport) == [8])
   }
@@ -31,9 +31,12 @@ import Testing
   @Test func captureTrimsSurroundingWhitespace() throws {
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 
-    let events = try commands.capture(title: "  buy milk \n", log: [])
+    let events = try commands.capture(title: "  buy milk \n", in: .default, log: [])
 
-    #expect(events.map(\.payload) == [.taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk"))])
+    #expect(
+      events.map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk", viewID: .default))
+      ])
   }
 
   @Test(arguments: ["", "   ", "\n\t"])
@@ -41,7 +44,7 @@ import Testing
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 
     #expect(throws: CommandError.blankTitle) {
-      try commands.capture(title: title, log: [])
+      try commands.capture(title: title, in: .default, log: [])
     }
   }
 }
@@ -58,7 +61,7 @@ import Testing
   func completeFindsTheOpenTaskByIDPrefix(prefix: String) throws {
     let commands = Commands(deviceID: DeviceID("air"), ids: SequentialIDs())
 
-    let events = try commands.complete(idPrefix: prefix, log: Self.log)
+    let events = try commands.complete(idPrefix: prefix, in: .default, log: Self.log)
 
     #expect(
       events == [
@@ -75,7 +78,7 @@ import Testing
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 
     #expect(throws: CommandError.ambiguousPrefix("ab", matches: [TaskID("abc123"), TaskID("abd456")])) {
-      try commands.complete(idPrefix: "ab", log: Self.log)
+      try commands.complete(idPrefix: "ab", in: .default, log: Self.log)
     }
   }
 
@@ -84,7 +87,7 @@ import Testing
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 
     #expect(throws: CommandError.noOpenTask(prefix)) {
-      try commands.complete(idPrefix: prefix, log: Self.log)
+      try commands.complete(idPrefix: prefix, in: .default, log: Self.log)
     }
   }
 

@@ -50,7 +50,7 @@ final class CLIHarness {
           id: EventID("id-1"),
           deviceID: DeviceID("mac"),
           lamport: 1,
-          payload: .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk"))
+          payload: .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "buy milk", viewID: .default))
         )
       ])
   }
@@ -182,5 +182,79 @@ final class CLIHarness {
     #expect(result.exitCode == 1)
     #expect(result.error == "luthor: \(cli.logURL.path) line 1 is not a readable event\n")
     #expect(try Data(contentsOf: cli.logURL) == Data("garbage\n".utf8))
+  }
+}
+
+@Suite("Given a Work view next to the default view")
+struct CLIViewTests {
+  static let log = [
+    viewCreated("work", "Work", lamport: 1),
+    captured("w1aaaaaa-1", "write the report", view: "work", lamport: 2),
+    captured("d1aaaaaa-2", "buy milk", lamport: 3),
+  ]
+
+  @Test("add --view captures into the view it names, ignoring case")
+  func addWithViewCapturesIntoThatView() throws {
+    let cli = try CLIHarness()
+    try cli.seed(Self.log)
+
+    let result = cli.run("add", "--view", "work", "book", "a", "room")
+
+    #expect(result == CLIResult(exitCode: 0, output: "Captured id-2  book a room\n"))
+    #expect(try cli.log().last == captured("id-2", "book a room", id: "id-1", view: "work", lamport: 4))
+  }
+
+  @Test("add captures into LUTHOR_VIEW, and --view wins over it")
+  func addUsesLuthorViewUnlessViewIsGiven() throws {
+    let cli = try CLIHarness()
+    try cli.seed(Self.log)
+    cli.environment["LUTHOR_VIEW"] = "Work"
+
+    cli.run("add", "book a room")
+    cli.run("add", "--view", "Default", "call mum")
+
+    #expect(
+      try cli.log().suffix(2).map(\.payload) == [
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-2"), title: "book a room", viewID: ViewID("work"))),
+        .taskCaptured(TaskCaptured(taskID: TaskID("id-4"), title: "call mum", viewID: .default)),
+      ])
+  }
+
+  @Test("an unknown view is refused and nothing is written")
+  func unknownViewIsRefused() throws {
+    let cli = try CLIHarness()
+    try cli.seed(Self.log)
+
+    let result = cli.run("add", "--view", "Home", "buy milk")
+
+    #expect(result == CLIResult(exitCode: 1, error: "luthor: no view named 'Home'\n"))
+    #expect(try cli.log().count == 3)
+  }
+
+  @Test("--view without a name is a usage error", arguments: [["add", "--view"], ["list", "--view"]])
+  func viewWithoutANameIsAUsageError(arguments: [String]) throws {
+    let cli = try CLIHarness()
+
+    #expect(CLI(environment: cli.environment, home: cli.home, ids: cli.ids).run(arguments).exitCode == 64)
+  }
+
+  @Test("list shows only the tasks of the view")
+  func listShowsOnlyTheView() throws {
+    let cli = try CLIHarness()
+    try cli.seed(Self.log)
+
+    #expect(cli.run("list") == CLIResult(exitCode: 0, output: "d1aaaaaa  buy milk\n"))
+    #expect(cli.run("list", "--view", "Work") == CLIResult(exitCode: 0, output: "w1aaaaaa  write the report\n"))
+  }
+
+  @Test("done finds only tasks of the view")
+  func doneStaysInTheView() throws {
+    let cli = try CLIHarness()
+    try cli.seed(Self.log)
+
+    #expect(cli.run("done", "w1").exitCode == 1)
+    #expect(
+      cli.run("done", "--view", "Work", "w1")
+        == CLIResult(exitCode: 0, output: "Completed w1aaaaaa  write the report\n"))
   }
 }

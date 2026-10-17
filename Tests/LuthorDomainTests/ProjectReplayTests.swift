@@ -11,7 +11,8 @@ struct ProjectCreationReplayTests {
       projectCreated("p2", "Move house", kind: .sequential, lamport: 2),
     ])
 
-    #expect(state.projects == [project("p1", "Holiday"), project("p2", "Move house", kind: .sequential)])
+    #expect(
+      state.view(.default).projects == [project("p1", "Holiday"), project("p2", "Move house", kind: .sequential)])
   }
 
   @Test("creating it again under the same ID changes nothing")
@@ -21,7 +22,7 @@ struct ProjectCreationReplayTests {
       projectCreated("p1", "Other", id: "e2", lamport: 2),
     ])
 
-    #expect(state.projects == [project("p1", "Holiday")])
+    #expect(state.view(.default).projects == [project("p1", "Holiday")])
   }
 }
 
@@ -36,13 +37,13 @@ struct TaskFilingReplayTests {
 
   @Test("it leaves the inbox")
   func filedTaskLeavesTheInbox() {
-    #expect(LibraryState.replay(Self.log).inbox == [item("t2", "buy milk")])
+    #expect(LibraryState.replay(Self.log).view(.default).inbox == [item("t2", "buy milk")])
   }
 
   @Test("it shows in the project")
   func filedTaskShowsInTheProject() {
     #expect(
-      LibraryState.replay(Self.log).projects == [
+      LibraryState.replay(Self.log).view(.default).projects == [
         project("p1", "Holiday", tasks: [item("t1", "book flights", in: "p1")])
       ])
   }
@@ -50,14 +51,16 @@ struct TaskFilingReplayTests {
   @Test("it stays open")
   func filedTaskStaysOpen() {
     #expect(
-      LibraryState.replay(Self.log).openTasks == [item("t1", "book flights", in: "p1"), item("t2", "buy milk")])
+      LibraryState.replay(Self.log).view(.default).openTasks == [
+        item("t1", "book flights", in: "p1"), item("t2", "buy milk"),
+      ])
   }
 
   @Test("it joins the end of the project's tasks")
   func filedTasksKeepTheirFilingOrder() {
     let state = LibraryState.replay(Self.log + [moved("t2", to: "p1", lamport: 5)])
 
-    #expect(state.projects.first?.tasks.map(\.title) == ["book flights", "buy milk"])
+    #expect(state.view(.default).projects.first?.tasks.map(\.title) == ["book flights", "buy milk"])
   }
 
   @Test("filing it into another project moves it there")
@@ -67,7 +70,7 @@ struct TaskFilingReplayTests {
     let state = LibraryState.replay(Self.log + refiled)
 
     #expect(
-      state.projects == [
+      state.view(.default).projects == [
         project("p1", "Holiday"),
         project("p2", "Errands", tasks: [item("t1", "book flights", in: "p2")]),
       ])
@@ -79,15 +82,15 @@ struct TaskFilingReplayTests {
 
     let state = LibraryState.replay(Self.log + refiled)
 
-    #expect(state.projects.first?.tasks.map(\.title) == ["book flights", "buy milk"])
+    #expect(state.view(.default).projects.first?.tasks.map(\.title) == ["book flights", "buy milk"])
   }
 
   @Test("completing it removes it from the project")
   func completingAFiledTaskRemovesIt() {
     let state = LibraryState.replay(Self.log + [completed("t1", lamport: 5)])
 
-    #expect(state.projects == [project("p1", "Holiday")])
-    #expect(state.openTasks == [item("t2", "buy milk")])
+    #expect(state.view(.default).projects == [project("p1", "Holiday")])
+    #expect(state.view(.default).openTasks == [item("t2", "buy milk")])
   }
 }
 
@@ -97,7 +100,7 @@ struct IgnoredFilingReplayTests {
   func filingIntoAnUnknownProjectIsIgnored() {
     let state = LibraryState.replay([captured("t1", "book flights", lamport: 1), moved("t1", to: "p9", lamport: 2)])
 
-    #expect(state.inbox == [item("t1", "book flights")])
+    #expect(state.view(.default).inbox == [item("t1", "book flights")])
   }
 
   @Test("filing a task that is not open changes no project")
@@ -109,8 +112,8 @@ struct IgnoredFilingReplayTests {
       moved("t1", to: "p1", lamport: 4),
     ])
 
-    #expect(state.projects == [project("p1", "Holiday")])
-    #expect(state.openTasks == [])
+    #expect(state.view(.default).projects == [project("p1", "Holiday")])
+    #expect(state.view(.default).openTasks == [])
   }
 }
 
@@ -126,19 +129,19 @@ struct ProjectCompletionReplayTests {
 
   @Test("it leaves the projects list")
   func completedProjectIsNotListed() {
-    #expect(LibraryState.replay(Self.log).projects == [])
+    #expect(LibraryState.replay(Self.log).view(.default).projects == [])
   }
 
   @Test("its open tasks are no longer open")
   func completedProjectClosesItsTasks() {
-    #expect(LibraryState.replay(Self.log).openTasks == [item("t2", "buy milk")])
+    #expect(LibraryState.replay(Self.log).view(.default).openTasks == [item("t2", "buy milk")])
   }
 
   @Test("a task filed into it afterwards stays where it was")
   func filingIntoACompletedProjectIsIgnored() {
     let state = LibraryState.replay(Self.log + [moved("t2", to: "p1", lamport: 6)])
 
-    #expect(state.inbox == [item("t2", "buy milk")])
+    #expect(state.view(.default).inbox == [item("t2", "buy milk")])
   }
 }
 
@@ -157,7 +160,7 @@ struct ProjectReplayOrderTests {
     let state = LibraryState.replay(order.map { Self.log[$0] })
 
     // Same lamport: device ID breaks the tie, "air" before "mac".
-    #expect(state.projects.first?.tasks.map(\.title) == ["pack", "book flights"])
+    #expect(state.view(.default).projects.first?.tasks.map(\.title) == ["pack", "book flights"])
   }
 }
 
