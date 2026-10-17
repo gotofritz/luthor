@@ -4,9 +4,11 @@ SWIFTLINT_VERSION := 0.63.2
 # swift-format ships with the Swift toolchain, so its version follows the toolchain.
 SWIFT_FORMAT ?= swift format
 SWIFTLINT ?= $(if $(wildcard .tools/swiftlint),.tools/swiftlint,swiftlint)
-SWIFT_PATHS := Package.swift Sources Tests
+SWIFT_PATHS := Package.swift Sources Tests App
+# The Mac app's Xcode build output; under .build so it is ignored like SwiftPM's.
+APP_DERIVED_DATA := .build/xcode
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test check-ci hooks tools
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test app check-ci hooks tools
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -37,7 +39,12 @@ test:
 	swift test
 	scripts/test-check-conventional-commit.sh
 
-check-ci: lint build test
+# Builds the Mac app, ad-hoc signed, into $(APP_DERIVED_DATA)/Build/Products/Release/Luthor.app.
+app:
+	xcodebuild -project App/Luthor.xcodeproj -scheme Luthor -configuration Release \
+	  -destination 'generic/platform=macOS' -derivedDataPath $(APP_DERIVED_DATA) -quiet build
+
+check-ci: lint build test app
 
 hooks:
 	git config core.hooksPath .githooks
