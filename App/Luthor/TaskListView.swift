@@ -4,50 +4,67 @@ import LuthorStore
 import LuthorViewModels
 import SwiftUI
 
-/// The capture field on top, open tasks below. The field keeps the focus: Return captures, ↑ and ↓
-/// select a task, ⌘Return completes it.
-struct InboxView: View {
-  @Bindable var inbox: LibraryViewModel
+/// The capture field on top, the open tasks of the inbox or of the project shown below. The field keeps
+/// the focus: Return captures, ↑ and ↓ select a task, ⌘Return completes it. Tasks that are not next
+/// actions are dimmed; drag a task onto a project in the sidebar to file it.
+struct TaskListView: View {
+  @Bindable var library: LibraryViewModel
   let logURL: URL
   @FocusState private var captureFocused: Bool
 
   var body: some View {
     VStack(spacing: 0) {
-      TextField("New task", text: $inbox.draft)
+      TextField("New task", text: $library.draft)
         .textFieldStyle(.plain)
         .font(.title3)
         .padding(12)
         .focused($captureFocused)
-        .onSubmit { inbox.submit() }
+        .onSubmit { library.submit() }
         .onKeyPress(.downArrow) {
-          inbox.moveSelection(by: 1)
+          library.moveSelection(by: 1)
           return .handled
         }
         .onKeyPress(.upArrow) {
-          inbox.moveSelection(by: -1)
+          library.moveSelection(by: -1)
           return .handled
         }
-      if let message = inbox.errorMessage {
+      if let message = library.errorMessage {
         Text(message)
           .foregroundStyle(.red)
           .frame(maxWidth: .infinity, alignment: .leading)
           .padding([.horizontal, .bottom], 12)
       }
       Divider()
-      List(selection: $inbox.selection) {
-        ForEach(inbox.tasks, id: \.id) { task in
-          TaskRow(task: task) { inbox.complete(task.id) }
+      List(selection: $library.selection) {
+        ForEach(library.tasks, id: \.id) { task in
+          TaskRow(task: task, isNextAction: library.nextActions.contains(task.id)) { library.complete(task.id) }
         }
       }
     }
-    .navigationTitle("Inbox")
+    .navigationTitle(title)
     .navigationSubtitle(logURL.path)
+    .toolbar {
+      if let projectID = shownProjectID {
+        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
+          .help("Complete this project and its open tasks")
+      }
+    }
     .defaultFocus($captureFocused, true)
     .onAppear { captureFocused = true }
     // Clicking a row or its checkbox would take the focus; hand it back to the capture field.
-    .onChange(of: inbox.selection) { captureFocused = true }
-    .onChange(of: inbox.tasks) { captureFocused = true }
+    .onChange(of: library.selection) { captureFocused = true }
+    .onChange(of: library.tasks) { captureFocused = true }
+    .onChange(of: library.sidebarSelection) { captureFocused = true }
     .task { await watchLog() }
+  }
+
+  private var shownProjectID: ProjectID? {
+    guard case .project(let projectID) = library.sidebarSelection else { return nil }
+    return projectID
+  }
+
+  private var title: String {
+    library.projects.first { $0.id == shownProjectID }?.title ?? "Inbox"
   }
 
   /// Reloads when another process, such as the CLI, changes the log.
@@ -55,13 +72,14 @@ struct InboxView: View {
     var monitor = FileChangeMonitor(fileURL: logURL)
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(1))
-      if monitor.poll() { inbox.reload() }
+      if monitor.poll() { library.reload() }
     }
   }
 }
 
 private struct TaskRow: View {
   let task: TaskItem
+  let isNextAction: Bool
   let complete: () -> Void
 
   var body: some View {
@@ -72,7 +90,9 @@ private struct TaskRow: View {
       .buttonStyle(.plain)
       .help("Complete")
       Text(task.title)
+        .foregroundStyle(isNextAction ? .primary : .secondary)
     }
     .tag(task.id)
+    .draggable(task.id.rawValue)
   }
 }
