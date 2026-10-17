@@ -43,15 +43,13 @@ fails under 90% line coverage of `Sources/` (`make coverage`).
 `make app` builds the Mac app in `make check-ci`; view model tests run with the
 package tests.
 
-### CD-1. Ship the Mac app and CLI (slice 2 or 3)
+### CD-1. Ship the Mac app and CLI (slice 3) ✅
 
-- On a version tag (`v0.x.y`): build the `.app` and the `luthor` CLI,
-  ad-hoc sign them (no Developer Program needed), zip and attach to a GitHub
-  Release
-- `make install` builds and installs both locally, for day-to-day use
-  between releases
-- Without notarisation, the first launch needs right-click → Open; fine for
-  one user
+A version tag (`v0.x.y`) runs `make dist` on CI: the `.app` and the universal
+`luthor` CLI, ad-hoc signed, zipped and attached to a GitHub Release. PRs that
+change the release build run it without publishing. `make install` puts both
+in `~/Applications` and `~/.local/bin` between releases. Not notarised: the
+first launch needs right-click → Open.
 
 ### CI-3. Event format guard (slice 9)
 
@@ -77,13 +75,13 @@ replay end to end with no UI.
 SwiftUI inbox on the same log: always-focused add field, complete by click or
 key, full replay on launch, file watching keeps CLI and app in step.
 
-### 3. Projects
+### 3. Projects ✅
 
-- `ProjectCreated`, `TaskMovedToProject`, `ProjectCompleted`
-- Parallel and sequential projects; "next action" rule as a pure function
-- Sidebar: Inbox, Projects; drag or keyboard shortcut to file a task
-
-Usable: inbox processing into projects.
+`ProjectCreated`, `TaskMovedToProject`, `ProjectCompleted` (which takes its
+open tasks with it). Parallel and sequential projects; next actions are a pure
+function of the project. The app gains a sidebar of Inbox and projects: drag a
+task onto a project or press ⌥⌘1–9 to file it, capture straight into the
+project shown, complete a project from the toolbar.
 
 ### 4. Defer and due, Today
 
