@@ -3,7 +3,8 @@ extension LibraryState {
   mutating func capture(_ captured: TaskCaptured) {
     guard captureOrder[captured.taskID] == nil else { return }
     captureOrder[captured.taskID] = captureOrder.count
-    openTasks.append(TaskItem(id: captured.taskID, title: captured.title, viewID: captured.viewID))
+    openTasks.append(TaskItem(
+        id: captured.taskID, title: captured.title, viewID: captured.viewID, createdOn: captured.createdOn))
   }
 
   /// Keeps the task as completed and takes it out of every list. Ignores a task that is not open.

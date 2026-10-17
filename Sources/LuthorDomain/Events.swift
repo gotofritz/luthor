@@ -2,19 +2,24 @@ public struct TaskCaptured: Equatable, Codable, Sendable {
   public let taskID: TaskID
   public let title: String
   public let viewID: ViewID
+  /// The day it was captured; `nil` for a task captured before cards showed it.
+  public let createdOn: CalendarDate?
 
-  public init(taskID: TaskID, title: String, viewID: ViewID) {
+  public init(taskID: TaskID, title: String, viewID: ViewID, createdOn: CalendarDate? = nil) {
     self.taskID = taskID
     self.title = title
     self.viewID = viewID
+    self.createdOn = createdOn
   }
 
-  /// Events written before views have no `viewID`; they belong to the default view.
+  /// Events written before views have no `viewID`; they belong to the default view. Events written before
+  /// cards showed the day have no `createdOn`.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     taskID = try container.decode(TaskID.self, forKey: .taskID)
     title = try container.decode(String.self, forKey: .title)
     viewID = try container.decodeIfPresent(ViewID.self, forKey: .viewID) ?? .default
+    createdOn = try container.decodeIfPresent(CalendarDate.self, forKey: .createdOn)
   }
 }
 
@@ -99,17 +104,24 @@ public struct ProjectCreated: Equatable, Codable, Sendable {
   public let viewID: ViewID
   /// The project it is created in; `nil` for a top-level project.
   public let parentID: ProjectID?
+  /// The day it was created; `nil` for a project created before cards showed it.
+  public let createdOn: CalendarDate?
 
-  public init(projectID: ProjectID, title: String, kind: ProjectKind, viewID: ViewID, parentID: ProjectID? = nil) {
+  public init(
+    projectID: ProjectID, title: String, kind: ProjectKind, viewID: ViewID, parentID: ProjectID? = nil,
+    createdOn: CalendarDate? = nil
+  ) {
     self.projectID = projectID
     self.title = title
     self.kind = kind
     self.viewID = viewID
     self.parentID = parentID
+    self.createdOn = createdOn
   }
 
   /// Events written before views have no `viewID`; they belong to the default view. Events written before
-  /// nesting have no `parentID`; they are top-level.
+  /// nesting have no `parentID`; they are top-level. Events written before cards showed the day have no
+  /// `createdOn`.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     projectID = try container.decode(ProjectID.self, forKey: .projectID)
@@ -117,6 +129,7 @@ public struct ProjectCreated: Equatable, Codable, Sendable {
     kind = try container.decode(ProjectKind.self, forKey: .kind)
     viewID = try container.decodeIfPresent(ViewID.self, forKey: .viewID) ?? .default
     parentID = try container.decodeIfPresent(ProjectID.self, forKey: .parentID)
+    createdOn = try container.decodeIfPresent(CalendarDate.self, forKey: .createdOn)
   }
 }
 

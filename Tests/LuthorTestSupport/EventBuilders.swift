@@ -6,6 +6,7 @@ public func captured(
   _ title: String,
   id: String? = nil,
   view: String = "default",
+  on day: String? = nil,
   device: String = "mac",
   lamport: UInt64 = 1
 ) -> EventEnvelope {
@@ -13,7 +14,8 @@ public func captured(
     id: EventID(id ?? "capture-\(task)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .taskCaptured(TaskCaptured(taskID: TaskID(task), title: title, viewID: ViewID(view)))
+    payload: .taskCaptured(
+      TaskCaptured(taskID: TaskID(task), title: title, viewID: ViewID(view), createdOn: day.map(date)))
   )
 }
 
@@ -40,6 +42,7 @@ public func projectCreated(
   under parent: String? = nil,
   id: String? = nil,
   view: String = "default",
+  on day: String? = nil,
   device: String = "mac",
   lamport: UInt64 = 1
 ) -> EventEnvelope {
@@ -50,7 +53,7 @@ public func projectCreated(
     payload: .projectCreated(
       ProjectCreated(
         projectID: ProjectID(project), title: title, kind: kind, viewID: ViewID(view),
-        parentID: parent.map(ProjectID.init)))
+        parentID: parent.map(ProjectID.init), createdOn: day.map(date)))
   )
 }
 
@@ -205,11 +208,12 @@ public func item(
   view: String = "default",
   priority: Priority? = nil,
   estimate: Int? = nil,
-  notes: String? = nil
+  notes: String? = nil,
+  createdOn day: String? = nil
 ) -> TaskItem {
   TaskItem(
     id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init),
-    priority: priority, estimate: estimate, notes: notes)
+    priority: priority, estimate: estimate, notes: notes, createdOn: day.map(date))
 }
 
 /// A project as replay lists it. `tasks` are its children; `children` replaces them where sub-projects
@@ -222,11 +226,12 @@ public func project(
   under parent: String? = nil,
   tasks: [TaskItem] = [],
   children: [ProjectChild]? = nil,
-  notes: String? = nil
+  notes: String? = nil,
+  createdOn day: String? = nil
 ) -> Project {
   Project(
     id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(ProjectID.init),
-    children: children ?? tasks.map(ProjectChild.task), notes: notes)
+    children: children ?? tasks.map(ProjectChild.task), notes: notes, createdOn: day.map(date))
 }
 
 /// A sub-project as a child of its parent.

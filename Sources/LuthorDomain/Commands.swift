@@ -37,9 +37,15 @@ public struct Commands {
 
   /// Captures a task into the inbox of the view `viewID`. `title` may carry the quick-capture syntax
   /// (`call bank !a 15m`); its priority and estimate land on the task, same as setting them by hand.
-  public func capture(title: String, in viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  /// `today` is the day it is, recorded as the day the task was created.
+  public func capture(
+    title: String,
+    in viewID: ViewID,
+    today: CalendarDate? = nil,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
     try requireView(viewID, in: LibraryState.replay(log))
-    return try captureEvents(title: title, viewID: viewID, log: log).events
+    return try captureEvents(title: title, viewID: viewID, today: today, log: log).events
   }
 
   /// Captures a task straight into the active project `projectID`, in the project's view. `title` may
@@ -47,10 +53,11 @@ public struct Commands {
   public func capture(
     title: String,
     into projectID: ProjectID,
+    today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let project = try activeProject(projectID, in: LibraryState.replay(log))
-    let (events, taskID) = try captureEvents(title: title, viewID: project.viewID, log: log)
+    let (events, taskID) = try captureEvents(title: title, viewID: project.viewID, today: today, log: log)
     return try events + move(taskID: taskID, to: projectID, log: log + events)
   }
 
@@ -62,16 +69,19 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
   }
 
+  /// Creates a project in the view `viewID`; `today` is recorded as the day it was created.
   public func createProject(
     title: String,
     kind: ProjectKind,
     in viewID: ViewID,
+    today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
     try requireView(viewID, in: LibraryState.replay(log))
     let eventID = EventID(ids.next())
-    let created = ProjectCreated(projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: viewID)
+    let created = ProjectCreated(
+      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: viewID, createdOn: today)
     return [envelope(eventID, .projectCreated(created), log: log)]
   }
 
@@ -80,13 +90,15 @@ public struct Commands {
     title: String,
     kind: ProjectKind,
     under parentID: ProjectID,
+    today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
     let parent = try activeProject(parentID, in: LibraryState.replay(log))
     let eventID = EventID(ids.next())
     let created = ProjectCreated(
-      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: parent.viewID, parentID: parentID)
+      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: parent.viewID, parentID: parentID,
+      createdOn: today)
     return [envelope(eventID, .projectCreated(created), log: log)]
   }
 
@@ -254,13 +266,14 @@ public struct Commands {
   private func captureEvents(
     title raw: String,
     viewID: ViewID,
+    today: CalendarDate?,
     log: [EventEnvelope]
   ) throws(CommandError) -> (events: [EventEnvelope], taskID: TaskID) {
     let parsed = QuickCapture.parse(raw)
     let title = try Self.named(parsed.title)
     let eventID = EventID(ids.next())
     let taskID = TaskID(ids.next())
-    let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID)
+    let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID, createdOn: today)
     var events = [envelope(eventID, .taskCaptured(captured), log: log)]
     if let priority = parsed.priority {
       events += try prioritize(taskID: taskID, as: priority, log: log + events)
