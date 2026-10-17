@@ -234,7 +234,8 @@ struct DecideActionViewModelTests {
     library.delegate(TaskID("t1"), to: "Sam", followUp: date("2026-10-23"))
 
     #expect(library.plan.entries.isEmpty)
-    #expect(library.waiting.map(\.delegation) == [Delegation(to: "Sam", since: monday, followUpDate: date("2026-10-23"))])
+    let expected = Delegation(to: "Sam", since: monday, followUpDate: date("2026-10-23"))
+    #expect(library.waiting.map(\.delegation) == [expected])
   }
 
   @Test("delegating the selected task")

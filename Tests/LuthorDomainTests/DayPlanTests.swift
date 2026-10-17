@@ -205,7 +205,8 @@ struct DayCandidateTests {
 
   @Test("clarified open tasks are candidates, the most urgent first")
   func clarifiedOpenTasksAreCandidates() {
-    let day = plan(Self.tasks + [captured("t3", "tidy desk", lamport: 5), prioritized("t3", as: .optional, lamport: 6)])
+    let tidyDesk = [captured("t3", "tidy desk", lamport: 5), prioritized("t3", as: .optional, lamport: 6)]
+    let day = plan(Self.tasks + tidyDesk)
 
     #expect(day.candidates.map(\.task.title) == ["write report", "tidy desk", "call bank"])
     #expect(day.candidates.map(\.minutes) == [5, 5, 30])

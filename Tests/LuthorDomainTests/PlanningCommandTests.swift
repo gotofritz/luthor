@@ -55,14 +55,17 @@ struct ScheduleCommandTests {
 
     let events = try makeCommands().schedule(taskID: TaskID("t1"), on: date("2026-10-20"), log: log)
 
-    #expect(events == [reclaimed("t1", id: "id-1", lamport: 3), scheduled("t1", on: "2026-10-20", id: "id-2", lamport: 4)])
+    #expect(
+      events == [reclaimed("t1", id: "id-1", lamport: 3), scheduled("t1", on: "2026-10-20", id: "id-2", lamport: 4)])
   }
 
   @Test("unscheduling writes one TaskUnscheduled, and nothing for a task with no day")
   func unschedulingWritesOneTaskUnscheduled() throws {
     let log = Self.log + [scheduled("t1", on: "2026-10-19", lamport: 2)]
 
-    #expect(try makeCommands().unschedule(taskID: TaskID("t1"), log: log) == [unscheduled("t1", id: "id-1", lamport: 3)])
+    let events = try makeCommands().unschedule(taskID: TaskID("t1"), log: log)
+
+    #expect(events == [unscheduled("t1", id: "id-1", lamport: 3)])
     #expect(try makeCommands().unschedule(taskID: TaskID("t1"), log: Self.log) == [])
   }
 
