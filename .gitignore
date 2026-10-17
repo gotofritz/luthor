@@ -18,3 +18,9 @@ infra/.terraform.lock.hcl
 
 # SwiftPM build output
 .build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+
+# never commit an event log
+*.jsonl
+.tools/

@@ -149,18 +149,21 @@ Speed of capture and interaction is a feature: do not regress it.
 
 ### Commands
 
-The build entry point is created in slice 1 of the roadmap. Until then use the SwiftPM
-commands directly:
+The `Makefile` is the single entry point, locally and in CI:
 
 ```bash
-swift build
-swift test
+make tools      # once: install the pinned SwiftLint into .tools/
+make hooks      # once: point git at .githooks/
+make format     # apply swift-format
+make lint       # swift-format lint --strict + SwiftLint
+make test       # swift test + script tests
+make check-ci   # lint + build + test, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
 ```
 
-Once a `Makefile` exists, prefer it: `make format`, `make lint`, `make test`,
-`make check-ci` (lint + format check + build + tests, exactly what CI runs).
-Run `make check-ci` locally before pushing. Keep these instructions in sync.
+SwiftLint is pinned by `SWIFTLINT_VERSION` in the `Makefile`; swift-format
+comes with the Swift toolchain. Run `make check-ci` locally before pushing.
+Keep these instructions in sync.
 
 ### Rules
 
@@ -251,7 +254,7 @@ commit to its branch instead of creating a new one.
 
 ## Enforcement
 
-- CI via GitHub Actions (to be set up in slice 1) runs `make check-ci`: lint,
+- CI via GitHub Actions runs `make check-ci`: lint,
   format check, build, `swift test`. The same command runs locally
 - CI checks that PR titles are Conventional Commits
 - Git hooks for local development, installed with `make hooks`:
