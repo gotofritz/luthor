@@ -169,7 +169,12 @@ already set.
   kept
 - Today view: capacity meter with the buffer shown, the ordered plan,
   candidates to pull in, and an overload warning that informs rather than
-  blocks. Defer, drop or send to someday from the plan in one key
+  blocks. Defer, delegate, drop or send to someday from the plan in one key
+- Delegating: `TaskDelegated(to, followUpDate?)` and `TaskReclaimed`. A
+  delegated task leaves Today's candidates and the capacity totals, and
+  shows in a Waiting for list in the current view with who and since when.
+  On its follow-up date (or when reclaimed) it returns to the candidates, so
+  nothing delegated is forgotten. Delegating never completes or drops it
 - One plan per view and day: the work day and the evening are planned apart
 
 Usable: the ALPEN morning plan, with capacity and buffer always in sight.
@@ -182,7 +187,7 @@ Usable: the ALPEN morning plan, with capacity and buffer always in sight.
   minutes)`; `DayReviewed(date, note)` with a one-line note (long reflection
   belongs in Joplin)
 - Each unfinished task gets a decision: tomorrow, another day, back to the
-  list, someday, or dropped (`TaskDropped`). No per-task carry-over policy:
+  list, delegate, someday, or dropped (`TaskDropped`). No per-task carry-over policy:
   the review decides, and an unreviewed day's leftovers show at the top of
   the next Today until decided
 - Estimate history per task and project is shown, never applied: the user's
@@ -300,28 +305,11 @@ Usable: the weekly review.
 - Timer for actual minutes, and an in-progress state with it
 - Estimate suggestions from history, offered and never applied silently
 - Calendar integration: fixed commitments reduce a day's capacity
-- Delegation as waiting-for, if tags are not enough
 - Perspectives as saved queries, scoped to a view
 - Per-device view lists: a work Mac that never shows (or never syncs)
   private views, if logical isolation turns out not to be enough
 - Notes field kept minimal (notes live in Joplin)
 - CloudKit transport, if ever
-
-## Open questions (ALPEN)
-
-To settle before the slice they affect.
-
-1. ~~Unestimated tasks in a plan~~ Settled: they count at a configurable
-   default (5 minutes) and are flagged, never refused (slices 6 and 7)
-2. ~~Day capacity~~ Settled: a default per weekday and view (a setting),
-   which the morning plan can adjust for that day (slices 6 and 7)
-3. ~~Weekly project review~~ Settled: kept, weekly by default, and the
-   user can change the interval or turn it off, for all projects or one
-   (slice 13)
-4. ~~Sync before deadlines?~~ Settled: sync (slice 9) stays ahead of defer
-   and due (slice 10), because two Macs matter more
-5. **Delegate**: ALPEN's E includes delegating. A `@waiting` tag, or a
-   proper waiting-for state?
 
 ## Decisions (2026-10-16)
 
@@ -363,3 +351,14 @@ To settle before the slice they affect.
 9. **A comprehensive user guide, kept current.** `docs/guide.md` starts with
    what is shipped (slices 1 to 3) and grows with every slice, checked in the
    docs check of `AGENTS.md`
+10. **Unestimated tasks are planned, not refused.** They count at a
+    configurable default (5 minutes) and are flagged
+11. **A default capacity per weekday and view**, adjusted for a single day in
+    the morning plan
+12. **Project review stays**, weekly by default; the interval is a setting and
+    review can be turned off for all projects or one
+13. **Sync (slice 9) before defer and due (slice 10)**, because two Macs
+    matter more than deadlines
+14. **Delegating is a real state**, not a tag: a delegated task leaves the
+    plan and the capacity totals, sits in a Waiting for list with who and
+    since when, and returns on its follow-up date
