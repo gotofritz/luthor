@@ -23,7 +23,8 @@ private func makeLibrary(_ events: [EventEnvelope] = twoViews, view: ViewID = .d
 ) {
   let log = InMemoryEventLog(events)
   let library = LibraryViewModel(
-    log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), view: view)
+    log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), view: view,
+    today: { date("2026-10-19") })
   library.reload()
   return (library, log)
 }
@@ -136,8 +137,8 @@ struct ViewSwitchingViewModelTests {
 
     #expect(
       log.events.suffix(2) == [
-        captured("id-2", "book a room", id: "id-1", view: "work", lamport: 10),
-        projectCreated("id-4", "Offsite", id: "id-3", view: "work", lamport: 11),
+        captured("id-2", "book a room", id: "id-1", view: "work", on: "2026-10-19", lamport: 10),
+        projectCreated("id-4", "Offsite", id: "id-3", view: "work", on: "2026-10-19", lamport: 11),
       ])
   }
 }

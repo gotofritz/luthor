@@ -6,6 +6,12 @@ public enum SidebarItem: Hashable, Sendable {
   case project(ProjectID)
 }
 
+/// The card a window can be editing: one of a task or one of a project.
+public enum CardTarget: Hashable, Sendable {
+  case task(TaskID)
+  case project(ProjectID)
+}
+
 /// The places the navigation rail leads to, in the order it lists them.
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox

@@ -120,7 +120,7 @@ struct SubprojectCreationViewModelTests {
 
     library.createProject(kind: .parallel)
 
-    #expect(log.events.last == projectCreated("id-2", "Roses", under: "p4", id: "id-1", lamport: 12))
+    #expect(log.events.last == projectCreated("id-2", "Roses", under: "p4", id: "id-1", on: "2026-10-19", lamport: 12))
     #expect(library.columns.last?.entries.map(\.id) == ["project-id-2"])
     #expect(library.projectDraft == "")
   }

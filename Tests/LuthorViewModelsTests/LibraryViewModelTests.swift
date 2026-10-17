@@ -7,7 +7,8 @@ import Testing
 @MainActor
 func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEventLog) {
   let log = InMemoryEventLog(events)
-  let inbox = LibraryViewModel(log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()))
+  let inbox = LibraryViewModel(
+    log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), today: { date("2026-10-19") })
   inbox.reload()
   return (inbox, log)
 }
@@ -52,8 +53,8 @@ func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEve
 
     inbox.submit()
 
-    #expect(log.events == [captured("id-2", "buy milk", id: "id-1", lamport: 1)])
-    #expect(inbox.tasks == [item("id-2", "buy milk")])
+    #expect(log.events == [captured("id-2", "buy milk", id: "id-1", on: "2026-10-19", lamport: 1)])
+    #expect(inbox.tasks == [item("id-2", "buy milk", createdOn: "2026-10-19")])
     #expect(inbox.draft == "")
   }
 

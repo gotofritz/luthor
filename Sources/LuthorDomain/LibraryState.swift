@@ -21,6 +21,8 @@ public struct TaskItem: Equatable, Sendable {
   public internal(set) var estimate: Int?
   /// Plain-text notes; `nil` until it is given some.
   public internal(set) var notes: String?
+  /// The day the task was captured; `nil` for one captured before cards showed it.
+  public let createdOn: CalendarDate?
 
   public init(
     id: TaskID,
@@ -29,7 +31,8 @@ public struct TaskItem: Equatable, Sendable {
     projectID: ProjectID? = nil,
     priority: Priority? = nil,
     estimate: Int? = nil,
-    notes: String? = nil
+    notes: String? = nil,
+    createdOn: CalendarDate? = nil
   ) {
     self.id = id
     self.title = title
@@ -38,6 +41,7 @@ public struct TaskItem: Equatable, Sendable {
     self.priority = priority
     self.estimate = estimate
     self.notes = notes
+    self.createdOn = createdOn
   }
 
   /// Not yet clarified: no priority, no estimate and no project.
@@ -63,6 +67,8 @@ public struct Project: Equatable, Sendable {
   public internal(set) var children: [ProjectChild]
   /// Plain-text notes; `nil` until it is given some.
   public internal(set) var notes: String?
+  /// The day the project was created; `nil` for one created before cards showed it.
+  public let createdOn: CalendarDate?
 
   public init(
     id: ProjectID,
@@ -71,7 +77,8 @@ public struct Project: Equatable, Sendable {
     viewID: ViewID,
     parentID: ProjectID? = nil,
     children: [ProjectChild] = [],
-    notes: String? = nil
+    notes: String? = nil,
+    createdOn: CalendarDate? = nil
   ) {
     self.id = id
     self.title = title
@@ -80,6 +87,7 @@ public struct Project: Equatable, Sendable {
     self.parentID = parentID
     self.children = children
     self.notes = notes
+    self.createdOn = createdOn
   }
 
   /// Open tasks filed straight into the project, in the order they were filed.
@@ -235,7 +243,7 @@ public struct LibraryState: Equatable, Sendable {
     projects.append(
       Project(
         id: created.projectID, title: created.title, kind: created.kind, viewID: created.viewID,
-        parentID: parent.map { projects[$0].id }))
+        parentID: parent.map { projects[$0].id }, createdOn: created.createdOn))
     if let parent { projects[parent].children.append(.project(created.projectID)) }
   }
 

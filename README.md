@@ -54,11 +54,12 @@ context menu; its sub-projects and open tasks go with it.
 
 Completed tasks and projects disappear, but the Completed toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
-back. Click a task and a card opens in the next column with its title,
-priority, estimate, project and notes; click a project and its column starts
-with a card for its title, kind (parallel or sequential, also in its context
-menu) and notes, with its children below. Notes are plain text, with web
-addresses made clickable.
+back. Click a task and a card opens in the next column; click a project and
+its column starts with a card, with its children below. A card is read-only:
+it shows the day it was created and the notes (web addresses are clickable),
+not the title, which is in the column before. The pencil opens it for editing
+(title, priority, estimate and notes for a task; title, kind and notes for a
+project), and OK keeps the changes or Cancel drops them.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
 minutes less the protected buffer, what is planned and what is left, red and

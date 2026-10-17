@@ -98,6 +98,7 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
+                             TaskCaptured and ProjectCreated carry the optional day created (`createdOn`);
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
                              TaskDelegated/Reclaimed, TaskDropped
@@ -147,7 +148,8 @@ Sources/
     UUIDGenerator.swift      production IDGenerator
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
-                             project columns, list, drops, injected clock; SidebarItem/NavigationSection/
+                             project columns, list, drops, injected clock; the card being edited
+                             (`editingCard`), with edit, cancel and save in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, logging time and
@@ -161,7 +163,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; CardViews: the task card column, the project card above
-                             its column, notes with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
+                             its column (read-only, a pencil opens the editor with OK and Cancel), notes
+                             with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan,
                              capacity meter, leftovers, candidates, Waiting for, delegate dialog;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;

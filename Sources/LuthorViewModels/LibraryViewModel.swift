@@ -65,7 +65,11 @@ public final class LibraryViewModel {
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
-  public var selection: TaskID?
+  public var selection: TaskID? {
+    didSet { if selection != oldValue { editingCard = nil } }
+  }
+  /// The card being edited, if any. Cards are read-only until Edit puts one here; OK and Cancel take it out.
+  public internal(set) var editingCard: CardTarget?
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
@@ -99,6 +103,7 @@ public final class LibraryViewModel {
     section = .inbox
     sidebarSelection = .inbox
     selection = nil
+    editingCard = nil
     present()
   }
 
@@ -171,11 +176,12 @@ public final class LibraryViewModel {
     let title = draft
     let projectID = shownProjectID
     let viewID = currentView
+    let day = clock()
     perform { (log) throws(CommandError) in
       if let projectID {
-        try commands.capture(title: title, into: projectID, log: log)
+        try commands.capture(title: title, into: projectID, today: day, log: log)
       } else {
-        try commands.capture(title: title, in: viewID, log: log)
+        try commands.capture(title: title, in: viewID, today: day, log: log)
       }
     }
     if errorMessage == nil { draft = "" }
@@ -189,6 +195,7 @@ public final class LibraryViewModel {
     }
     sidebarSelection = item
     selection = nil
+    editingCard = nil
     present()
   }
 
@@ -198,6 +205,7 @@ public final class LibraryViewModel {
     self.section = section
     if section != .projects { sidebarSelection = .inbox }
     selection = nil
+    editingCard = nil
     present()
   }
 
@@ -245,11 +253,12 @@ public final class LibraryViewModel {
     let title = projectDraft
     let viewID = currentView
     let parentID = shownProjectID
+    let day = clock()
     perform { (log) throws(CommandError) in
       if let parentID {
-        try commands.createProject(title: title, kind: kind, under: parentID, log: log)
+        try commands.createProject(title: title, kind: kind, under: parentID, today: day, log: log)
       } else {
-        try commands.createProject(title: title, kind: kind, in: viewID, log: log)
+        try commands.createProject(title: title, kind: kind, in: viewID, today: day, log: log)
       }
     }
     if errorMessage == nil { projectDraft = "" }
