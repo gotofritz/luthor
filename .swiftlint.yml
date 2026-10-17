@@ -17,3 +17,7 @@ disabled_rules:
   - trailing_comma
   - opening_brace
   - line_length
+# Every event type adds a case to the switches that apply, encode and decode events; a case per event is
+# dispatch, not branching logic, so it does not count towards complexity.
+cyclomatic_complexity:
+  ignores_case_statements: true

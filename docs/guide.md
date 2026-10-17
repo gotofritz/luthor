@@ -13,28 +13,32 @@ CLI does updates this guide in the same PR (see the docs check in
 - **Task**: one thing to do. Captured in the Inbox, optionally filed into a
   project, completed when done
 - **Inbox**: tasks of the current view not filed into a project yet
-- **Project**: a group of tasks. *Parallel*: every open task is a next action.
-  *Sequential*: only the first open task is; the others are dimmed
-- **Next action**: a task you can do now, in its project
+- **Project**: a group of tasks and other projects, its sub-projects, to any
+  depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
+  children are in the order they were added. *Parallel*: every child is
+  active. *Sequential*: only the first open child is; the others are dimmed
+- **Next action**: a task you can do now. A task is one only if every project
+  above it lets it be: an active sub-project hands out its own next actions,
+  one held back by a sequential parent hands out none
 
 ## Views
 
-- The view you are in is shown at the top of the sidebar. Click it to switch
+- The view you are in is shown at the top of the window. Click it to switch
   to another view, or press ⌃⌘1 to ⌃⌘9 for the first nine (View menu)
 - Create a view with New View… in the same menu; the window switches to it.
   Rename the current view with Rename View…. Names are unique, ignoring case
 - The app opens on the view you used last on this Mac
 - A task can only be filed into a project of its own view. To take a task to
   another view, select it and use Task → Move to View: it lands in that
-  view's Inbox. To take a whole project with its tasks, use Move to View in
-  the project's context menu in the sidebar
+  view's Inbox. To take a whole project with its sub-projects and tasks, use
+  Move to View in the project's context menu. A sub-project moved alone is
+  top-level in the other view
 
 ## Capturing a task
 
 Type in the capture field and press Return. The field is always focused, so
-capture needs no click. With a project selected in the sidebar, the task goes
-straight into that project; otherwise it goes to the Inbox of the current
-view.
+capture needs no click. With a project shown, the task goes straight into
+that project; otherwise it goes to the Inbox of the current view.
 
 ## Completing a task
 
@@ -42,12 +46,22 @@ Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
 
 ## Projects
 
-- Create one with the field at the bottom of the sidebar, choosing parallel or
-  sequential
-- File a task by dragging it onto a project in the sidebar, or select it and
-  press ⌥⌘1 to ⌥⌘9 for the first nine projects (Task → Move to Project)
-- Complete a project from the toolbar or its context menu in the sidebar. Its
-  open tasks are completed with it
+Projects show in Miller columns. The first column lists the Inbox and the
+top-level projects. Click a project to open it: a column of its sub-projects
+and tasks appears to its right, and so on down the tree. With the Inbox
+open, its tasks are the last column.
+
+- Create a project with the field at the bottom, choosing parallel or
+  sequential. It goes inside the project shown, or is top-level when the
+  Inbox is shown
+- Nest a project by dragging it onto another, or onto a column to move it
+  into that column's project. Drag it onto the first column, or use Move to
+  Top Level in its context menu, to make it top-level again. A project cannot
+  go inside itself or one of its own sub-projects
+- File a task by dragging it onto a project, or select it and press ⌥⌘1 to
+  ⌥⌘9 for the first nine projects (Task → Move to Project)
+- Complete a project from the toolbar or its context menu. Its sub-projects
+  and their open tasks are completed with it, all the way down
 
 ## The luthor command
 

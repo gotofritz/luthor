@@ -81,7 +81,7 @@ private let twoViews = [
 
 /// Every list a view exposes, as task or project IDs, so each can be checked for leaks.
 enum ViewList: String, CaseIterable, Sendable {
-  case inbox, openTasks, projects, projectTasks, nextActions
+  case inbox, openTasks, projects, projectTasks, nextActions, projectNextActions
 
   func ids(in view: ViewState) -> Set<String> {
     switch self {
@@ -89,7 +89,8 @@ enum ViewList: String, CaseIterable, Sendable {
     case .openTasks: Set(view.openTasks.map(\.id.rawValue))
     case .projects: Set(view.projects.map(\.id.rawValue))
     case .projectTasks: Set(view.projects.flatMap(\.tasks).map(\.id.rawValue))
-    case .nextActions: Set(view.projects.flatMap(\.nextActions).map(\.id.rawValue))
+    case .nextActions: Set(view.nextActions.map(\.id.rawValue))
+    case .projectNextActions: Set(view.projects.flatMap { view.nextActions(of: $0.id) }.map(\.id.rawValue))
     }
   }
 }

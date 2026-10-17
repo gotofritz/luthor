@@ -37,6 +37,7 @@ public func projectCreated(
   _ project: String,
   _ title: String,
   kind: ProjectKind = .parallel,
+  under parent: String? = nil,
   id: String? = nil,
   view: String = "default",
   device: String = "mac",
@@ -47,7 +48,26 @@ public func projectCreated(
     deviceID: DeviceID(device),
     lamport: lamport,
     payload: .projectCreated(
-      ProjectCreated(projectID: ProjectID(project), title: title, kind: kind, viewID: ViewID(view)))
+      ProjectCreated(
+        projectID: ProjectID(project), title: title, kind: kind, viewID: ViewID(view),
+        parentID: parent.map(ProjectID.init)))
+  )
+}
+
+/// Builds a `ProjectMovedToProject` envelope with short, readable defaults; a `nil` parent un-nests.
+public func nested(
+  _ project: String,
+  under parent: String?,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "nest-\(project)-\(parent ?? "top")"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .projectMovedToProject(
+      ProjectMovedToProject(projectID: ProjectID(project), parentID: parent.map(ProjectID.init)))
   )
 }
 
@@ -150,12 +170,23 @@ public func item(_ task: String, _ title: String, in project: String? = nil, vie
   TaskItem(id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init))
 }
 
+/// A project as replay lists it. `tasks` are its children; `children` replaces them where sub-projects
+/// are mixed in.
 public func project(
   _ project: String,
   _ title: String,
   kind: ProjectKind = .parallel,
   view: String = "default",
-  tasks: [TaskItem] = []
+  under parent: String? = nil,
+  tasks: [TaskItem] = [],
+  children: [ProjectChild]? = nil
 ) -> Project {
-  Project(id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), tasks: tasks)
+  Project(
+    id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(ProjectID.init),
+    children: children ?? tasks.map(ProjectChild.task))
+}
+
+/// A sub-project as a child of its parent.
+public func sub(_ project: String) -> ProjectChild {
+  .project(ProjectID(project))
 }

@@ -166,20 +166,30 @@ struct ProjectReplayOrderTests {
 
 @Suite("Next actions of a project")
 struct NextActionTests {
-  static let tasks = [item("t1", "find a flat", in: "p1"), item("t2", "sign the lease", in: "p1")]
+  static func moveHouse(_ kind: ProjectKind, tasks: Int = 2) -> ViewState {
+    let titles = ["find a flat", "sign the lease"].prefix(tasks)
+    var log = [projectCreated("p1", "Move house", kind: kind, lamport: 1)]
+    for (index, title) in titles.enumerated() {
+      log += [
+        captured("t\(index + 1)", title, lamport: UInt64(2 * index + 2)),
+        moved("t\(index + 1)", to: "p1", lamport: UInt64(2 * index + 3)),
+      ]
+    }
+    return LibraryState.replay(log).view(.default)
+  }
 
   @Test("in a parallel project, every open task is one")
   func parallelProjectOffersEveryTask() {
-    #expect(project("p1", "Move house", kind: .parallel, tasks: Self.tasks).nextActions == Self.tasks)
+    #expect(Self.moveHouse(.parallel).nextActions(of: ProjectID("p1")).map(\.id.rawValue) == ["t1", "t2"])
   }
 
   @Test("in a sequential project, only the first open task is one")
   func sequentialProjectOffersTheFirstTask() {
-    #expect(project("p1", "Move house", kind: .sequential, tasks: Self.tasks).nextActions == [Self.tasks[0]])
+    #expect(Self.moveHouse(.sequential).nextActions(of: ProjectID("p1")).map(\.id.rawValue) == ["t1"])
   }
 
   @Test("an empty project has none", arguments: [ProjectKind.parallel, .sequential])
   func emptyProjectOffersNothing(kind: ProjectKind) {
-    #expect(project("p1", "Move house", kind: kind).nextActions == [])
+    #expect(Self.moveHouse(kind, tasks: 0).nextActions(of: ProjectID("p1")) == [])
   }
 }

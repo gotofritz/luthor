@@ -12,6 +12,10 @@ public enum CommandError: Error, Equatable {
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.
   case otherView(TaskID, ProjectID)
+  /// The project and the one it would be nested in are in different views.
+  case projectInOtherView(ProjectID, parent: ProjectID)
+  /// A project cannot be nested under itself or one of its own sub-projects.
+  case nestedUnderItself(ProjectID)
 }
 
 /// Turns user intentions into new events, given the current log.
@@ -77,6 +81,40 @@ public struct Commands {
     let eventID = EventID(ids.next())
     let created = ProjectCreated(projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: viewID)
     return [envelope(eventID, .projectCreated(created), log: log)]
+  }
+
+  /// Creates a project inside the active project `parentID`, in the parent's view.
+  public func createProject(
+    title: String,
+    kind: ProjectKind,
+    under parentID: ProjectID,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    let title = try Self.named(title)
+    let parent = try activeProject(parentID, in: LibraryState.replay(log))
+    let eventID = EventID(ids.next())
+    let created = ProjectCreated(
+      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: parent.viewID, parentID: parentID)
+    return [envelope(eventID, .projectCreated(created), log: log)]
+  }
+
+  /// Nests the active project `projectID` in the active project `parentID` of its view; with no parent,
+  /// makes it top-level. Nesting a project where it already is writes nothing.
+  public func move(
+    projectID: ProjectID,
+    under parentID: ProjectID?,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    let state = LibraryState.replay(log)
+    let project = try activeProject(projectID, in: state)
+    if let parentID {
+      let parent = try activeProject(parentID, in: state)
+      guard parent.viewID == project.viewID else { throw .projectInOtherView(projectID, parent: parentID) }
+      guard !state.subtree(of: projectID).contains(parentID) else { throw .nestedUnderItself(projectID) }
+    }
+    guard project.parentID != parentID else { return [] }
+    let moved = ProjectMovedToProject(projectID: projectID, parentID: parentID)
+    return [envelope(EventID(ids.next()), .projectMovedToProject(moved), log: log)]
   }
 
   public func createView(name: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {

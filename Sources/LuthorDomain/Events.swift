@@ -28,6 +28,7 @@ public enum EventPayload: Equatable, Sendable {
   case viewRenamed(ViewRenamed)
   case taskMovedToView(TaskMovedToView)
   case projectMovedToView(ProjectMovedToView)
+  case projectMovedToProject(ProjectMovedToProject)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.
@@ -67,21 +68,26 @@ public struct ProjectCreated: Equatable, Codable, Sendable {
   public let title: String
   public let kind: ProjectKind
   public let viewID: ViewID
+  /// The project it is created in; `nil` for a top-level project.
+  public let parentID: ProjectID?
 
-  public init(projectID: ProjectID, title: String, kind: ProjectKind, viewID: ViewID) {
+  public init(projectID: ProjectID, title: String, kind: ProjectKind, viewID: ViewID, parentID: ProjectID? = nil) {
     self.projectID = projectID
     self.title = title
     self.kind = kind
     self.viewID = viewID
+    self.parentID = parentID
   }
 
-  /// Events written before views have no `viewID`; they belong to the default view.
+  /// Events written before views have no `viewID`; they belong to the default view. Events written before
+  /// nesting have no `parentID`; they are top-level.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     projectID = try container.decode(ProjectID.self, forKey: .projectID)
     title = try container.decode(String.self, forKey: .title)
     kind = try container.decode(ProjectKind.self, forKey: .kind)
     viewID = try container.decodeIfPresent(ViewID.self, forKey: .viewID) ?? .default
+    parentID = try container.decodeIfPresent(ProjectID.self, forKey: .parentID)
   }
 }
 
@@ -144,6 +150,18 @@ public struct ProjectMovedToView: Equatable, Codable, Sendable {
   public init(projectID: ProjectID, viewID: ViewID) {
     self.projectID = projectID
     self.viewID = viewID
+  }
+}
+
+/// Nests a project in another of its view, or with no parent makes it top-level again.
+public struct ProjectMovedToProject: Equatable, Codable, Sendable {
+  public let projectID: ProjectID
+  /// The project it is nested in from now on; `nil` makes it top-level.
+  public let parentID: ProjectID?
+
+  public init(projectID: ProjectID, parentID: ProjectID?) {
+    self.projectID = projectID
+    self.parentID = parentID
   }
 }
 

@@ -119,6 +119,43 @@ struct ViewEventLineFormatTests {
   }
 }
 
+@Suite("When nesting events are written as lines")
+struct NestingEventLineFormatTests {
+  @Test("ProjectCreated under a parent carries its parentID")
+  func projectCreatedUnderAParentCarriesParentID() throws {
+    let line = try EventLine.encode(projectCreated("p2", "Kitchen", under: "p1", id: "e1", lamport: 1))
+
+    #expect(
+      line
+        == #"{"data":{"kind":"parallel","parentID":"p1","projectID":"p2","title":"Kitchen","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
+    )
+  }
+
+  @Test("ProjectMovedToProject is one sorted JSON object")
+  func projectMovedToProjectIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(nested("p2", under: "p1", id: "e2", lamport: 2))
+
+    #expect(
+      line
+        == #"{"data":{"parentID":"p1","projectID":"p2"},"device":"mac","id":"e2","lamport":2,"type":"ProjectMovedToProject"}"#
+    )
+  }
+
+  @Test("ProjectMovedToProject to the top has no parentID")
+  func unnestingHasNoParentID() throws {
+    let line = try EventLine.encode(nested("p2", under: nil, id: "e3", lamport: 3))
+
+    #expect(line == #"{"data":{"projectID":"p2"},"device":"mac","id":"e3","lamport":3,"type":"ProjectMovedToProject"}"#)
+  }
+
+  @Test(
+    "each decodes back to the same event",
+    arguments: [projectCreated("p2", "Kitchen", under: "p1"), nested("p2", under: "p1"), nested("p2", under: nil)])
+  func nestingLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
+
 @Suite struct JSONLinesEventLogTests {
   @Test func missingFileReadsAsEmptyLog() throws {
     let dir = try TemporaryDirectory()

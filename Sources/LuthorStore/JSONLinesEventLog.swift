@@ -59,6 +59,7 @@ private struct EventLineDTO: Codable {
     case viewRenamed = "ViewRenamed"
     case taskMovedToView = "TaskMovedToView"
     case projectMovedToView = "ProjectMovedToView"
+    case projectMovedToProject = "ProjectMovedToProject"
   }
 
   init(from decoder: any Decoder) throws {
@@ -74,6 +75,8 @@ private struct EventLineDTO: Codable {
       case .viewRenamed: .viewRenamed(try container.decode(ViewRenamed.self, forKey: .data))
       case .taskMovedToView: .taskMovedToView(try container.decode(TaskMovedToView.self, forKey: .data))
       case .projectMovedToView: .projectMovedToView(try container.decode(ProjectMovedToView.self, forKey: .data))
+      case .projectMovedToProject:
+        .projectMovedToProject(try container.decode(ProjectMovedToProject.self, forKey: .data))
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -115,6 +118,9 @@ private struct EventLineDTO: Codable {
       try container.encode(data, forKey: .data)
     case .projectMovedToView(let data):
       try container.encode(EventType.projectMovedToView, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .projectMovedToProject(let data):
+      try container.encode(EventType.projectMovedToProject, forKey: .type)
       try container.encode(data, forKey: .data)
     }
   }
