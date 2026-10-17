@@ -176,6 +176,19 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskMovedToProject(moved), log: log)]
   }
 
+  /// Gives the open task `taskID` a priority, or with `nil` clears it. Giving a task the priority it has
+  /// writes nothing.
+  public func prioritize(taskID: TaskID, as priority: Priority?, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    guard let task = LibraryState.replay(log).openTasks.first(where: { $0.id == taskID }) else {
+      throw .noOpenTask(taskID.rawValue)
+    }
+    guard task.priority != priority else { return [] }
+    let prioritized = TaskPrioritized(taskID: taskID, priority: priority)
+    return [envelope(EventID(ids.next()), .taskPrioritized(prioritized), log: log)]
+  }
+
   public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     try requireActive(projectID, log: log)
     return [envelope(EventID(ids.next()), .projectCompleted(ProjectCompleted(projectID: projectID)), log: log)]

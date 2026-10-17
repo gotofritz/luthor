@@ -2,23 +2,31 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// Projects in Miller columns: the inbox and the top-level projects first, then one column for each
-/// project on the way to the one shown, listing its sub-projects and tasks in the order they were added.
-/// While the inbox is shown, its tasks are the last column. Tasks that are not next actions are dimmed.
-/// Drag a task onto a project to file it, a project onto another to nest it, or onto a column to move it
-/// into that column's project; the first column makes it top-level.
+/// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. The
+/// projects are the top-level projects first, then one column for each project on the way to the one
+/// shown, listing its sub-projects and tasks in the order they were added. The priorities are the four
+/// priorities, which add up when clicked, then the tasks that have one of the picked. Tasks that are not
+/// next actions are dimmed. Drag a task onto a project to file it, a project onto another to nest it, or
+/// onto a column to move it into that column's project; the first column makes it top-level.
 struct ColumnBrowserView: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
     ScrollView(.horizontal) {
       HStack(spacing: 0) {
-        ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
-          ColumnView(library: library, column: column, position: position)
+        switch library.section {
+        case .inbox:
+          TaskListColumn(library: library)
           Divider()
-        }
-        if library.sidebarSelection == .inbox {
-          InboxColumnView(library: library)
+        case .projects:
+          ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
+            ColumnView(library: library, column: column, position: position)
+            Divider()
+          }
+        case .priorities:
+          PriorityColumn(library: library)
+          Divider()
+          TaskListColumn(library: library)
           Divider()
         }
       }
@@ -28,12 +36,11 @@ struct ColumnBrowserView: View {
 
 /// What a click in a column picks.
 private enum ColumnSelection: Hashable {
-  case inbox
   case project(ProjectID)
   case task(TaskID)
 }
 
-/// One column: the inbox and top-level projects, or the children of one project.
+/// One column: the top-level projects, or the children of one project.
 private struct ColumnView: View {
   @Bindable var library: LibraryViewModel
   let column: ProjectColumn
@@ -42,18 +49,17 @@ private struct ColumnView: View {
 
   var body: some View {
     List(selection: selection) {
-      if column.parentID == nil {
-        Label("Inbox", systemImage: "tray")
-          .tag(ColumnSelection.inbox)
-      }
       ForEach(column.entries) { entry in
         switch entry {
         case .project(let project):
           ProjectRow(library: library, project: project)
             .tag(ColumnSelection.project(project.id))
         case .task(let task):
-          TaskRow(task: task, isNextAction: library.nextActions.contains(task.id)) { library.complete(task.id) }
-            .tag(ColumnSelection.task(task.id))
+          TaskRow(
+            task: task, isNextAction: library.nextActions.contains(task.id),
+            complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) }
+          )
+          .tag(ColumnSelection.task(task.id))
         }
       }
     }
@@ -68,13 +74,11 @@ private struct ColumnView: View {
     Binding(
       get: {
         if position < library.path.count { return .project(library.path[position]) }
-        if column.parentID == nil { return library.sidebarSelection == .inbox ? .inbox : nil }
+        if column.parentID == nil { return nil }
         return library.selection.map(ColumnSelection.task)
       },
       set: { picked in
         switch picked {
-        case .inbox:
-          library.open(.inbox)
         case .project(let projectID):
           library.open(.project(projectID))
         case .task(let taskID):
@@ -88,15 +92,41 @@ private struct ColumnView: View {
   }
 }
 
-/// The last column while the inbox is shown: its tasks.
-private struct InboxColumnView: View {
+/// The priorities, each picked or not by a click. Unlike a list selection, a click adds to the picked
+/// priorities instead of replacing them, and clicking a picked one drops it.
+private struct PriorityColumn: View {
+  @Bindable var library: LibraryViewModel
+
+  var body: some View {
+    List {
+      ForEach(Priority.allCases, id: \.self) { priority in
+        let picked = library.selectedPriorities.contains(priority)
+        Label(priority.title, systemImage: priority.symbol)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.vertical, 2)
+          .padding(.horizontal, 6)
+          .background(picked ? Color.accentColor.opacity(0.25) : .clear, in: .rect(cornerRadius: 5))
+          .contentShape(.rect)
+          .onTapGesture { library.togglePriority(priority) }
+          .accessibilityAddTraits(picked ? .isSelected : [])
+      }
+    }
+    .frame(width: 200)
+  }
+}
+
+/// The tasks of the inbox, or of the priorities picked.
+private struct TaskListColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
     List(selection: $library.selection) {
       ForEach(library.tasks, id: \.id) { task in
-        TaskRow(task: task, isNextAction: library.nextActions.contains(task.id)) { library.complete(task.id) }
-          .tag(task.id)
+        TaskRow(
+          task: task, isNextAction: library.nextActions.contains(task.id),
+          complete: { library.complete(task.id) }, setPriority: { library.prioritize(task.id, as: $0) }
+        )
+        .tag(task.id)
       }
     }
     .frame(width: 320)
@@ -137,6 +167,7 @@ private struct TaskRow: View {
   let task: TaskItem
   let isNextAction: Bool
   let complete: () -> Void
+  let setPriority: (Priority?) -> Void
 
   var body: some View {
     HStack(spacing: 8) {
@@ -147,8 +178,23 @@ private struct TaskRow: View {
       .help("Complete")
       Text(task.title)
         .foregroundStyle(isNextAction ? .primary : .secondary)
+      if let priority = task.priority {
+        Spacer()
+        Image(systemName: priority.symbol)
+          .foregroundStyle(.secondary)
+          .help(priority.title)
+      }
     }
     .draggable(task.id.rawValue)
+    .contextMenu {
+      Menu("Priority") {
+        ForEach(Priority.allCases, id: \.self) { priority in
+          Button(priority.title, systemImage: priority.symbol) { setPriority(priority) }
+        }
+        Divider()
+        Button("None") { setPriority(nil) }
+      }
+    }
   }
 }
 

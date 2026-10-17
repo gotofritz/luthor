@@ -15,12 +15,19 @@ public struct TaskItem: Equatable, Sendable {
   public let viewID: ViewID
   /// The project the task is filed in; `nil` while it is in the inbox.
   public let projectID: ProjectID?
+  /// How much the task matters; `nil` until it is given one.
+  public let priority: Priority?
 
-  public init(id: TaskID, title: String, viewID: ViewID, projectID: ProjectID? = nil) {
+  public init(id: TaskID, title: String, viewID: ViewID, projectID: ProjectID? = nil, priority: Priority? = nil) {
     self.id = id
     self.title = title
     self.viewID = viewID
     self.projectID = projectID
+    self.priority = priority
+  }
+
+  fileprivate func prioritized(_ priority: Priority?) -> TaskItem {
+    TaskItem(id: id, title: title, viewID: viewID, projectID: projectID, priority: priority)
   }
 }
 
@@ -81,6 +88,14 @@ public struct ViewState: Equatable, Sendable {
   /// Projects of the view that are nested in none, in creation order.
   public var topLevelProjects: [Project] {
     projects.filter { $0.parentID == nil }
+  }
+
+  /// The open tasks of the view with one of these priorities, the most urgent priority first and each in
+  /// capture order. No priority lists nothing.
+  public func tasks(prioritised priorities: Set<Priority>) -> [TaskItem] {
+    Priority.allCases.filter(priorities.contains).flatMap { priority in
+      openTasks.filter { $0.priority == priority }
+    }
   }
 
   /// The active sub-projects of a project, in the order they were added to it.
@@ -176,6 +191,8 @@ public struct LibraryState: Equatable, Sendable {
       move(moved.projectID, toView: moved.viewID)
     case .projectMovedToProject(let moved):
       nest(moved.projectID, under: moved.parentID)
+    case .taskPrioritized(let prioritized):
+      prioritize(prioritized.taskID, as: prioritized.priority)
     }
   }
 
@@ -268,7 +285,8 @@ public struct LibraryState: Equatable, Sendable {
       openTasks[index].viewID == projects[target].viewID
     else { return }
     let task = openTasks[index]
-    let filed = TaskItem(id: taskID, title: task.title, viewID: task.viewID, projectID: projectID)
+    let filed = TaskItem(
+      id: taskID, title: task.title, viewID: task.viewID, projectID: projectID, priority: task.priority)
     openTasks[index] = filed
     removeFromProjects(taskID)
     projects[target].children.append(.task(filed))
@@ -277,7 +295,8 @@ public struct LibraryState: Equatable, Sendable {
   /// Ignores a task that is not open and a view that does not exist.
   private mutating func move(_ taskID: TaskID, toView viewID: ViewID) {
     guard let index = openTasks.firstIndex(where: { $0.id == taskID }), hasView(viewID) else { return }
-    openTasks[index] = TaskItem(id: taskID, title: openTasks[index].title, viewID: viewID)
+    let task = openTasks[index]
+    openTasks[index] = TaskItem(id: taskID, title: task.title, viewID: viewID, priority: task.priority)
     removeFromProjects(taskID)
   }
 
@@ -287,7 +306,7 @@ public struct LibraryState: Equatable, Sendable {
     guard projects.contains(where: { $0.id == projectID }), hasView(viewID) else { return }
     let moved = subtree(of: projectID)
     let reassign = { (task: TaskItem) in
-      TaskItem(id: task.id, title: task.title, viewID: viewID, projectID: task.projectID)
+      TaskItem(id: task.id, title: task.title, viewID: viewID, projectID: task.projectID, priority: task.priority)
     }
     detach(projectID)
     openTasks = openTasks.map { task in
@@ -299,6 +318,18 @@ public struct LibraryState: Equatable, Sendable {
       projects[index].children = projects[index].children.map { child in
         guard case .task(let task) = child else { return child }
         return .task(reassign(task))
+      }
+    }
+  }
+
+  /// Ignores a task that is not open.
+  private mutating func prioritize(_ taskID: TaskID, as priority: Priority?) {
+    guard let index = openTasks.firstIndex(where: { $0.id == taskID }) else { return }
+    openTasks[index] = openTasks[index].prioritized(priority)
+    for project in projects.indices {
+      projects[project].children = projects[project].children.map { child in
+        guard case .task(let task) = child, task.id == taskID else { return child }
+        return .task(task.prioritized(priority))
       }
     }
   }

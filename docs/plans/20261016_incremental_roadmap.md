@@ -116,10 +116,25 @@ project onto another or onto a column to nest it, and the new project field
 creates inside the project shown. Later slices read the tree: Today's
 project path, on hold and dropped subtrees, review intervals.
 
+### 5a. Navigation rail ✅
+
+The sidebar becomes a narrow rail of icons with their names underneath, which
+never expands: Inbox, Projects, Prios (a new place gets a new case in
+`NavigationSection` and an icon). The main area has a bar with a search box
+(disabled until the Search slice) and the view switcher, which has no
+shortcuts so it cannot be triggered by mistake. The first Miller column
+depends on the place: Inbox is its list of tasks, Projects the top-level
+projects, Prios the four priorities, which add up when clicked, followed by
+the tasks that have one of them. For Prios to have anything to list,
+`TaskPrioritized(task, priority?)` landed here, ahead of slice 6, with
+`Priority` (A, B, C, someday) and a priority menu on tasks; nothing else of
+slice 6 did.
+
 ### 6. Priority and estimates (ALPEN: A, L)
 
-- `TaskPrioritized` (A, B, C or someday) and `TaskEstimated` (minutes), each
-  clearable. Priority is importance only: never order, deadline or day
+- `TaskPrioritized` (A, B, C or someday; shipped with the rail, see 5a) and
+  `TaskEstimated` (minutes), each clearable. Priority is importance only:
+  never order, deadline or day
 - Clarifying a task means giving it a priority, an estimate or a project;
   the Inbox holds only unclarified tasks
 - Someday list: someday tasks, kept out of next actions and planning until
@@ -305,6 +320,11 @@ Usable: the weekly review.
 
 ### Later
 
+- Search: make the search box in the top bar work, over titles in the
+  current view only
+- Full keyboard navigation: reach the rail, every column, the top bar and
+  the view switcher without the mouse (the view switcher still gets no
+  shortcut)
 - Repeating tasks
 - Timer for actual minutes, and an in-progress state with it
 - Estimate suggestions from history, offered and never applied silently
@@ -397,3 +417,19 @@ Usable: the weekly review.
    given tasks
 4. **A sub-project moved to another view alone is top-level there.** Its old
    parent stays behind without it
+
+## Decisions (2026-10-17, navigation)
+
+1. **Navigation is a rail, not a sidebar.** A fixed-width strip of icon and
+   name, never expanded. Places: Inbox, Projects, Prios. Later slices add
+   theirs (Tags in slice 12)
+2. **The view switcher has no keyboard shortcut.** Switching view by mistake
+   shows a different world; the ⌃⌘1–9 commands are gone
+3. **Prios are additive.** Clicking a priority adds it to the picked ones
+   instead of replacing them; with none picked the list is empty
+4. **`TaskPrioritized` ships before slice 6.** It is the minimal priority
+   model: `Priority` (A critical, B important, C optional, someday, shown as
+   "One day") and a clearable event, with no UI for it beyond a menu. The
+   event format is still soft
+5. **Search and keyboard navigation are deferred** to their own slices (see
+   Later)

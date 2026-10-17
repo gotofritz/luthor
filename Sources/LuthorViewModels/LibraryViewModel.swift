@@ -8,6 +8,13 @@ public enum SidebarItem: Hashable, Sendable {
   case project(ProjectID)
 }
 
+/// The places the navigation rail leads to, in the order it lists them.
+public enum NavigationSection: Hashable, Sendable, CaseIterable {
+  case inbox
+  case projects
+  case priorities
+}
+
 /// One entry of a column: a sub-project to open, or a task.
 public enum ColumnEntry: Equatable, Sendable, Identifiable {
   case project(Project)
@@ -50,14 +57,18 @@ public final class LibraryViewModel {
   public private(set) var views: [ViewItem] = []
   /// The one view the window shows; nothing from another view is ever listed.
   public private(set) var currentView: ViewID
+  /// The place the navigation rail has picked.
+  public private(set) var section = NavigationSection.inbox
   public private(set) var sidebarSelection: SidebarItem = .inbox
+  /// The priorities picked in the priorities section; they add up, so the list shows all of them.
+  public private(set) var selectedPriorities: Set<Priority> = []
   /// Every active project of the view, nested or not, in creation order.
   public private(set) var projects: [Project] = []
   /// The project browser: the top-level projects, then one column for each project on the path.
   public private(set) var columns: [ProjectColumn] = []
   /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
   public private(set) var path: [ProjectID] = []
-  /// Open tasks of the inbox, or of the project the sidebar shows.
+  /// Open tasks of the inbox, of the project shown, or with a priority picked.
   public private(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
   public private(set) var nextActions: Set<TaskID> = []
@@ -80,6 +91,7 @@ public final class LibraryViewModel {
   /// Shows another view, at its inbox, with no task selected.
   public func showView(_ viewID: ViewID) {
     currentView = viewID
+    section = .inbox
     sidebarSelection = .inbox
     selection = nil
     present()
@@ -166,9 +178,39 @@ public final class LibraryViewModel {
 
   /// Shows the inbox or a project, with no task selected.
   public func open(_ item: SidebarItem) {
+    switch item {
+    case .inbox: section = .inbox
+    case .project: section = .projects
+    }
     sidebarSelection = item
     selection = nil
     present()
+  }
+
+  /// Shows a section of the navigation rail, with no task selected. Leaving the projects closes the
+  /// project shown.
+  public func show(_ section: NavigationSection) {
+    self.section = section
+    if section != .projects { sidebarSelection = .inbox }
+    selection = nil
+    present()
+  }
+
+  /// Picks a priority or, if it is picked, drops it. The others stay as they are.
+  public func togglePriority(_ priority: Priority) {
+    if !selectedPriorities.insert(priority).inserted { selectedPriorities.remove(priority) }
+    present()
+  }
+
+  /// Gives a task a priority, or with `nil` clears it.
+  public func prioritize(_ taskID: TaskID, as priority: Priority?) {
+    perform { (log) throws(CommandError) in try commands.prioritize(taskID: taskID, as: priority, log: log) }
+  }
+
+  /// Gives the selected task a priority, or with `nil` clears it.
+  public func prioritizeSelected(as priority: Priority?) {
+    guard let selected = selection else { return }
+    prioritize(selected, as: priority)
   }
 
   /// Creates a project titled by the project draft, inside the project shown, or top-level while the
@@ -285,7 +327,11 @@ public final class LibraryViewModel {
       columns.append(ProjectColumn(parentID: projectID, entries: project.children.compactMap { entry($0) }))
     }
     self.columns = columns
-    if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
+    if section == .priorities {
+      tasks = view.tasks(prioritised: selectedPriorities)
+      let actionable = Set(view.nextActions.map(\.id))
+      nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
+    } else if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
       tasks = project.tasks
       let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
         guard case .task(let task) = entry else { return nil }

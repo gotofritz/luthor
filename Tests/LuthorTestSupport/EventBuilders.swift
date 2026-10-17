@@ -166,8 +166,31 @@ public func projectMovedToView(
   )
 }
 
-public func item(_ task: String, _ title: String, in project: String? = nil, view: String = "default") -> TaskItem {
-  TaskItem(id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init))
+/// Builds a `TaskPrioritized` envelope with short, readable defaults; a `nil` priority clears it.
+public func prioritized(
+  _ task: String,
+  as priority: Priority?,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "prioritize-\(task)-\(priority?.rawValue ?? "none")"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskPrioritized(TaskPrioritized(taskID: TaskID(task), priority: priority))
+  )
+}
+
+public func item(
+  _ task: String,
+  _ title: String,
+  in project: String? = nil,
+  view: String = "default",
+  priority: Priority? = nil
+) -> TaskItem {
+  TaskItem(
+    id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init), priority: priority)
 }
 
 /// A project as replay lists it. `tasks` are its children; `children` replaces them where sub-projects
