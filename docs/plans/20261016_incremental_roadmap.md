@@ -251,19 +251,32 @@ name. Acceptance flows simulate two Macs on one folder. The optional
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 11. Defer and due, Upcoming and Forecast
+### 11. Due dates and the calendar
 
-- `TaskDeferred` (available from), `TaskDueSet` (hard deadline or target
-  date), and clearing both
-- Availability rule (deferred, blocked by sequence, completed, dropped) in
-  the domain. Scheduling before a task is available is a `CommandError`; a
-  due date never schedules a task by itself
+- `TaskDueSet(task, date?, hard)` sets a due date, a hard deadline or a
+  target date, and clears it when the date is missing. A due date never
+  schedules a task by itself
 - Due and overdue hard deadlines surface in Today's candidates, ahead of
   their priority peers
-- Upcoming (days ahead and their plans) and Forecast (deadlines and planned
-  minutes per day, overloaded days flagged)
+- Due date field on the task card, next to priority and estimate
+- Calendar, a new place on the rail (new case in `NavigationSection`, calendar
+  icon). Its first Miller column is a scrolling list of days, one row per day
+  across the whole column, starting at today with earlier days reachable by
+  scrolling up. Sundays have a different background, today is marked, and a
+  mark on a row shows the day has tasks: one for tasks planned for it
+  (`TaskScheduled`), another for tasks due on it, so a deadline looks
+  different from a plan. Picking a day lists all its tasks in the next
+  column, planned and due; picking a task opens its card in the column after
+  that, as everywhere else. Per view, like Today. Read-only: planning,
+  rescheduling and deciding stay in Today and Review
+- The day-to-tasks lookup is a pure function in `LibraryState`, taking the
+  range of days and today as parameters like `plan(for:on:today:)`
 
-Usable: deadlines feed the plan without taking it over.
+Dropped from this slice (see Decisions, slice 11): defer dates and the
+availability rule, Upcoming, Forecast.
+
+Usable: deadlines feed the plan without taking it over, and any day's
+tasks are one click away.
 
 ### 12. Tags
 
@@ -645,3 +658,29 @@ Usable: the weekly review.
 4. **Distribution stays ad-hoc signed.** A release zip is fetched with
    `gh release download`, which sets no quarantine flag, so Gatekeeper does
    not block it; notarising (Developer ID, $99 a year) is not set up
+
+## Decisions (2026-10-17, slice 11)
+
+1. **Slice 11 shrinks to due dates.** Due dates fit ALPEN: a deadline is an
+   input to the morning plan, and decision 4 of slice 8 already leaves a slot
+   for it in the ordering. Defer dates, Upcoming and Forecast are OmniFocus
+   ideas, and ALPEN plans one day at a time. Dropped, not postponed
+2. **No defer dates, so no availability rule.** "Defer to tomorrow" from
+   slice 8 covers the need: it schedules the task for tomorrow. Scheduling
+   still does not enforce availability (slice 8, decision 5) and no
+   `CommandError` is added for it. Sequential projects keep holding tasks
+   back through next actions, as before
+3. **The calendar is a rail place, not a Forecast.** It shows where tasks
+   are, with no totals and no overload flags: capacity stays a Today concern
+4. **Calendar layout: a list of days, not month grids.** One row per day
+   fills the first Miller column, as every other first column is a list, so
+   picking works like any list (click, then the day's tasks in the next
+   column). The column is narrow and a seven-column month grid is cramped in
+   it; a row also has room for two kinds of mark and a weekday name, and the
+   Sunday background marks the week boundary. Alternative, kept for later if
+   the list proves hard to place a date in: month calendars, one grid per
+   month, scrolling, with the same marks as dots under the day number and the
+   same next column for the tasks of the picked day
+5. **Two marks, planned and due.** A day with tasks scheduled for it and a day
+   with a task due on it look different. Both read from existing and new
+   events only; the calendar stores nothing of its own
