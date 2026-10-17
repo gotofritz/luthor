@@ -81,6 +81,8 @@ private struct EventLineDTO: Codable {
     case .taskCompleted(let data):
       try container.encode(EventType.taskCompleted, forKey: .type)
       try container.encode(data, forKey: .data)
+    case .projectCreated, .taskMovedToProject, .projectCompleted:
+      break
     }
   }
 }

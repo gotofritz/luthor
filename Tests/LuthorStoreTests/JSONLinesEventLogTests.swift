@@ -26,6 +26,41 @@ import Testing
   }
 }
 
+@Suite("When project events are written as lines")
+struct ProjectEventLineFormatTests {
+  @Test("ProjectCreated is one sorted JSON object")
+  func projectCreatedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(projectCreated("p1", "Move house", kind: .sequential, id: "e1", lamport: 1))
+
+    #expect(
+      line
+        == #"{"data":{"kind":"sequential","projectID":"p1","title":"Move house"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
+    )
+  }
+
+  @Test("TaskMovedToProject is one sorted JSON object")
+  func taskMovedToProjectIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(moved("t1", to: "p1", id: "e2", lamport: 2))
+
+    #expect(
+      line
+        == #"{"data":{"projectID":"p1","taskID":"t1"},"device":"mac","id":"e2","lamport":2,"type":"TaskMovedToProject"}"#
+    )
+  }
+
+  @Test("ProjectCompleted is one sorted JSON object")
+  func projectCompletedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(projectCompleted("p1", id: "e3", lamport: 3))
+
+    #expect(line == #"{"data":{"projectID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"ProjectCompleted"}"#)
+  }
+
+  @Test(arguments: [projectCreated("p1", "Holiday"), moved("t1", to: "p1"), projectCompleted("p1")])
+  func projectLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
+
 @Suite struct JSONLinesEventLogTests {
   @Test func missingFileReadsAsEmptyLog() throws {
     let dir = try TemporaryDirectory()

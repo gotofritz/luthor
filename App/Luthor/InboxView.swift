@@ -7,7 +7,7 @@ import SwiftUI
 /// The capture field on top, open tasks below. The field keeps the focus: Return captures, ↑ and ↓
 /// select a task, ⌘Return completes it.
 struct InboxView: View {
-  @Bindable var inbox: InboxViewModel
+  @Bindable var inbox: LibraryViewModel
   let logURL: URL
   @FocusState private var captureFocused: Bool
 

@@ -7,14 +7,14 @@ import SwiftUI
 @main
 struct LuthorApp: App {
   private let configuration: LuthorConfiguration
-  @State private var inbox: InboxViewModel
+  @State private var inbox: LibraryViewModel
 
   init() {
     let configuration = LuthorConfiguration(
       environment: ProcessInfo.processInfo.environment,
       home: FileManager.default.homeDirectoryForCurrentUser
     )
-    let inbox = InboxViewModel(
+    let inbox = LibraryViewModel(
       log: JSONLinesEventLog(fileURL: configuration.logURL),
       commands: Commands(deviceID: configuration.deviceID, ids: UUIDGenerator())
     )

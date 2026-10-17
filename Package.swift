@@ -35,6 +35,9 @@ let package = Package(
       dependencies: ["LuthorViewModels", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
     ),
     // End-to-end flows through the CLI and view models; `make test-acceptance` runs them alone.
-    .testTarget(name: "LuthorAcceptanceTests", dependencies: ["LuthorCLI", "LuthorTestSupport"]),
+    .testTarget(
+      name: "LuthorAcceptanceTests",
+      dependencies: ["LuthorCLI", "LuthorDomain", "LuthorStore", "LuthorViewModels", "LuthorTestSupport"]
+    ),
   ]
 )

@@ -2,15 +2,30 @@ import LuthorDomain
 import LuthorStore
 import Observation
 
-/// The inbox window: open tasks, the capture field and the keyboard selection.
+/// What the sidebar can show: the inbox or one active project.
+public enum SidebarItem: Hashable, Sendable {
+  case inbox
+  case project(ProjectID)
+}
+
+/// The main window: the sidebar of inbox and projects, the open tasks of the one shown, the capture
+/// fields and the keyboard selection.
 ///
 /// Every action re-reads the log first, so events another process appended (the CLI) are never missed
 /// and new events follow the highest Lamport counter on disk.
 @MainActor
 @Observable
-public final class InboxViewModel {
+public final class LibraryViewModel {
+  public private(set) var sidebarSelection: SidebarItem = .inbox
+  /// Active projects in creation order.
+  public private(set) var projects: [Project] = []
+  /// Open tasks of the inbox, or of the project the sidebar shows.
   public private(set) var tasks: [TaskItem] = []
+  /// The shown tasks that can be worked on now. Every inbox task is one.
+  public private(set) var nextActions: Set<TaskID> = []
   public var draft = ""
+  /// Title of the next project to create.
+  public var projectDraft = ""
   public var selection: TaskID?
   public private(set) var errorMessage: String?
 
@@ -36,6 +51,21 @@ public final class InboxViewModel {
     perform { (log) throws(CommandError) in try commands.capture(title: title, log: log) }
     if errorMessage == nil { draft = "" }
   }
+
+  /// Shows the inbox or a project, with no task selected.
+  public func open(_ item: SidebarItem) {}
+
+  /// Creates a project titled by the project draft. A blank draft creates nothing.
+  public func createProject(kind: ProjectKind) {}
+
+  /// Files a task into a project.
+  public func file(_ taskID: TaskID, into projectID: ProjectID) {}
+
+  /// Files the selected task and selects the one that takes its place in the list.
+  public func fileSelected(into projectID: ProjectID) {}
+
+  /// Completes a project and its open tasks. If the sidebar showed it, it shows the inbox again.
+  public func completeProject(_ projectID: ProjectID) {}
 
   public func complete(_ taskID: TaskID) {
     perform { (log) throws(CommandError) in try commands.complete(taskID: taskID, log: log) }
@@ -86,7 +116,7 @@ public final class InboxViewModel {
   }
 
   private func show(_ events: [EventEnvelope]) {
-    tasks = InboxState.replay(events).openTasks
+    tasks = LibraryState.replay(events).openTasks
     if let selected = selection, index(of: selected) == nil { selection = nil }
     errorMessage = nil
   }

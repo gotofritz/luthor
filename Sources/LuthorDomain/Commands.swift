@@ -7,6 +7,7 @@ public enum CommandError: Error, Equatable {
   case blankTitle
   case noOpenTask(String)
   case ambiguousPrefix(String, matches: [TaskID])
+  case noActiveProject(ProjectID)
 }
 
 /// Turns user intentions into new events, given the current log.
@@ -19,7 +20,12 @@ public struct Commands {
     self.ids = ids
   }
 
-  public func capture(title: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  /// Captures a task into the inbox, or straight into the active project `projectID`.
+  public func capture(
+    title: String,
+    into projectID: ProjectID? = nil,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
     let title = String(title.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
     guard !title.isEmpty else { throw .blankTitle }
     let eventID = EventID(ids.next())
@@ -30,7 +36,7 @@ public struct Commands {
   /// Completes the one open task whose ID starts with `idPrefix`, ignoring case.
   public func complete(idPrefix: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     let prefix = idPrefix.lowercased()
-    let matches = InboxState.replay(log).openTasks
+    let matches = LibraryState.replay(log).openTasks
       .map(\.id)
       .filter { !prefix.isEmpty && $0.rawValue.lowercased().hasPrefix(prefix) }
     guard let match = matches.first else { throw .noOpenTask(idPrefix) }
@@ -40,10 +46,32 @@ public struct Commands {
 
   /// Completes the open task with exactly this ID.
   public func complete(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard InboxState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
+    guard LibraryState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
       throw .noOpenTask(taskID.rawValue)
     }
     return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
+  }
+
+  public func createProject(
+    title: String,
+    kind: ProjectKind,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    []
+  }
+
+  /// Files the open task `taskID` into the active project `projectID`. Filing a task where it already
+  /// is writes nothing.
+  public func move(
+    taskID: TaskID,
+    to projectID: ProjectID,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    []
+  }
+
+  public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    []
   }
 
   private func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {

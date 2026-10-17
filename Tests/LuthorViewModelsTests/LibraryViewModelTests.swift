@@ -5,9 +5,9 @@ import LuthorViewModels
 import Testing
 
 @MainActor
-func makeInbox(_ events: [EventEnvelope] = []) -> (InboxViewModel, InMemoryEventLog) {
+func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEventLog) {
   let log = InMemoryEventLog(events)
-  let inbox = InboxViewModel(log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()))
+  let inbox = LibraryViewModel(log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()))
   inbox.reload()
   return (inbox, log)
 }
