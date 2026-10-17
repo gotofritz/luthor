@@ -44,6 +44,15 @@ Write code before the test? Delete it. Start over.
 
 Implement fresh from tests. Period.
 
+## Start Outside-In
+
+Implementing a plan, or a slice of one? Before any unit test:
+
+1. Write the slice's acceptance tests in `Tests/LuthorAcceptanceTests`: one per user-visible flow, named BDD-style from the plan's wording
+2. Run `make test-acceptance`; watch each fail because the behaviour is missing
+3. Drive the implementation with the red-green-refactor loop below, one unit test at a time
+4. The slice is done when its acceptance tests pass. Until then they stay red; never skip them
+
 ## Red-Green-Refactor
 
 ```dot

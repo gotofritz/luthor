@@ -107,6 +107,13 @@ it fail.
 
 Bug fixes start with a test that reproduces the bug.
 
+**Outside-in.** Work on a plan, or a slice of one, starts with its acceptance
+tests: one per user-visible flow the slice promises, in
+`Tests/LuthorAcceptanceTests`, named BDD-style from the plan's wording. Watch
+them fail, then drive the implementation with unit tests (the loop above)
+until they pass. The slice is done when its acceptance tests are green; they
+stay red on the branch until then, and are never skipped to get there
+
 Reference: `.claude/skills/tdd/SKILL.md`
 
 ### What to test where
