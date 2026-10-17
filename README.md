@@ -97,7 +97,15 @@ right-click → Open.
 
 ## Development
 
+Needs Xcode (for `make app`). Once per checkout:
+
 ```bash
-make tools hooks   # once
-make check-ci      # what CI runs
+make tools   # download the pinned SwiftLint into .tools/; make lint and make check-ci need it
+make hooks   # run format, lint and commit-message checks on every commit
+```
+
+Then:
+
+```bash
+make check-ci   # lint, build, tests and the Mac app: exactly what CI runs
 ```

@@ -20,8 +20,10 @@ swiftlint: swiftlint-version
 	$(SWIFTLINT) lint --strict --quiet
 
 swiftlint-version:
-	@found="$$($(SWIFTLINT) version)"; \
-	if [ "$$found" != "$(SWIFTLINT_VERSION)" ]; then \
+	@found="$$($(SWIFTLINT) version 2>/dev/null)"; \
+	if [ -z "$$found" ]; then \
+	  echo "SwiftLint not installed: run 'make tools'"; exit 1; \
+	elif [ "$$found" != "$(SWIFTLINT_VERSION)" ]; then \
 	  echo "SwiftLint $$found found, $(SWIFTLINT_VERSION) pinned: run 'make tools'"; exit 1; \
 	fi
 
