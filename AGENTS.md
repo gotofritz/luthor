@@ -97,12 +97,13 @@ What is where today. Grep for anything finer; this only orients.
 Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
-    Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order
+    Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
+                             Priority (A, B, C, someday) and TaskPrioritized
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
                              only via view(id) → ViewState (open tasks, inbox, project tree,
-                             recursive next actions: parallel/sequential rule)
+                             recursive next actions: parallel/sequential rule; tasks by priority)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
@@ -112,11 +113,12 @@ Sources/
     UUIDGenerator.swift      production IDGenerator
   LuthorCLI/CLI.swift        `luthor add|list|done [--view]`, testable (returns CLIResult)
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
-  LuthorViewModels/          @Observable view models (LibraryViewModel: current view, project
-                             columns, list, drops), no SwiftUI
+  LuthorViewModels/          @Observable view models (LibraryViewModel: current view, navigation
+                             section, picked priorities, project columns, list, drops), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
-  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView: window, capture,
-                             view switcher; ColumnBrowserView: projects in Miller columns)
+  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView: window, top bar
+                             with search and view switcher, capture; NavigationRailView: icon
+                             rail; ColumnBrowserView: the columns of the place picked)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory

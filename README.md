@@ -39,16 +39,25 @@ completes it, or click its circle.
 
 The app shows one view at a time, such as Work or Private, and nothing of
 another view leaks into it. The view switcher at the top of the window
-switches view (or ⌃⌘1 to ⌃⌘9), creates and renames views; the app reopens on
-the view last used on that Mac. Task → Move to View, or Move to View in a
+switches view (no keyboard shortcut, so it cannot be hit by mistake), creates
+and renames views; the app reopens on the view last used on that Mac. Task → Move to View, or Move to View in a
 project's context menu, takes a task or a whole project across.
 
+A narrow rail on the left, icons with their names underneath, picks the place
+to look at: Inbox (a list of its tasks), Projects or Prios. Above the main
+area is a bar with a search box (not working yet) and the view switcher.
+
+Prios lists the priorities Critical, Important, Optional and One day. Click
+one to list its tasks, click another to add it: the picked priorities add up,
+the most urgent first; click a picked one again to drop it. Give a task a
+priority from its context menu or Task → Priority.
+
 Projects nest to any depth and show in Miller columns: the first column lists
-the Inbox and the top-level projects, and each project you open adds a column
+the top-level projects, and each project you open adds a column
 of its sub-projects and tasks. Create a project with the field at the bottom,
 choosing parallel (every child is active) or sequential (only the first open
 child is; the rest are dimmed); it goes inside the project shown, or top-level
-from the Inbox. Drag a project onto another to nest it, or onto the first
+while none is open. Drag a project onto another to nest it, or onto the first
 column to make it top-level. File a task by dragging it onto a project, or
 select it and press ⌥⌘1 to ⌥⌘9 for the first nine projects (Task → Move to
 Project). Typing in the capture field adds the task straight to the project

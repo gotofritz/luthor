@@ -13,6 +13,9 @@ CLI does updates this guide in the same PR (see the docs check in
 - **Task**: one thing to do. Captured in the Inbox, optionally filed into a
   project, completed when done
 - **Inbox**: tasks of the current view not filed into a project yet
+- **Priority**: how much a task matters: Critical (A), Important (B),
+  Optional (C) or One day. It says nothing about order or deadline. A task
+  has none until you give it one
 - **Project**: a group of tasks and other projects, its sub-projects, to any
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
   children are in the order they were added. *Parallel*: every child is
@@ -21,10 +24,24 @@ CLI does updates this guide in the same PR (see the docs check in
   above it lets it be: an active sub-project hands out its own next actions,
   one held back by a sequential parent hands out none
 
+## Finding your way around
+
+A narrow rail on the left lists the places, an icon with its name underneath.
+It does not expand. Click a place to look at it:
+
+- **Inbox**: your inbox tasks, as a list
+- **Projects**: the top-level projects, as Miller columns (see Projects)
+- **Prios**: the priorities, then the tasks that have one of them (see
+  Priorities)
+
+Above the main area is a bar with a search box and the view switcher. Search
+does not work yet. Navigating by keyboard alone is not possible yet either.
+
 ## Views
 
-- The view you are in is shown at the top of the window. Click it to switch
-  to another view, or press ⌃⌘1 to ⌃⌘9 for the first nine (View menu)
+- The view you are in is shown in the bar at the top of the window. Click it
+  to switch to another view. It has no keyboard shortcut, so you cannot
+  trigger it by mistake
 - Create a view with New View… in the same menu; the window switches to it.
   Rename the current view with Rename View…. Names are unique, ignoring case
 - The app opens on the view you used last on this Mac
@@ -46,14 +63,13 @@ Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
 
 ## Projects
 
-Projects show in Miller columns. The first column lists the Inbox and the
-top-level projects. Click a project to open it: a column of its sub-projects
-and tasks appears to its right, and so on down the tree. With the Inbox
-open, its tasks are the last column.
+Projects show in Miller columns. The first column lists the top-level
+projects. Click a project to open it: a column of its sub-projects and tasks
+appears to its right, and so on down the tree.
 
-- Create a project with the field at the bottom, choosing parallel or
-  sequential. It goes inside the project shown, or is top-level when the
-  Inbox is shown
+- Create a project with the field at the bottom of Projects, choosing
+  parallel or sequential. It goes inside the project shown, or is top-level
+  when none is open
 - Nest a project by dragging it onto another, or onto a column to move it
   into that column's project. Drag it onto the first column, or use Move to
   Top Level in its context menu, to make it top-level again. A project cannot
@@ -62,6 +78,18 @@ open, its tasks are the last column.
   ⌥⌘9 for the first nine projects (Task → Move to Project)
 - Complete a project from the toolbar or its context menu. Its sub-projects
   and their open tasks are completed with it, all the way down
+
+## Priorities
+
+Give a task a priority from its context menu (Priority) or, with the task
+selected, from Task → Priority. None clears it. A task keeps its priority
+when filed into a project or taken to another view.
+
+Prios lists Critical, Important, Optional and One day. Click one to list its
+tasks. Click another to add it: the picked priorities add up, and the list
+shows the tasks of all of them, the most urgent first. Click a picked
+priority again to drop it. With none picked, the list is empty. You can
+complete a task from the list like anywhere else.
 
 ## The luthor command
 

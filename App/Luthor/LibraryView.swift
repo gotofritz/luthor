@@ -4,7 +4,8 @@ import LuthorStore
 import LuthorViewModels
 import SwiftUI
 
-/// The window: the view switcher, the capture field, the projects in Miller columns and the new project
+/// The window: the navigation rail on the left; on the right a bar with the search box and the view
+/// switcher, the capture field, the columns of the place picked and, in the projects, the new project
 /// field. The capture field keeps the focus: Return captures into the inbox or the project shown, ↑ and ↓
 /// select one of its tasks, ⌘Return completes it.
 struct LibraryView: View {
@@ -14,25 +15,31 @@ struct LibraryView: View {
   @State private var newProjectKind = ProjectKind.parallel
 
   var body: some View {
-    VStack(spacing: 0) {
-      ViewSwitcher(library: library)
+    HStack(spacing: 0) {
+      NavigationRailView(library: library)
       Divider()
-      captureField
-      if let message = library.errorMessage {
-        Text(message)
-          .foregroundStyle(.red)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding([.horizontal, .bottom], 12)
+      VStack(spacing: 0) {
+        topBar
+        Divider()
+        captureField
+        if let message = library.errorMessage {
+          Text(message)
+            .foregroundStyle(.red)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding([.horizontal, .bottom], 12)
+        }
+        Divider()
+        ColumnBrowserView(library: library)
+        if library.section == .projects {
+          Divider()
+          newProjectField
+        }
       }
-      Divider()
-      ColumnBrowserView(library: library)
-      Divider()
-      newProjectField
     }
     .navigationTitle(title)
     .navigationSubtitle(logURL.path)
     .toolbar {
-      if let projectID = shownProjectID {
+      if library.section == .projects, let projectID = shownProjectID {
         Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
           .help("Complete this project, its sub-projects and their open tasks")
       }
@@ -43,11 +50,25 @@ struct LibraryView: View {
     .onChange(of: library.selection) { captureFocused = true }
     .onChange(of: library.tasks) { captureFocused = true }
     .onChange(of: library.sidebarSelection) { captureFocused = true }
+    .onChange(of: library.section) { captureFocused = true }
     .task { await watchLog() }
   }
 
+  /// The search box, which waits for its slice, and the view switcher.
+  private var topBar: some View {
+    HStack(spacing: 12) {
+      TextField("Search", text: .constant(""))
+        .textFieldStyle(.roundedBorder)
+        .disabled(true)
+        .help("Search comes in a later slice")
+      ViewSwitcher(library: library)
+    }
+    .padding(.horizontal, 12)
+    .padding(.vertical, 8)
+  }
+
   private var captureField: some View {
-    TextField("New task in \(title)", text: $library.draft)
+    TextField("New task in \(shownProject?.title ?? "Inbox")", text: $library.draft)
       .textFieldStyle(.plain)
       .font(.title3)
       .padding(12)
@@ -85,8 +106,16 @@ struct LibraryView: View {
     return projectID
   }
 
+  private var shownProject: Project? {
+    library.projects.first { $0.id == shownProjectID }
+  }
+
   private var title: String {
-    library.projects.first { $0.id == shownProjectID }?.title ?? "Inbox"
+    switch library.section {
+    case .inbox: "Inbox"
+    case .projects: shownProject?.title ?? "Projects"
+    case .priorities: "Prios"
+    }
   }
 
   /// Reloads when another process, such as the CLI, changes the log.
@@ -100,6 +129,7 @@ struct LibraryView: View {
 }
 
 /// Shows which view the window is in; its menu switches to another view, creates one or renames this one.
+/// It has no keyboard shortcuts, so it cannot be triggered by mistake.
 private struct ViewSwitcher: View {
   private enum Naming {
     case new, rename
@@ -127,9 +157,7 @@ private struct ViewSwitcher: View {
     }
     .menuStyle(.button)
     .buttonStyle(.borderless)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(.horizontal, 12)
-    .padding(.vertical, 8)
+    .fixedSize()
     .alert(naming == .rename ? "Rename View" : "New View", isPresented: isNaming) {
       TextField("Name", text: $name)
       Button(naming == .rename ? "Rename" : "Create") { finish() }

@@ -29,6 +29,7 @@ public enum EventPayload: Equatable, Sendable {
   case taskMovedToView(TaskMovedToView)
   case projectMovedToView(ProjectMovedToView)
   case projectMovedToProject(ProjectMovedToProject)
+  case taskPrioritized(TaskPrioritized)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.
@@ -162,6 +163,30 @@ public struct ProjectMovedToProject: Equatable, Codable, Sendable {
   public init(projectID: ProjectID, parentID: ProjectID?) {
     self.projectID = projectID
     self.parentID = parentID
+  }
+}
+
+/// How much a task matters. Importance only: never order, deadline or day.
+public enum Priority: String, Codable, Sendable, CaseIterable {
+  /// A: must be addressed today.
+  case critical = "A"
+  /// B: meaningfully advances what matters.
+  case important = "B"
+  /// C: do when capacity remains.
+  case optional = "C"
+  /// Not committed to; kept for one day.
+  case someday
+}
+
+/// Gives an open task a priority, or with none clears it.
+public struct TaskPrioritized: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  /// The priority from now on; `nil` clears it.
+  public let priority: Priority?
+
+  public init(taskID: TaskID, priority: Priority?) {
+    self.taskID = taskID
+    self.priority = priority
   }
 }
 

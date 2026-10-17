@@ -156,6 +156,34 @@ struct NestingEventLineFormatTests {
   }
 }
 
+@Suite("When a priority is written to the log")
+struct PriorityLineTests {
+  @Test("TaskPrioritized is one sorted JSON object")
+  func taskPrioritizedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(prioritized("t1", as: .critical, id: "e4", lamport: 4))
+
+    #expect(
+      line == #"{"data":{"priority":"A","taskID":"t1"},"device":"mac","id":"e4","lamport":4,"type":"TaskPrioritized"}"#)
+  }
+
+  @Test("clearing a priority has no priority field")
+  func clearingHasNoPriorityField() throws {
+    let line = try EventLine.encode(prioritized("t1", as: nil, id: "e5", lamport: 5))
+
+    #expect(line == #"{"data":{"taskID":"t1"},"device":"mac","id":"e5","lamport":5,"type":"TaskPrioritized"}"#)
+  }
+
+  @Test(
+    "each decodes back to the same event",
+    arguments: [
+      prioritized("t1", as: .critical), prioritized("t1", as: .important), prioritized("t1", as: .optional),
+      prioritized("t1", as: .someday), prioritized("t1", as: nil),
+    ])
+  func priorityLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
+
 @Suite struct JSONLinesEventLogTests {
   @Test func missingFileReadsAsEmptyLog() throws {
     let dir = try TemporaryDirectory()

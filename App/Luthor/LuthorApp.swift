@@ -36,20 +36,18 @@ struct LuthorApp: App {
     }
     .defaultSize(width: 760, height: 640)
     .commands {
-      // ⌃⌘1 to ⌃⌘9 show the first nine views, in the View menu.
-      CommandGroup(before: .sidebar) {
-        ForEach(Array(library.views.enumerated()), id: \.element.id) { position, view in
-          Toggle(
-            view.name, isOn: Binding(get: { library.currentView == view.id }, set: { _ in library.showView(view.id) })
-          )
-          .keyboardShortcut(Self.shortcut(for: position, modifiers: [.command, .control]))
-        }
-        Divider()
-      }
       CommandMenu("Task") {
         Button("Complete") { library.completeSelected() }
           .keyboardShortcut(.return, modifiers: .command)
           .disabled(library.selection == nil)
+        Menu("Priority") {
+          ForEach(Priority.allCases, id: \.self) { priority in
+            Button(priority.title, systemImage: priority.symbol) { library.prioritizeSelected(as: priority) }
+          }
+          Divider()
+          Button("None") { library.prioritizeSelected(as: nil) }
+        }
+        .disabled(library.selection == nil)
         Divider()
         // ⌥⌘1 to ⌥⌘9 file the selected task into the first nine projects.
         Menu("Move to Project") {
