@@ -218,10 +218,15 @@ an iOS app exists, and from Alfred on the Mac without switching to the app.
 The daily review (slice 7) looks at the day; this one keeps projects from
 going stale.
 
-- `ProjectReviewIntervalSet` (default one week, set per project);
-  `ProjectReviewed` sets the next review date to the review date plus the
-  interval. Next review date is a pure function of events and the injected
-  clock
+- On by default, weekly, and the user can change both. `ReviewDefaultSet`
+  sets the default interval (a number of days, or off) for all projects;
+  `ProjectReviewIntervalSet` overrides it for one project, with its own
+  value or off, and clearing the override falls back to the default.
+  Turning review off everywhere is `ReviewDefaultSet(off)`
+- `ProjectReviewed` sets the next review date to the review date plus the
+  effective interval. Next review date is a pure function of events and the
+  injected clock; a project with review off has none and never appears in
+  the review list
 - Project status: `ProjectPutOnHold`, `ProjectResumed`, `ProjectDropped`.
   On-hold and dropped projects yield no next actions or plan candidates, and
   dropped ones skip review
@@ -279,8 +284,9 @@ To settle before the slice they affect.
    them?
 2. **Day capacity** (slice 6): typed each morning, or a default per weekday
    and view that the morning plan adjusts?
-3. **Weekly project review** (slice 12): keep it next to the daily review,
-   or drop it?
+3. ~~Weekly project review~~ Settled: kept, weekly by default, and the
+   user can change the interval or turn it off, for all projects or one
+   (slice 12)
 4. **Sync before deadlines?** Slice 8 (sync) sits before slice 9 (defer and
    due) on the guess that using two Macs matters more. Swap if not
 5. **Delegate**: ALPEN's E includes delegating. A `@waiting` tag, or a
