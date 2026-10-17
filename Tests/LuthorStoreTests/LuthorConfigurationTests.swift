@@ -31,15 +31,4 @@ import Testing
 
     #expect(config.deviceID == DeviceID("local"))
   }
-
-  @Test func viewComesFromLuthorView() {
-    let config = LuthorConfiguration(environment: ["LUTHOR_VIEW": "Work"], home: Self.home)
-
-    #expect(config.viewName == "Work")
-  }
-
-  @Test(arguments: [[:], ["LUTHOR_VIEW": ""]])
-  func viewIsUnsetWithoutLuthorView(environment: [String: String]) {
-    #expect(LuthorConfiguration(environment: environment, home: Self.home).viewName == nil)
-  }
 }

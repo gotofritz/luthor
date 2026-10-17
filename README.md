@@ -5,26 +5,6 @@ a reference: local-first and event-sourced.
 See `docs/guide.md` for how to use it, and `AGENTS.md` and `docs/plans/` for
 the architecture and roadmap.
 
-## CLI
-
-A quick way to capture from the shell. It knows only tasks, not projects,
-and works in one view: `list` shows every open task of that view, filed or
-not. The app does everything it does
-and more; from slice 13 of the roadmap it shrinks to `luthor add`, for Alfred.
-
-```bash
-swift build -c release                             # or `make install`, below, to put luthor on PATH
-export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
-export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
-export LUTHOR_VIEW=Work                            # optional, default: the view chosen in Settings
-
-.build/release/luthor add "buy milk"
-.build/release/luthor add "call bank !a 15m"        # priority Critical, 15-minute estimate
-.build/release/luthor add --view Private "call mum" # --view wins over LUTHOR_VIEW
-.build/release/luthor list
-.build/release/luthor done 9afc                    # any unique prefix of a task ID
-```
-
 ## Mac app
 
 ```bash
@@ -32,10 +12,10 @@ make app
 open .build/xcode/Build/Products/Release/Luthor.app
 ```
 
-Or open `App/Luthor.xcodeproj` in Xcode and run. Like the CLI, the app
-reads and writes `$LUTHOR_LOG` when it is set (launched from a shell, or from
-Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
-CLI makes. Type and press Return to capture; ↑ and ↓ select a task, ⌘Return
+Or open `App/Luthor.xcodeproj` in Xcode and run. The app reads and writes
+`$LUTHOR_LOG` when it is set (launched from a shell, or from Xcode's scheme),
+otherwise `~/.luthor/events.jsonl`, and picks up changes another process
+makes to that file. Type and press Return to capture; ↑ and ↓ select a task, ⌘Return
 completes it, or click its circle.
 
 The app shows one view at a time, such as Work or Private, and nothing of
@@ -95,7 +75,7 @@ next day, ⇧⌘T returns to today (Plan menu).
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
-weekday) and which view `luthor add` and imports use when none is named;
+weekday) and a default view;
 Local overrides the buffer and capacity for the current view only, and
 follows the global value until switched on.
 
@@ -105,13 +85,13 @@ right-click → Open.
 ## Install and releases
 
 ```bash
-make install   # the app into /Applications, the CLI into ~/.local/bin
+make install   # the app into /Applications
 ```
 
-`PREFIX` and `APP_INSTALL_DIR` change where (`make install PREFIX=/usr/local`).
-Pushing a version tag (`git tag v0.1.0 && git push origin v0.1.0`) builds both
-on CI and attaches them, zipped, to a GitHub Release. `make dist` builds the
-same zips locally into `.build/dist/`.
+`APP_INSTALL_DIR` changes where (`make install APP_INSTALL_DIR=~/Applications`).
+Pushing a version tag (`git tag v0.1.0 && git push origin v0.1.0`) builds the
+app on CI and attaches it, zipped, to a GitHub Release. `make dist` builds the
+same zip locally into `.build/dist/`.
 
 ## Development
 

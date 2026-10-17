@@ -109,7 +109,7 @@ Sources/
     Commands+Completion.swift  reopen a completed task or project
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
-                             used by Commands.capture; shared by the CLI and the app
+                             used by Commands.capture
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, delegations, plan orders and day capacities
@@ -128,12 +128,9 @@ Sources/
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
-    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID,
-                             view name (LUTHOR_VIEW)
+    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID
     FileChangeMonitor.swift  polls the log file so the app sees outside writes
     UUIDGenerator.swift      production IDGenerator
-  LuthorCLI/CLI.swift        `luthor add|list|done [--view]`, testable (returns CLIResult)
-  luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
                              project columns, list, drops, injected clock; SidebarItem/NavigationSection/
@@ -155,15 +152,15 @@ Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
   Luthor<Module>Tests/       unit tests, one target per module
-  LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`);
+  LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 scripts/                     commit-message and coverage checks, with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
 .github/workflows/           CI (make check-ci), PR title check, release on v* tags
 ```
 
-Dependencies point inwards: `LuthorStore`, `LuthorCLI` and `LuthorViewModels`
-depend on `LuthorDomain`; nothing depends on the app or the CLI executable.
+Dependencies point inwards: `LuthorStore` and `LuthorViewModels` depend on
+`LuthorDomain`; nothing depends on the app.
 There are no projections, SQLite or sync modules yet; the reducer's state is
 the only read model. Commands are in [Commands](#commands).
 
@@ -215,7 +212,7 @@ Reference: `.claude/skills/tdd/SKILL.md`
 - **UI**: keep views thin and test their view models. No snapshot or UI tests
   unless a plan asks for them
 - **Acceptance**: end-to-end user flows (capture, list, complete…) driven
-  through the CLI or the view models against a real log in a temporary
+  through the view models against a real log in a temporary
   directory. They live in `Tests/LuthorAcceptanceTests`, apart from the fast
   unit tests in the per-module targets, and run on their own with
   `make test-acceptance`. Keep them few: one per user-visible flow
@@ -258,9 +255,8 @@ make coverage   # make test with coverage; fails under 90% line coverage of Sour
 make test-unit  # unit tests only (skips LuthorAcceptanceTests)
 make test-acceptance  # end-to-end acceptance tests only
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
-make cli        # release build of the luthor CLI, universal, ad-hoc signed
-make install    # build and install the app (/Applications) and CLI (~/.local/bin)
-make dist       # zip the app and CLI into .build/dist, as a release does
+make install    # build and install the app (/Applications)
+make dist       # zip the app into .build/dist, as a release does
 make infra      # Terraform: show changes to the GitHub repo settings, apply on yes (needs GITHUB_TOKEN)
 make check-ci   # lint + build + coverage + app, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
@@ -356,7 +352,7 @@ too messy (many conflicting commits, or a branch others are also pushing to).
 Do this unasked, and again after any later push that changes behaviour,
 commands or setup. The user should never have to ask whether docs are current.
 
-- `README.md` describes what the app, the CLI and every `make` target do now:
+- `README.md` describes what the app and every `make` target do now:
   new features, changed shortcuts, install paths, setup steps
 - `docs/guide.md` (the user guide) covers every user-visible feature and
   shortcut this PR adds or changes, and nothing that is not shipped yet

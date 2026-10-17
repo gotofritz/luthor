@@ -11,19 +11,14 @@ APP_DERIVED_DATA := .build/xcode
 COVERAGE_MIN := 90
 COVERAGE_REPORT := .build/coverage.txt
 APP_BUILD := $(APP_DERIVED_DATA)/Build/Products/Release/Luthor.app
-# Universal (arm64 and x86_64) release build of the CLI. Where SwiftPM puts multi-arch output depends on
-# the toolchain, so ask it; `=` defers the call until a recipe needs the path.
-CLI_ARCHS := --arch arm64 --arch x86_64
-CLI_BUILD = $(shell swift build -c release $(CLI_ARCHS) --show-bin-path)/luthor
-# Where `make install` puts the CLI and the app.
-PREFIX ?= $(HOME)/.local
+# Where `make install` puts the app.
 APP_INSTALL_DIR ?= /Applications
 # Release zips; named after the tag on a tagged commit.
 DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
 TERRAFORM ?= terraform
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app cli install dist check-ci hooks tools infra infra-token
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app install dist check-ci hooks tools infra infra-token
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -77,24 +72,17 @@ app:
 	xcodebuild -project App/Luthor.xcodeproj -scheme Luthor -configuration Release \
 	  -destination 'generic/platform=macOS' -derivedDataPath $(APP_DERIVED_DATA) -quiet build
 
-# Builds the luthor CLI for release, universal and ad-hoc signed, into $(CLI_BUILD).
-cli:
-	swift build -c release $(CLI_ARCHS) --product luthor
-	codesign --force --sign - $(CLI_BUILD)
-
-# Builds both and installs them: the CLI into $(PREFIX)/bin, the app into $(APP_INSTALL_DIR).
-install: app cli
-	mkdir -p $(PREFIX)/bin $(APP_INSTALL_DIR)
-	install -m 0755 $(CLI_BUILD) $(PREFIX)/bin/luthor
+# Builds the app and installs it into $(APP_INSTALL_DIR).
+install: app
+	mkdir -p $(APP_INSTALL_DIR)
 	rm -rf $(APP_INSTALL_DIR)/Luthor.app
 	ditto $(APP_BUILD) $(APP_INSTALL_DIR)/Luthor.app
 
-# Zips the app and the CLI into $(DIST), as attached to a GitHub Release.
-dist: app cli
+# Zips the app into $(DIST), as attached to a GitHub Release.
+dist: app
 	rm -rf $(DIST)
 	mkdir -p $(DIST)
 	ditto -c -k --keepParent $(APP_BUILD) $(DIST)/Luthor-$(VERSION).zip
-	ditto -c -k --keepParent $(CLI_BUILD) $(DIST)/luthor-cli-$(VERSION).zip
 
 check-ci: lint build coverage app
 

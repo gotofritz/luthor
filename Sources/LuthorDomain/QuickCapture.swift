@@ -1,5 +1,5 @@
-/// The quick-capture syntax shared by the CLI and the app: `call bank !a 15m` captures "call bank" with
-/// priority A and a 15-minute estimate. Pure, so both sides parse the same way.
+/// The quick-capture syntax of the capture field: `call bank !a 15m` captures "call bank" with
+/// priority A and a 15-minute estimate. Pure, so it is easy to test.
 public enum QuickCapture {
   /// What one piece of captured text means: the title with its tags stripped, and whichever tags it had.
   public struct Parsed: Equatable, Sendable {

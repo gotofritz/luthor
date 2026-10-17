@@ -119,40 +119,6 @@ struct QuickCaptureCommandTests {
     completed("ffe789", lamport: 4),
   ]
 
-  @Test(arguments: ["abc", "ABC", "abc123"])
-  func completeFindsTheOpenTaskByIDPrefix(prefix: String) throws {
-    let commands = Commands(deviceID: DeviceID("air"), ids: SequentialIDs())
-
-    let events = try commands.complete(idPrefix: prefix, in: .default, log: Self.log)
-
-    #expect(
-      events == [
-        EventEnvelope(
-          id: EventID("id-1"),
-          deviceID: DeviceID("air"),
-          lamport: 5,
-          payload: .taskCompleted(TaskCompleted(taskID: TaskID("abc123")))
-        )
-      ])
-  }
-
-  @Test func completeRejectsAnAmbiguousPrefix() {
-    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
-
-    #expect(throws: CommandError.ambiguousPrefix("ab", matches: [TaskID("abc123"), TaskID("abd456")])) {
-      try commands.complete(idPrefix: "ab", in: .default, log: Self.log)
-    }
-  }
-
-  @Test(arguments: ["zzz", "", "ffe"])
-  func completeRejectsAPrefixMatchingNoOpenTask(prefix: String) {
-    let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
-
-    #expect(throws: CommandError.noOpenTask(prefix)) {
-      try commands.complete(idPrefix: prefix, in: .default, log: Self.log)
-    }
-  }
-
   @Test func completeByTaskIDCompletesExactlyThatTask() throws {
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
 

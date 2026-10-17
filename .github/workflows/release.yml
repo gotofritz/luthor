@@ -1,6 +1,6 @@
 name: Release
 
-# A version tag (v0.x.y) builds the Mac app and the CLI and attaches both to a GitHub Release. On a PR
+# A version tag (v0.x.y) builds the Mac app and attaches it to a GitHub Release. On a PR
 # that changes the release build, the same build runs without publishing, so a broken release shows up
 # before the tag.
 on:

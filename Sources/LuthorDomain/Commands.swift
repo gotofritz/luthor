@@ -6,7 +6,6 @@ public protocol IDGenerator {
 public enum CommandError: Error, Equatable {
   case blankTitle
   case noOpenTask(String)
-  case ambiguousPrefix(String, matches: [TaskID])
   case noActiveProject(ProjectID)
   /// The task is open, or was completed along with its project, so it cannot be reopened on its own.
   case noCompletedTask(TaskID)
@@ -51,21 +50,6 @@ public struct Commands {
     let project = try activeProject(projectID, in: LibraryState.replay(log))
     let (events, taskID) = try captureEvents(title: title, viewID: project.viewID, log: log)
     return try events + move(taskID: taskID, to: projectID, log: log + events)
-  }
-
-  /// Completes the one open task of the view `viewID` whose ID starts with `idPrefix`, ignoring case.
-  public func complete(
-    idPrefix: String,
-    in viewID: ViewID,
-    log: [EventEnvelope]
-  ) throws(CommandError) -> [EventEnvelope] {
-    let prefix = idPrefix.lowercased()
-    let matches = LibraryState.replay(log).view(viewID).openTasks
-      .map(\.id)
-      .filter { !prefix.isEmpty && $0.rawValue.lowercased().hasPrefix(prefix) }
-    guard let match = matches.first else { throw .noOpenTask(idPrefix) }
-    guard matches.count == 1 else { throw .ambiguousPrefix(idPrefix, matches: matches) }
-    return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: match)), log: log)]
   }
 
   /// Completes the open task with exactly this ID.
@@ -233,7 +217,7 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .settingChanged(changed), log: log)]
   }
 
-  /// Sets the view `luthor add` and imports use when none is named. The view must exist.
+  /// Sets the default view; nothing reads it since the CLI was removed. The view must exist.
   public func setDefaultView(_ viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     try requireView(viewID, in: LibraryState.replay(log))
     return try changeSetting(.defaultViewID, to: viewID.rawValue, log: log)
