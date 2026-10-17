@@ -36,13 +36,11 @@ public final class LibraryViewModel {
   public private(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
   /// The view `luthor add` and imports use when none is named.
   public private(set) var defaultViewID = ViewID.default
-  /// The day it is by the clock, as of the last refresh.
+  /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned
+  /// tasks, candidates, capacity) for the current view, and the view's delegated tasks, longest wait first.
   public private(set) var today: CalendarDate
-  /// The day whose plan the Today place shows.
   public internal(set) var planDate: CalendarDate
-  /// The current view's plan for `planDate`: the tasks planned for it, the candidates and the capacity.
   public private(set) var plan: DayPlan
-  /// The current view's delegated tasks, the longest wait first.
   public private(set) var waiting: [WaitingItem] = []
   public var draft = ""
   /// Title of the next project to create.

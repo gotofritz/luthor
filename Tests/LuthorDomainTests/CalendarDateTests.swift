@@ -31,7 +31,7 @@ struct CalendarDateTextTests {
   func aDateEncodesAsOneJSONString() throws {
     let encoded = try JSONEncoder().encode([date("2026-10-19")])
 
-    #expect(String(decoding: encoded, as: UTF8.self) == #"["2026-10-19"]"#)
+    #expect(String(bytes: encoded, encoding: .utf8) == #"["2026-10-19"]"#)
     #expect(try JSONDecoder().decode([CalendarDate].self, from: encoded) == [date("2026-10-19")])
   }
 
