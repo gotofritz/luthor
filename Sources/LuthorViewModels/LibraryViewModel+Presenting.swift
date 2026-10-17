@@ -62,11 +62,13 @@ extension LibraryViewModel {
     projects = view.projects
     let completed = showCompleted ? Completion(view) : Completion()
     let known = projects + completed.projects.map(\.item)
+    knownProjects = known
     if let projectID = shownProjectID, !known.contains(where: { $0.id == projectID }) {
       // Completed here or elsewhere, with completed items hidden: there is nothing left to show.
       sidebarSelection = .inbox
     }
     path = shownProjectID.map { ancestry(of: $0, among: known) } ?? []
+    shownProject = path.last.flatMap { id in known.first { $0.id == id } }
     columns = projectColumns(of: view, completed: completed)
     today = clock()
     plan = state.plan(for: currentView, on: planDate, today: today)

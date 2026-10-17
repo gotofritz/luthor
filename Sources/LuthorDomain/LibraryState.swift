@@ -11,14 +11,16 @@ public struct ViewItem: Equatable, Sendable {
 
 public struct TaskItem: Equatable, Sendable {
   public let id: TaskID
-  public let title: String
-  public let viewID: ViewID
+  public internal(set) var title: String
+  public internal(set) var viewID: ViewID
   /// The project the task is filed in; `nil` while it is in the inbox.
-  public let projectID: ProjectID?
+  public internal(set) var projectID: ProjectID?
   /// How much the task matters; `nil` until it is given one.
-  public let priority: Priority?
+  public internal(set) var priority: Priority?
   /// Minutes the task is expected to take; `nil` until it is given one.
-  public let estimate: Int?
+  public internal(set) var estimate: Int?
+  /// Plain-text notes; `nil` until it is given some.
+  public internal(set) var notes: String?
 
   public init(
     id: TaskID,
@@ -26,7 +28,8 @@ public struct TaskItem: Equatable, Sendable {
     viewID: ViewID,
     projectID: ProjectID? = nil,
     priority: Priority? = nil,
-    estimate: Int? = nil
+    estimate: Int? = nil,
+    notes: String? = nil
   ) {
     self.id = id
     self.title = title
@@ -34,19 +37,12 @@ public struct TaskItem: Equatable, Sendable {
     self.projectID = projectID
     self.priority = priority
     self.estimate = estimate
+    self.notes = notes
   }
 
   /// Not yet clarified: no priority, no estimate and no project.
   var isClarified: Bool {
     priority != nil || estimate != nil || projectID != nil
-  }
-
-  fileprivate func prioritized(_ priority: Priority?) -> TaskItem {
-    TaskItem(id: id, title: title, viewID: viewID, projectID: projectID, priority: priority, estimate: estimate)
-  }
-
-  fileprivate func estimated(_ estimate: Int?) -> TaskItem {
-    TaskItem(id: id, title: title, viewID: viewID, projectID: projectID, priority: priority, estimate: estimate)
   }
 }
 
@@ -58,13 +54,15 @@ public enum ProjectChild: Equatable, Sendable {
 
 public struct Project: Equatable, Sendable {
   public let id: ProjectID
-  public let title: String
-  public let kind: ProjectKind
+  public internal(set) var title: String
+  public internal(set) var kind: ProjectKind
   public internal(set) var viewID: ViewID
   /// The project it is nested in; `nil` for a top-level project.
   public internal(set) var parentID: ProjectID?
   /// Open tasks and active sub-projects, in the order they were added to the project.
   public internal(set) var children: [ProjectChild]
+  /// Plain-text notes; `nil` until it is given some.
+  public internal(set) var notes: String?
 
   public init(
     id: ProjectID,
@@ -72,7 +70,8 @@ public struct Project: Equatable, Sendable {
     kind: ProjectKind,
     viewID: ViewID,
     parentID: ProjectID? = nil,
-    children: [ProjectChild] = []
+    children: [ProjectChild] = [],
+    notes: String? = nil
   ) {
     self.id = id
     self.title = title
@@ -80,6 +79,7 @@ public struct Project: Equatable, Sendable {
     self.viewID = viewID
     self.parentID = parentID
     self.children = children
+    self.notes = notes
   }
 
   /// Open tasks filed straight into the project, in the order they were filed.
@@ -166,6 +166,8 @@ public struct LibraryState: Equatable, Sendable {
       complete(completed.taskID)
     case .taskReopened(let reopened):
       reopen(reopened.taskID)
+    case .taskRenamed, .taskNoted, .projectRenamed, .projectNoted, .projectKindChanged:
+      applyCardEdit(payload)
     case .projectReopened(let reopened):
       reopen(reopened.projectID)
     case .projectCreated(let created):
@@ -303,10 +305,8 @@ public struct LibraryState: Equatable, Sendable {
       openTasks[index].projectID != projectID,
       openTasks[index].viewID == projects[target].viewID
     else { return }
-    let task = openTasks[index]
-    let filed = TaskItem(
-      id: taskID, title: task.title, viewID: task.viewID, projectID: projectID, priority: task.priority,
-      estimate: task.estimate)
+    var filed = openTasks[index]
+    filed.projectID = projectID
     openTasks[index] = filed
     removeFromProjects(taskID)
     projects[target].children.append(.task(filed))
@@ -315,9 +315,8 @@ public struct LibraryState: Equatable, Sendable {
   /// Ignores a task that is not open and a view that does not exist.
   private mutating func move(_ taskID: TaskID, toView viewID: ViewID) {
     guard let index = openTasks.firstIndex(where: { $0.id == taskID }), hasView(viewID) else { return }
-    let task = openTasks[index]
-    openTasks[index] = TaskItem(
-      id: taskID, title: task.title, viewID: viewID, priority: task.priority, estimate: task.estimate)
+    openTasks[index].viewID = viewID
+    openTasks[index].projectID = nil
     removeFromProjects(taskID)
     forgetPlanning(of: taskID)
   }
@@ -328,9 +327,9 @@ public struct LibraryState: Equatable, Sendable {
     guard projects.contains(where: { $0.id == projectID }), hasView(viewID) else { return }
     let moved = subtree(of: projectID)
     let reassign = { (task: TaskItem) in
-      TaskItem(
-        id: task.id, title: task.title, viewID: viewID, projectID: task.projectID, priority: task.priority,
-        estimate: task.estimate)
+      var task = task
+      task.viewID = viewID
+      return task
     }
     detach(projectID)
     openTasks = openTasks.map { task in
@@ -348,25 +347,31 @@ public struct LibraryState: Equatable, Sendable {
 
   /// Ignores a task that is not open.
   private mutating func prioritize(_ taskID: TaskID, as priority: Priority?) {
-    updateTask(taskID) { $0.prioritized(priority) }
+    updateTask(taskID) { $0.priority = priority }
   }
 
   /// Ignores a task that is not open.
   private mutating func estimate(_ taskID: TaskID, as minutes: Int?) {
-    updateTask(taskID) { $0.estimated(minutes) }
+    updateTask(taskID) { $0.estimate = minutes }
   }
 
-  /// Replaces the open task `taskID`, wherever it is filed, with the result of `transform`. Ignores a
-  /// task that is not open.
-  private mutating func updateTask(_ taskID: TaskID, _ transform: (TaskItem) -> TaskItem) {
+  /// Changes the open task `taskID`, wherever it is filed, with `change`. Ignores a task that is not open.
+  mutating func updateTask(_ taskID: TaskID, _ change: (inout TaskItem) -> Void) {
     guard let index = openTasks.firstIndex(where: { $0.id == taskID }) else { return }
-    openTasks[index] = transform(openTasks[index])
+    change(&openTasks[index])
     for project in projects.indices {
       projects[project].children = projects[project].children.map { child in
-        guard case .task(let task) = child, task.id == taskID else { return child }
-        return .task(transform(task))
+        guard case .task(var task) = child, task.id == taskID else { return child }
+        change(&task)
+        return .task(task)
       }
     }
+  }
+
+  /// Changes the active project `projectID` with `change`. Ignores a project that is not active.
+  mutating func updateProject(_ projectID: ProjectID, _ change: (inout Project) -> Void) {
+    guard let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
+    change(&projects[index])
   }
 
   private mutating func removeFromProjects(_ taskID: TaskID) {

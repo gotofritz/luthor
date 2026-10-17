@@ -101,6 +101,16 @@ struct CompletedShownViewModelTests {
     #expect(library.tasks.map(\.title) == ["call bank", "buy milk"])
   }
 
+  @Test("the known projects include the completed ones, which the card looks up")
+  func knownProjectsIncludeCompletedOnes() {
+    let (library, _) = makeInbox(completedLog)
+    #expect(library.knownProjects.map(\.title) == ["Holiday", "Packing"])
+
+    library.showCompleted = true
+
+    #expect(library.knownProjects.map(\.title) == ["Holiday", "Packing", "Garden"])
+  }
+
   @Test("hiding them again takes them off the lists")
   func hidingThemAgain() {
     let (library, _) = makeInbox(completedLog)

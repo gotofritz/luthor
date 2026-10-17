@@ -53,10 +53,15 @@ private struct EventLineDTO: Codable {
     case taskCaptured = "TaskCaptured"
     case taskCompleted = "TaskCompleted"
     case taskReopened = "TaskReopened"
+    case taskRenamed = "TaskRenamed"
+    case taskNoted = "TaskNoted"
     case projectCreated = "ProjectCreated"
     case taskMovedToProject = "TaskMovedToProject"
     case projectCompleted = "ProjectCompleted"
     case projectReopened = "ProjectReopened"
+    case projectRenamed = "ProjectRenamed"
+    case projectNoted = "ProjectNoted"
+    case projectKindChanged = "ProjectKindChanged"
     case viewCreated = "ViewCreated"
     case viewRenamed = "ViewRenamed"
     case taskMovedToView = "TaskMovedToView"
@@ -81,10 +86,16 @@ private struct EventLineDTO: Codable {
       case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
       case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
       case .taskReopened: .taskReopened(try container.decode(TaskReopened.self, forKey: .data))
+      case .taskRenamed: .taskRenamed(try container.decode(TaskRenamed.self, forKey: .data))
+      case .taskNoted: .taskNoted(try container.decode(TaskNoted.self, forKey: .data))
       case .projectCreated: .projectCreated(try container.decode(ProjectCreated.self, forKey: .data))
       case .taskMovedToProject: .taskMovedToProject(try container.decode(TaskMovedToProject.self, forKey: .data))
       case .projectCompleted: .projectCompleted(try container.decode(ProjectCompleted.self, forKey: .data))
       case .projectReopened: .projectReopened(try container.decode(ProjectReopened.self, forKey: .data))
+      case .projectRenamed: .projectRenamed(try container.decode(ProjectRenamed.self, forKey: .data))
+      case .projectNoted: .projectNoted(try container.decode(ProjectNoted.self, forKey: .data))
+      case .projectKindChanged:
+        .projectKindChanged(try container.decode(ProjectKindChanged.self, forKey: .data))
       case .viewCreated: .viewCreated(try container.decode(ViewCreated.self, forKey: .data))
       case .viewRenamed: .viewRenamed(try container.decode(ViewRenamed.self, forKey: .data))
       case .taskMovedToView: .taskMovedToView(try container.decode(TaskMovedToView.self, forKey: .data))
@@ -119,10 +130,15 @@ private struct EventLineDTO: Codable {
     case .taskCaptured(let data): try write(.taskCaptured, data, to: &container)
     case .taskCompleted(let data): try write(.taskCompleted, data, to: &container)
     case .taskReopened(let data): try write(.taskReopened, data, to: &container)
+    case .taskRenamed(let data): try write(.taskRenamed, data, to: &container)
+    case .taskNoted(let data): try write(.taskNoted, data, to: &container)
     case .projectCreated(let data): try write(.projectCreated, data, to: &container)
     case .taskMovedToProject(let data): try write(.taskMovedToProject, data, to: &container)
     case .projectCompleted(let data): try write(.projectCompleted, data, to: &container)
     case .projectReopened(let data): try write(.projectReopened, data, to: &container)
+    case .projectRenamed(let data): try write(.projectRenamed, data, to: &container)
+    case .projectNoted(let data): try write(.projectNoted, data, to: &container)
+    case .projectKindChanged(let data): try write(.projectKindChanged, data, to: &container)
     case .viewCreated(let data): try write(.viewCreated, data, to: &container)
     case .viewRenamed(let data): try write(.viewRenamed, data, to: &container)
     case .taskMovedToView(let data): try write(.taskMovedToView, data, to: &container)

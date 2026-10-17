@@ -204,11 +204,12 @@ public func item(
   in project: String? = nil,
   view: String = "default",
   priority: Priority? = nil,
-  estimate: Int? = nil
+  estimate: Int? = nil,
+  notes: String? = nil
 ) -> TaskItem {
   TaskItem(
     id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init),
-    priority: priority, estimate: estimate)
+    priority: priority, estimate: estimate, notes: notes)
 }
 
 /// A project as replay lists it. `tasks` are its children; `children` replaces them where sub-projects
@@ -220,11 +221,12 @@ public func project(
   view: String = "default",
   under parent: String? = nil,
   tasks: [TaskItem] = [],
-  children: [ProjectChild]? = nil
+  children: [ProjectChild]? = nil,
+  notes: String? = nil
 ) -> Project {
   Project(
     id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(ProjectID.init),
-    children: children ?? tasks.map(ProjectChild.task))
+    children: children ?? tasks.map(ProjectChild.task), notes: notes)
 }
 
 /// A sub-project as a child of its parent.

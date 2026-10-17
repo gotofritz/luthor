@@ -119,7 +119,7 @@ struct LibraryView: View {
   }
 
   private var shownProject: Project? {
-    library.projects.first { $0.id == shownProjectID }
+    library.shownProject
   }
 
   private var title: String {

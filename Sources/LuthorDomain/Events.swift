@@ -22,10 +22,15 @@ public enum EventPayload: Equatable, Sendable {
   case taskCaptured(TaskCaptured)
   case taskCompleted(TaskCompleted)
   case taskReopened(TaskReopened)
+  case taskRenamed(TaskRenamed)
+  case taskNoted(TaskNoted)
   case projectCreated(ProjectCreated)
   case taskMovedToProject(TaskMovedToProject)
   case projectCompleted(ProjectCompleted)
   case projectReopened(ProjectReopened)
+  case projectRenamed(ProjectRenamed)
+  case projectNoted(ProjectNoted)
+  case projectKindChanged(ProjectKindChanged)
   case viewCreated(ViewCreated)
   case viewRenamed(ViewRenamed)
   case taskMovedToView(TaskMovedToView)
@@ -129,6 +134,63 @@ public struct ProjectCompleted: Equatable, Codable, Sendable {
 
   public init(projectID: ProjectID) {
     self.projectID = projectID
+  }
+}
+
+/// Gives an open task another title.
+public struct TaskRenamed: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  public let title: String
+
+  public init(taskID: TaskID, title: String) {
+    self.taskID = taskID
+    self.title = title
+  }
+}
+
+/// Sets the notes of an open task, or with none clears them. Notes are plain text.
+public struct TaskNoted: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  /// The notes from now on; `nil` clears them.
+  public let notes: String?
+
+  public init(taskID: TaskID, notes: String?) {
+    self.taskID = taskID
+    self.notes = notes
+  }
+}
+
+/// Gives an active project another title.
+public struct ProjectRenamed: Equatable, Codable, Sendable {
+  public let projectID: ProjectID
+  public let title: String
+
+  public init(projectID: ProjectID, title: String) {
+    self.projectID = projectID
+    self.title = title
+  }
+}
+
+/// Sets the notes of an active project, or with none clears them. Notes are plain text.
+public struct ProjectNoted: Equatable, Codable, Sendable {
+  public let projectID: ProjectID
+  /// The notes from now on; `nil` clears them.
+  public let notes: String?
+
+  public init(projectID: ProjectID, notes: String?) {
+    self.projectID = projectID
+    self.notes = notes
+  }
+}
+
+/// Makes an active project sequential or parallel.
+public struct ProjectKindChanged: Equatable, Codable, Sendable {
+  public let projectID: ProjectID
+  public let kind: ProjectKind
+
+  public init(projectID: ProjectID, kind: ProjectKind) {
+    self.projectID = projectID
+    self.kind = kind
   }
 }
 

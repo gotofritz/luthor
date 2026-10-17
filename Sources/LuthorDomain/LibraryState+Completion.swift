@@ -17,13 +17,11 @@ extension LibraryState {
   /// else loose. Ignores a task that is not completed, or that a project's completion took along.
   mutating func reopen(_ taskID: TaskID) {
     guard let index = completedTasks.firstIndex(where: { $0.item.id == taskID && $0.isReopenable }) else { return }
-    let task = completedTasks.remove(at: index).item
-    let project = task.projectID.flatMap { projectID in
-      projects.firstIndex { $0.id == projectID && $0.viewID == task.viewID }
+    var reopened = completedTasks.remove(at: index).item
+    let project = reopened.projectID.flatMap { projectID in
+      projects.firstIndex { $0.id == projectID && $0.viewID == reopened.viewID }
     }
-    let reopened = TaskItem(
-      id: task.id, title: task.title, viewID: task.viewID, projectID: project.map { projects[$0].id },
-      priority: task.priority, estimate: task.estimate)
+    reopened.projectID = project.map { projects[$0].id }
     insertOpen(reopened)
     if let project { projects[project].children.append(.task(reopened)) }
   }

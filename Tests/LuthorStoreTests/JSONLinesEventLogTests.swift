@@ -358,3 +358,32 @@ struct ReopenEventLineFormatTests {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
   }
 }
+
+@Suite("When card events are written as lines")
+struct CardEventLineFormatTests {
+  @Test("TaskNoted is one sorted JSON object")
+  func taskNotedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(noted("t1", "oat", id: "e1", lamport: 3))
+
+    #expect(line == #"{"data":{"notes":"oat","taskID":"t1"},"device":"mac","id":"e1","lamport":3,"type":"TaskNoted"}"#)
+  }
+
+  @Test("ProjectKindChanged is one sorted JSON object")
+  func projectKindChangedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(kindChanged("p1", to: .sequential, id: "e2", lamport: 3))
+
+    #expect(
+      line
+        == #"{"data":{"kind":"sequential","projectID":"p1"},"device":"mac","id":"e2","lamport":3,"type":"ProjectKindChanged"}"#
+    )
+  }
+
+  @Test(
+    arguments: [
+      renamed("t1", to: "buy milk"), noted("t1", "oat"), noted("t1", nil), projectRenamed("p1", to: "Summer"),
+      projectNoted("p1", "https://example.com"), projectNoted("p1", nil), kindChanged("p1", to: .sequential),
+    ])
+  func cardLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}

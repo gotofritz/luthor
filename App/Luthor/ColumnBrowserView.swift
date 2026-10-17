@@ -36,6 +36,10 @@ struct ColumnBrowserView: View {
           SettingsColumnsView(library: library)
           Divider()
         }
+        if library.section != .settings, let task = library.selectedTask {
+          TaskCardColumn(library: library, task: task)
+          Divider()
+        }
       }
     }
   }
@@ -55,6 +59,20 @@ private struct ColumnView: View {
   let position: Int
 
   var body: some View {
+    VStack(spacing: 0) {
+      if let project = library.shownProject, project.id == column.parentID {
+        ProjectCard(library: library, project: project)
+        Divider()
+      }
+      list
+    }
+    .frame(width: 260)
+    .dropDestination(for: String.self) { payloads, _ in
+      library.drop(payloads, on: column.parentID)
+    }
+  }
+
+  private var list: some View {
     List(selection: selection) {
       ForEach(column.entries) { entry in
         switch entry {
@@ -66,10 +84,6 @@ private struct ColumnView: View {
             .tag(ColumnSelection.task(task.id))
         }
       }
-    }
-    .frame(width: 240)
-    .dropDestination(for: String.self) { payloads, _ in
-      library.drop(payloads, on: column.parentID)
     }
   }
 
@@ -162,6 +176,16 @@ private struct ProjectRow: View {
         }
       } else {
         Button("Complete Project") { library.completeProject(project.id) }
+        Menu("Kind") {
+          Button("Parallel", systemImage: ProjectKind.parallel.symbol) {
+            library.setKind(of: project.id, to: .parallel)
+          }
+          .disabled(project.kind == .parallel)
+          Button("Sequential", systemImage: ProjectKind.sequential.symbol) {
+            library.setKind(of: project.id, to: .sequential)
+          }
+          .disabled(project.kind == .sequential)
+        }
         if project.parentID != nil {
           Button("Move to Top Level") { library.nest(project.id, under: nil) }
         }

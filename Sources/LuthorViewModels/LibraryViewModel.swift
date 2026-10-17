@@ -22,6 +22,12 @@ public final class LibraryViewModel {
   public internal(set) var selectedPriorities: Set<Priority> = []
   /// Every active project of the view, nested or not, in creation order.
   public internal(set) var projects: [Project] = []
+  /// The active projects of the view and, while completed items are listed, the completed ones: whatever a
+  /// card can name as the project of a task.
+  public internal(set) var knownProjects: [Project] = []
+  /// The project the columns lead to, whose card is shown; a completed one too while completed items are
+  /// listed. `nil` while the inbox, Today or the priorities are shown.
+  public internal(set) var shownProject: Project?
   /// The project browser: the top-level projects, then one column for each project on the path.
   public internal(set) var columns: [ProjectColumn] = []
   /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
@@ -256,6 +262,36 @@ public final class LibraryViewModel {
   /// Opens a completed project again, with what its completion took along.
   public func reopenProject(_ projectID: ProjectID) {
     perform { (log) throws(CommandError) in try commands.reopenProject(projectID, log: log) }
+  }
+
+  /// Gives a task another title. A blank title changes nothing.
+  public func rename(_ taskID: TaskID, to title: String) {
+    perform { (log) throws(CommandError) in try commands.rename(taskID: taskID, to: title, log: log) }
+  }
+
+  /// Sets the notes of a task, or with blank text clears them.
+  public func setNotes(_ taskID: TaskID, to notes: String) {
+    perform { (log) throws(CommandError) in try commands.setNotes(taskID: taskID, to: notes, log: log) }
+  }
+
+  /// Gives a project another title. A blank title changes nothing.
+  public func renameProject(_ projectID: ProjectID, to title: String) {
+    perform { (log) throws(CommandError) in try commands.renameProject(projectID, to: title, log: log) }
+  }
+
+  /// Makes a project sequential or parallel.
+  public func setKind(of projectID: ProjectID, to kind: ProjectKind) {
+    perform { (log) throws(CommandError) in try commands.setKind(of: projectID, to: kind, log: log) }
+  }
+
+  /// Sets the notes of a project, or with blank text clears them.
+  public func setNotes(ofProject projectID: ProjectID, to notes: String) {
+    perform { (log) throws(CommandError) in try commands.setNotes(ofProject: projectID, to: notes, log: log) }
+  }
+
+  /// The selected task, whose card is shown.
+  public var selectedTask: TaskItem? {
+    selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
   public func complete(_ taskID: TaskID) {
