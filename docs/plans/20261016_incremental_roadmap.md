@@ -54,7 +54,8 @@ run locally with the same command, so CI never surprises me.
   synchronize) passes the title to the same script through an environment
   variable (never interpolated into the shell) and fails if it is not a
   Conventional Commit of at most 50 characters
-- Branch protection on `main`: both checks must pass to merge
+- Branch protection on `main`: both checks must pass to merge (Terraform in
+  `infra/`, see README)
 
 ### CI-2. Build the Mac app (slice 2)
 
