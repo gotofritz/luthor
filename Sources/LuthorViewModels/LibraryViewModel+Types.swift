@@ -10,6 +10,7 @@ public enum SidebarItem: Hashable, Sendable {
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
   case today
+  case review
   case projects
   case priorities
   case settings

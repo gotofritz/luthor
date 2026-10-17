@@ -131,6 +131,9 @@ public struct LibraryState: Equatable, Sendable {
   var dayOrders: [DayKey: [TaskID]] = [:]
   /// The capacity set for single days, in place of the weekday's.
   var dayCapacities: [DayKey: Int] = [:]
+  /// What the daily review looks back on: logged time, reviewed days, and the day each completed task was
+  /// planned for.
+  var reviewRecords = ReviewRecords()
 
   /// The open tasks and active projects of one view; empty for a view that does not exist.
   public func view(_ viewID: ViewID) -> ViewState {
@@ -206,6 +209,8 @@ public struct LibraryState: Equatable, Sendable {
       delegations.removeValue(forKey: reclaimed.taskID)
     case .taskDropped(let dropped):
       finish(dropped.taskID)
+    case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
+      applyReview(payload)
     }
   }
 

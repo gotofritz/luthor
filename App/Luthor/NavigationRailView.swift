@@ -56,6 +56,7 @@ extension NavigationSection {
     switch self {
     case .inbox: "tray"
     case .today: "sun.max"
+    case .review: "checklist"
     case .projects: "folder"
     case .priorities: "flag"
     case .settings: "gear"
@@ -66,6 +67,7 @@ extension NavigationSection {
     switch self {
     case .inbox: "Inbox"
     case .today: "Today"
+    case .review: "Review"
     case .projects: "Projects"
     case .priorities: "Prios"
     case .settings: "Settings"

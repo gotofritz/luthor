@@ -10,6 +10,7 @@ extension LibraryState {
   mutating func complete(_ taskID: TaskID) {
     guard let task = openTasks.first(where: { $0.id == taskID }) else { return }
     completedTasks.append(Completed(item: task, completedWith: nil))
+    reviewRecords.plannedDays[taskID] = scheduledDates[taskID]
     finish(taskID)
   }
 
@@ -18,6 +19,7 @@ extension LibraryState {
   mutating func reopen(_ taskID: TaskID) {
     guard let index = completedTasks.firstIndex(where: { $0.item.id == taskID && $0.isReopenable }) else { return }
     var reopened = completedTasks.remove(at: index).item
+    reviewRecords.plannedDays.removeValue(forKey: taskID)
     let project = reopened.projectID.flatMap { projectID in
       projects.firstIndex { $0.id == projectID && $0.viewID == reopened.viewID }
     }
@@ -43,6 +45,7 @@ extension LibraryState {
     }
     for task in openTasks where task.projectID.map(subtree.contains) ?? false {
       completedTasks.append(Completed(item: task, completedWith: projectID))
+      reviewRecords.plannedDays[task.id] = scheduledDates[task.id]
     }
   }
 
@@ -55,6 +58,7 @@ extension LibraryState {
     completedProjects.removeAll { entry in taken.contains(entry) }
     let tasks = completedTasks.filter { $0.completedWith == projectID }
     completedTasks.removeAll { entry in tasks.contains(entry) }
+    for task in tasks { reviewRecords.plannedDays.removeValue(forKey: task.item.id) }
     projects += taken.map(\.item)
     for task in tasks.map(\.item) { insertOpen(task) }
     let parent = root.item.parentID.flatMap { parentID in

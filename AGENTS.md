@@ -103,10 +103,12 @@ Sources/
                              TaskDelegated/Reclaimed, TaskDropped
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
+    ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed task or project
+    Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
@@ -114,6 +116,9 @@ Sources/
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, delegations, plan orders and day capacities
     LibraryState+Completion.swift  keeping completed tasks and projects, and reopening them
+    LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
+                             DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
+                             days), estimateHistory(ofTask:/ofProject:)
     LibraryState+Cards.swift  applying rename, notes and kind events
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
@@ -136,7 +141,8 @@ Sources/
                              project columns, list, drops, injected clock; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
-                             delegation actions in LibraryViewModel+Today.swift, reading the log and
+                             delegation actions in LibraryViewModel+Today.swift, logging time and
+                             reviewing a day in LibraryViewModel+Review.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
@@ -147,7 +153,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              the place picked; CardViews: the task card column, the project card above
                              its column, notes with clickable links; SettingsColumnsView: Global/Local setting families,
                              then the individual settings of the one picked; TodayView: the day's plan,
-                             capacity meter, candidates, Waiting for, delegate dialog)
+                             capacity meter, leftovers, candidates, Waiting for, delegate dialog;
+                             ReviewView: the day looked back on, time fields, deciding, closing the review)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory

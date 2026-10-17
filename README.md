@@ -25,7 +25,7 @@ and renames views; the app reopens on the view last used on that Mac. Task → M
 project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
-to look at: Inbox (a list of its tasks), Today, Projects or Prios, with
+to look at: Inbox (a list of its tasks), Today, Review, Projects or Prios, with
 Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
 (not working yet) and the view switcher.
 
@@ -70,7 +70,17 @@ the task. Decide on a task in one chord: Defer to Tomorrow (⌘D), Delegate…
 (⌘L, with an optional follow-up day), Send to Someday (⌘Y), Drop Task
 (⇧⌘⌫). A delegated task leaves the plan and its totals and waits in Waiting
 for until reclaimed or its follow-up day. ⌘[ and ⌘] move to the previous and
-next day, ⇧⌘T returns to today (Plan menu).
+next day, ⇧⌘T returns to today (Plan menu). Tasks planned for a day that has
+passed and not decided on wait at the top of Today as leftovers; nothing moves
+them on by itself.
+
+Review (⇧⌘N) closes the loop on a day: the tasks planned for it that were done
+and the ones not, the minutes each took typed by hand against its estimate,
+unplanned minutes, and a one-line note that marks the day reviewed. Each task
+not done gets a decision with the same chords as Today (tomorrow, another day,
+back to the list, delegate, someday, drop). What a task was estimated and what
+it took is shown on the review and on the cards, and never applied to the
+estimate.
 
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to

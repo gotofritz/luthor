@@ -208,19 +208,24 @@ here, ahead of slice 9, because dropping from the plan needs it.
 
 Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
-### 9. Daily review and carry-over (ALPEN: N)
+### 9. Daily review and carry-over (ALPEN: N) ✅
 
-- Review of the day in the current view: done and not done, estimated
-  against actual minutes, unplanned minutes
-- `TaskTimeLogged(minutes)` entered by hand; `UnplannedTimeLogged(date,
-  minutes)`; `DayReviewed(date, note)` with a one-line note (long reflection
-  belongs in Joplin)
-- Each unfinished task gets a decision: tomorrow, another day, back to the
-  list, delegate, someday, or dropped (`TaskDropped`). No per-task carry-over policy:
-  the review decides, and an unreviewed day's leftovers show at the top of
-  the next Today until decided
-- Estimate history per task and project is shown, never applied: the user's
-  estimate is never changed silently
+Review is a place on the rail (⇧⌘N), looking back on the day Today shows.
+`TaskTimeLogged(task, date, minutes?)` sets the minutes a task took on a day,
+by hand; `UnplannedTimeLogged(view, date, minutes?)` the minutes of work
+outside the plan; `DayReviewed(view, date, note?)` closes the review with a
+one-line note. Each sets rather than adds, so typing again replaces what the
+day had and clearing it is the same event with no minutes. The review lists
+the tasks planned for the day that were completed (done) and the ones still
+planned for it (not done), each with its planned minutes (the estimate, or the
+default estimate), the minutes logged, and its estimate history; its totals are
+planned, logged and unplanned minutes. Deciding on a task not done reuses the
+Today chords: tomorrow, another day, back to the list (`TaskUnscheduled`),
+delegate, someday and `TaskDropped`. There is no carry-over policy: an open
+task planned for a day before today is a leftover, listed at the top of Today
+(and no longer among its candidates) until decided, reviewed or not. The
+estimate history, a task's estimate against its logged minutes and the same
+added up for a project, is shown in the review and on the cards, never applied.
 
 Usable: the ALPEN loop is closed, and estimates improve with feedback.
 
@@ -571,3 +576,36 @@ Usable: the weekly review.
 3. **The default-view setting is now unused.** Only the CLI read it (the
    view `luthor add` captured into); the app reopens on the view last used.
    It stays in Settings for now
+
+## Decisions (2026-10-17, slice 9)
+
+1. **Time is set, not added.** `TaskTimeLogged` and `UnplannedTimeLogged`
+   carry the minutes the day has; logging again replaces them and `nil` (or
+   zero) clears them, like `DayCapacitySet`. A task done over several days has
+   one entry for each. The roadmap's `TaskTimeLogged(minutes)` gained the
+   task and the day, and `UnplannedTimeLogged` and `DayReviewed` the view,
+   because the review is per view and day
+2. **No completion date in the log.** A completed task counts as done on the
+   day it was planned for, which the reducer remembers when it completes the
+   task (`plannedDays`). A task completed without a day is in no review, and
+   its time goes under unplanned. Completing early or late is still done on
+   its planned day; a `TaskCompleted` with a date would be a later change
+3. **Deciding clears the day.** A task deferred, delegated, sent to someday or
+   dropped leaves the day it was planned for, so the review of an old day
+   lists what was done and what is still undecided. The decisions themselves
+   are not kept as a history; the plan is, in the events
+4. **Leftovers are a pure function.** `LibraryState.carryOver(in:today:)`: open
+   tasks of the view planned for a day before today, oldest day first, then the
+   suggested order (a manual order for that day is honoured). Nothing writes an
+   event to carry a task over. Candidates no longer include them, so a task is
+   never in two places of Today
+5. **Reviewing is optional and recorded.** `DayReviewed` does not gate
+   anything; leftovers wait whether or not the day was reviewed. The note is
+   one line (the command folds line breaks and runs of spaces to one space)
+   and reviewing again replaces it
+6. **History is shown, never applied.** `EstimateHistory` adds the estimates
+   and the logged minutes of the tasks that have both; for a project, its
+   tasks and sub-projects' tasks, open or completed. No command or reducer
+   reads it to change an estimate
+7. **⇧⌘N for Show Review.** N for Nachkontrolle, the ALPEN step. ⇧⌘R stays free
+   for slice 14's project review

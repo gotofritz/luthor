@@ -201,8 +201,9 @@ extension LibraryState {
     let actionable = Set(viewState.nextActions.map(\.id))
     let candidates = viewState.openTasks.filter { task in
       let isWaiting = delegations[task.id].map { !$0.isFollowUpDue(on: today) } ?? false
+      let isLeftOver = scheduledDates[task.id].map { $0 < today } ?? false
       return task.isClarified && task.priority != .someday && scheduledDates[task.id] != date
-        && (task.projectID == nil || actionable.contains(task.id)) && !isWaiting
+        && (task.projectID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
     }.sorted(by: suggested).map(entry)
 
     let weekday = date.weekday
@@ -226,7 +227,7 @@ extension LibraryState {
 }
 
 /// Where a task sits in a plan; the smaller key goes first.
-private struct PlanKey: Comparable {
+struct PlanKey: Comparable {
   let manual: Int
   let priority: Int
   let project: Int
@@ -238,7 +239,7 @@ private struct PlanKey: Comparable {
 }
 
 /// What the suggested order of a view's tasks is made of.
-private struct PlanRanking {
+struct PlanRanking {
   /// Where each task sits among the view's open tasks, in capture order.
   let captureIndex: [TaskID: Int]
   /// Where each task filed in a project sits in a walk through the view's projects, depth first.

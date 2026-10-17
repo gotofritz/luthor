@@ -29,6 +29,10 @@ does updates this guide in the same PR (see the docs check in
 - **Plan**: the tasks you decided to do on one day in one view, in order. The
   work day and the evening are planned apart. A task keeps its identity when
   moved from day to day: rescheduling never duplicates it
+- **Leftover**: an open task planned for a day before today. Nothing moves it
+  on by itself: it waits at the top of Today until you decide on it
+- **Review**: looking back on one day of a view: what was done, what was not,
+  and how long it took against the estimates
 - **Capacity**: the minutes a view has on a day. The weekday's capacity from
   Settings applies unless you set one for that day. The **buffer** is a
   percentage of it held back for interruptions; it is protected time, never a
@@ -47,6 +51,7 @@ It does not expand. Click a place to look at it:
 
 - **Inbox**: your inbox tasks, as a list
 - **Today**: the plan of a day, with its capacity (see Today)
+- **Review**: the day looked back on (see Review)
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
@@ -134,7 +139,7 @@ the task is still planned. To change one day's capacity, set it for that day
 **Pulling tasks in.** Candidates are the open tasks of the view that are
 clarified (they have a priority, an estimate or a project), not someday, not
 held back by a sequential project, and not delegated until their follow-up
-day. A task planned for another day is a candidate too, so you can pull it
+day. A task planned for a later day is a candidate too, so you can pull it
 forward. Select one and press ⌘T, or use Add to Plan in its context menu.
 Remove from Plan (⌥⌘T) returns it to the candidates.
 
@@ -153,10 +158,63 @@ survives a relaunch.
 - Send to Someday (⌘Y) takes it off its day and gives it the One day priority
 - Drop Task (⇧⌘⌫) gives it up: it leaves every list, without being completed
 
+**Leftovers.** A task planned for a day that has passed, and not completed or
+decided on, is not carried over by itself. It waits in a section at the top of
+the plan, "Left over from earlier days", saying which day it was planned for,
+until you decide on it. Nothing needs a review to have happened first: an
+unreviewed day's leftovers are there the next morning, and the morning after.
+The same chords decide on it, counting from the day shown: Add to Plan (⌘T)
+plans it for that day, Remove from Plan (⌥⌘T) sends it back to the list (it is
+a candidate again), and Defer to Tomorrow, Delegate…, Send to Someday and Drop
+Task work as above. Another Day, in the context menu, plans it for one of the
+next few days.
+
 **Waiting for.** Lists the delegated tasks of the view, the longest wait
 first, with who and since when. On the follow-up day the task is a candidate
 again and the entry says to follow up. Reclaim (context menu) takes it back
 at any time; planning a delegated task also takes it back.
+
+## Review
+
+Review looks back on one day of the current view. It shows the day Today
+shows: ◀ and ▶ (or ⌘[ and ⌘]) change it, and the Today button comes back. ⇧⌘N
+opens it (Plan menu). The first column has the totals (minutes planned,
+minutes logged, minutes unplanned) and **Done**, the tasks planned for the day
+that were completed. The second column has **Not done**, the tasks still
+planned for the day, and the box that closes the review.
+
+**Time.** Each task has a field for the minutes it took on that day, typed by
+hand; an empty field clears it. Time can be logged for a done task and for
+one not done, and for a day that is over. "Unplanned time" is the minutes of
+the day spent on work that was not in the plan. Typing again replaces the
+minutes of that day; nothing is added up behind your back. Planned minutes
+use the estimate, or the default estimate for a task without one (shown
+"~5m").
+
+**Estimate history.** Under a task that has an estimate and logged time, the
+review says what it was estimated and what it took over all days ("Estimated
+60m, took 90m (+30m)"). The task's card and the card of a project show the
+same, for a project added up over its tasks and sub-projects. It is only
+shown: Luthor never changes an estimate for you.
+
+**Deciding.** Each task not done gets a decision, with the task selected or
+from its context menu, with the same chords as Today and counting from the
+day reviewed: Defer to Tomorrow (⌘D), Another Day (a few days to pick from),
+Remove from Plan (⌥⌘T, back to the list), Delegate… (⌘L), Send to Someday
+(⌘Y) or Drop Task (⇧⌘⌫). A decided task leaves the day. Or complete it with
+its circle, and it moves to Done. There is no carry-over rule per task: the
+review decides.
+
+**Closing the review.** Type a one-line note (long reflection belongs in your
+notes app) and press Review Day. The day then shows "Reviewed" with its note,
+and reviewing it again replaces the note. A day that is not reviewed is not
+blocked in any way: its leftovers wait in Today.
+
+A task shows in the review of the day it was planned for. A task completed
+without having been planned for any day is in no review; log its time as
+unplanned time instead. A task that was decided on has left the day it was
+decided from, so the review of that day lists only what was done and what is
+still undecided.
 
 ## Projects
 

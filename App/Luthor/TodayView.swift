@@ -31,8 +31,16 @@ private struct PlanColumn: View {
         .padding([.horizontal, .bottom], 12)
       Divider()
       List(selection: $library.selection) {
+        if !library.carryOver.isEmpty {
+          Section("Left over from earlier days") {
+            ForEach(library.carryOver, id: \.entry.task.id) { leftOver in
+              PlanRow(library: library, entry: leftOver.entry, kind: .leftOver)
+                .tag(leftOver.entry.task.id)
+            }
+          }
+        }
         ForEach(library.plan.entries, id: \.task.id) { entry in
-          PlanRow(library: library, entry: entry, isPlanned: true)
+          PlanRow(library: library, entry: entry, kind: .planned)
             .tag(entry.task.id)
         }
       }
@@ -156,7 +164,7 @@ private struct CandidatesColumn: View {
       Divider()
       List(selection: $library.selection) {
         ForEach(library.plan.candidates, id: \.task.id) { entry in
-          PlanRow(library: library, entry: entry, isPlanned: false)
+          PlanRow(library: library, entry: entry, kind: .candidate)
             .tag(entry.task.id)
         }
       }
@@ -202,12 +210,20 @@ private struct WaitingColumn: View {
   }
 }
 
-/// One task of the plan or of the candidates, with the minutes it counts for and why it sits there.
+/// One task of the plan, of the candidates or of the leftovers, with the minutes it counts for and why it
+/// sits there.
 private struct PlanRow: View {
+  /// Where the task sits: in the plan of the day shown, among the candidates for it, or left over from an
+  /// earlier day.
+  enum Kind {
+    case planned
+    case candidate
+    case leftOver
+  }
+
   @Bindable var library: LibraryViewModel
   let entry: PlanEntry
-  /// Whether the task is in the plan of the day shown, rather than a candidate for it.
-  let isPlanned: Bool
+  let kind: Kind
 
   var body: some View {
     HStack(spacing: 8) {
@@ -235,19 +251,43 @@ private struct PlanRow: View {
       }
     }
     .contextMenu {
-      if isPlanned {
+      switch kind {
+      case .planned:
         Button("Move Earlier") { library.moveInPlan(entry.task.id, by: -1) }
         Button("Move Later") { library.moveInPlan(entry.task.id, by: 1) }
         Button("Remove from Plan") { library.removeFromPlan(entry.task.id) }
-      } else {
+      case .candidate:
         Button("Add to Plan") { library.addToPlan(entry.task.id) }
+      case .leftOver:
+        Button("Plan for This Day") { library.addToPlan(entry.task.id) }
+        Button("Back to the List") { library.removeFromPlan(entry.task.id) }
       }
       Divider()
-      Button("Defer to Tomorrow") { library.deferToTomorrow(entry.task.id) }
-      Button("Delegate…") { library.delegatingTaskID = entry.task.id }
-      Button("Send to Someday") { library.sendToSomeday(entry.task.id) }
-      Button("Drop Task") { library.dropTask(entry.task.id) }
+      DecisionMenuItems(library: library, taskID: entry.task.id)
     }
+  }
+}
+
+/// What can be decided about a task that is planned, left over or not done: tomorrow, another day, delegate,
+/// someday or drop. Tomorrow and the other days count from the day shown.
+struct DecisionMenuItems: View {
+  @Bindable var library: LibraryViewModel
+  let taskID: TaskID
+
+  /// How many days after the day shown "Another Day" offers, beyond tomorrow.
+  private static let laterDays = 2...8
+
+  var body: some View {
+    Button("Defer to Tomorrow") { library.deferToTomorrow(taskID) }
+    Menu("Another Day") {
+      ForEach(Self.laterDays, id: \.self) { offset in
+        let day = library.planDate.adding(days: offset)
+        Button("\(day.weekday.title) \(day.isoString)") { library.schedule(taskID, on: day) }
+      }
+    }
+    Button("Delegate…") { library.delegatingTaskID = taskID }
+    Button("Send to Someday") { library.sendToSomeday(taskID) }
+    Button("Drop Task") { library.dropTask(taskID) }
   }
 }
 
