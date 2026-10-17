@@ -1,5 +1,6 @@
 import Foundation
 import LuthorCLI
+import LuthorStore
 
 let result = CLI(environment: ProcessInfo.processInfo.environment, ids: UUIDGenerator())
   .run(Array(CommandLine.arguments.dropFirst()))

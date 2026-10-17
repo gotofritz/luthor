@@ -15,7 +15,7 @@ let package = Package(
     .target(name: "LuthorStore", dependencies: ["LuthorDomain"]),
     .target(name: "LuthorCLI", dependencies: ["LuthorDomain", "LuthorStore"]),
     .target(name: "LuthorViewModels", dependencies: ["LuthorDomain", "LuthorStore"]),
-    .executableTarget(name: "luthor", dependencies: ["LuthorCLI"]),
+    .executableTarget(name: "luthor", dependencies: ["LuthorCLI", "LuthorStore"]),
     .target(
       name: "LuthorTestSupport",
       dependencies: ["LuthorDomain", "LuthorStore"],
