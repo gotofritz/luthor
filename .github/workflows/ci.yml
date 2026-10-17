@@ -15,9 +15,14 @@ concurrency:
 jobs:
   check:
     name: make check-ci
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+      - name: Select the newest stable Xcode
+        # The runner image's default Xcode lags behind; build with what the Mac in use has.
+        run: |
+          xcode="$(ls -d /Applications/Xcode_[0-9]*.app | grep -iv beta | sort -V | tail -1)"
+          sudo xcode-select -s "$xcode"
       - name: Toolchain
         run: |
           swift --version

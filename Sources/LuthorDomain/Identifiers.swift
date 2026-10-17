@@ -32,6 +32,14 @@ public struct TaskID: Hashable, Codable, Sendable {
   }
 }
 
+public struct ProjectID: Hashable, Codable, Sendable {
+  public let rawValue: String
+
+  public init(_ rawValue: String) {
+    self.rawValue = rawValue
+  }
+}
+
 extension EventID {
   public init(from decoder: any Decoder) throws {
     self.init(try decoder.singleValueContainer().decode(String.self))
@@ -55,6 +63,17 @@ extension DeviceID {
 }
 
 extension TaskID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
+extension ProjectID {
   public init(from decoder: any Decoder) throws {
     self.init(try decoder.singleValueContainer().decode(String.self))
   }

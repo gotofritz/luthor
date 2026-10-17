@@ -4,13 +4,13 @@ import Testing
 
 @Suite struct ReplayTests {
   @Test func capturedTaskIsOpenInInbox() {
-    let state = InboxState.replay([captured("t1", "buy milk")])
+    let state = LibraryState.replay([captured("t1", "buy milk")])
 
     #expect(state.openTasks == [item("t1", "buy milk")])
   }
 
   @Test func completedTaskLeavesInbox() {
-    let state = InboxState.replay([
+    let state = LibraryState.replay([
       captured("t1", "buy milk", lamport: 1),
       captured("t2", "call mum", lamport: 2),
       completed("t1", lamport: 3),
@@ -38,7 +38,7 @@ import Testing
 
   @Test(arguments: arrivalOrders)
   func anyArrivalOrderReplaysToTheSameState(order: [Int]) {
-    let state = InboxState.replay(order.map { Self.log[$0] })
+    let state = LibraryState.replay(order.map { Self.log[$0] })
 
     // Same lamport: device ID breaks the tie, "air" before "mac".
     #expect(state.openTasks == [item("t3", "pay rent"), item("t2", "call mum")])
@@ -47,7 +47,7 @@ import Testing
   @Test func duplicateEventsAreAppliedOnce() {
     let capture = captured("t1", "buy milk")
 
-    let state = InboxState.replay([capture, capture])
+    let state = LibraryState.replay([capture, capture])
 
     #expect(state.openTasks == [item("t1", "buy milk")])
   }

@@ -23,6 +23,9 @@ resource "github_repository" "luthor" {
 
   delete_branch_on_merge = true
 
+  # Offer the "Update branch" button on PRs that are behind main.
+  allow_update_branch = true
+
   # Never let Terraform delete the repo, e.g. after a rename here.
   lifecycle {
     prevent_destroy = true
@@ -56,8 +59,11 @@ resource "github_repository_ruleset" "main" {
       required_approving_review_count = 0
     }
 
-    # Check names are the job names in .github/workflows.
+    # Check names are the job names in .github/workflows. Strict: a PR must
+    # be up to date with main, so the checks ran on what will be merged.
     required_status_checks {
+      strict_required_status_checks_policy = true
+
       required_check {
         context        = "make check-ci"
         integration_id = local.github_actions_app_id

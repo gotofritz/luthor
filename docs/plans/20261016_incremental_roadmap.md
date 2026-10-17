@@ -43,15 +43,13 @@ fails under 90% line coverage of `Sources/` (`make coverage`).
 `make app` builds the Mac app in `make check-ci`; view model tests run with the
 package tests.
 
-### CD-1. Ship the Mac app and CLI (slice 2 or 3)
+### CD-1. Ship the Mac app and CLI (slice 3) ✅
 
-- On a version tag (`v0.x.y`): build the `.app` and the `luthor` CLI,
-  ad-hoc sign them (no Developer Program needed), zip and attach to a GitHub
-  Release
-- `make install` builds and installs both locally, for day-to-day use
-  between releases
-- Without notarisation, the first launch needs right-click → Open; fine for
-  one user
+A version tag (`v0.x.y`) runs `make dist` on CI: the `.app` and the universal
+`luthor` CLI, ad-hoc signed, zipped and attached to a GitHub Release. PRs that
+change the release build run it without publishing. `make install` puts both
+in `/Applications` and `~/.local/bin` between releases. Not notarised: the
+first launch needs right-click → Open.
 
 ### CI-3. Event format guard (slice 9)
 
@@ -77,13 +75,13 @@ replay end to end with no UI.
 SwiftUI inbox on the same log: always-focused add field, complete by click or
 key, full replay on launch, file watching keeps CLI and app in step.
 
-### 3. Projects
+### 3. Projects ✅
 
-- `ProjectCreated`, `TaskMovedToProject`, `ProjectCompleted`
-- Parallel and sequential projects; "next action" rule as a pure function
-- Sidebar: Inbox, Projects; drag or keyboard shortcut to file a task
-
-Usable: inbox processing into projects.
+`ProjectCreated`, `TaskMovedToProject`, `ProjectCompleted` (which takes its
+open tasks with it). Parallel and sequential projects; next actions are a pure
+function of the project. The app gains a sidebar of Inbox and projects: drag a
+task onto a project or press ⌥⌘1–9 to file it, capture straight into the
+project shown, complete a project from the toolbar.
 
 ### 4. Defer and due, Today
 
@@ -118,14 +116,18 @@ Usable: contexts (`@home`, `@calls`, `@computer`).
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 7. iPhone capture without an iOS app (THROWAWAY)
+### 7. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
   file once imported (idempotent by line hash)
+- The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
+  stays, `list` and `done` go, and an Alfred workflow (keyword, then the
+  task title) calls it. Acceptance tests that relied on `luthor list` move
+  to the view models
 
 Usable: capture from the phone, lock screen and Siri included, months before
-an iOS app exists.
+an iOS app exists, and from Alfred on the Mac without switching to the app.
 
 ### 8. Review
 
@@ -177,3 +179,9 @@ Usable: the weekly review.
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
 5. **No SQLite until slice 10**, and only if replay is measurably slow
+
+## Decisions (2026-10-17)
+
+1. **CLI is capture only.** The app does everything the CLI does; the CLI
+   gains no project, defer or tag commands, and shrinks to `luthor add` for
+   Alfred in slice 7

@@ -88,7 +88,7 @@ public struct CLI {
       store = JSONLinesEventLog(fileURL: URL(fileURLWithPath: path))
       commands = Commands(deviceID: deviceID, ids: ids)
       log = try store.readAll()
-      open = InboxState.replay(log).openTasks
+      open = LibraryState.replay(log).openTasks
     }
   }
 
@@ -129,6 +129,8 @@ public struct CLI {
     case .ambiguousPrefix(let prefix, let matches):
       let candidates = matches.compactMap { id in open.first { $0.id == id } }.map(Self.line).joined()
       return failure(Self.exitFailure, "'\(prefix)' matches more than one open task:\n" + candidates.dropLast())
+    case .noActiveProject(let projectID):
+      return failure(Self.exitFailure, "no active project '\(projectID.rawValue)'")
     }
   }
 

@@ -1,14 +1,83 @@
-A GTD system loosely inspired by OmniFocus
+# Luthor
+
+A GTD system loosely inspired by OmniFocus: local-first and event-sourced.
+See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
+
+## CLI
+
+A quick way to capture from the shell. It knows only tasks, not projects:
+`list` shows every open task, filed or not. The app does everything it does
+and more; from slice 7 of the roadmap it shrinks to `luthor add`, for Alfred.
+
+```bash
+swift build -c release                             # or `make install`, below, to put luthor on PATH
+export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
+export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
+
+.build/release/luthor add "buy milk"
+.build/release/luthor list
+.build/release/luthor done 9afc                    # any unique prefix of a task ID
+```
+
+## Mac app
+
+```bash
+make app
+open .build/xcode/Build/Products/Release/Luthor.app
+```
+
+Or open `App/Luthor.xcodeproj` in Xcode and run. Like the CLI, the app
+reads and writes `$LUTHOR_LOG` when it is set (launched from a shell, or from
+Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
+CLI makes. Type and press Return to capture; ↑ and ↓ select a task, ⌘Return
+completes it, or click its circle.
+
+The sidebar lists the Inbox and the active projects. Create a project with the
+field at the bottom of the sidebar, choosing parallel (every task is a next
+action) or sequential (only the first open task is; the others are dimmed).
+File a task by dragging it onto a project, or select it and press ⌥⌘1 to ⌥⌘9
+for the first nine projects (Task → Move to Project). Typing in a project's
+capture field adds the task straight to that project. Complete a project from
+the toolbar or its context menu in the sidebar; its open tasks go with it.
+
+The build is ad-hoc signed: the first launch of a copied app needs
+right-click → Open.
+
+## Install and releases
+
+```bash
+make install   # the app into /Applications, the CLI into ~/.local/bin
+```
+
+`PREFIX` and `APP_INSTALL_DIR` change where (`make install PREFIX=/usr/local`).
+Pushing a version tag (`git tag v0.1.0 && git push origin v0.1.0`) builds both
+on CI and attaches them, zipped, to a GitHub Release. `make dist` builds the
+same zips locally into `.build/dist/`.
+
+## Development
+
+Needs Xcode (for `make app`). Once per checkout:
+
+```bash
+make tools   # download the pinned SwiftLint into .tools/; make lint and make check-ci need it
+make hooks   # run format, lint and commit-message checks on every commit
+```
+
+Then:
+
+```bash
+make check-ci   # lint, build, tests with a 90% coverage gate, and the Mac app: exactly what CI runs
+```
 
 ## Repository settings
 
 GitHub settings for this repo live in Terraform, in `infra/`:
 
 - squash merge only, with the PR title as the commit title; auto-merge allowed
-- head branches deleted after merge
+- head branches deleted after merge; PRs behind `main` offer "Update branch"
 - a ruleset on `main`: changes go through a PR, no force pushes or
   deletion, and the `make check-ci` and `Conventional Commit title` checks
-  must pass
+  must pass on a branch that is up to date with `main`
 
 Rulesets on a private repo need GitHub Pro (or a paid plan); on GitHub Free
 the apply fails for the ruleset.
@@ -36,14 +105,12 @@ the apply fails for the ruleset.
    terraform import github_repository.luthor luthor
    # only if a ruleset already exists; its ID is in the ruleset's URL
    terraform import github_repository_ruleset.main luthor:<ruleset-id>
+   cd ..
    ```
 
-4. Preview, then apply:
-
-   ```bash
-   terraform plan
-   terraform apply
-   ```
+4. From the project root, run `make infra`. It runs `terraform init`, shows
+   the plan and applies it only if you answer `yes`; anything else is a dry
+   run.
 
    Read the plan before applying: it should only change settings, never
    destroy the repository (`prevent_destroy` blocks that anyway).
@@ -56,56 +123,8 @@ imports in step 3 again.
 
 ### Changes later
 
-Edit the `.tf` files, then `terraform plan` and `terraform apply`. A plan
+Edit the `.tf` files, then `make infra`. A plan
 with no edits shows drift, for example a setting changed in the GitHub UI.
 
 Apply the ruleset only once both checks have run on a PR to `main`, or PRs
 wait for checks that never report.
-# Luthor
-
-A GTD system loosely inspired by OmniFocus: local-first and event-sourced.
-See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
-
-## CLI
-
-```bash
-swift build -c release
-export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
-export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
-
-.build/release/luthor add "buy milk"
-.build/release/luthor list
-.build/release/luthor done 9afc                    # any unique prefix of a task ID
-```
-
-## Mac app
-
-```bash
-make app
-open .build/xcode/Build/Products/Release/Luthor.app
-```
-
-Or open `App/Luthor.xcodeproj` in Xcode and run. Like the CLI, the app
-reads and writes `$LUTHOR_LOG` when it is set (launched from a shell, or from
-Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
-CLI makes. Type
-and press Return to capture; ↑ and ↓ select a task, ⌘Return completes it, or
-click its circle.
-
-The build is ad-hoc signed: the first launch of a copied app needs
-right-click → Open.
-
-## Development
-
-Needs Xcode (for `make app`). Once per checkout:
-
-```bash
-make tools   # download the pinned SwiftLint into .tools/; make lint and make check-ci need it
-make hooks   # run format, lint and commit-message checks on every commit
-```
-
-Then:
-
-```bash
-make check-ci   # lint, build, tests with a 90% coverage gate, and the Mac app: exactly what CI runs
-```

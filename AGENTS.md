@@ -95,9 +95,10 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order
-    Identifiers.swift        EventID, DeviceID, TaskID
+    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID
     Commands.swift           command → new events; IDGenerator protocol, CommandError
-    InboxState.swift         reducer: InboxState.replay(events) → open tasks
+    LibraryState.swift       reducer: LibraryState.replay(events) → open tasks, inbox, projects;
+                             Project.nextActions (parallel/sequential rule)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
@@ -106,16 +107,17 @@ Sources/
     UUIDGenerator.swift      production IDGenerator
   LuthorCLI/CLI.swift        `luthor add|list|done`, testable (returns CLIResult)
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
-  LuthorViewModels/          @Observable view models (InboxViewModel), no SwiftUI
+  LuthorViewModels/          @Observable view models (LibraryViewModel: sidebar, list), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
-  Luthor/                    LuthorApp (wiring) + thin views (InboxView)
+  Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView, TaskListView)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
   Luthor<Module>Tests/       unit tests, one target per module
   LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`)
 scripts/                     commit-message and coverage checks, with their shell tests
-.githooks/  .github/workflows/  infra/ (Terraform for the GitHub repo settings)
+.githooks/  infra/ (Terraform for the GitHub repo settings)
+.github/workflows/           CI (make check-ci), PR title check, release on v* tags
 ```
 
 Dependencies point inwards: `LuthorStore`, `LuthorCLI` and `LuthorViewModels`
@@ -214,6 +216,10 @@ make coverage   # make test with coverage; fails under 90% line coverage of Sour
 make test-unit  # unit tests only (skips LuthorAcceptanceTests)
 make test-acceptance  # end-to-end acceptance tests only
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
+make cli        # release build of the luthor CLI, universal, ad-hoc signed
+make install    # build and install the app (/Applications) and CLI (~/.local/bin)
+make dist       # zip the app and CLI into .build/dist, as a release does
+make infra      # Terraform: show changes to the GitHub repo settings, apply on yes (needs GITHUB_TOKEN)
 make check-ci   # lint + build + coverage + app, exactly what CI runs
 swift test --filter <TestName>   # run one test while doing red/green
 ```
@@ -300,8 +306,23 @@ too messy (many conflicting commits, or a branch others are also pushing to).
 - Keep PRs focused
 - Avoid unrelated refactors
 - Include tests for behaviour changes
-- Update relevant docs and plans
+- Update relevant docs and plans (checklist below)
 - Ensure CI passes
+
+### Docs check, before every PR is ready for review
+
+Do this unasked, and again after any later push that changes behaviour,
+commands or setup. The user should never have to ask whether docs are current.
+
+- `README.md` describes what the app, the CLI and every `make` target do now:
+  new features, changed shortcuts, install paths, setup steps
+- The roadmap (`docs/plans/20261016_incremental_roadmap.md`) marks every slice
+  and CI/CD item this PR finishes with ✅, condensed to a short paragraph like
+  the earlier finished ones; decisions taken in the PR go under Decisions
+- A plan finished as a whole is archived (see [Plans](#plans))
+- The [Code map](#code-map) and [Commands](#commands) in this file match the
+  tree and the `Makefile`
+- Say in the PR, or the reply that asks for review, that these were checked
 
 ### Title & Body
 
@@ -335,6 +356,9 @@ too messy (many conflicting commits, or a branch others are also pushing to).
   `Sources/` (`COVERAGE_MIN` in the `Makefile`), Mac app build. The same
   command runs locally
 - CI checks that PR titles are Conventional Commits
+- A version tag (`v0.x.y`) runs `make dist` on CI and attaches the zips to a
+  GitHub Release; PRs that change the `Makefile` or that workflow run the same
+  build without publishing
 - Git hooks for local development, installed with `make hooks`:
   `pre-commit` runs format check and lint, `commit-msg` checks the message
   is a Conventional Commit. Do not bypass them with `--no-verify`

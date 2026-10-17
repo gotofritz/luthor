@@ -25,3 +25,4 @@ infra/.terraform.lock.hcl
 # never commit an event log
 *.jsonl
 .tools/
+.env

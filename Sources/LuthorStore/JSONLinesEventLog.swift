@@ -52,6 +52,9 @@ private struct EventLineDTO: Codable {
   private enum EventType: String, Codable {
     case taskCaptured = "TaskCaptured"
     case taskCompleted = "TaskCompleted"
+    case projectCreated = "ProjectCreated"
+    case taskMovedToProject = "TaskMovedToProject"
+    case projectCompleted = "ProjectCompleted"
   }
 
   init(from decoder: any Decoder) throws {
@@ -60,6 +63,9 @@ private struct EventLineDTO: Codable {
       switch try container.decode(EventType.self, forKey: .type) {
       case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
       case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
+      case .projectCreated: .projectCreated(try container.decode(ProjectCreated.self, forKey: .data))
+      case .taskMovedToProject: .taskMovedToProject(try container.decode(TaskMovedToProject.self, forKey: .data))
+      case .projectCompleted: .projectCompleted(try container.decode(ProjectCompleted.self, forKey: .data))
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -80,6 +86,15 @@ private struct EventLineDTO: Codable {
       try container.encode(data, forKey: .data)
     case .taskCompleted(let data):
       try container.encode(EventType.taskCompleted, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .projectCreated(let data):
+      try container.encode(EventType.projectCreated, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .taskMovedToProject(let data):
+      try container.encode(EventType.taskMovedToProject, forKey: .type)
+      try container.encode(data, forKey: .data)
+    case .projectCompleted(let data):
+      try container.encode(EventType.projectCompleted, forKey: .type)
       try container.encode(data, forKey: .data)
     }
   }
