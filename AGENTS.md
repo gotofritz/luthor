@@ -86,6 +86,47 @@ remote events → merge into log → deterministic replay → projection → UI
 Update `docs/plans/20260512_initial_plan.md` (or a successor architecture doc)
 before merging changes affecting architecture, boundaries or core patterns.
 
+### Code map
+
+What is where today. Grep for anything finer; this only orients.
+
+```
+Package.swift                SwiftPM manifest: every module and test target
+Sources/
+  LuthorDomain/              pure Swift, imports nothing
+    Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order
+    Identifiers.swift        EventID, DeviceID, TaskID
+    Commands.swift           command → new events; IDGenerator protocol, CommandError
+    InboxState.swift         reducer: InboxState.replay(events) → open tasks
+  LuthorStore/               event log on disk, config, real ID generator
+    EventLog.swift           EventLog protocol
+    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
+    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID
+    FileChangeMonitor.swift  polls the log file so the app sees outside writes
+    UUIDGenerator.swift      production IDGenerator
+  LuthorCLI/CLI.swift        `luthor add|list|done`, testable (returns CLIResult)
+  luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
+  LuthorViewModels/          @Observable view models (InboxViewModel), no SwiftUI
+App/                         Xcode project for the SwiftUI Mac app (`make app`)
+  Luthor/                    LuthorApp (wiring) + thin views (InboxView)
+Tests/
+  LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
+                             SequentialIDs, TemporaryDirectory
+  Luthor<Module>Tests/       unit tests, one target per module
+  LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`)
+scripts/                     commit-message and coverage checks, with their shell tests
+.githooks/  .github/workflows/  infra/ (Terraform for the GitHub repo settings)
+```
+
+Dependencies point inwards: `LuthorStore`, `LuthorCLI` and `LuthorViewModels`
+depend on `LuthorDomain`; nothing depends on the app or the CLI executable.
+There are no projections, SQLite or sync modules yet; the reducer's state is
+the only read model. Commands are in [Commands](#commands).
+
+**Keep this map current.** A PR that adds, removes, renames or moves a
+module, target or top-level folder, or a file listed above, updates this map
+in the same PR.
+
 ## Workflow
 
 **MANDATORY TDD — no exceptions.** Every change to behaviour starts with a
