@@ -31,6 +31,7 @@ public final class LibraryViewModel {
 
   private let log: any EventLog
   private let commands: Commands
+  private var state = LibraryState()
 
   public init(log: any EventLog, commands: Commands) {
     self.log = log
@@ -48,24 +49,40 @@ public final class LibraryViewModel {
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
   public func submit() {
     let title = draft
-    perform { (log) throws(CommandError) in try commands.capture(title: title, log: log) }
+    let projectID = shownProjectID
+    perform { (log) throws(CommandError) in try commands.capture(title: title, into: projectID, log: log) }
     if errorMessage == nil { draft = "" }
   }
 
   /// Shows the inbox or a project, with no task selected.
-  public func open(_ item: SidebarItem) {}
+  public func open(_ item: SidebarItem) {
+    sidebarSelection = item
+    selection = nil
+    present()
+  }
 
-  /// Creates a project titled by the project draft. A blank draft creates nothing.
-  public func createProject(kind: ProjectKind) {}
+  /// Creates a project titled by the project draft. A blank draft creates nothing; a failed write keeps
+  /// the draft.
+  public func createProject(kind: ProjectKind) {
+    let title = projectDraft
+    perform { (log) throws(CommandError) in try commands.createProject(title: title, kind: kind, log: log) }
+    if errorMessage == nil { projectDraft = "" }
+  }
 
   /// Files a task into a project.
-  public func file(_ taskID: TaskID, into projectID: ProjectID) {}
+  public func file(_ taskID: TaskID, into projectID: ProjectID) {
+    perform { (log) throws(CommandError) in try commands.move(taskID: taskID, to: projectID, log: log) }
+  }
 
   /// Files the selected task and selects the one that takes its place in the list.
-  public func fileSelected(into projectID: ProjectID) {}
+  public func fileSelected(into projectID: ProjectID) {
+    replaceSelected { file($0, into: projectID) }
+  }
 
   /// Completes a project and its open tasks. If the sidebar showed it, it shows the inbox again.
-  public func completeProject(_ projectID: ProjectID) {}
+  public func completeProject(_ projectID: ProjectID) {
+    perform { (log) throws(CommandError) in try commands.completeProject(projectID, log: log) }
+  }
 
   public func complete(_ taskID: TaskID) {
     perform { (log) throws(CommandError) in try commands.complete(taskID: taskID, log: log) }
@@ -83,8 +100,14 @@ public final class LibraryViewModel {
 
   /// Completes the selected task and selects the one that takes its place in the list.
   public func completeSelected() {
+    replaceSelected(complete)
+  }
+
+  /// Applies `action` to the selected task; if that takes it off the list, selects the task that takes
+  /// its place.
+  private func replaceSelected(_ action: (TaskID) -> Void) {
     guard let selected = selection, let position = index(of: selected) else { return }
-    complete(selected)
+    action(selected)
     guard !tasks.contains(where: { $0.id == selected }) else { return }
     selection = tasks.isEmpty ? nil : tasks[min(position, tasks.count - 1)].id
   }
@@ -116,9 +139,31 @@ public final class LibraryViewModel {
   }
 
   private func show(_ events: [EventEnvelope]) {
-    tasks = LibraryState.replay(events).openTasks
-    if let selected = selection, index(of: selected) == nil { selection = nil }
+    state = LibraryState.replay(events)
     errorMessage = nil
+    present()
+  }
+
+  /// Fills the sidebar and the list from the last replayed state.
+  private func present() {
+    projects = state.projects
+    if let projectID = shownProjectID, !projects.contains(where: { $0.id == projectID }) {
+      // Completed here or elsewhere: there is nothing left to show.
+      sidebarSelection = .inbox
+    }
+    if let projectID = shownProjectID, let project = projects.first(where: { $0.id == projectID }) {
+      tasks = project.tasks
+      nextActions = Set(project.nextActions.map(\.id))
+    } else {
+      tasks = state.inbox
+      nextActions = Set(tasks.map(\.id))
+    }
+    if let selected = selection, index(of: selected) == nil { selection = nil }
+  }
+
+  private var shownProjectID: ProjectID? {
+    guard case .project(let projectID) = sidebarSelection else { return nil }
+    return projectID
   }
 
   private func index(of taskID: TaskID) -> Int? {

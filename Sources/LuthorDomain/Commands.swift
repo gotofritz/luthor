@@ -26,11 +26,14 @@ public struct Commands {
     into projectID: ProjectID? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let title = String(title.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
+    let title = Self.trimmed(title)
     guard !title.isEmpty else { throw .blankTitle }
+    if let projectID { try requireActive(projectID, log: log) }
     let eventID = EventID(ids.next())
     let taskID = TaskID(ids.next())
-    return [envelope(eventID, .taskCaptured(TaskCaptured(taskID: taskID, title: title)), log: log)]
+    let capture = envelope(eventID, .taskCaptured(TaskCaptured(taskID: taskID, title: title)), log: log)
+    guard let projectID else { return [capture] }
+    return try [capture] + move(taskID: taskID, to: projectID, log: log + [capture])
   }
 
   /// Completes the one open task whose ID starts with `idPrefix`, ignoring case.
@@ -57,7 +60,11 @@ public struct Commands {
     kind: ProjectKind,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    []
+    let title = Self.trimmed(title)
+    guard !title.isEmpty else { throw .blankTitle }
+    let eventID = EventID(ids.next())
+    let created = ProjectCreated(projectID: ProjectID(ids.next()), title: title, kind: kind)
+    return [envelope(eventID, .projectCreated(created), log: log)]
   }
 
   /// Files the open task `taskID` into the active project `projectID`. Filing a task where it already
@@ -67,11 +74,29 @@ public struct Commands {
     to projectID: ProjectID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    []
+    let state = LibraryState.replay(log)
+    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    try requireActive(projectID, in: state)
+    guard task.projectID != projectID else { return [] }
+    let moved = TaskMovedToProject(taskID: taskID, projectID: projectID)
+    return [envelope(EventID(ids.next()), .taskMovedToProject(moved), log: log)]
   }
 
   public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    []
+    try requireActive(projectID, log: log)
+    return [envelope(EventID(ids.next()), .projectCompleted(ProjectCompleted(projectID: projectID)), log: log)]
+  }
+
+  private func requireActive(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) {
+    try requireActive(projectID, in: LibraryState.replay(log))
+  }
+
+  private func requireActive(_ projectID: ProjectID, in state: LibraryState) throws(CommandError) {
+    guard state.projects.contains(where: { $0.id == projectID }) else { throw .noActiveProject(projectID) }
+  }
+
+  private static func trimmed(_ title: String) -> String {
+    String(title.drop(while: \.isWhitespace).reversed().drop(while: \.isWhitespace).reversed())
   }
 
   private func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
