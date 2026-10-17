@@ -55,6 +55,7 @@ extension NavigationSection {
   var symbol: String {
     switch self {
     case .inbox: "tray"
+    case .today: "sun.max"
     case .projects: "folder"
     case .priorities: "flag"
     case .settings: "gear"
@@ -64,6 +65,7 @@ extension NavigationSection {
   var title: String {
     switch self {
     case .inbox: "Inbox"
+    case .today: "Today"
     case .projects: "Projects"
     case .priorities: "Prios"
     case .settings: "Settings"

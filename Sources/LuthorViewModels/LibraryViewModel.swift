@@ -36,20 +36,42 @@ public final class LibraryViewModel {
   public private(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
   /// The view `luthor add` and imports use when none is named.
   public private(set) var defaultViewID = ViewID.default
+  /// The day it is by the clock, as of the last refresh.
+  public private(set) var today: CalendarDate
+  /// The day whose plan the Today place shows.
+  public internal(set) var planDate: CalendarDate
+  /// The current view's plan for `planDate`: the tasks planned for it, the candidates and the capacity.
+  public private(set) var plan: DayPlan
+  /// The current view's delegated tasks, the longest wait first.
+  public private(set) var waiting: [WaitingItem] = []
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
   public var selection: TaskID?
+  /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
+  public var delegatingTaskID: TaskID?
   public private(set) var errorMessage: String?
 
   private let log: any EventLog
+  private let clock: () -> CalendarDate
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
 
-  public init(log: any EventLog, commands: Commands, view: ViewID = .default) {
+  /// `today` tells the day it is; the default is the system clock.
+  public init(
+    log: any EventLog,
+    commands: Commands,
+    view: ViewID = .default,
+    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() }
+  ) {
     self.log = log
     self.commands = commands
+    clock = today
     currentView = view
+    let day = today()
+    self.today = day
+    planDate = day
+    plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
   }
 
   /// Shows another view, at its inbox, with no task selected.
@@ -244,7 +266,7 @@ public final class LibraryViewModel {
 extension LibraryViewModel {
   /// Applies `action` to the selected task; if that takes it off the list, selects the task that takes
   /// its place.
-  private func replaceSelected(_ action: (TaskID) -> Void) {
+  func replaceSelected(_ action: (TaskID) -> Void) {
     guard let selected = selection, let position = index(of: selected) else { return }
     action(selected)
     guard !tasks.contains(where: { $0.id == selected }) else { return }
@@ -287,7 +309,7 @@ extension LibraryViewModel {
   }
 
   /// Fills the view switcher, the sidebar and the list from the current view of the last replayed state.
-  private func present() {
+  func present() {
     views = state.views
     if !views.contains(where: { $0.id == currentView }) {
       // A remembered view this log does not have.
@@ -309,7 +331,20 @@ extension LibraryViewModel {
       columns.append(ProjectColumn(parentID: projectID, entries: project.children.compactMap { entry($0) }))
     }
     self.columns = columns
-    if section == .priorities {
+    today = clock()
+    plan = state.plan(for: currentView, on: planDate, today: today)
+    waiting = state.waitingFor(in: currentView, today: today)
+    presentTasks(of: view)
+    if let selected = selection, index(of: selected) == nil { selection = nil }
+  }
+
+  /// Fills the list of the place the rail has picked: the plan and its candidates, the tasks with a
+  /// priority picked, the project shown, or the inbox.
+  private func presentTasks(of view: ViewState) {
+    if section == .today {
+      tasks = (plan.entries + plan.candidates).map(\.task)
+      nextActions = Set(tasks.map(\.id))
+    } else if section == .priorities {
       tasks = view.tasks(prioritised: selectedPriorities)
       let actionable = Set(view.nextActions.map(\.id))
       nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
@@ -324,7 +359,6 @@ extension LibraryViewModel {
       tasks = view.inbox
       nextActions = Set(tasks.map(\.id))
     }
-    if let selected = selection, index(of: selected) == nil { selection = nil }
   }
 
   /// The project and its ancestors, top-level first.

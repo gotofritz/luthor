@@ -2,12 +2,13 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. The
-/// projects are the top-level projects first, then one column for each project on the way to the one
-/// shown, listing its sub-projects and tasks in the order they were added. The priorities are the four
-/// priorities, which add up when clicked, then the tasks that have one of the picked. Tasks that are not
-/// next actions are dimmed. Drag a task onto a project to file it, a project onto another to nest it, or
-/// onto a column to move it into that column's project; the first column makes it top-level.
+/// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. Today
+/// is the plan of a day, its candidates and the tasks waited for. The projects are the top-level projects
+/// first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
+/// in the order they were added. The priorities are the four priorities, which add up when clicked, then
+/// the tasks that have one of the picked. Tasks that are not next actions are dimmed. Drag a task onto a
+/// project to file it, a project onto another to nest it, or onto a column to move it into that column's
+/// project; the first column makes it top-level.
 struct ColumnBrowserView: View {
   @Bindable var library: LibraryViewModel
 
@@ -17,6 +18,9 @@ struct ColumnBrowserView: View {
         switch library.section {
         case .inbox:
           TaskListColumn(library: library)
+          Divider()
+        case .today:
+          TodayColumnsView(library: library)
           Divider()
         case .projects:
           ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in

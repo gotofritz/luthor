@@ -9,6 +9,7 @@ public enum SidebarItem: Hashable, Sendable {
 /// The places the navigation rail leads to, in the order it lists them.
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
+  case today
   case projects
   case priorities
   case settings

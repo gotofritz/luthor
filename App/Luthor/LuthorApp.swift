@@ -76,6 +76,35 @@ struct LuthorApp: App {
         }
         .disabled(library.selection == nil || library.views.count < 2)
       }
+      CommandMenu("Plan") {
+        Button("Show Today") {
+          library.show(.today)
+          library.showToday()
+        }
+        .keyboardShortcut("t", modifiers: [.command, .shift])
+        Button("Previous Day") { library.showPreviousDay() }
+          .keyboardShortcut("[", modifiers: .command)
+        Button("Next Day") { library.showNextDay() }
+          .keyboardShortcut("]", modifiers: .command)
+        Divider()
+        Button("Add to Plan") { library.addSelectedToPlan() }
+          .keyboardShortcut("t", modifiers: .command)
+        Button("Remove from Plan") { library.removeSelectedFromPlan() }
+          .keyboardShortcut("t", modifiers: [.command, .option])
+        Button("Move Earlier") { library.moveSelectedInPlan(by: -1) }
+          .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+        Button("Move Later") { library.moveSelectedInPlan(by: 1) }
+          .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+        Divider()
+        Button("Defer to Tomorrow") { library.deferSelected() }
+          .keyboardShortcut("d", modifiers: .command)
+        Button("Delegate…") { library.delegatingTaskID = library.selection }
+          .keyboardShortcut("l", modifiers: .command)
+        Button("Send to Someday") { library.sendSelectedToSomeday() }
+          .keyboardShortcut("y", modifiers: .command)
+        Button("Drop Task") { library.dropSelected() }
+          .keyboardShortcut(.delete, modifiers: [.command, .shift])
+      }
     }
   }
 
