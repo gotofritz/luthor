@@ -92,6 +92,42 @@ follows the global value until switched on.
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.
 
+## Sync between Macs
+
+The same tasks on every Mac, through a folder the Dropbox desktop app syncs.
+Luthor has no sync code of its own: each Mac appends only to its own file in
+the folder, `events-<device>.jsonl`, so two Macs never write the same file and
+Dropbox never makes a conflict copy. Every Mac reads all the files, merges
+the events and replays them in one order, so all Macs end with the same state.
+
+Do this once on each Mac, with a different device name on each:
+
+```bash
+mkdir -p ~/Dropbox/Luthor
+# the app, which a Finder launch gives no shell variables:
+defaults write com.gotofritz.luthor LUTHOR_SYNC_DIR "$HOME/Dropbox/Luthor"
+defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID desk    # laptop on the other Mac
+# the CLI: put the same two in your shell profile
+export LUTHOR_SYNC_DIR=~/Dropbox/Luthor
+export LUTHOR_DEVICE_ID=desk
+```
+
+Without `LUTHOR_DEVICE_ID` the device is named after the Mac's host name,
+which is also fine as long as it differs between Macs.
+
+To bring the tasks you already have, on one Mac only, copy the old log into
+the folder under that Mac's device name, then relaunch the app:
+
+```bash
+cp ~/.luthor/events.jsonl ~/Dropbox/Luthor/events-desk.jsonl
+```
+
+The app picks up what Dropbox delivers within a second or two. Wait for
+Dropbox to finish syncing before you quit a Mac, or the other Mac sees your
+latest changes only when that Mac next syncs; nothing is lost either way.
+With `LUTHOR_SYNC_DIR` set, `LUTHOR_LOG` and `~/.luthor/events.jsonl` are not
+used.
+
 ## Install and releases
 
 ```bash
@@ -110,6 +146,36 @@ is a choice of yours. `docs`, `test`, `ci`, `chore`, `style`, `build` and
 version tag by hand (`git tag v0.1.0 && git push origin v0.1.0`) still
 publishes that version instead. `make dist` builds the same zip locally into
 `.build/dist/`.
+
+### On another Mac, without compiling
+
+Every release has `Luthor-<version>.zip` (the app) and `luthor-cli-<version>.zip`
+attached. Fetch the latest with the GitHub CLI (`brew install gh`, then
+`gh auth login` once; the repo is private, so a browser would need a login
+too):
+
+```bash
+cd "$(mktemp -d)"
+gh release download --repo gotofritz/luthor --pattern 'Luthor-*.zip'
+unzip -q Luthor-*.zip
+rm -rf /Applications/Luthor.app && mv Luthor.app /Applications/
+open /Applications/Luthor.app
+```
+
+To update, quit the app and run the same commands; your data lives in the
+log, not in the app.
+
+The build is ad-hoc signed, not notarised. `gh` does not mark the download
+as quarantined, so the app opens normally. If you download the zip in a
+browser, or get it over AirDrop, macOS blocks the first launch: right-click
+the app → Open, or clear the flag once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Luthor.app
+```
+
+Notarising (an Apple Developer ID, $99 a year) would remove that step; it is
+not set up.
 
 ## Development
 

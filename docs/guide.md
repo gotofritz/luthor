@@ -279,7 +279,20 @@ Everything is one append-only event log, `~/.luthor/events.jsonl` by default.
 Set `LUTHOR_LOG` to use another file and `LUTHOR_DEVICE_ID` to name the device.
 Back it up by copying the file.
 
+## The same tasks on several Macs
+
+Point every Mac at one folder that the Dropbox desktop app syncs, with
+`LUTHOR_SYNC_DIR` (for the app, `defaults write com.gotofritz.luthor
+LUTHOR_SYNC_DIR <folder>`), and give each Mac its own `LUTHOR_DEVICE_ID`. Each
+Mac writes only its own file there, `events-<device>.jsonl`, and reads all of
+them, so a task captured on one Mac shows on the other within a few seconds
+of Dropbox delivering it. Two Macs changing things while apart both keep
+their changes: when the files meet, every Mac shows the same result. If two
+Macs change the same thing, the later change (by the events' order, not the
+clock) wins. The README has the setup steps and how to bring in an existing log.
+
 ## Installing
 
-See the README: `make install`, or a release from GitHub. The app is not
-notarised, so the first launch of a copied app needs right-click → Open.
+See the README: `make install`, or a release from GitHub, which installs on
+another Mac without compiling. The app is not notarised, so the first launch
+of an app downloaded in a browser needs right-click → Open.

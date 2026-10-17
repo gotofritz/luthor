@@ -133,8 +133,13 @@ Sources/
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
-    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID
-    FileChangeMonitor.swift  polls the log file so the app sees outside writes
+    DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
+                             reads the merge of every device's file
+    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl) or shared folder
+                             (LUTHOR_SYNC_DIR), device ID; makes the log
+                             and its change monitor
+    FileChangeMonitor.swift  polls the log file, or the device files of the shared folder, so the app
+                             sees outside writes
     UUIDGenerator.swift      production IDGenerator
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
