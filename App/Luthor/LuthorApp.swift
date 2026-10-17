@@ -82,6 +82,8 @@ struct LuthorApp: App {
           library.showToday()
         }
         .keyboardShortcut("t", modifiers: [.command, .shift])
+        Button("Show Review") { library.show(.review) }
+          .keyboardShortcut("n", modifiers: [.command, .shift])
         Button("Previous Day") { library.showPreviousDay() }
           .keyboardShortcut("[", modifiers: .command)
         Button("Next Day") { library.showNextDay() }

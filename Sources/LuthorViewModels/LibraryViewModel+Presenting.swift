@@ -73,6 +73,8 @@ extension LibraryViewModel {
     today = clock()
     plan = state.plan(for: currentView, on: planDate, today: today)
     waiting = state.waitingFor(in: currentView, today: today)
+    review = state.dayReview(for: currentView, on: planDate, today: today)
+    carryOver = state.carryOver(in: currentView, today: today)
     presentTasks(of: view, completed: completed)
     presentCompletion(completed)
     if let selected = selection, index(of: selected) == nil { selection = nil }
@@ -130,12 +132,16 @@ extension LibraryViewModel {
     reopenableProjectIDs = Set(projectsShown.filter(\.isReopenable).map(\.item.id))
   }
 
-  /// Fills the list of the place the rail has picked: the plan and its candidates, the tasks with a
-  /// priority picked, the project shown, or the inbox; completed tasks follow the open ones.
+  /// Fills the list of the place the rail has picked: the leftovers, the plan and its candidates, the tasks
+  /// not done on the day reviewed, the tasks with a priority picked, the project shown, or the inbox;
+  /// completed tasks follow the open ones.
   private func presentTasks(of view: ViewState, completed: Completion) {
     let completedItems = completed.tasks.map(\.item)
     if section == .today {
-      tasks = (plan.entries + plan.candidates).map(\.task)
+      tasks = (carryOver.map(\.entry) + plan.entries + plan.candidates).map(\.task)
+      nextActions = Set(tasks.map(\.id))
+    } else if section == .review {
+      tasks = review.notDone.map(\.task)
       nextActions = Set(tasks.map(\.id))
     } else if section == .priorities {
       tasks =

@@ -43,6 +43,9 @@ struct TaskCardColumn: View {
           }
         }
         .disabled(isCompleted)
+        if let history = library.estimateHistory(ofTask: task.id) {
+          LabeledContent("History", value: history.summary)
+        }
         LabeledContent("Project", value: projectTitle)
         NotesView(notes: task.notes, isEditable: !isCompleted) { library.setNotes(task.id, to: $0) }
       }
@@ -118,6 +121,9 @@ struct ProjectCard: View {
       }
       .pickerStyle(.segmented)
       .disabled(isCompleted)
+      if let history = library.estimateHistory(ofProject: project.id) {
+        LabeledContent("History", value: history.summary)
+      }
       NotesView(notes: project.notes, isEditable: !isCompleted) { library.setNotes(ofProject: project.id, to: $0) }
     }
     .padding(12)

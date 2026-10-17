@@ -21,6 +21,8 @@ public enum CommandError: Error, Equatable {
   case nestedUnderItself(ProjectID)
   /// A someday task is not committed to; give it another priority before planning it for a day.
   case someday(TaskID)
+  /// The task is neither open nor completed: it never existed, or it was dropped.
+  case unknownTask(TaskID)
 }
 
 /// Turns user intentions into new events, given the current log.

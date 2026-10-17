@@ -80,6 +80,22 @@ struct ReviewShownViewModelTests {
 }
 
 @MainActor
+@Suite("When a task of the review is planned for another day")
+struct ScheduleAnotherDayViewModelTests {
+  @Test("it leaves the review and is planned for that day, and nothing is duplicated")
+  func itLeavesTheReviewAndIsPlannedForThatDay() {
+    let (library, _) = makeLibrary(plannedMonday)
+    library.show(.review)
+
+    library.schedule(TaskID("t2"), on: date("2026-10-23"))
+
+    #expect(library.review.notDone.map(\.task.title) == ["tidy desk"])
+    library.showDay(date("2026-10-23"))
+    #expect(library.plan.entries.map(\.task.id) == [TaskID("t2")])
+  }
+}
+
+@MainActor
 @Suite("When time is logged from the window")
 struct LogTimeViewModelTests {
   @Test("time logged for a task lands on the day shown")

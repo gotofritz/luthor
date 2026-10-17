@@ -126,6 +126,7 @@ struct LibraryView: View {
     switch library.section {
     case .inbox: "Inbox"
     case .today: "Today"
+    case .review: "Review"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
     case .settings: "Settings"

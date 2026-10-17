@@ -49,6 +49,10 @@ public final class LibraryViewModel {
   public internal(set) var planDate: CalendarDate
   public internal(set) var plan: DayPlan
   public internal(set) var waiting: [WaitingItem] = []
+  /// The review of the day shown, and the open tasks planned for an earlier day than today, which wait at
+  /// the top of Today until each is decided.
+  public internal(set) var review: DayReview
+  public internal(set) var carryOver: [CarryOverEntry] = []
   /// Whether completed tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }
@@ -86,6 +90,7 @@ public final class LibraryViewModel {
     self.today = day
     planDate = day
     plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
+    review = LibraryState.replay([]).dayReview(for: view, on: day, today: day)
   }
 
   /// Shows another view, at its inbox, with no task selected.

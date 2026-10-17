@@ -132,7 +132,8 @@ extension LibraryViewModel {
     replaceSelected(dropTask)
   }
 
-  private func schedule(_ taskID: TaskID, on day: CalendarDate) {
+  /// Plans a task for another day than the one shown. A delegated task is taken back.
+  public func schedule(_ taskID: TaskID, on day: CalendarDate) {
     perform { (log) throws(CommandError) in try commands.schedule(taskID: taskID, on: day, log: log) }
   }
 }
