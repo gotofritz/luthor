@@ -1,6 +1,7 @@
 import Foundation
 import LuthorDomain
 import LuthorStore
+import LuthorViewModels
 import SwiftUI
 
 @main
