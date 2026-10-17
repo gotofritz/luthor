@@ -49,6 +49,6 @@ public struct LuthorConfiguration: Equatable, Sendable {
     let capacity = 256
     var buffer = [CChar](repeating: 0, count: capacity)
     guard gethostname(&buffer, capacity) == 0 else { return "" }
-    return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+    return String(bytes: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, encoding: .utf8) ?? ""
   }
 }

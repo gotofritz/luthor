@@ -14,7 +14,7 @@ public struct FileChangeMonitor {
   /// What was watched, so a new, removed or changed file is told apart from an untouched one.
   private enum Target {
     case file(URL)
-    case deviceLogs(in: URL)
+    case deviceLogs(folder: URL)
   }
 
   private let target: Target
@@ -27,7 +27,7 @@ public struct FileChangeMonitor {
 
   /// Watches every device log (`events-<device>.jsonl`) in the folder, as `DeviceFilesEventLog` writes them.
   public init(directoryURL: URL) {
-    target = .deviceLogs(in: directoryURL)
+    target = .deviceLogs(folder: directoryURL)
     last = Self.signatures(of: target)
   }
 
@@ -44,15 +44,15 @@ public struct FileChangeMonitor {
     switch target {
     case .file(let url):
       return signature(of: url).map { [$0] } ?? []
-    case .deviceLogs(let directory):
+    case .deviceLogs(let folder):
       let names: [String]
       do {
-        names = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        names = try FileManager.default.contentsOfDirectory(atPath: folder.path)
       } catch {
         return []
       }
       return names.filter(DeviceFilesEventLog.isDeviceLog(named:)).sorted().compactMap {
-        signature(of: directory.appendingPathComponent($0))
+        signature(of: folder.appendingPathComponent($0))
       }
     }
   }
