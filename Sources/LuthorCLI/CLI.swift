@@ -162,8 +162,8 @@ public struct CLI {
     case .ambiguousPrefix(let prefix, let matches):
       let candidates = matches.compactMap { id in open.first { $0.id == id } }.map(Self.line).joined()
       return failure(Self.exitFailure, "'\(prefix)' matches more than one open task:\n" + candidates.dropLast())
-    case .noActiveProject, .noView, .duplicateViewName, .otherView, .projectInOtherView, .nestedUnderItself:
-      // Only the app files tasks, nests projects and manages views; the commands the CLI runs never throw these.
+    case .noActiveProject, .noView, .duplicateViewName, .otherView, .projectInOtherView, .nestedUnderItself, .someday:
+      // Only the app files tasks, nests projects, plans days and manages views; the CLI never throws these.
       return failure(Self.exitFailure, "\(error)")
     }
   }
