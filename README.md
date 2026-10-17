@@ -99,9 +99,17 @@ make install   # the app into /Applications
 ```
 
 `APP_INSTALL_DIR` changes where (`make install APP_INSTALL_DIR=~/Applications`).
-Pushing a version tag (`git tag v0.1.0 && git push origin v0.1.0`) builds the
-app on CI and attaches it, zipped, to a GitHub Release. `make dist` builds the
-same zip locally into `.build/dist/`.
+Releases are automatic. When a merge to `main` brings a `feat`, a `fix` or a
+`perf` commit since the last release, CI works out the next version from the
+Conventional Commit titles, builds the app and publishes it, zipped, in a
+GitHub Release (which creates the tag): `feat` bumps the minor version, `fix`
+and `perf` the patch, and a `!` after the type (`feat!:`) is a breaking change
+and bumps the major version, or the minor one while the major is 0, so 1.0.0
+is a choice of yours. `docs`, `test`, `ci`, `chore`, `style`, `build` and
+`refactor` merges make no release. The first release is `v0.1.0`. Pushing a
+version tag by hand (`git tag v0.1.0 && git push origin v0.1.0`) still
+publishes that version instead. `make dist` builds the same zip locally into
+`.build/dist/`.
 
 ## Development
 
