@@ -9,7 +9,7 @@ the architecture and roadmap.
 
 A quick way to capture from the shell. It knows only tasks, not projects:
 `list` shows every open task, filed or not. The app does everything it does
-and more; from slice 12 of the roadmap it shrinks to `luthor add`, for Alfred.
+and more; from slice 13 of the roadmap it shrinks to `luthor add`, for Alfred.
 
 ```bash
 swift build -c release                             # or `make install`, below, to put luthor on PATH

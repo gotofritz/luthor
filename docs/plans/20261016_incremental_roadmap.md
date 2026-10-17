@@ -25,7 +25,7 @@ sync of event files) stays; the order and the amount of machinery change.
 - **Pre-1.0 event format is soft.** While I am the only user, an event format
   change may be handled by a one-off migration script over the log, or by
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
-  the slice that freezes the format (slice 14)
+  the slice that freezes the format (slice 15)
 
 ## CI/CD track
 
@@ -55,15 +55,15 @@ change the release build run it without publishing. `make install` puts both
 in `/Applications` and `~/.local/bin` between releases. Not notarised: the
 first launch needs right-click → Open.
 
-### CI-3. Event format guard (slice 14)
+### CI-3. Event format guard (slice 15)
 
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 17)
+### CD-2. iOS (slice 18)
 
 - `xcodebuild` the iOS target in CI
-- Distribution decided with slice 17: free 7-day provisioning from Xcode, or
+- Distribution decided with slice 18: free 7-day provisioning from Xcode, or
   TestFlight with the Developer Program
 
 ## Slices
@@ -112,7 +112,40 @@ never show up at work, nor a work task at home.
 
 Usable: one Luthor for work and home, with no leaks either way.
 
-### 5. Priority and estimates (ALPEN: A, L)
+### 5. Nested projects
+
+A project can contain tasks and other projects, to any depth ("Home"
+contains "Kitchen", which contains "Replace tap"). It comes before the
+planning slices because their next-action rules read the whole tree.
+
+- `ProjectCreated` gains an optional `parentID`; `ProjectMovedToProject(
+  project, parent?)` nests or un-nests. A project and its parent are in the
+  same view: nesting across views is a `CommandError`, and `TaskMovedToView`
+  moves the whole subtree. A project can never be nested under itself or one
+  of its own sub-projects (`CommandError`)
+- Projects with no parent are top-level, so today's log needs no migration
+- Next actions stay a pure function, now recursive. Parallel: every child,
+  task or sub-project, is active, and a sub-project contributes its own next
+  actions. Sequential: only the first open child is active, and when it is a
+  sub-project its next actions are the parent's; later children are dimmed.
+  A task is a next action only if every ancestor lets it be
+- Children are ordered as tasks are today, by when they were added to the
+  project; sequential projects mix tasks and sub-projects in that order.
+  Manual reordering waits until planning needs it
+- Completing a project completes its open tasks and sub-projects with it,
+  all the way down
+- The sidebar becomes a collapsible tree; drag a project onto another to nest
+  it, or drag it out to the top. A project's list shows its sub-projects as
+  groups next to its tasks. Capture goes into the project shown, as now
+- Later slices read the tree: Today shows each candidate with its project
+  path ("Home › Kitchen"); a project put on hold or dropped takes its
+  subtree with it; a sub-project follows its parent's review interval unless
+  it has its own
+
+Usable: break a big project into sub-projects and still see only what is
+next.
+
+### 6. Priority and estimates (ALPEN: A, L)
 
 - `TaskPrioritized` (A, B, C or someday) and `TaskEstimated` (minutes), each
   clearable. Priority is importance only: never order, deadline or day
@@ -126,7 +159,7 @@ Usable: one Luthor for work and home, with no leaks either way.
 
 Usable: triage the inbox into A/B/C with estimates, at capture speed.
 
-### 6. Settings
+### 7. Settings
 
 Planning only works if its numbers are mine: how big the buffer is, what an
 unestimated task counts as, how many hours a Friday has. A settings panel
@@ -139,7 +172,7 @@ unestimated task counts as, how many hours a Friday has. A settings panel
   survives a newer log
 - Settings that live in the log: default estimate for unestimated tasks
   (5 minutes), buffer percentage (40%), default capacity per weekday, default
-  project review interval or off (slice 13). Capacity and buffer differ
+  project review interval or off (slice 14). Capacity and buffer differ
   between a work view and a private one, hence the per-view override
 - Per-device preferences (last view shown, window state) stay out of the
   log, in `UserDefaults`
@@ -151,12 +184,12 @@ unestimated task counts as, how many hours a Friday has. A settings panel
 Usable: views managed in the app, and the numbers Today will plan with are
 already set.
 
-### 7. Today: plan the day (ALPEN: P, E)
+### 8. Today: plan the day (ALPEN: P, E)
 
 - `TaskScheduled(date)`, `TaskUnscheduled`, `DayPlanOrdered(date, taskIDs)`.
   Rescheduling keeps the task's identity; nothing is ever duplicated
 - Day capacity per view: `DayCapacitySet(date, minutes)` overrides the
-  weekday default from Settings (slice 6); the buffer percentage is a setting
+  weekday default from Settings (slice 7); the buffer percentage is a setting
   too, default 40%
 - A task without an estimate is never refused: it counts at the default
   estimate from Settings (5 minutes) and is flagged "unestimated", in the
@@ -179,7 +212,7 @@ already set.
 
 Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
-### 8. Daily review and carry-over (ALPEN: N)
+### 9. Daily review and carry-over (ALPEN: N)
 
 - Review of the day in the current view: done and not done, estimated
   against actual minutes, unplanned minutes
@@ -195,7 +228,7 @@ Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
 Usable: the ALPEN loop is closed, and estimates improve with feedback.
 
-### 9. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
+### 10. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
 
 - Log lives in the Dropbox folder, synced by the Dropbox desktop app
 - One file per device (`events-<deviceID>.jsonl`), so two machines never
@@ -205,14 +238,14 @@ Usable: the ALPEN loop is closed, and estimates improve with feedback.
 - Optional: split acceptance testing out of the TDD skill into its own
   `acceptance` skill, linked from the TDD skill. Likely needed here, because
   two-device flows need a shared harness (several simulated devices, an
-  injected clock from slice 7, fixture logs) and a way to turn a slice's
+  injected clock from slice 8, fixture logs) and a way to turn a slice's
   promises into scenarios. Do it only if that guidance outgrows a section of
   the TDD skill
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 10. Defer and due, Upcoming and Forecast
+### 11. Defer and due, Upcoming and Forecast
 
 - `TaskDeferred` (available from), `TaskDueSet` (hard deadline or target
   date), and clearing both
@@ -226,7 +259,7 @@ reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
 Usable: deadlines feed the plan without taking it over.
 
-### 11. Tags
+### 12. Tags
 
 - `TagCreated`, `TaskTagged`, `TaskUntagged`
 - Filter any list, Today's candidates included, by tag; also by priority,
@@ -235,12 +268,12 @@ Usable: deadlines feed the plan without taking it over.
 
 Usable: contexts (`@home`, `@calls`, `@deep-work`).
 
-### 12. Capture without the app: iPhone (THROWAWAY) and Alfred
+### 13. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
   file once imported (idempotent by line hash); lines use the quick-capture
-  syntax of slice 5
+  syntax of slice 6
 - One inbox file per view (`inbox-<view>.txt`), one Shortcut per view
 - The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
   stays, `list` and `done` go, and an Alfred workflow (keyword, then the
@@ -250,9 +283,9 @@ Usable: contexts (`@home`, `@calls`, `@deep-work`).
 Usable: capture from the phone, lock screen and Siri included, months before
 an iOS app exists, and from Alfred on the Mac without switching to the app.
 
-### 13. Weekly project review
+### 14. Weekly project review
 
-The daily review (slice 8) looks at the day; this one keeps projects from
+The daily review (slice 9) looks at the day; this one keeps projects from
 going stale.
 
 - On by default, weekly, and the user can change both. `ReviewDefaultSet`
@@ -273,27 +306,27 @@ going stale.
 
 Usable: the weekly review.
 
-### 14. Freeze the event format
+### 15. Freeze the event format
 
 - Write down every event type and field as v1
 - Golden-file tests: a checked-in fixture log must always replay to the same
   state
 - From here, `AGENTS.md` event rules are strict
 
-### 15. Speed pass
+### 16. Speed pass
 
 - Measure launch replay time and capture latency on the real log
 - Only if needed: GRDB projections, snapshotting, global capture hotkey,
   command palette
 
-### 16. Dropbox API sync
+### 17. Dropbox API sync
 
 - OAuth, token in Keychain, sync of the same per-device files over the API
 - Sync behind a `Transport` protocol; in-memory fake for tests; two-device
   convergence tests
 - Required for iOS, which has no Dropbox folder to watch
 
-### 17. iOS app
+### 18. iOS app
 
 - Same package; capture, Inbox and Today first, then the daily review
 - Without the Apple Developer Program, a free provisioning profile expires
@@ -313,20 +346,20 @@ Usable: the weekly review.
 
 ## Decisions (2026-10-16)
 
-1. **Soft event format until slice 14.** `AGENTS.md` event rules updated to
+1. **Soft event format until slice 15.** `AGENTS.md` event rules updated to
    match: format changes before the freeze ship with a migration script or a
    fresh log
 2. **CLI first** in slice 1
-3. **Dropbox folder sync** in slice 9, possibly as the permanent Mac solution
+3. **Dropbox folder sync** in slice 10, possibly as the permanent Mac solution
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
-5. **No SQLite until slice 15**, and only if replay is measurably slow
+5. **No SQLite until slice 16**, and only if replay is measurably slow
 
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
    gains no project, defer or tag commands, and shrinks to `luthor add` for
-   Alfred in slice 12
+   Alfred in slice 13
 2. **Views are logical, in one log.** Work and private live in the same
    event log and sync together; isolation is enforced by the domain (every
    query names a view), not by separate files. Separate logs per view stay
@@ -335,7 +368,7 @@ Usable: the weekly review.
    Luthor at work
 4. **Luthor is an ALPEN app**, with OmniFocus as a reference rather than
    the goal. `20261015_alpen.md` is the product spec; this roadmap puts it
-   in order (slices 5, 7 and 8 are A-L-P-E-N, with Settings in between) and
+   in order (slices 6, 8 and 9 are A-L-P-E-N, with Settings in between) and
    records where it deviates
 5. **State is derived, not stored.** The spec's `status`, `planned_minutes`,
    `updated_at` and the like are computed by the reducer from events; only
@@ -346,7 +379,7 @@ Usable: the weekly review.
    capacity, buffer and plan
 8. **Planning numbers are settings, in the log.** Default estimate, buffer
    and weekday capacity are events with a per-view override, so they sync;
-   per-device preferences stay local. The panel is its own slice (6), ahead
+   per-device preferences stay local. The panel is its own slice (7), ahead
    of Today
 9. **A comprehensive user guide, kept current.** `docs/guide.md` starts with
    what is shipped (slices 1 to 3) and grows with every slice, checked in the
@@ -357,8 +390,11 @@ Usable: the weekly review.
     the morning plan
 12. **Project review stays**, weekly by default; the interval is a setting and
     review can be turned off for all projects or one
-13. **Sync (slice 9) before defer and due (slice 10)**, because two Macs
+13. **Sync (slice 10) before defer and due (slice 11)**, because two Macs
     matter more than deadlines
 14. **Delegating is a real state**, not a tag: a delegated task leaves the
     plan and the capacity totals, sits in a Waiting for list with who and
     since when, and returns on its follow-up date
+15. **Projects nest, to any depth, before the planning slices** (slice 5).
+    Next actions become a recursive pure function, so the rule is settled
+    before Today, review and delegation build on it
