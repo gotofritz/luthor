@@ -98,26 +98,30 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order
-    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID
+    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
-    LibraryState.swift       reducer: LibraryState.replay(events) → open tasks, inbox, projects;
+    LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
+                             only via view(id) → ViewState (open tasks, inbox, projects);
                              Project.nextActions (parallel/sequential rule)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
-    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID
+    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID,
+                             view name (LUTHOR_VIEW)
     FileChangeMonitor.swift  polls the log file so the app sees outside writes
     UUIDGenerator.swift      production IDGenerator
-  LuthorCLI/CLI.swift        `luthor add|list|done`, testable (returns CLIResult)
+  LuthorCLI/CLI.swift        `luthor add|list|done [--view]`, testable (returns CLIResult)
   luthor/main.swift          CLI executable: wires real env, home dir, UUIDs
-  LuthorViewModels/          @Observable view models (LibraryViewModel: sidebar, list), no SwiftUI
+  LuthorViewModels/          @Observable view models (LibraryViewModel: current view, sidebar,
+                             list), no SwiftUI
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus) + thin views (LibraryView, TaskListView)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
   Luthor<Module>Tests/       unit tests, one target per module
-  LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`)
+  LuthorAcceptanceTests/     end-to-end flows via CLI/view models (`make test-acceptance`);
+                             AppHarness.swift launches the app's view model on a real log
 scripts/                     commit-message and coverage checks, with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
 .github/workflows/           CI (make check-ci), PR title check, release on v* tags

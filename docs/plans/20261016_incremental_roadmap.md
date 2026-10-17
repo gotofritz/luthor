@@ -87,30 +87,18 @@ function of the project. The app gains a sidebar of Inbox and projects: drag a
 task onto a project or press ⌥⌘1–9 to file it, capture straight into the
 project shown, complete a project from the toolbar.
 
-### 4. Views: work and private kept apart
+### 4. Views: work and private kept apart ✅
 
-High priority: I use Luthor at work and at home, and a private task must
-never show up at work, nor a work task at home.
-
-- A view is a separate space, such as Work and Private. Every task and
-  project belongs to exactly one view; the Inbox is per view
-- `ViewCreated`, `ViewRenamed`; `TaskCaptured` and `ProjectCreated` gain a
-  `viewID`. Tasks filed into a project take the project's view; moving a
-  task to a project in another view is a `CommandError`, and
-  `TaskMovedToView` (for a task and, with it, a project's tasks) is the only
-  way across
-- Pre-freeze, no migration: events without a `viewID` belong to a default
-  view that replay creates, so today's log keeps working
-- Isolation is a domain rule, not a UI filter: the reducer exposes state per
-  view, and no view model can ask for tasks without naming a view. A test
-  per list (inbox, projects, next actions, and every later list) checks that
-  nothing from view A appears in view B
-- The app shows one view at a time: a view switcher in the sidebar header,
-  ⌃⌘1–9 to switch, the last view remembered per device
-- `luthor add` captures into the device's default view (`LUTHOR_VIEW`), or
-  the one named with `--view`
-
-Usable: one Luthor for work and home, with no leaks either way.
+Every task and project belongs to exactly one view (Work, Private…), each
+with its own Inbox. `ViewCreated`, `ViewRenamed`, `TaskMovedToView` and
+`ProjectMovedToView`; `TaskCaptured` and `ProjectCreated` carry a `viewID`,
+and events without one belong to the default view replay always creates.
+Isolation is a domain rule: tasks and projects are reachable only through
+`LibraryState.view(_:)`, filing a task into a project of another view is a
+`CommandError`, and a no-leak test per list checks both directions. The app
+shows one view at a time (switcher in the sidebar header, ⌃⌘1–9, last view
+remembered per device); `luthor add|list|done` work in `--view` or
+`LUTHOR_VIEW`, else the default view.
 
 ### 5. Nested projects
 
@@ -120,8 +108,8 @@ planning slices because their next-action rules read the whole tree.
 
 - `ProjectCreated` gains an optional `parentID`; `ProjectMovedToProject(
   project, parent?)` nests or un-nests. A project and its parent are in the
-  same view: nesting across views is a `CommandError`, and `TaskMovedToView`
-  moves the whole subtree. A project can never be nested under itself or one
+  same view: nesting across views is a `CommandError`, and
+  `ProjectMovedToView` moves the whole subtree. A project can never be nested under itself or one
   of its own sub-projects (`CommandError`)
 - Projects with no parent are top-level, so today's log needs no migration
 - Next actions stay a pure function, now recursive. Parallel: every child,
@@ -398,3 +386,16 @@ Usable: the weekly review.
 15. **Projects nest, to any depth, before the planning slices** (slice 5).
     Next actions become a recursive pure function, so the rule is settled
     before Today, review and delegation build on it
+
+## Decisions (2026-10-17, slice 4)
+
+1. **Two move events.** `TaskMovedToView` takes one task across, into the
+   other view's Inbox (out of its project); `ProjectMovedToView` takes a
+   project and its open tasks. Two plain events read better in the log than
+   one event with an optional task or project
+2. **The default view is called "Default"** and can be renamed like any
+   other; it cannot be removed, so every log has at least one view
+3. **The CLI works in one view for every command.** Not only `add`: `list`
+   and `done` also take `--view` or `LUTHOR_VIEW`, so `luthor list` at work
+   never prints a private task. View names match ignoring case and must be
+   unique

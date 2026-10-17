@@ -14,16 +14,18 @@ public struct CLIResult: Equatable, Sendable {
   }
 }
 
-/// The `luthor` command line: `add`, `list`, `done`. Pure apart from the log file it is pointed at.
+/// The `luthor` command line: `add`, `list`, `done`, each in one view. Pure apart from the log file it
+/// is pointed at.
 public struct CLI {
   static let usage = """
-    usage: luthor add <title>      capture a task into the inbox
-           luthor list             show open tasks
-           luthor done <id-prefix> complete the open task whose ID starts with <id-prefix>
+    usage: luthor add [--view <name>] <title>       capture a task into the view's inbox
+           luthor list [--view <name>]              show the view's open tasks
+           luthor done [--view <name>] <id-prefix>  complete the view's open task whose ID starts with <id-prefix>
 
     environment:
       LUTHOR_LOG        path of the event log (default: ~/.luthor/events.jsonl)
       LUTHOR_DEVICE_ID  name of this device in the log (default: local)
+      LUTHOR_VIEW       name of the view to use without --view (default: the default view)
 
     """
 
@@ -40,8 +42,8 @@ public struct CLI {
   }
 
   public func run(_ arguments: [String]) -> CLIResult {
-    guard let command = arguments.first else { return CLIResult(exitCode: Self.exitUsage, error: Self.usage) }
-    let rest = Array(arguments.dropFirst())
+    guard let command = arguments.first, let (viewName, rest) = Self.viewOption(Array(arguments.dropFirst()))
+    else { return CLIResult(exitCode: Self.exitUsage, error: Self.usage) }
     let action: (Session) throws -> CLIResult
     switch command {
     case "help", "--help", "-h":
@@ -62,7 +64,18 @@ public struct CLI {
     } catch {
       return report(error, path: path)
     }
-    return perform(action, session, path: path)
+    let name = viewName ?? configuration.viewName
+    guard let view = session.view(named: name) else {
+      return failure(Self.exitFailure, "no view named '\(name ?? "")'")
+    }
+    return perform(action, session.in(view), path: path)
+  }
+
+  /// Splits a leading `--view <name>` off the arguments; `nil` if the name is missing.
+  private static func viewOption(_ arguments: [String]) -> (name: String?, rest: [String])? {
+    guard arguments.first == "--view" else { return (nil, arguments) }
+    guard arguments.count > 1 else { return nil }
+    return (arguments[1], Array(arguments.dropFirst(2)))
   }
 
   private func perform(_ action: (Session) throws -> CLIResult, _ session: Session, path: String) -> CLIResult {
@@ -77,23 +90,39 @@ public struct CLI {
     }
   }
 
-  /// The log as read at the start of one command.
+  /// The log as read at the start of one command, and the one view the command works in.
   private struct Session {
     let store: JSONLinesEventLog
     let commands: Commands
     let log: [EventEnvelope]
-    let open: [TaskItem]
+    let state: LibraryState
+    private(set) var viewID = ViewID.default
 
     init(path: String, deviceID: DeviceID, ids: any IDGenerator) throws(EventLogError) {
       store = JSONLinesEventLog(fileURL: URL(fileURLWithPath: path))
       commands = Commands(deviceID: deviceID, ids: ids)
       log = try store.readAll()
-      open = LibraryState.replay(log).openTasks
+      state = LibraryState.replay(log)
+    }
+
+    /// The open tasks of the session's view.
+    var open: [TaskItem] { state.view(viewID).openTasks }
+
+    /// The view with this name, ignoring case; the default view for `nil`.
+    func view(named name: String?) -> ViewID? {
+      guard let name else { return .default }
+      return state.view(named: name)?.id
+    }
+
+    func `in`(_ viewID: ViewID) -> Session {
+      var session = self
+      session.viewID = viewID
+      return session
     }
   }
 
   private func add(title: String, _ session: Session) throws -> CLIResult {
-    let events = try session.commands.capture(title: title, log: session.log)
+    let events = try session.commands.capture(title: title, in: session.viewID, log: session.log)
     try session.store.append(events)
     let captured = events.compactMap(Self.capturedTask)
     return CLIResult(exitCode: 0, output: captured.map { "Captured " + Self.line($0) }.joined())
@@ -104,7 +133,7 @@ public struct CLI {
   }
 
   private func done(idPrefix: String, _ session: Session) throws -> CLIResult {
-    let events = try session.commands.complete(idPrefix: idPrefix, log: session.log)
+    let events = try session.commands.complete(idPrefix: idPrefix, in: session.viewID, log: session.log)
     try session.store.append(events)
     let done = events.compactMap(Self.completedTaskID).compactMap { id in session.open.first { $0.id == id } }
     return CLIResult(exitCode: 0, output: done.map { "Completed " + Self.line($0) }.joined())
@@ -112,7 +141,7 @@ public struct CLI {
 
   private static func capturedTask(_ event: EventEnvelope) -> TaskItem? {
     guard case .taskCaptured(let captured) = event.payload else { return nil }
-    return TaskItem(id: captured.taskID, title: captured.title)
+    return TaskItem(id: captured.taskID, title: captured.title, viewID: captured.viewID)
   }
 
   private static func completedTaskID(_ event: EventEnvelope) -> TaskID? {
@@ -129,8 +158,9 @@ public struct CLI {
     case .ambiguousPrefix(let prefix, let matches):
       let candidates = matches.compactMap { id in open.first { $0.id == id } }.map(Self.line).joined()
       return failure(Self.exitFailure, "'\(prefix)' matches more than one open task:\n" + candidates.dropLast())
-    case .noActiveProject(let projectID):
-      return failure(Self.exitFailure, "no active project '\(projectID.rawValue)'")
+    case .noActiveProject, .noView, .duplicateViewName, .otherView:
+      // Only the app files tasks and manages views; the commands the CLI runs never throw these.
+      return failure(Self.exitFailure, "\(error)")
     }
   }
 

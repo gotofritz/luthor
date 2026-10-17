@@ -7,16 +7,19 @@ the architecture and roadmap.
 
 ## CLI
 
-A quick way to capture from the shell. It knows only tasks, not projects:
-`list` shows every open task, filed or not. The app does everything it does
+A quick way to capture from the shell. It knows only tasks, not projects,
+and works in one view: `list` shows every open task of that view, filed or
+not. The app does everything it does
 and more; from slice 13 of the roadmap it shrinks to `luthor add`, for Alfred.
 
 ```bash
 swift build -c release                             # or `make install`, below, to put luthor on PATH
 export LUTHOR_LOG=~/.luthor/events.jsonl           # optional, this is the default; created on first add
 export LUTHOR_DEVICE_ID=macbook                   # optional, default: local
+export LUTHOR_VIEW=Work                            # optional, default: the Default view
 
 .build/release/luthor add "buy milk"
+.build/release/luthor add --view Private "call mum" # --view wins over LUTHOR_VIEW
 .build/release/luthor list
 .build/release/luthor done 9afc                    # any unique prefix of a task ID
 ```
@@ -34,7 +37,13 @@ Xcode's scheme), otherwise `~/.luthor/events.jsonl`, and picks up changes the
 CLI makes. Type and press Return to capture; ↑ and ↓ select a task, ⌘Return
 completes it, or click its circle.
 
-The sidebar lists the Inbox and the active projects. Create a project with the
+The app shows one view at a time, such as Work or Private, and nothing of
+another view leaks into it. The view switcher at the top of the sidebar
+switches view (or ⌃⌘1 to ⌃⌘9), creates and renames views; the app reopens on
+the view last used on that Mac. Task → Move to View, or Move to View in a
+project's context menu, takes a task or a whole project across.
+
+The sidebar lists the current view's Inbox and active projects. Create a project with the
 field at the bottom of the sidebar, choosing parallel (every task is a next
 action) or sequential (only the first open task is; the others are dimmed).
 File a task by dragging it onto a project, or select it and press ⌥⌘1 to ⌥⌘9

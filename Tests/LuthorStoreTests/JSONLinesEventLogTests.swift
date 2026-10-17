@@ -10,7 +10,7 @@ import Testing
 
     #expect(
       line
-        == #"{"data":{"taskID":"t1","title":"buy \"milk\""},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
+        == #"{"data":{"taskID":"t1","title":"buy \"milk\"","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
     )
   }
 
@@ -34,7 +34,7 @@ struct ProjectEventLineFormatTests {
 
     #expect(
       line
-        == #"{"data":{"kind":"sequential","projectID":"p1","title":"Move house"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
+        == #"{"data":{"kind":"sequential","projectID":"p1","title":"Move house","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
     )
   }
 
@@ -58,6 +58,64 @@ struct ProjectEventLineFormatTests {
   @Test(arguments: [projectCreated("p1", "Holiday"), moved("t1", to: "p1"), projectCompleted("p1")])
   func projectLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}
+
+@Suite("When view events are written as lines")
+struct ViewEventLineFormatTests {
+  @Test("ViewCreated is one sorted JSON object")
+  func viewCreatedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(viewCreated("v1", "Work", id: "e1", lamport: 1))
+
+    #expect(
+      line == #"{"data":{"name":"Work","viewID":"v1"},"device":"mac","id":"e1","lamport":1,"type":"ViewCreated"}"#)
+  }
+
+  @Test("ViewRenamed is one sorted JSON object")
+  func viewRenamedIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(viewRenamed("v1", to: "Office", id: "e2", lamport: 2))
+
+    #expect(
+      line == #"{"data":{"name":"Office","viewID":"v1"},"device":"mac","id":"e2","lamport":2,"type":"ViewRenamed"}"#)
+  }
+
+  @Test("TaskMovedToView is one sorted JSON object")
+  func taskMovedToViewIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(movedToView("t1", toView: "v1", id: "e3", lamport: 3))
+
+    #expect(
+      line == #"{"data":{"taskID":"t1","viewID":"v1"},"device":"mac","id":"e3","lamport":3,"type":"TaskMovedToView"}"#)
+  }
+
+  @Test("ProjectMovedToView is one sorted JSON object")
+  func projectMovedToViewIsOneSortedJSONObject() throws {
+    let line = try EventLine.encode(projectMovedToView("p1", toView: "v1", id: "e4", lamport: 4))
+
+    #expect(
+      line
+        == #"{"data":{"projectID":"p1","viewID":"v1"},"device":"mac","id":"e4","lamport":4,"type":"ProjectMovedToView"}"#
+    )
+  }
+
+  @Test(
+    "each decodes back to the same event",
+    arguments: [
+      viewCreated("v1", "Work"), viewRenamed("v1", to: "Office"), movedToView("t1", toView: "v1"),
+      projectMovedToView("p1", toView: "v1"), captured("t1", "a", view: "v1"), projectCreated("p1", "b", view: "v1"),
+    ])
+  func viewLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+
+  @Test("a TaskCaptured or ProjectCreated line written before views decodes into the default view")
+  func preViewLinesDecodeIntoTheDefaultView() throws {
+    let task =
+      #"{"data":{"taskID":"t1","title":"buy milk"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
+    let project =
+      #"{"data":{"kind":"parallel","projectID":"p1","title":"Holiday"},"device":"mac","id":"e2","lamport":2,"type":"ProjectCreated"}"#
+
+    #expect(try EventLine.decode(task) == captured("t1", "buy milk", id: "e1", lamport: 1))
+    #expect(try EventLine.decode(project) == projectCreated("p1", "Holiday", id: "e2", lamport: 2))
   }
 }
 

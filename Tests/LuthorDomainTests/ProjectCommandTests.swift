@@ -11,7 +11,7 @@ struct CreateProjectCommandTests {
   @Test("it writes one ProjectCreated after the highest Lamport in the log")
   func createProjectWritesProjectCreated() throws {
     let events = try makeCommands().createProject(
-      title: "  Move house ", kind: .sequential, log: [captured("t1", "a", lamport: 4)])
+      title: "  Move house ", kind: .sequential, in: .default, log: [captured("t1", "a", lamport: 4)])
 
     #expect(
       events == [
@@ -22,7 +22,7 @@ struct CreateProjectCommandTests {
   @Test("a blank title is refused", arguments: ["", "  ", "\n"])
   func blankProjectTitleIsRefused(title: String) {
     #expect(throws: CommandError.blankTitle) {
-      try makeCommands().createProject(title: title, kind: .parallel, log: [])
+      try makeCommands().createProject(title: title, kind: .parallel, in: .default, log: [])
     }
   }
 }

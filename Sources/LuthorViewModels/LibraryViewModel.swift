@@ -8,14 +8,19 @@ public enum SidebarItem: Hashable, Sendable {
   case project(ProjectID)
 }
 
-/// The main window: the sidebar of inbox and projects, the open tasks of the one shown, the capture
-/// fields and the keyboard selection.
+/// The main window: one view at a time, with the sidebar of its inbox and projects, the open tasks of
+/// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
+/// current view's state, so nothing of another view is ever shown.
 ///
 /// Every action re-reads the log first, so events another process appended (the CLI) are never missed
 /// and new events follow the highest Lamport counter on disk.
 @MainActor
 @Observable
 public final class LibraryViewModel {
+  /// Every view, the default one first.
+  public private(set) var views: [ViewItem] = []
+  /// The one view the window shows; nothing from another view is ever listed.
+  public private(set) var currentView: ViewID
   public private(set) var sidebarSelection: SidebarItem = .inbox
   /// Active projects in creation order.
   public private(set) var projects: [Project] = []
@@ -33,9 +38,47 @@ public final class LibraryViewModel {
   private let commands: Commands
   @ObservationIgnored private var state = LibraryState.replay([])
 
-  public init(log: any EventLog, commands: Commands) {
+  public init(log: any EventLog, commands: Commands, view: ViewID = .default) {
     self.log = log
     self.commands = commands
+    currentView = view
+  }
+
+  /// Shows another view, at its inbox, with no task selected.
+  public func showView(_ viewID: ViewID) {
+    currentView = viewID
+    sidebarSelection = .inbox
+    selection = nil
+    present()
+  }
+
+  /// Creates a view and shows it. A blank name, or one another view has, creates nothing.
+  public func createView(named name: String) {
+    let created = perform { (log) throws(CommandError) in try commands.createView(name: name, log: log) }
+    for case .viewCreated(let view) in created.map(\.payload) {
+      showView(view.viewID)
+    }
+  }
+
+  /// Renames a view. A blank name, or one another view has, changes nothing.
+  public func renameView(_ viewID: ViewID, to name: String) {
+    perform { (log) throws(CommandError) in try commands.renameView(viewID, to: name, log: log) }
+  }
+
+  /// Takes a task across to another view, into its inbox.
+  public func move(_ taskID: TaskID, toView viewID: ViewID) {
+    perform { (log) throws(CommandError) in try commands.move(taskID: taskID, toView: viewID, log: log) }
+  }
+
+  /// Takes the selected task across to another view and selects the one that takes its place.
+  public func moveSelected(toView viewID: ViewID) {
+    replaceSelected { move($0, toView: viewID) }
+  }
+
+  /// Takes a project and its open tasks across to another view. If the sidebar showed it, it shows the
+  /// inbox again.
+  public func moveProject(_ projectID: ProjectID, toView viewID: ViewID) {
+    perform { (log) throws(CommandError) in try commands.move(projectID: projectID, toView: viewID, log: log) }
   }
 
   public func reload() {
@@ -50,7 +93,14 @@ public final class LibraryViewModel {
   public func submit() {
     let title = draft
     let projectID = shownProjectID
-    perform { (log) throws(CommandError) in try commands.capture(title: title, into: projectID, log: log) }
+    let viewID = currentView
+    perform { (log) throws(CommandError) in
+      if let projectID {
+        try commands.capture(title: title, into: projectID, log: log)
+      } else {
+        try commands.capture(title: title, in: viewID, log: log)
+      }
+    }
     if errorMessage == nil { draft = "" }
   }
 
@@ -65,7 +115,10 @@ public final class LibraryViewModel {
   /// the draft.
   public func createProject(kind: ProjectKind) {
     let title = projectDraft
-    perform { (log) throws(CommandError) in try commands.createProject(title: title, kind: kind, log: log) }
+    let viewID = currentView
+    perform { (log) throws(CommandError) in
+      try commands.createProject(title: title, kind: kind, in: viewID, log: log)
+    }
     if errorMessage == nil { projectDraft = "" }
   }
 
@@ -112,30 +165,33 @@ public final class LibraryViewModel {
     selection = tasks.isEmpty ? nil : tasks[min(position, tasks.count - 1)].id
   }
 
-  private func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) {
+  /// Runs a command on the log as it is now and appends what it returns; returns the events written.
+  @discardableResult
+  private func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
     let current: [EventEnvelope]
     do {
       current = try log.readAll()
     } catch {
       errorMessage = Self.describe(error)
-      return
+      return []
     }
     let events: [EventEnvelope]
     do {
       events = try command(current)
     } catch {
-      // A blank title, or a task completed elsewhere since the last reload: nothing to write, and
-      // nothing the user needs to fix.
+      // A blank title, a view name already taken, or a task completed elsewhere since the last reload:
+      // nothing to write, and nothing the user needs to fix.
       show(current)
-      return
+      return []
     }
     do {
       try log.append(events)
     } catch {
       errorMessage = Self.describe(error)
-      return
+      return []
     }
     show(current + events)
+    return events
   }
 
   private func show(_ events: [EventEnvelope]) {
@@ -144,9 +200,15 @@ public final class LibraryViewModel {
     present()
   }
 
-  /// Fills the sidebar and the list from the last replayed state.
+  /// Fills the view switcher, the sidebar and the list from the current view of the last replayed state.
   private func present() {
-    projects = state.projects
+    views = state.views
+    if !views.contains(where: { $0.id == currentView }) {
+      // A remembered view this log does not have.
+      currentView = .default
+    }
+    let view = state.view(currentView)
+    projects = view.projects
     if let projectID = shownProjectID, !projects.contains(where: { $0.id == projectID }) {
       // Completed here or elsewhere: there is nothing left to show.
       sidebarSelection = .inbox
@@ -155,7 +217,7 @@ public final class LibraryViewModel {
       tasks = project.tasks
       nextActions = Set(project.nextActions.map(\.id))
     } else {
-      tasks = state.inbox
+      tasks = view.inbox
       nextActions = Set(tasks.map(\.id))
     }
     if let selected = selection, index(of: selected) == nil { selection = nil }
