@@ -21,7 +21,7 @@ sync of event files) stays; the order and the amount of machinery change.
 - **Pre-1.0 event format is soft.** While I am the only user, an event format
   change may be handled by a one-off migration script over the log, or by
   starting a new log. The immutability rules in `AGENTS.md` apply in full from
-  the slice that freezes the format (slice 9)
+  the slice that freezes the format (slice 10)
 
 ## CI/CD track
 
@@ -51,15 +51,15 @@ change the release build run it without publishing. `make install` puts both
 in `/Applications` and `~/.local/bin` between releases. Not notarised: the
 first launch needs right-click → Open.
 
-### CI-3. Event format guard (slice 9)
+### CI-3. Event format guard (slice 10)
 
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 12)
+### CD-2. iOS (slice 13)
 
 - `xcodebuild` the iOS target in CI
-- Distribution decided with slice 12: free 7-day provisioning from Xcode, or
+- Distribution decided with slice 13: free 7-day provisioning from Xcode, or
   TestFlight with the Developer Program
 
 ## Slices
@@ -83,23 +83,50 @@ function of the project. The app gains a sidebar of Inbox and projects: drag a
 task onto a project or press ⌥⌘1–9 to file it, capture straight into the
 project shown, complete a project from the toolbar.
 
-### 4. Defer and due, Today
+### 4. Views: work and private kept apart
+
+High priority: I use Luthor at work and at home, and a private task must
+never show up at work, nor a work task at home.
+
+- A view is a separate space, such as Work and Private. Every task and
+  project belongs to exactly one view; the Inbox is per view
+- `ViewCreated`, `ViewRenamed`; `TaskCaptured` and `ProjectCreated` gain a
+  `viewID`. Tasks filed into a project take the project's view; moving a
+  task to a project in another view is a `CommandError`, and
+  `TaskMovedToView` (for a task and, with it, a project's tasks) is the only
+  way across
+- Pre-freeze, no migration: events without a `viewID` belong to a default
+  view that replay creates, so today's log keeps working
+- Isolation is a domain rule, not a UI filter: the reducer exposes state per
+  view, and no view model can ask for tasks without naming a view. A test
+  per list (inbox, projects, next actions, and every later list) checks that
+  nothing from view A appears in view B
+- The app shows one view at a time: a view switcher in the sidebar header,
+  ⌃⌘1–9 to switch, the last view remembered per device
+- `luthor add` captures into the device's default view (`LUTHOR_VIEW`), or
+  the one named with `--view`
+
+Usable: one Luthor for work and home, with no leaks either way.
+
+### 5. Defer and due, Today
 
 - `TaskDeferred`, `TaskDueSet` (and clearing both)
 - Availability rule (deferred, blocked by sequence, completed) in the domain,
   clock injected
-- Views: Available, Today (due or overdue), Forecast-lite list
+- Lists in the current view: Available, Today (due or overdue),
+  Forecast-lite
 
 Usable: the daily "what can I do now" view.
 
-### 5. Tags
+### 6. Tags
 
 - `TagCreated`, `TaskTagged`, `TaskUntagged`
-- Filter any view by tag
+- Filter any list by tag
+- Tags belong to a view, so `@calls` at work and at home are different tags
 
 Usable: contexts (`@home`, `@calls`, `@computer`).
 
-### 6. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
+### 7. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
 
 - Log lives in the Dropbox folder, synced by the Dropbox desktop app
 - One file per device (`events-<deviceID>.jsonl`), so two machines never
@@ -109,18 +136,19 @@ Usable: contexts (`@home`, `@calls`, `@computer`).
 - Optional: split acceptance testing out of the TDD skill into its own
   `acceptance` skill, linked from the TDD skill. Likely needed here, because
   two-device flows need a shared harness (several simulated devices, an
-  injected clock from slice 4, fixture logs) and a way to turn a slice's
+  injected clock from slice 5, fixture logs) and a way to turn a slice's
   promises into scenarios. Do it only if that guidance outgrows a section of
   the TDD skill
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 
-### 7. Capture without the app: iPhone (THROWAWAY) and Alfred
+### 8. Capture without the app: iPhone (THROWAWAY) and Alfred
 
 - An iOS Shortcut appends a line to `Dropbox/Luthor/inbox.txt`
 - The Mac app imports new lines as `TaskCaptured` events and truncates the
   file once imported (idempotent by line hash)
+- One inbox file per view (`inbox-<view>.txt`), one Shortcut per view
 - The CLI becomes a capture tool for Alfred and nothing else: `luthor add`
   stays, `list` and `done` go, and an Alfred workflow (keyword, then the
   task title) calls it. Acceptance tests that relied on `luthor list` move
@@ -129,34 +157,34 @@ reliable, the "proper" Dropbox API sync can come much later or never for Mac.
 Usable: capture from the phone, lock screen and Siri included, months before
 an iOS app exists, and from Alfred on the Mac without switching to the app.
 
-### 8. Review
+### 9. Review
 
 - `ProjectReviewed`, per-project review interval
 - Review view: projects due for review, mark reviewed, next one
 
 Usable: the weekly review.
 
-### 9. Freeze the event format
+### 10. Freeze the event format
 
 - Write down every event type and field as v1
 - Golden-file tests: a checked-in fixture log must always replay to the same
   state
 - From here, `AGENTS.md` event rules are strict
 
-### 10. Speed pass
+### 11. Speed pass
 
 - Measure launch replay time and capture latency on the real log
 - Only if needed: GRDB projections, snapshotting, global capture hotkey,
   command palette
 
-### 11. Dropbox API sync
+### 12. Dropbox API sync
 
 - OAuth, token in Keychain, sync of the same per-device files over the API
 - Sync behind a `Transport` protocol; in-memory fake for tests; two-device
   convergence tests
 - Required for iOS, which has no Dropbox folder to watch
 
-### 12. iOS app
+### 13. iOS app
 
 - Same package; inbox, Today, Available, capture first
 - Without the Apple Developer Program, a free provisioning profile expires
@@ -164,24 +192,32 @@ Usable: the weekly review.
 
 ### Later
 
-- Perspectives as saved queries
+- Perspectives as saved queries, scoped to a view
+- Per-device view lists: a work Mac that never shows (or never syncs)
+  private views, if logical isolation turns out not to be enough
 - Repeating tasks
 - Notes field kept minimal (notes live in Joplin)
 - CloudKit transport, if ever
 
 ## Decisions (2026-10-16)
 
-1. **Soft event format until slice 9.** `AGENTS.md` event rules updated to
+1. **Soft event format until slice 10.** `AGENTS.md` event rules updated to
    match: format changes before the freeze ship with a migration script or a
    fresh log
 2. **CLI first** in slice 1
-3. **Dropbox folder sync** in slice 6, possibly as the permanent Mac solution
+3. **Dropbox folder sync** in slice 7, possibly as the permanent Mac solution
 4. **Ordering key**: Lamport counter plus device ID (then event ID as the
    tiebreak). Hybrid logical clocks only if timestamps matter for display
-5. **No SQLite until slice 10**, and only if replay is measurably slow
+5. **No SQLite until slice 11**, and only if replay is measurably slow
 
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
    gains no project, defer or tag commands, and shrinks to `luthor add` for
-   Alfred in slice 7
+   Alfred in slice 8
+2. **Views are logical, in one log.** Work and private live in the same
+   event log and sync together; isolation is enforced by the domain (every
+   query names a view), not by separate files. Separate logs per view stay
+   an option under Later if a work machine must not hold private data
+3. **Views come before defer and due** (new slice 4), because without them
+   I cannot use Luthor at work. Later slices renumbered by one

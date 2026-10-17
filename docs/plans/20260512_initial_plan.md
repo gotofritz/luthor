@@ -8,6 +8,7 @@ A personal GTD-style task system (OmniFocus-like) with these constraints:
   * Mac + iPhone usage (cross-device from day 1)
   * extremely fast capture and interaction
   * sophisticated GTD workflows (projects, tags, defer/due, review, etc.)
+  * views that keep work and private tasks strictly apart
 * Must be **forever software** (long-term personal system)
 * You want:
 

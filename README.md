@@ -7,7 +7,7 @@ See `AGENTS.md` and `docs/plans/` for the architecture and roadmap.
 
 A quick way to capture from the shell. It knows only tasks, not projects:
 `list` shows every open task, filed or not. The app does everything it does
-and more; from slice 7 of the roadmap it shrinks to `luthor add`, for Alfred.
+and more; from slice 8 of the roadmap it shrinks to `luthor add`, for Alfred.
 
 ```bash
 swift build -c release                             # or `make install`, below, to put luthor on PATH

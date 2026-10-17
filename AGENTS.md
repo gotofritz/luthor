@@ -65,7 +65,7 @@ remote events → merge into log → deterministic replay → projection → UI
 ### Event-sourcing rules
 
 - Events are append-only. Code never edits or deletes a written event
-- The event format is soft until it is frozen (slice 9 of
+- The event format is soft until it is frozen (slice 10 of
   `docs/plans/20261016_incremental_roadmap.md`). Until then a format change
   may break old logs, provided it ships with a one-off migration script that
   rewrites the log, or the change says the log is to be started afresh
