@@ -57,6 +57,11 @@ struct StorageSetupSheet: View {
 struct ThisMacSettingsColumn: View {
   @Environment(StorageController.self) private var controller
 
+  private static let movingNote = """
+    Moving to Dropbox copies the tasks of the Home Folder the first time. \
+    Moving back copies nothing: the Home Folder keeps the tasks it had.
+    """
+
   var body: some View {
     Form {
       Section("Storage") {
@@ -67,9 +72,7 @@ struct ThisMacSettingsColumn: View {
         } else {
           StorageChoiceForm(controller: controller)
           Button("Use This Place") { controller.confirm() }
-          Text(
-            "Moving to Dropbox copies the tasks of the Home Folder the first time. Moving back copies nothing: "
-              + "the Home Folder keeps the tasks it had.")
+          Text(Self.movingNote)
             .font(.caption)
             .foregroundStyle(.secondary)
         }
