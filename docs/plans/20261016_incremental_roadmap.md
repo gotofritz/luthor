@@ -684,3 +684,17 @@ Usable: the weekly review.
 5. **Two marks, planned and due.** A day with tasks scheduled for it and a day
    with a task due on it look different. Both read from existing and new
    events only; the calendar stores nothing of its own
+
+## Decisions (2026-10-17, device IDs)
+
+1. **A random machine ID, not the MAC address.** Two Macs can share a host
+   name, and the shared folder named each Mac's file after it, so they would
+   write the same file. macOS randomises Wi-Fi MAC addresses per network and a
+   Mac has several, so `MachineID` makes a UUID on first start and keeps it in
+   the app's defaults on that Mac (never in the log or the folder)
+2. **The device is `<host name>-<first 8 characters of the ID>`** in a shared
+   folder; `LUTHOR_DEVICE_ID` still wins, and without a shared folder it is
+   `local`. Files written under the old host-name-only device stay in the
+   folder and are still read; the Mac simply writes a new file from now on.
+   If the defaults are wiped the Mac becomes a new device, which is harmless
+   because events merge by ID

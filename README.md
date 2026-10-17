@@ -116,9 +116,11 @@ second or two. Wait for Dropbox to finish syncing before you quit a Mac, or
 the other Mac sees your latest changes only when that Mac next syncs; nothing
 is lost either way.
 
-A Mac is named in the folder after its host name, so each Mac must have a
-different one. To name it yourself, `defaults write com.gotofritz.luthor
-LUTHOR_DEVICE_ID desk` and restart the app.
+A Mac is named in the folder after its host name and a random ID the app
+makes on first start and keeps on that Mac, e.g. `events-MacBook-3f9a2c1b.jsonl`,
+so two Macs with the same host name still write different files. To name a
+Mac yourself instead, `defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID
+desk` and restart the app (give each Mac a different name).
 
 Environment variables override the choice, and are for running the app from a
 shell or Xcode: `LUTHOR_SYNC_DIR` (a shared folder), `LUTHOR_LOG` (a single

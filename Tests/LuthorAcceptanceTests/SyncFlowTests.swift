@@ -21,6 +21,24 @@ struct TwoMacSyncFlowTests {
     #expect(laptop.tasks.map(\.title) == ["buy milk"])
   }
 
+  @Test("two Macs with the same host name still write their own files")
+  func sameHostNameKeepsTheFilesApart() throws {
+    let dropbox = try TemporaryDirectory()
+    defer { dropbox.remove() }
+    let work = launchApp(configuration: sharedConfiguration(dropbox, machineID: "aaaaaaaa-1111"))
+    let home = launchApp(configuration: sharedConfiguration(dropbox, machineID: "bbbbbbbb-2222"))
+
+    work.capture("call the bank")
+    home.capture("buy milk")
+    work.reload()
+    home.reload()
+
+    #expect(work.tasks.map(\.title).sorted() == ["buy milk", "call the bank"])
+    #expect(home.tasks.map(\.title).sorted() == ["buy milk", "call the bank"])
+    let files = try FileManager.default.contentsOfDirectory(atPath: dropbox.url.path).sorted()
+    #expect(files == ["events-MacBook-aaaaaaaa.jsonl", "events-MacBook-bbbbbbbb.jsonl"])
+  }
+
   @Test("completing it on the other Mac completes it on the first")
   func completionComesBack() throws {
     let dropbox = try TemporaryDirectory()
@@ -89,4 +107,11 @@ struct TwoMacSyncFlowTests {
 
     #expect(Set(laptop.tasks.map(\.title)) == ["buy milk", "call mum"])
   }
+}
+
+/// The configuration of a Mac called "MacBook" that shares `folder` and has the given machine ID.
+private func sharedConfiguration(_ folder: TemporaryDirectory, machineID: String) -> LuthorConfiguration {
+  LuthorConfiguration(
+    environment: ["LUTHOR_SYNC_DIR": folder.url.path], home: folder.file("home"), hostName: "MacBook",
+    machineID: machineID)
 }

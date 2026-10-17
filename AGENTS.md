@@ -137,6 +137,8 @@ Sources/
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
                              per device; prepares it (creates folders, copies the Home Folder log in)
+    MachineID.swift          this Mac's own ID, made once and kept by the app, so devices that share a
+                             host name stay apart
     LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl) or shared folder
                              (LUTHOR_SYNC_DIR) or the chosen LogStorage, device ID; makes the log
                              and its change monitor

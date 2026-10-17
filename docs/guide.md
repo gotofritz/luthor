@@ -285,8 +285,9 @@ file or folder.
 ## The same tasks on several Macs
 
 Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,
-`events-<device>.jsonl` (named after the Mac's host name, which must differ
-between Macs), and reads all of them, so a task captured on one Mac shows on
+`events-<device>.jsonl` (named after the Mac's host name and a short random ID
+the app makes on first start, so Macs with the same host name stay apart), and
+reads all of them, so a task captured on one Mac shows on
 the other within a few seconds of Dropbox delivering it. Two Macs changing
 things while apart both keep their changes: when the files meet, every Mac
 shows the same result. If two Macs change the same thing, the later change
