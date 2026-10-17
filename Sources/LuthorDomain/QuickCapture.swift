@@ -8,6 +8,12 @@ public enum QuickCapture {
     public let priority: Priority?
     /// The minutes named by an `<n>m` tag; `nil` if none is present.
     public let estimateMinutes: Int?
+
+    public init(title: String, priority: Priority?, estimateMinutes: Int?) {
+      self.title = title
+      self.priority = priority
+      self.estimateMinutes = estimateMinutes
+    }
   }
 
   /// Splits `!a`, `!b`, `!c`, `!someday` (a priority) and `<n>m` (an estimate in minutes) out of `input`,
