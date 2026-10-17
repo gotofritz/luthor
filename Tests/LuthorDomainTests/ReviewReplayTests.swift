@@ -271,8 +271,9 @@ struct CarryOverReplayTests {
   func eachSaysWhereItWasLeftFrom() {
     let state = LibraryState.replay([
       captured("t1", "write report", lamport: 1), estimated("t1", as: 60, lamport: 2),
-      captured("t2", "tidy desk", lamport: 3), prioritized("t2", as: .optional, lamport: 4),
-      scheduled("t1", on: "2026-10-19", lamport: 5), scheduled("t2", on: "2026-10-19", lamport: 6),
+      prioritized("t1", as: .critical, lamport: 3),
+      captured("t2", "tidy desk", lamport: 4), prioritized("t2", as: .optional, lamport: 5),
+      scheduled("t1", on: "2026-10-19", lamport: 6), scheduled("t2", on: "2026-10-19", lamport: 7),
     ])
 
     let leftOver = state.carryOver(in: .default, today: date("2026-10-20"))
