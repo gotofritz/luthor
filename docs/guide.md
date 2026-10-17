@@ -275,11 +275,25 @@ Today plans the day with these numbers.
 
 ## Where your data lives
 
-Everything is one append-only event log, `~/.luthor/events.jsonl` by default.
-Set `LUTHOR_LOG` to use another file and `LUTHOR_DEVICE_ID` to name the device.
-Back it up by copying the file.
+Everything is one append-only event log. The first time you start the app it
+asks where to keep it: **Dropbox** (the default, `~/Dropbox/backups/Luthor`,
+created if missing) or the **Home Folder** (`~/.luthor/events.jsonl`, this
+Mac only). Settings → This Mac changes the choice later; moving to Dropbox
+copies the Home Folder's tasks in the first time. Back up by copying the
+file or folder.
+
+## The same tasks on several Macs
+
+Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,
+`events-<device>.jsonl` (named after the Mac's host name, which must differ
+between Macs), and reads all of them, so a task captured on one Mac shows on
+the other within a few seconds of Dropbox delivering it. Two Macs changing
+things while apart both keep their changes: when the files meet, every Mac
+shows the same result. If two Macs change the same thing, the later change
+(by the events' order, not the clock) wins. The README has the details.
 
 ## Installing
 
-See the README: `make install`, or a release from GitHub. The app is not
-notarised, so the first launch of a copied app needs right-click → Open.
+See the README: `make install`, or a release from GitHub, which installs on
+another Mac without compiling. The app is not notarised, so the first launch
+of an app downloaded in a browser needs right-click → Open.

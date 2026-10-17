@@ -188,6 +188,14 @@ public struct JSONLinesEventLog: Sendable {
 
   /// All events in file order. A missing file is an empty log.
   public func readAll() throws(EventLogError) -> [EventEnvelope] {
+    try readAll(skippingIncompleteTail: false)
+  }
+
+  /// All events in file order. A missing file is an empty log.
+  ///
+  /// With `skippingIncompleteTail`, a last line that has no newline yet and cannot be decoded is left out
+  /// instead of being an error: another device's file whose sync is still in progress.
+  public func readAll(skippingIncompleteTail: Bool) throws(EventLogError) -> [EventEnvelope] {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return [] }
     let contents: String
     do {
@@ -195,12 +203,14 @@ public struct JSONLinesEventLog: Sendable {
     } catch {
       throw .ioFailure("cannot read \(fileURL.path): \(error)")
     }
+    let lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
     var events: [EventEnvelope] = []
-    for (index, line) in contents.split(separator: "\n", omittingEmptySubsequences: false).enumerated()
-    where !line.allSatisfy(\.isWhitespace) {
+    for (index, line) in lines.enumerated() where !line.allSatisfy(\.isWhitespace) {
       do {
         events.append(try EventLine.decode(String(line)))
       } catch {
+        // The last element has no newline after it; earlier ones always do.
+        if skippingIncompleteTail && index == lines.count - 1 { break }
         throw .unreadableLine(index + 1)
       }
     }

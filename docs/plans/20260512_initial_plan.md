@@ -87,6 +87,9 @@ SQLite is a performance layer, not the canonical store.
 
 * Dropbox API
 * syncs event log files (NOT SQLite DB)
+* Mac ↔ Mac today (roadmap slice 10): no API at all; the log is a folder the
+  Dropbox desktop app syncs, one `events-<device>.jsonl` per device, merged on
+  read (`DeviceFilesEventLog`). The Dropbox API adapter stays for iOS or later
 
 ---
 

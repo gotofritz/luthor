@@ -87,10 +87,43 @@ view currently shown): Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
 weekday) and a default view;
 Local overrides the buffer and capacity for the current view only, and
-follows the global value until switched on.
+follows the global value until switched on. A third family, This Mac, chooses
+where the tasks live (see below).
 
 The build is ad-hoc signed: the first launch of a copied app needs
 right-click → Open.
+
+## Where the tasks live, and sync between Macs
+
+The first time you start the app, a window asks where to keep the tasks:
+
+- **Dropbox**, the default: a folder the Dropbox desktop app syncs
+  (`~/Dropbox/backups/Luthor`; type another folder if yours is elsewhere).
+  The folders are created if they are not there. Use it on every Mac and all
+  of them show the same tasks.
+- **Home Folder**: `~/.luthor/events.jsonl`, on this Mac only.
+
+Change the choice later in Settings → This Mac. Moving to Dropbox copies the
+tasks of the Home Folder in the first time, so none are lost; moving back
+copies nothing, and the Home Folder keeps the tasks it had.
+
+How the sync works: Luthor has no sync code of its own. Each Mac appends only
+to its own file in the folder, `events-<device>.jsonl`, so two Macs never
+write the same file and Dropbox never makes a conflict copy. Every Mac reads
+all the files, merges the events and replays them in one order, so all Macs
+end with the same state. The app picks up what Dropbox delivers within a
+second or two. Wait for Dropbox to finish syncing before you quit a Mac, or
+the other Mac sees your latest changes only when that Mac next syncs; nothing
+is lost either way.
+
+A Mac is named in the folder after its host name, so each Mac must have a
+different one. To name it yourself, `defaults write com.gotofritz.luthor
+LUTHOR_DEVICE_ID desk` and restart the app.
+
+Environment variables override the choice, and are for running the app from a
+shell or Xcode: `LUTHOR_SYNC_DIR` (a shared folder), `LUTHOR_LOG` (a single
+file) and `LUTHOR_DEVICE_ID`. While one of the first two is set, Settings
+shows that it decides.
 
 ## Install and releases
 
@@ -110,6 +143,35 @@ is a choice of yours. `docs`, `test`, `ci`, `chore`, `style`, `build` and
 version tag by hand (`git tag v0.1.0 && git push origin v0.1.0`) still
 publishes that version instead. `make dist` builds the same zip locally into
 `.build/dist/`.
+
+### On another Mac, without compiling
+
+Every release has `Luthor-<version>.zip` attached. Fetch the latest with the GitHub CLI (`brew install gh`, then
+`gh auth login` once; the repo is private, so a browser would need a login
+too):
+
+```bash
+cd "$(mktemp -d)"
+gh release download --repo gotofritz/luthor --pattern 'Luthor-*.zip'
+unzip -q Luthor-*.zip
+rm -rf /Applications/Luthor.app && mv Luthor.app /Applications/
+open /Applications/Luthor.app
+```
+
+To update, quit the app and run the same commands; your data lives in the
+log, not in the app.
+
+The build is ad-hoc signed, not notarised. `gh` does not mark the download
+as quarantined, so the app opens normally. If you download the zip in a
+browser, or get it over AirDrop, macOS blocks the first launch: right-click
+the app → Open, or clear the flag once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Luthor.app
+```
+
+Notarising (an Apple Developer ID, $99 a year) would remove that step; it is
+not set up.
 
 ## Development
 

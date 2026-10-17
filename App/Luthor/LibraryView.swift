@@ -10,7 +10,7 @@ import SwiftUI
 /// select one of its tasks, ⌘Return completes it.
 struct LibraryView: View {
   @Bindable var library: LibraryViewModel
-  let logURL: URL
+  let configuration: LuthorConfiguration
   @FocusState private var captureFocused: Bool
   @State private var newProjectKind = ProjectKind.parallel
 
@@ -37,7 +37,7 @@ struct LibraryView: View {
       }
     }
     .navigationTitle(title)
-    .navigationSubtitle(logURL.path)
+    .navigationSubtitle(configuration.location.path)
     .toolbar {
       if library.section == .projects, let projectID = shownProjectID {
         Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
@@ -54,7 +54,7 @@ struct LibraryView: View {
     .onChange(of: library.tasks) { captureFocused = true }
     .onChange(of: library.sidebarSelection) { captureFocused = true }
     .onChange(of: library.section) { captureFocused = true }
-    .task { await watchLog() }
+    .task(id: configuration.location) { await watchLog() }
   }
 
   /// The search box, which waits for its slice, the toggle for completed items and the view switcher.
@@ -133,9 +133,9 @@ struct LibraryView: View {
     }
   }
 
-  /// Reloads when another process changes the log.
+  /// Reloads when another process or the sync service changes the log.
   private func watchLog() async {
-    var monitor = FileChangeMonitor(fileURL: logURL)
+    var monitor = configuration.makeChangeMonitor()
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(1))
       if monitor.poll() { library.reload() }

@@ -133,8 +133,15 @@ Sources/
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
-    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl), device ID
-    FileChangeMonitor.swift  polls the log file so the app sees outside writes
+    DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
+                             reads the merge of every device's file
+    LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
+                             per device; prepares it (creates folders, copies the Home Folder log in)
+    LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl) or shared folder
+                             (LUTHOR_SYNC_DIR) or the chosen LogStorage, device ID; makes the log
+                             and its change monitor
+    FileChangeMonitor.swift  polls the log file, or the device files of the shared folder, so the app
+                             sees outside writes
     UUIDGenerator.swift      production IDGenerator
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
@@ -145,16 +152,18 @@ Sources/
                              reviewing a day in LibraryViewModel+Review.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
+    StorageController.swift  where the log lives: first-start choice and Settings → This Mac
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; CardViews: the task card column, the project card above
-                             its column, notes with clickable links; SettingsColumnsView: Global/Local setting families,
+                             its column, notes with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan,
                              capacity meter, leftovers, candidates, Waiting for, delegate dialog;
-                             ReviewView: the day looked back on, time fields, deciding, closing the review)
+                             ReviewView: the day looked back on, time fields, deciding, closing the review;
+                             StorageSetupView: the first-start modal and the This Mac settings)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory

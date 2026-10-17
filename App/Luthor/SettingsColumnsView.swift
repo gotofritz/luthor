@@ -17,6 +17,7 @@ struct SettingsColumnsView: View {
       switch group {
       case .global: GlobalSettingsColumn(library: library)
       case .local: LocalSettingsColumn(library: library)
+      case .thisMac: ThisMacSettingsColumn()
       }
     }
   }
@@ -24,12 +25,13 @@ struct SettingsColumnsView: View {
 
 /// A family of settings, as the first column of the settings place lists it.
 private enum SettingsGroup: Hashable, CaseIterable {
-  case global, local
+  case global, local, thisMac
 
   var title: String {
     switch self {
     case .global: "Global"
     case .local: "Local"
+    case .thisMac: "This Mac"
     }
   }
 
@@ -37,6 +39,7 @@ private enum SettingsGroup: Hashable, CaseIterable {
     switch self {
     case .global: "globe"
     case .local: "pin"
+    case .thisMac: "desktopcomputer"
     }
   }
 }

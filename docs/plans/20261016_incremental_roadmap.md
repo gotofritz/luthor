@@ -230,19 +230,23 @@ added up for a project, is shown in the review and on the cards, never applied.
 
 Usable: the ALPEN loop is closed, and estimates improve with feedback.
 
-### 10. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate)
+### 10. Mac ↔ Mac sync via a Dropbox folder (THROWAWAY candidate) ✅
 
-- Log lives in the Dropbox folder, synced by the Dropbox desktop app
-- One file per device (`events-<deviceID>.jsonl`), so two machines never
-  write the same file and Dropbox never makes conflict copies
-- Read = merge all device files, order by `(lamport, deviceID, eventID)`,
-  replay. Shuffled-order and duplicate-event tests land here
-- Optional: split acceptance testing out of the TDD skill into its own
-  `acceptance` skill, linked from the TDD skill. Likely needed here, because
-  two-device flows need a shared harness (several simulated devices, an
-  injected clock from slice 8, fixture logs) and a way to turn a slice's
-  promises into scenarios. Do it only if that guidance outgrows a section of
-  the TDD skill
+The log lives in a folder the Dropbox desktop app syncs, chosen in a
+first-start modal and later in Settings → This Mac (`LUTHOR_SYNC_DIR` does the
+same from a shell).
+`DeviceFilesEventLog` appends only to `events-<device>.jsonl`, so two Macs
+never write the same file and Dropbox never makes a conflict copy, and reads
+the merge of every `events-*.jsonl`; replay already orders by `(lamport,
+deviceID, eventID)` and applies each event once, so any arrival order gives
+the same state (a conflict copy is harmless for the same reason). A last line
+of another device's file that is still half synced is skipped until the rest
+arrives; any other unreadable line is still an error. `FileChangeMonitor`
+also watches the folder, so the app reloads when Dropbox delivers. Without
+`LUTHOR_DEVICE_ID` a shared folder names the device after the Mac's host
+name. Acceptance flows simulate two Macs on one folder. The optional
+`acceptance` skill was not needed: the two-device harness is a small
+`launchApp(sharing:as:)` helper.
 
 Usable: same tasks on every Mac, with almost no sync code. If this proves
 reliable, the "proper" Dropbox API sync can come much later or never for Mac.
@@ -624,3 +628,20 @@ Usable: the weekly review.
    creates it, so no second workflow is needed (a tag pushed with the workflow
    token would not start one). A build that fails after a merge makes no
    release; the next merge works from the same last tag and tries again
+
+## Decisions (2026-10-17, slice 10)
+
+1. **Where the log lives is a per-device choice, not an event.** The log has
+   to be found before it can be read, so the choice sits in `UserDefaults`
+   next to the last view shown. A first-start modal asks (radio buttons
+   Dropbox, defaulting to `~/Dropbox/backups/Luthor`, and Home Folder,
+   `~/.luthor/events.jsonl`); Settings → This Mac changes it, live
+2. **Moving to Dropbox copies, never moves.** The Home Folder log is copied in
+   as this Mac's device file the first time, if that file does not exist; the
+   original stays. Moving back copies nothing
+3. **The environment still wins.** `LUTHOR_LOG` or `LUTHOR_SYNC_DIR` decide
+   the place, with no modal and a read-only note in Settings. Without
+   `LUTHOR_DEVICE_ID` a shared folder names the device after the host name
+4. **Distribution stays ad-hoc signed.** A release zip is fetched with
+   `gh release download`, which sets no quarantine flag, so Gatekeeper does
+   not block it; notarising (Developer ID, $99 a year) is not set up
