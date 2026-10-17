@@ -174,15 +174,16 @@ extension LibraryState {
   /// The view's plan for `date`, as of `today`.
   ///
   /// The plan lists the tasks planned for the day: the order the user chose first, then the rest in the
-  /// suggested order. The suggestion is deterministic: A before B before C, then the order of the tasks in
-  /// their projects, then the order they were captured. (Hard deadlines will slot in after priority once
-  /// tasks have them.) Candidates are the clarified open tasks that could be pulled in, in the same
-  /// suggested order: no someday task, no task a sequential project is holding back, no delegated task
-  /// until its follow-up date.
+  /// suggested order. The suggestion is deterministic: A before B before C, then hard deadlines that are due
+  /// on the day (the earliest first), then the order of the tasks in their projects, then the order they were
+  /// captured. Candidates are the clarified open tasks that could be pulled in, and the unclarified ones whose
+  /// hard deadline is due, in the same suggested order: no someday task, no task a sequential project is
+  /// holding back, no delegated task until its follow-up date.
   public func plan(for viewID: ViewID, on date: CalendarDate, today: CalendarDate) -> DayPlan {
     let viewState = view(viewID)
     let planning = settings(for: viewID)
-    let ranking = PlanRanking(viewState)
+    let deadlines = dueDates.filter { $0.value.isHard && $0.value.date <= date }.mapValues(\.date)
+    let ranking = PlanRanking(viewState, deadlines: deadlines)
     let key = DayKey(viewID: viewID, date: date)
     let manualPosition = Dictionary(
       (dayOrders[key] ?? []).enumerated().map { (position, id) in (id, position) },
@@ -202,7 +203,8 @@ extension LibraryState {
     let candidates = viewState.openTasks.filter { task in
       let isWaiting = delegations[task.id].map { !$0.isFollowUpDue(on: today) } ?? false
       let isLeftOver = scheduledDates[task.id].map { $0 < today } ?? false
-      return task.isClarified && task.priority != .someday && scheduledDates[task.id] != date
+      let isClarified = task.isClarified || deadlines[task.id] != nil
+      return isClarified && task.priority != .someday && scheduledDates[task.id] != date
         && (task.projectID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
     }.sorted(by: suggested).map(entry)
 
@@ -230,11 +232,14 @@ extension LibraryState {
 struct PlanKey: Comparable {
   let manual: Int
   let priority: Int
+  /// The day of a hard deadline that is due, else `Int.max`.
+  let deadline: Int
   let project: Int
   let capture: Int
 
   static func < (lhs: PlanKey, rhs: PlanKey) -> Bool {
-    (lhs.manual, lhs.priority, lhs.project, lhs.capture) < (rhs.manual, rhs.priority, rhs.project, rhs.capture)
+    (lhs.manual, lhs.priority, lhs.deadline, lhs.project, lhs.capture)
+      < (rhs.manual, rhs.priority, rhs.deadline, rhs.project, rhs.capture)
   }
 }
 
@@ -245,8 +250,11 @@ struct PlanRanking {
   /// Where each task filed in a project sits in a walk through the view's projects, depth first.
   let projectIndex: [TaskID: Int]
   let projectTitles: [ProjectID: String]
+  /// The day of the hard deadline of each task whose deadline is due.
+  let deadlines: [TaskID: CalendarDate]
 
-  init(_ view: ViewState) {
+  init(_ view: ViewState, deadlines: [TaskID: CalendarDate]) {
+    self.deadlines = deadlines
     let captured = view.openTasks.enumerated().map { (position, task) in (task.id, position) }
     captureIndex = Dictionary(captured, uniquingKeysWith: { first, _ in first })
     projectTitles = Dictionary(view.projects.map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
@@ -266,11 +274,12 @@ struct PlanRanking {
     projectIndex = index
   }
 
-  /// The place of a task in a plan: the user's own position first, then priority, project order, capture
-  /// order.
+  /// The place of a task in a plan: the user's own position first, then priority, deadline, project order,
+  /// capture order.
   func key(_ task: TaskItem, manual: Int?) -> PlanKey {
     PlanKey(
-      manual: manual ?? Int.max, priority: Self.rank(of: task.priority), project: projectIndex[task.id] ?? Int.max,
+      manual: manual ?? Int.max, priority: Self.rank(of: task.priority),
+      deadline: deadlines[task.id]?.daysSinceEpoch ?? Int.max, project: projectIndex[task.id] ?? Int.max,
       capture: captureIndex[task.id] ?? Int.max)
   }
 
@@ -283,8 +292,10 @@ struct PlanRanking {
       case .someday?: "Someday"
       case nil: "No priority"
       }
-    guard let projectID = task.projectID, let title = projectTitles[projectID] else { return priority }
-    return "\(priority), in project \(title)"
+    var reason = priority
+    if let projectID = task.projectID, let title = projectTitles[projectID] { reason += ", in project \(title)" }
+    if let deadline = deadlines[task.id] { reason += ", deadline \(deadline.isoString)" }
+    return reason
   }
 
   private static func rank(of priority: Priority?) -> Int {

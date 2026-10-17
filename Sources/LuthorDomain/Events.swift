@@ -51,6 +51,7 @@ public enum EventPayload: Equatable, Sendable {
   case taskDelegated(TaskDelegated)
   case taskReclaimed(TaskReclaimed)
   case taskDropped(TaskDropped)
+  case taskDueSet(TaskDueSet)
   case taskTimeLogged(TaskTimeLogged)
   case unplannedTimeLogged(UnplannedTimeLogged)
   case dayReviewed(DayReviewed)
