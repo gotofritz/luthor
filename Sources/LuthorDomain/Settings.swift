@@ -40,7 +40,7 @@ public enum SettingKey: String, Codable, Sendable, CaseIterable, Hashable {
   case capacityFriday
   case capacitySaturday
   case capacitySunday
-  /// The view `luthor add` and imports use when none is named. Global only; a view cannot override
+  /// The default view; nothing reads it since the CLI was removed. Global only; a view cannot override
   /// which view is the default.
   case defaultViewID
 }
@@ -100,7 +100,7 @@ extension LibraryState {
     viewSettingOverrides[viewID]?[key] != nil
   }
 
-  /// The view `luthor add` and imports use when none is named: the one chosen in settings, or the
+  /// The default view: the one chosen in settings, or the
   /// built-in default view if none was chosen or the one chosen no longer exists.
   public var defaultViewID: ViewID {
     let chosen = globalSettingValues[.defaultViewID].map(ViewID.init) ?? .default

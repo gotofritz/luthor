@@ -140,15 +140,4 @@ struct CrossViewCommandTests {
       try commands.move(projectID: ProjectID("p9"), toView: .default, log: Self.log)
     }
   }
-
-  @Test("completing by ID prefix only finds tasks of the view named")
-  func completeByPrefixStaysInTheView() throws {
-    #expect(throws: CommandError.noOpenTask("w1")) {
-      try commands().complete(idPrefix: "w1", in: .default, log: Self.log)
-    }
-    #expect(
-      try commands().complete(idPrefix: "w1", in: ViewID("work"), log: Self.log) == [
-        completed("w1", id: "id-1", lamport: 5)
-      ])
-  }
 }

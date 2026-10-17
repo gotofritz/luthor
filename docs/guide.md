@@ -1,8 +1,8 @@
 # Luthor user guide
 
 How to use Luthor as it is today. This describes shipped behaviour only: what
-is planned lives in `docs/plans/`. Every PR that changes what the app or the
-CLI does updates this guide in the same PR (see the docs check in
+is planned lives in `docs/plans/`. Every PR that changes what the app
+does updates this guide in the same PR (see the docs check in
 `AGENTS.md`).
 
 ## Concepts
@@ -79,7 +79,6 @@ that project; otherwise it goes to the Inbox of the current view.
 Add `!a`, `!b`, `!c` or `!someday` for a priority and `<n>m` for an estimate
 in minutes, anywhere in what you type: `call bank !a 15m` captures "call
 bank" with priority Critical and a 15-minute estimate, already clarified.
-The `luthor add` command understands the same syntax.
 
 ## Completing a task
 
@@ -208,7 +207,7 @@ Settings shows two families in its first column: Global and Local.
   for a task given no estimate (5 minutes), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
   minutes (8 hours on weekdays, none at the weekend). It also picks the
-  default view: the one `luthor add` and imports use when none is named
+  default view
 - **Local** overrides the buffer and the weekday capacity for the view
   currently shown. Each is a toggle: off, it follows the global value
   (shown greyed with "(global)"); on, it shows its own value to change.
@@ -216,29 +215,11 @@ Settings shows two families in its first column: Global and Local.
 
 Today plans the day with these numbers.
 
-## The luthor command
-
-A quick way to capture from a terminal. It knows tasks only, not projects,
-and works in one view: the one named with `--view`, else `LUTHOR_VIEW`, else
-the view chosen in Settings. View names ignore case.
-
-```bash
-luthor add "buy milk"
-luthor add "call bank !a 15m"   # priority Critical, 15-minute estimate
-luthor add --view Work "write the report"
-luthor list              # every open task of the view, filed or not
-luthor done 9afc         # any unique prefix of a task ID in the view
-```
-
-Set `LUTHOR_VIEW=Work` on the work Mac, and `luthor` never shows or touches a
-private task there.
-
 ## Where your data lives
 
 Everything is one append-only event log, `~/.luthor/events.jsonl` by default.
 Set `LUTHOR_LOG` to use another file and `LUTHOR_DEVICE_ID` to name the device.
-The app and the command share the log and see each other's changes. Back it
-up by copying the file.
+Back it up by copying the file.
 
 ## Installing
 

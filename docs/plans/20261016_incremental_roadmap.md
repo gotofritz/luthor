@@ -47,13 +47,14 @@ fails under 90% line coverage of `Sources/` (`make coverage`).
 `make app` builds the Mac app in `make check-ci`; view model tests run with the
 package tests.
 
-### CD-1. Ship the Mac app and CLI (slice 3) ✅
+### CD-1. Ship the Mac app (slice 3) ✅
 
-A version tag (`v0.x.y`) runs `make dist` on CI: the `.app` and the universal
-`luthor` CLI, ad-hoc signed, zipped and attached to a GitHub Release. PRs that
-change the release build run it without publishing. `make install` puts both
-in `/Applications` and `~/.local/bin` between releases. Not notarised: the
-first launch needs right-click → Open.
+A version tag (`v0.x.y`) runs `make dist` on CI: the `.app`, ad-hoc signed,
+zipped and attached to a GitHub Release. PRs that change the release build
+run it without publishing. `make install` puts it in `/Applications` between
+releases. Not notarised: the first launch needs right-click → Open. The
+universal `luthor` CLI shipped alongside until it was removed (see Decisions
+2026-10-17, slice 13 dropped).
 
 ### CI-3. Event format guard (slice 15)
 
@@ -72,7 +73,8 @@ first launch needs right-click → Open.
 
 `luthor add`, `list` and `done <id-prefix>` over a JSON-Lines log
 (`TaskCaptured`, `TaskCompleted`), path from an env var. Proves domain, log and
-replay end to end with no UI.
+replay end to end with no UI. The CLI was removed on 2026-10-17; the app
+is the only front end.
 
 ### 2. Mac app: Inbox ✅
 
@@ -265,8 +267,8 @@ Usable: contexts (`@home`, `@calls`, `@deep-work`).
 ### 13. ~~Capture without the app: iPhone and Alfred~~ (dropped)
 
 Dropped 2026-10-17: the Shortcut inbox file and the Alfred workflow are not
-needed. The number stays so later slices keep theirs. The CLI stays as it is
-(see Decisions 2026-10-17, slice 13 dropped).
+needed. The number stays so later slices keep theirs. The CLI is removed
+with it (see Decisions 2026-10-17, slice 13 dropped).
 
 ### 14. Weekly project review
 
@@ -349,8 +351,8 @@ Usable: the weekly review.
 ## Decisions (2026-10-17)
 
 1. **CLI is capture only.** The app does everything the CLI does; the CLI
-   gains no project, defer or tag commands. (It was to shrink to `luthor add`
-   for Alfred in slice 13; slice 13 is dropped, so it stays as it is)
+   gains no project, defer or tag commands. (Superseded: slice 13 is dropped
+   and the CLI is removed altogether)
 2. **Views are logical, in one log.** Work and private live in the same
    event log and sync together; isolation is enforced by the domain (every
    query names a view), not by separate files. Separate logs per view stay
@@ -561,5 +563,11 @@ Usable: the weekly review.
 
 1. **Slice 13 is dropped.** Phone capture through a Dropbox inbox file and
    the Alfred workflow are not needed. Slice numbers are not renumbered
-2. **The CLI is left as it is.** It no longer shrinks to `luthor add`; it
-   gains nothing and may be removed later
+2. **The CLI is removed.** `LuthorCLI`, the `luthor` executable, its tests,
+   `make cli` and the CLI zip in releases go; `Commands.complete(idPrefix:)`
+   and `CommandError.ambiguousPrefix` existed only for it and go too, as does
+   `LUTHOR_VIEW`. `LUTHOR_LOG` and `LUTHOR_DEVICE_ID` stay, for the app. The
+   app and the view models do everything it did
+3. **The default-view setting is now unused.** Only the CLI read it (the
+   view `luthor add` captured into); the app reopens on the view last used.
+   It stays in Settings for now

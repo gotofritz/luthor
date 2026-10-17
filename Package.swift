@@ -8,14 +8,11 @@ let package = Package(
     .library(name: "LuthorDomain", targets: ["LuthorDomain"]),
     .library(name: "LuthorStore", targets: ["LuthorStore"]),
     .library(name: "LuthorViewModels", targets: ["LuthorViewModels"]),
-    .executable(name: "luthor", targets: ["luthor"]),
   ],
   targets: [
     .target(name: "LuthorDomain"),
     .target(name: "LuthorStore", dependencies: ["LuthorDomain"]),
-    .target(name: "LuthorCLI", dependencies: ["LuthorDomain", "LuthorStore"]),
     .target(name: "LuthorViewModels", dependencies: ["LuthorDomain", "LuthorStore"]),
-    .executableTarget(name: "luthor", dependencies: ["LuthorCLI", "LuthorStore"]),
     .target(
       name: "LuthorTestSupport",
       dependencies: ["LuthorDomain", "LuthorStore"],
@@ -27,17 +24,13 @@ let package = Package(
       dependencies: ["LuthorDomain", "LuthorStore", "LuthorTestSupport"]
     ),
     .testTarget(
-      name: "LuthorCLITests",
-      dependencies: ["LuthorCLI", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
-    ),
-    .testTarget(
       name: "LuthorViewModelsTests",
       dependencies: ["LuthorViewModels", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
     ),
-    // End-to-end flows through the CLI and view models; `make test-acceptance` runs them alone.
+    // End-to-end flows through the view models; `make test-acceptance` runs them alone.
     .testTarget(
       name: "LuthorAcceptanceTests",
-      dependencies: ["LuthorCLI", "LuthorDomain", "LuthorStore", "LuthorViewModels", "LuthorTestSupport"]
+      dependencies: ["LuthorDomain", "LuthorStore", "LuthorViewModels", "LuthorTestSupport"]
     ),
   ]
 )

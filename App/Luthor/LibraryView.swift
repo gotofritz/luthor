@@ -132,7 +132,7 @@ struct LibraryView: View {
     }
   }
 
-  /// Reloads when another process, such as the CLI, changes the log.
+  /// Reloads when another process changes the log.
   private func watchLog() async {
     var monitor = FileChangeMonitor(fileURL: logURL)
     while !Task.isCancelled {

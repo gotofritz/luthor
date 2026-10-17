@@ -1,5 +1,4 @@
 import Foundation
-import LuthorCLI
 import LuthorDomain
 import LuthorStore
 import LuthorTestSupport
@@ -49,38 +48,6 @@ struct PreViewLogFlowTests {
     #expect(library.views.map(\.name) == ["Default"])
     #expect(library.tasks.map(\.title) == ["buy milk"])
     #expect(library.projects.map(\.title) == ["Holiday"])
-  }
-}
-
-@MainActor
-@Suite("Given a Work view, when luthor captures with --view or LUTHOR_VIEW")
-struct CLIViewFlowTests {
-  @Test("the task shows in Work only, and luthor list shows only the view it names")
-  func cliCapturesIntoTheNamedView() throws {
-    let dir = try TemporaryDirectory()
-    defer { dir.remove() }
-    let library = launchApp(on: dir.file("events.jsonl"))
-    let work = try library.createView("Work")
-    let environment = ["LUTHOR_LOG": dir.file("events.jsonl").path, "LUTHOR_DEVICE_ID": "cli"]
-    let cli = CLI(environment: environment, home: dir.file("home"), ids: UUIDGenerator())
-    var atWorkEnvironment = environment
-    atWorkEnvironment["LUTHOR_VIEW"] = "work"
-    let cliAtWork = CLI(environment: atWorkEnvironment, home: dir.file("home"), ids: UUIDGenerator())
-
-    _ = cli.run(["add", "--view", "Work", "write", "the", "report"])
-    _ = cliAtWork.run(["add", "book", "a", "room"])
-    _ = cli.run(["add", "buy", "milk"])
-    library.reload()
-
-    library.showView(work)
-    #expect(library.tasks.map(\.title) == ["write the report", "book a room"])
-    library.showView(.default)
-    #expect(library.tasks.map(\.title) == ["buy milk"])
-    #expect(cliAtWork.run(["list"]).output.contains("buy milk") == false)
-    #expect(
-      cli.run(["list", "--view", "Work"]).output.split(separator: "\n").map { $0.dropFirst(10) } == [
-        "write the report", "book a room",
-      ])
   }
 }
 

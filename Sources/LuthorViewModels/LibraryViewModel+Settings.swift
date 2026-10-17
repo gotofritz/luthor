@@ -35,7 +35,7 @@ extension LibraryViewModel {
     isOverriddenForCurrentView(weekday.capacityKey)
   }
 
-  /// Sets the view `luthor add` and imports use when none is named.
+  /// Sets the default view.
   public func setDefaultView(_ viewID: ViewID) {
     perform { (log) throws(CommandError) in try commands.setDefaultView(viewID, log: log) }
   }

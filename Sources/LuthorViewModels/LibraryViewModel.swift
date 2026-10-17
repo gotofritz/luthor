@@ -6,7 +6,7 @@ import Observation
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
 ///
-/// Every action re-reads the log first, so events another process appended (the CLI) are never missed
+/// Every action re-reads the log first, so events another process appended are never missed
 /// and new events follow the highest Lamport counter on disk.
 @MainActor
 @Observable
@@ -41,7 +41,7 @@ public final class LibraryViewModel {
   public internal(set) var globalSettings = LibraryState.replay([]).globalSettings
   /// The settings `currentView` plans with: its own overrides, then the global values.
   public internal(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
-  /// The view `luthor add` and imports use when none is named.
+  /// The default view chosen in settings.
   public internal(set) var defaultViewID = ViewID.default
   /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned
   /// tasks, candidates, capacity) for the current view, and the view's delegated tasks, longest wait first.

@@ -1,5 +1,4 @@
 import Foundation
-import LuthorCLI
 import LuthorDomain
 import LuthorStore
 import LuthorTestSupport
@@ -88,11 +87,5 @@ struct ProjectCompletionFlowTests {
 
     #expect(library.projects.isEmpty)
     #expect(library.sidebarSelection == .inbox)
-    let cli = CLI(
-      environment: ["LUTHOR_LOG": dir.file("events.jsonl").path, "LUTHOR_DEVICE_ID": "mac"],
-      home: dir.file("home"),
-      ids: SequentialIDs()
-    )
-    #expect(cli.run(["list"]) == CLIResult(exitCode: 0, output: ""))
   }
 }
