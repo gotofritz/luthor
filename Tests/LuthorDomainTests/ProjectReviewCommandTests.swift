@@ -84,6 +84,34 @@ struct ReviewIntervalCommandTests {
   }
 }
 
+@Suite("When the next review of a project is chosen by command")
+struct NextReviewCommandTests {
+  @Test("it writes one ReviewDateSet")
+  func itWritesOneReviewDateSet() throws {
+    let events = try makeCommands().setNextReview(of: TaskID("p1"), to: date("2026-10-26"), log: base)
+
+    #expect(events == [reviewDateSet("p1", to: "2026-10-26", id: "id-1", lamport: 2)])
+  }
+
+  @Test("the day it already falls on writes nothing")
+  func theDayItAlreadyFallsOnWritesNothing() throws {
+    // p1 was created on 2026-10-12, so with the weekly default it falls on 2026-10-19.
+    #expect(try makeCommands().setNextReview(of: TaskID("p1"), to: date("2026-10-19"), log: base).isEmpty)
+    let log = base + [reviewDateSet("p1", to: "2026-10-26")]
+    #expect(try makeCommands().setNextReview(of: TaskID("p1"), to: date("2026-10-26"), log: log).isEmpty)
+  }
+
+  @Test("a project that is not active is refused")
+  func aProjectThatIsNotActiveIsRefused() {
+    #expect(throws: CommandError.noActiveProject(TaskID("ghost"))) {
+      try makeCommands().setNextReview(of: TaskID("ghost"), to: monday, log: base)
+    }
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().setNextReview(of: TaskID("p1"), to: monday, log: base + [projectDropped("p1")])
+    }
+  }
+}
+
 @Suite("When a project is marked reviewed by command")
 struct ReviewProjectCommandTests {
   @Test("it writes one TaskReviewed for the day")
@@ -99,6 +127,13 @@ struct ReviewProjectCommandTests {
 
     #expect(try makeCommands().reviewProject(TaskID("p1"), on: monday, log: log).isEmpty)
     #expect(try makeCommands().reviewProject(TaskID("p1"), on: date("2026-10-26"), log: log).count == 1)
+  }
+
+  @Test("a chosen next review that is due is cleared by reviewing, even on the day it was last reviewed")
+  func aChosenNextReviewIsClearedByReviewing() throws {
+    let log = base + [projectReviewed("p1", on: "2026-10-19"), reviewDateSet("p1", to: "2026-10-15", lamport: 4)]
+
+    #expect(try makeCommands().reviewProject(TaskID("p1"), on: monday, log: log).count == 1)
   }
 
   @Test("a project whose review is off can still be marked reviewed")

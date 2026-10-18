@@ -190,7 +190,7 @@ public struct LibraryState: Equatable, Sendable {
       applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
-    case .reviewDefaultSet, .reviewIntervalSet, .taskReviewed:
+    case .reviewDefaultSet, .reviewIntervalSet, .reviewDateSet, .taskReviewed:
       applyProjectReview(payload)
     case .taskRepeatSet, .taskRecurred:
       applyRepeat(payload)

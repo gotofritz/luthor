@@ -79,6 +79,7 @@ private struct EventLineDTO: Codable {
     case dayReviewed = "DayReviewed"
     case reviewDefaultSet = "ReviewDefaultSet"
     case reviewIntervalSet = "ReviewIntervalSet"
+    case reviewDateSet = "ReviewDateSet"
     case taskReviewed = "TaskReviewed"
     case taskRepeatSet = "TaskRepeatSet"
     case taskRecurred = "TaskRecurred"
@@ -116,7 +117,7 @@ private struct EventLineDTO: Codable {
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .reviewIntervalSet,
-        .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted:
+        .reviewDateSet, .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted:
         try Self.laterPayload(type, in: container)
       }
     event = EventEnvelope(
@@ -139,6 +140,7 @@ private struct EventLineDTO: Codable {
     case .dayReviewed: .dayReviewed(try container.decode(DayReviewed.self, forKey: .data))
     case .reviewDefaultSet: .reviewDefaultSet(try container.decode(ReviewDefaultSet.self, forKey: .data))
     case .reviewIntervalSet: .reviewIntervalSet(try container.decode(ReviewIntervalSet.self, forKey: .data))
+    case .reviewDateSet: .reviewDateSet(try container.decode(ReviewDateSet.self, forKey: .data))
     case .taskReviewed: .taskReviewed(try container.decode(TaskReviewed.self, forKey: .data))
     case .taskRepeatSet: .taskRepeatSet(try container.decode(TaskRepeatSet.self, forKey: .data))
     case .taskRecurred: .taskRecurred(try container.decode(TaskRecurred.self, forKey: .data))
@@ -185,6 +187,7 @@ private struct EventLineDTO: Codable {
     case .dayReviewed(let data): try write(.dayReviewed, data, to: &container)
     case .reviewDefaultSet(let data): try write(.reviewDefaultSet, data, to: &container)
     case .reviewIntervalSet(let data): try write(.reviewIntervalSet, data, to: &container)
+    case .reviewDateSet(let data): try write(.reviewDateSet, data, to: &container)
     case .taskReviewed(let data): try write(.taskReviewed, data, to: &container)
     case .taskRepeatSet(let data): try write(.taskRepeatSet, data, to: &container)
     case .taskRecurred(let data): try write(.taskRecurred, data, to: &container)

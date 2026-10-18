@@ -313,7 +313,9 @@ Calendar, with a glasses icon (`eyeglasses`, "Reviews"): the projects due, the o
 picked with its card and the buttons to mark it reviewed or drop it, and its tasks, listed and edited like any list (new tasks are captured into
 the picked project). Mark Project Reviewed (⇧⌘R) moves to the next project. The
 default interval is in Settings → Global, a project's own in the review and in its
-context menu.
+context menu. Afterwards a project's card gained the interval and an editable next
+review day, so projects made together can be staggered: `ReviewDateSet(project, date)`
+replaces the computed day until the project is next reviewed.
 
 Usable: the weekly review.
 

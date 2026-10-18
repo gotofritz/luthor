@@ -66,6 +66,7 @@ public enum EventPayload: Equatable, Sendable {
   case dayReviewed(DayReviewed)
   case reviewDefaultSet(ReviewDefaultSet)
   case reviewIntervalSet(ReviewIntervalSet)
+  case reviewDateSet(ReviewDateSet)
   case taskReviewed(TaskReviewed)
   case taskRepeatSet(TaskRepeatSet)
   case taskRecurred(TaskRecurred)

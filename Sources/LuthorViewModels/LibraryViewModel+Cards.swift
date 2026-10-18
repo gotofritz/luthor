@@ -48,13 +48,19 @@ extension LibraryViewModel {
     return events
   }
 
-  /// Keeps what was typed on a project's card, which has the fields of a task's and a kind, and leaves edit
-  /// mode. A blank title keeps the card in edit mode and writes nothing.
+  /// Keeps what was typed on a project's card, which has the fields of a task's, a kind and how and when it is
+  /// reviewed, and leaves edit mode. A blank title keeps the card in edit mode and writes nothing.
   public func saveCard(ofProject projectID: TaskID, _ draft: TaskCardDraft, kind: ProjectKind) {
     guard !draft.title.allSatisfy(\.isWhitespace) else { return }
     perform { (log) throws(CommandError) in
       var events = try cardEvents(of: projectID, draft, log: log)
       events += try commands.setKind(of: projectID, to: kind, log: log + events)
+      if let review = draft.review {
+        events += try commands.setReviewInterval(of: projectID, to: review.interval, log: log + events)
+        if let next = review.nextReview {
+          events += try commands.setNextReview(of: projectID, to: next, log: log + events)
+        }
+      }
       return events
     }
     if errorMessage == nil { editingCard = nil }

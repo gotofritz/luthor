@@ -38,6 +38,16 @@ struct ProjectReviewLineTests {
     )
   }
 
+  @Test("a chosen next review names the project and the day")
+  func aChosenNextReviewNamesTheProjectAndTheDay() throws {
+    let line = try EventLine.encode(reviewDateSet("p1", to: "2026-10-26", id: "e1", lamport: 1))
+
+    #expect(
+      line
+        == #"{"data":{"date":"2026-10-26","taskID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"ReviewDateSet"}"#
+    )
+  }
+
   @Test("a drop of a project is a TaskDropped naming it")
   func aDropNamesTheProject() throws {
     let drop = try EventLine.encode(projectDropped("p1", id: "e3", lamport: 3))
@@ -50,7 +60,7 @@ struct ProjectReviewLineTests {
     arguments: [
       reviewDefaultSet(.every(days: 7)), reviewDefaultSet(.off), reviewIntervalSet("p1", to: .every(days: 3)),
       reviewIntervalSet("p1", to: .off), reviewIntervalSet("p1", to: nil), projectReviewed("p1", on: "2026-10-19"),
-      projectDropped("p1"),
+      projectDropped("p1"), reviewDateSet("p1", to: "2026-10-26"),
     ])
   func projectReviewLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
