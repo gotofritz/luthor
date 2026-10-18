@@ -182,7 +182,8 @@ private struct TaskCardEditor: View {
     self.library = library
     self.task = task
     _title = State(initialValue: task.title)
-    _fields = State(initialValue: CardFields(library: library, id: task.id, priority: task.priority, estimate: task.estimate))
+    _fields = State(
+      initialValue: CardFields(library: library, id: task.id, priority: task.priority, estimate: task.estimate))
     _notes = State(initialValue: task.notes ?? "")
   }
 
@@ -288,7 +289,8 @@ private struct ProjectCardEditor: View {
     _title = State(initialValue: project.title)
     _kind = State(initialValue: project.kind)
     _fields = State(
-      initialValue: CardFields(library: library, id: project.id, priority: project.priority, estimate: project.estimate))
+      initialValue: CardFields(
+        library: library, id: project.id, priority: project.priority, estimate: project.estimate))
     _notes = State(initialValue: project.notes ?? "")
   }
 

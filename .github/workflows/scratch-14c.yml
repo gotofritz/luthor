@@ -36,3 +36,8 @@ jobs:
         if: always()
         run: |
           make app 2>&1 | grep -E "error|warning: unre|\*\* BUILD" | head -n 100
+      - name: Format diff
+        if: always()
+        run: |
+          swift format --in-place --recursive Package.swift Sources Tests App
+          git diff | head -n 400
