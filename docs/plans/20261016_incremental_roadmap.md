@@ -362,8 +362,6 @@ This roadmap now ends at the desktop app.
 
 ### Later
 
-- Search: make the search box in the top bar work, over titles in the
-  current view only
 - Full keyboard navigation: reach the rail, every column, the top bar and
   the view switcher without the mouse (the view switcher still gets no
   shortcut)
