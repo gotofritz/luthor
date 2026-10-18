@@ -213,7 +213,7 @@ Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
 ### 9. Daily review and carry-over (ALPEN: N) ✅
 
-Review is a place on the rail (⇧⌘N), looking back on the day Today shows.
+Review is a place (⇧⌘N), looking back on the day Today shows; slice 14 folded it into Today as a Plan / Review toggle.
 `TaskTimeLogged(task, date, minutes?)` sets the minutes a task took on a day,
 by hand; `UnplannedTimeLogged(view, date, minutes?)` the minutes of work
 outside the plan; `DayReviewed(view, date, note?)` closes the review with a
@@ -311,9 +311,9 @@ today or overdue, the longest overdue first. `ProjectPutOnHold`, `ProjectResumed
 and `ProjectDropped` give a project a status; an on-hold or dropped project
 hands out no next actions, so none of its tasks is a Today candidate, and a
 dropped one is not reviewed. The weekly review is a new place on the rail, after
-Review, with a glasses icon (`eyeglasses`, "Weekly"): the projects due, the one
-picked with its card and the buttons to mark it reviewed, put it on hold or drop
-it, and its tasks, listed and edited like any list (new tasks are captured into
+Calendar, with a glasses icon (`eyeglasses`, "Reviews"): the projects due, the one
+picked with its card and the buttons to mark it reviewed, pause its reviews (on
+hold) or drop it, and its tasks, listed and edited like any list (new tasks are captured into
 the picked project). Mark Project Reviewed (⇧⌘R) moves to the next project. The
 default interval is in Settings → Global, a project's own in the review and in its
 context menu.
@@ -797,8 +797,11 @@ Usable: the weekly review.
 5. **On hold is reviewed, dropped is not.** Review is how an on-hold project
    gets resumed; `ProjectReviewed` for a dropped project is refused by the
    command and ignored by the reducer
-6. **The weekly review sits after Review** on the rail, with the glasses
-   icon, the title "Weekly" and the window title "Weekly Review". Its first
+6. **The weekly review is "Reviews" on the rail**, with the glasses icon. The
+   day's review lost its rail icon: it is Today's other face, flipped with a
+   Plan / Review toggle in the header of both (`NavigationSection.review`
+   stays, with ⇧⌘N, and Today stays picked on the rail while it is shown).
+   The buttons read Pause Reviews (the on-hold status) and Drop Project. Its first
    column lists the projects due, the next the picked project's card with
    Mark Reviewed, the interval picker and the status buttons, the third its
    tasks. The first project is picked on arrival, and marking one reviewed

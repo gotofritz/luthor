@@ -63,11 +63,11 @@ A narrow rail on the left lists the places, an icon with its name underneath.
 It does not expand. Click a place to look at it:
 
 - **Inbox**: your inbox tasks, as a list
-- **Today**: the plan of a day, with its capacity (see Today)
+- **Today**: the plan of a day, with its capacity (see Today); the Plan /
+  Review toggle at the top flips it to the day looked back on (see Review)
 - **Calendar**: the days, and the tasks of the one you pick (see Calendar)
-- **Review**: the day looked back on (see Review)
-- **Weekly** (the glasses): the projects whose review is due (see Weekly
-  review)
+- **Reviews** (the glasses): the projects whose review is due (see Reviews).
+  The review of a day is Today's other face (see Review)
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
@@ -237,7 +237,9 @@ planning, rescheduling and deciding on tasks are done in Today and Review. ⇧�
 
 ## Review
 
-Review looks back on one day of the current view. It shows the day Today
+Review looks back on one day of the current view. It is Today's other face:
+the Plan / Review toggle at the top of Today flips between the two, and the
+day shown stays. It shows the day Today
 shows: ◀ and ▶ (or ⌘[ and ⌘]) change it, and the Today button comes back. ⇧⌘N
 opens it (Plan menu). The first column has the totals (minutes planned,
 minutes logged, minutes unplanned) and **Done**, the tasks planned for the day
@@ -277,9 +279,9 @@ unplanned time instead. A task that was decided on has left the day it was
 decided from, so the review of that day lists only what was done and what is
 still undecided.
 
-## Weekly review
+## Reviews
 
-The Weekly place (the glasses icon, after Review) keeps projects from going
+The Reviews place (the glasses icon, after Calendar) keeps projects from going
 stale. Its first column lists the projects of the current view whose review is
 due, the longest overdue first, each with the day the review fell due. A
 project is due once its next review day is today or has passed, so a project
@@ -295,7 +297,7 @@ as projects of their own. The first project is picked for you.
 - **Mark Reviewed** (⇧⌘R, Plan → Mark Project Reviewed) records today as the
   day it was reviewed and picks the next project. The project is due again an
   interval later
-- Plan → Show Weekly Review opens the place
+- Plan → Show Project Reviews opens the place
 
 **How often.** Every project is reviewed weekly until you say otherwise.
 Settings → Global → Project review sets the default (Off, Daily, Every 3
@@ -306,11 +308,11 @@ default. Off leaves one project out of the review; with the default off, only
 projects with an interval of their own are reviewed. Changing an interval
 changes the next review day at once.
 
-**Status.** Put on Hold (the button, or the project's context menu) stops a
-project handing out next actions: its tasks show dimmed and none is offered
-as a candidate in Today (tasks already in a day's plan stay there). It is
-still reviewed, so you can resume it. Drop gives up a project: no next
-actions and no review. Its tasks stay open and nothing is deleted. Resume
+**Status.** Pause Reviews (the button, or the project's context menu) puts a
+project on hold, so it stops handing out next actions: its tasks show dimmed
+and none is offered as a candidate in Today (tasks already in a day's plan
+stay there). It is still listed when its review is due, so you can resume
+it. Drop Project gives up a project: no next actions and no review. Its tasks stay open and nothing is deleted. Resume
 brings either back. On-hold and dropped projects show a pause or cross
 symbol in the Projects columns.
 
@@ -389,7 +391,7 @@ Settings shows two families in its first column: Global and Local.
   for a task given no estimate (5 minutes), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
   minutes (8 hours on weekdays, none at the weekend). It sets how often
-  projects are reviewed (weekly; see Weekly review), and picks the default
+  projects are reviewed (weekly; see Reviews), and picks the default
   view
 - **Local** overrides the buffer and the weekday capacity for the view
   currently shown. Each is a toggle: off, it follows the global value

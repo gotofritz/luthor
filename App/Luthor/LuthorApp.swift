@@ -154,9 +154,9 @@ struct LuthorApp: App {
         .keyboardShortcut("t", modifiers: [.command, .shift])
         Button("Show Calendar") { library.show(.calendar) }
           .keyboardShortcut("c", modifiers: [.command, .shift])
-        Button("Show Review") { library.show(.review) }
+        Button("Show Day Review") { library.show(.review) }
           .keyboardShortcut("n", modifiers: [.command, .shift])
-        Button("Show Weekly Review") { library.show(.weeklyReview) }
+        Button("Show Project Reviews") { library.show(.weeklyReview) }
         Button("Mark Project Reviewed") { library.markProjectReviewed() }
           .keyboardShortcut("r", modifiers: [.command, .shift])
           .disabled(library.section != .weeklyReview || library.reviewProjectID == nil)

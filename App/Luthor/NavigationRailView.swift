@@ -7,8 +7,9 @@ import SwiftUI
 struct NavigationRailView: View {
   @Bindable var library: LibraryViewModel
 
-  /// Places listed above the settings icon, which is pinned to the bottom instead.
-  private static let mainSections = NavigationSection.allCases.filter { $0 != .settings }
+  /// Places listed above the settings icon, which is pinned to the bottom instead. The day's review has no
+  /// icon of its own: it is Today's other face, picked with the toggle in its header.
+  private static let mainSections = NavigationSection.allCases.filter { $0 != .settings && $0 != .review }
 
   var body: some View {
     VStack(spacing: 4) {
@@ -41,12 +42,17 @@ private struct RailButton: View {
       }
       .frame(maxWidth: .infinity)
       .padding(.vertical, 6)
-      .background(library.section == section ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
+      .background(isPicked ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .foregroundStyle(library.section == section ? Color.accentColor : .secondary)
+    .foregroundStyle(isPicked ? Color.accentColor : .secondary)
     .help(section.title)
+  }
+
+  /// The place shown; Today stays picked while its review is shown.
+  private var isPicked: Bool {
+    library.section == section || (section == .today && library.section == .review)
   }
 }
 
@@ -72,7 +78,7 @@ extension NavigationSection {
     case .today: "Today"
     case .calendar: "Calendar"
     case .review: "Review"
-    case .weeklyReview: "Weekly"
+    case .weeklyReview: "Reviews"
     case .projects: "Projects"
     case .priorities: "Prios"
     case .tags: "Tags"

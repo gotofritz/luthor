@@ -136,7 +136,7 @@ struct LibraryView: View {
     case .today: "Today"
     case .calendar: "Calendar"
     case .review: "Review"
-    case .weeklyReview: "Weekly Review"
+    case .weeklyReview: "Reviews"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
     case .tags: "Tags"

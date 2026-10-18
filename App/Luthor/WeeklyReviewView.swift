@@ -99,12 +99,12 @@ private struct ProjectStatusButtons: View {
   var body: some View {
     HStack {
       if project.status == .active {
-        Button("Put on Hold", systemImage: ProjectStatus.onHold.symbol) { library.putOnHold(project.id) }
+        Button("Pause Reviews", systemImage: ProjectStatus.onHold.symbol) { library.putOnHold(project.id) }
       } else {
         Button("Resume", systemImage: "play.circle") { library.resume(project.id) }
       }
       if project.status != .dropped {
-        Button("Drop", systemImage: ProjectStatus.dropped.symbol) { library.dropProject(project.id) }
+        Button("Drop Project", systemImage: ProjectStatus.dropped.symbol) { library.dropProject(project.id) }
       }
     }
   }
@@ -125,7 +125,7 @@ struct ProjectReviewMenuItems: View {
       }
     }
     if project.status == .active {
-      Button("Put on Hold") { library.putOnHold(project.id) }
+      Button("Pause Reviews") { library.putOnHold(project.id) }
     } else {
       Button("Resume") { library.resume(project.id) }
     }
