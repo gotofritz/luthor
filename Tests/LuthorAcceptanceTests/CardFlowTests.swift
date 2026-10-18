@@ -104,7 +104,9 @@ struct EditCardFlowTests {
     #expect(library.editingCard == nil)
 
     library.editCard(.project(move))
-    library.saveCard(ofProject: move, title: "Move to Lisbon", kind: .sequential, notes: "deadline in March")
+    library.saveCard(
+      ofProject: move, TaskCardDraft(title: "Move to Lisbon", priority: nil, estimate: nil, due: nil, notes: "deadline in March"),
+      kind: .sequential)
 
     let relaunched = launchApp(on: dir.file("events.jsonl"))
     relaunched.open(.project(move))

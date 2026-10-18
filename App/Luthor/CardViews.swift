@@ -67,87 +67,83 @@ struct TaskCardColumn: View {
   }
 }
 
-/// A task card in edit mode. What is typed stays here until OK hands it to the view model; Cancel drops it.
-private struct TaskCardEditor: View {
-  let library: LibraryViewModel
-  let task: TaskItem
+/// What the card of a task or a project lets one set besides its title and notes, until OK keeps it.
+private struct CardFields {
+  var priority: Priority?
+  var estimate: Int?
+  var hasDue: Bool
+  var dueDay: Date
+  var dueIsHard: Bool
+  var repeatRule: RepeatRule?
+  var tagsText: String
 
-  /// Estimates offered next to the one the task has, in minutes.
-  private static let estimateChoices = [5, 15, 30, 60]
-
-  @State private var title: String
-  @State private var priority: Priority?
-  @State private var estimate: Int?
-  @State private var hasDue: Bool
-  @State private var dueDay: Date
-  @State private var dueIsHard: Bool
-  @State private var repeatRule: RepeatRule?
-  @State private var tagsText: String
-  @State private var notes: String
-
-  init(library: LibraryViewModel, task: TaskItem) {
-    self.library = library
-    self.task = task
-    _title = State(initialValue: task.title)
-    _priority = State(initialValue: task.priority)
-    _estimate = State(initialValue: task.estimate)
-    let due = library.dueDate(of: task.id)
-    _hasDue = State(initialValue: due != nil)
-    _dueDay = State(initialValue: due?.date.startOfDay ?? Date())
-    _dueIsHard = State(initialValue: due?.isHard ?? true)
-    _repeatRule = State(initialValue: library.repeatRule(of: task.id))
-    _tagsText = State(initialValue: library.tagItems(of: task.id).map(\.name).joined(separator: ", "))
-    _notes = State(initialValue: task.notes ?? "")
+  init(library: LibraryViewModel, id: TaskID, priority: Priority?, estimate: Int?) {
+    self.priority = priority
+    self.estimate = estimate
+    let due = library.dueDate(of: id)
+    hasDue = due != nil
+    dueDay = due?.date.startOfDay ?? Date()
+    dueIsHard = due?.isHard ?? true
+    repeatRule = library.repeatRule(of: id)
+    tagsText = library.tagItems(of: id).map(\.name).joined(separator: ", ")
   }
 
+  func draft(title: String, notes: String) -> TaskCardDraft {
+    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
+    return TaskCardDraft(
+      title: title, priority: priority, estimate: estimate, due: due, notes: notes,
+      tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule)
+  }
+}
+
+/// The priority, estimate, due date, repeat and tags of a card in edit mode: the same for a task and a project.
+private struct CardFieldsForm: View {
+  let library: LibraryViewModel
+  @Binding var fields: CardFields
+  /// The estimate the item has, offered beside the usual choices.
+  let currentEstimate: Int?
+  let submit: () -> Void
+
+  /// Estimates offered next to the one the item has, in minutes.
+  private static let estimateChoices = [5, 15, 30, 60]
+
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      TextField("Title", text: $title)
-        .textFieldStyle(.roundedBorder)
-        .font(.title3)
-        .onSubmit(save)
-      Picker("Priority", selection: $priority) {
-        Text("None").tag(Priority?.none)
-        ForEach(Priority.allCases, id: \.self) { priority in
-          Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
-        }
+    Picker("Priority", selection: $fields.priority) {
+      Text("None").tag(Priority?.none)
+      ForEach(Priority.allCases, id: \.self) { priority in
+        Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
       }
-      Picker("Estimate", selection: $estimate) {
-        Text("None").tag(Int?.none)
-        ForEach(estimateChoices, id: \.self) { Text("\($0)m").tag(Int?.some($0)) }
-      }
-      Toggle("Due date", isOn: $hasDue)
-        .disabled(repeatRule != nil)
-      if hasDue {
-        DatePicker("Due", selection: $dueDay, displayedComponents: .date)
-        Picker("Kind", selection: $dueIsHard) {
-          Text("Hard deadline").tag(true)
-          Text("Target date").tag(false)
-        }
-        .pickerStyle(.segmented)
-      }
-      RepeatEditor(rule: $repeatRule)
-        .onChange(of: repeatRule) { giveRepeatADueDate() }
-      tagsField
-      if let history = library.estimateHistory(ofTask: task.id) {
-        LabeledContent("History", value: history.summary)
-      }
-      LabeledContent("Project", value: projectTitle)
-      CreatedLine(day: task.createdOn)
-      NotesEditor(notes: $notes)
-      EditButtons(save: save) { library.cancelCardEdit() }
     }
+    Picker("Estimate", selection: $fields.estimate) {
+      Text("None").tag(Int?.none)
+      ForEach(estimateChoices, id: \.self) { Text("\($0)m").tag(Int?.some($0)) }
+    }
+    Toggle("Due date", isOn: $fields.hasDue)
+      .disabled(fields.repeatRule != nil)
+    if fields.hasDue {
+      DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
+      Picker("Kind", selection: $fields.dueIsHard) {
+        Text("Hard deadline").tag(true)
+        Text("Target date").tag(false)
+      }
+      .pickerStyle(.segmented)
+    }
+    RepeatEditor(rule: $fields.repeatRule)
+      .onChange(of: fields.repeatRule) { giveRepeatADueDate() }
+    tagsField
   }
 
   /// The tags as typed, separated by commas, and a menu to add one the view already has.
   private var tagsField: some View {
     HStack {
-      TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
+      TextField("Tags", text: $fields.tagsText, prompt: Text("calls, home"))
         .textFieldStyle(.roundedBorder)
-        .onSubmit(save)
+        .onSubmit(submit)
       Menu {
         ForEach(library.tags) { item in
-          Button(item.name) { tagsText = (TaskCardDraft.tagNames(in: tagsText) + [item.name]).joined(separator: ", ") }
+          Button(item.name) {
+            fields.tagsText = (TaskCardDraft.tagNames(in: fields.tagsText) + [item.name]).joined(separator: ", ")
+          }
         }
       } label: {
         Image(systemName: "tag")
@@ -159,26 +155,56 @@ private struct TaskCardEditor: View {
     }
   }
 
-  private func save() {
-    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
-    library.saveCard(
-      ofTask: task.id,
-      TaskCardDraft(
-        title: title, priority: priority, estimate: estimate, due: due, notes: notes,
-        tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule))
-  }
-
-  /// A repeat counts from a due date: turning one on gives a task with none the day Today shows, as a target date.
+  /// A repeat counts from a due date: turning one on gives an item with none the day Today shows, as a target date.
   private func giveRepeatADueDate() {
-    guard repeatRule != nil, !hasDue else { return }
-    hasDue = true
-    dueDay = library.planDate.startOfDay ?? Date()
-    dueIsHard = false
+    guard fields.repeatRule != nil, !fields.hasDue else { return }
+    fields.hasDue = true
+    fields.dueDay = library.planDate.startOfDay ?? Date()
+    fields.dueIsHard = false
   }
 
-  /// The choices, plus the estimate the task has when it is none of them.
+  /// The choices, plus the estimate the item has when it is none of them.
   private var estimateChoices: [Int] {
-    Array(Set(Self.estimateChoices + (task.estimate.map { [$0] } ?? []))).sorted()
+    Array(Set(Self.estimateChoices + (currentEstimate.map { [$0] } ?? []))).sorted()
+  }
+}
+
+/// A task card in edit mode. What is typed stays here until OK hands it to the view model; Cancel drops it.
+private struct TaskCardEditor: View {
+  let library: LibraryViewModel
+  let task: TaskItem
+
+  @State private var title: String
+  @State private var fields: CardFields
+  @State private var notes: String
+
+  init(library: LibraryViewModel, task: TaskItem) {
+    self.library = library
+    self.task = task
+    _title = State(initialValue: task.title)
+    _fields = State(initialValue: CardFields(library: library, id: task.id, priority: task.priority, estimate: task.estimate))
+    _notes = State(initialValue: task.notes ?? "")
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      TextField("Title", text: $title)
+        .textFieldStyle(.roundedBorder)
+        .font(.title3)
+        .onSubmit(save)
+      CardFieldsForm(library: library, fields: $fields, currentEstimate: task.estimate, submit: save)
+      if let history = library.estimateHistory(ofTask: task.id) {
+        LabeledContent("History", value: history.summary)
+      }
+      LabeledContent("Project", value: projectTitle)
+      CreatedLine(day: task.createdOn)
+      NotesEditor(notes: $notes)
+      EditButtons(save: save) { library.cancelCardEdit() }
+    }
+  }
+
+  private func save() {
+    library.saveCard(ofTask: task.id, fields.draft(title: title, notes: notes))
   }
 
   private var projectTitle: String {
@@ -226,6 +252,16 @@ struct ProjectCard: View {
           }
         }
       }
+      if let due = library.dueDate(of: project.id) {
+        DueLine(due: due, today: library.today)
+      }
+      if let rule = library.repeatRule(of: project.id) {
+        RepeatLine(rule: rule)
+      }
+      if let tags = tagLine(of: library.tagItems(of: project.id)) {
+        Label(tags, systemImage: "tag")
+          .font(.callout)
+      }
       if let next = library.nextReviewDate(of: project.id) {
         Label("Next review \(next.isoString)", systemImage: "eyeglasses")
           .font(.callout)
@@ -243,6 +279,7 @@ private struct ProjectCardEditor: View {
 
   @State private var title: String
   @State private var kind: ProjectKind
+  @State private var fields: CardFields
   @State private var notes: String
 
   init(library: LibraryViewModel, project: Project) {
@@ -250,6 +287,8 @@ private struct ProjectCardEditor: View {
     self.project = project
     _title = State(initialValue: project.title)
     _kind = State(initialValue: project.kind)
+    _fields = State(
+      initialValue: CardFields(library: library, id: project.id, priority: project.priority, estimate: project.estimate))
     _notes = State(initialValue: project.notes ?? "")
   }
 
@@ -264,6 +303,7 @@ private struct ProjectCardEditor: View {
         Label("Sequential", systemImage: ProjectKind.sequential.symbol).tag(ProjectKind.sequential)
       }
       .pickerStyle(.segmented)
+      CardFieldsForm(library: library, fields: $fields, currentEstimate: project.estimate, submit: save)
       if let history = library.estimateHistory(ofProject: project.id) {
         LabeledContent("History", value: history.summary)
       }
@@ -274,7 +314,7 @@ private struct ProjectCardEditor: View {
   }
 
   private func save() {
-    library.saveCard(ofProject: project.id, title: title, kind: kind, notes: notes)
+    library.saveCard(ofProject: project.id, fields.draft(title: title, notes: notes), kind: kind)
   }
 }
 

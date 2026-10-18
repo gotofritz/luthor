@@ -163,12 +163,37 @@ struct ProjectCardEditModeTests {
     library.open(.project(TaskID("p1")))
     library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: TaskID("p1"), title: "Summer", kind: .sequential, notes: "deadline in June")
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(title: "Summer", priority: nil, estimate: nil, due: nil, notes: "deadline in June"),
+      kind: .sequential)
 
     #expect(library.editingCard == nil)
     #expect(library.shownProject?.title == "Summer")
     #expect(library.shownProject?.kind == .sequential)
     #expect(library.shownProject?.notes == "deadline in June")
+  }
+
+  @Test("OK also keeps its priority, estimate, due date, repeat and tags, as for a task")
+  func okKeepsTheTaskFields() throws {
+    let (library, _) = makeLibrary()
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+    let due = DueDate(date: date("2027-04-01"), isHard: true)
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(
+        title: "Holiday", priority: .important, estimate: 120, due: due, notes: "", tags: ["travel"],
+        repeatRule: RepeatRule(every: 1, unit: .year)),
+      kind: .parallel)
+
+    #expect(library.editingCard == nil)
+    #expect(library.shownProject?.priority == .important)
+    #expect(library.shownProject?.estimate == 120)
+    #expect(library.dueDate(of: TaskID("p1")) == due)
+    #expect(library.repeatRule(of: TaskID("p1")) == RepeatRule(every: 1, unit: .year))
+    #expect(library.tagItems(of: TaskID("p1")).map(\.name) == ["travel"])
   }
 
   @Test("OK with a blank title writes nothing and stays in edit mode")
@@ -177,7 +202,9 @@ struct ProjectCardEditModeTests {
     library.open(.project(TaskID("p1")))
     library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: TaskID("p1"), title: "", kind: .sequential, notes: "x")
+    library.saveCard(
+      ofProject: TaskID("p1"), TaskCardDraft(title: "", priority: nil, estimate: nil, due: nil, notes: "x"),
+      kind: .sequential)
 
     #expect(library.editingCard == .project(TaskID("p1")))
     #expect(log.events == editLog)
