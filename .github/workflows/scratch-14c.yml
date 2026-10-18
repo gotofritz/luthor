@@ -1,6 +1,5 @@
-# TEMPORARY: removed before the slice 14c PR is ready. Runs the build, the tests and the format check as
-# separate steps, so a lint failure does not hide compile errors, because the session writing slice 14c has no
-# Swift toolchain.
+# TEMPORARY: removed before the slice 14c PR is ready. Runs each `make check-ci` stage as its own step, so one
+# failure does not hide the next, because the session writing slice 14c has no Swift toolchain.
 name: scratch-14c
 
 on:
@@ -19,14 +18,17 @@ jobs:
         run: |
           xcode="$(ls -d /Applications/Xcode_[0-9]*.app | grep -iv beta | sort -V | tail -1)"
           sudo xcode-select -s "$xcode"
-      - name: Build
+      - name: Tools
+        run: make tools
+      - name: Format check
         if: always()
-        run: swift build --build-tests 2>&1 | tail -n 300
-      - name: Test
+        run: make format-check 2>&1 | head -n 200
+      - name: SwiftLint
         if: always()
-        run: swift test 2>&1 | grep -E "error|✘|failed|Test run|Executed|Suite .* failed" | head -n 300
-      - name: Format diff
+        run: make swiftlint 2>&1 | head -n 200
+      - name: Coverage
         if: always()
-        run: |
-          swift format --in-place --recursive Package.swift Sources Tests App
-          git diff | head -n 600
+        run: make coverage 2>&1 | grep -E "error|✘|failed|Test run|coverage|Coverage|%|below" | head -n 200
+      - name: App
+        if: always()
+        run: make app 2>&1 | grep -E "error|warning: unre|\*\* BUILD" | head -n 100
