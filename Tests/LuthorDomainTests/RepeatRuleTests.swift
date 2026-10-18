@@ -32,7 +32,7 @@ struct RepeatRuleShapeTests {
     let json = try encoder.encode(rule)
 
     #expect(
-      String(decoding: json, as: UTF8.self)
+      String(bytes: json, encoding: .utf8)
         == #"{"afterCompletion":false,"every":2,"unit":"week","weekdays":["monday","thursday"]}"#
     )
     #expect(try JSONDecoder().decode(RepeatRule.self, from: json) == rule)

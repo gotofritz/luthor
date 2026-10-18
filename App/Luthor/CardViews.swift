@@ -109,13 +109,10 @@ private struct TaskCardEditor: View {
       }
       Picker("Estimate", selection: $estimate) {
         Text("None").tag(Int?.none)
-        ForEach(estimateChoices, id: \.self) { minutes in
-          Text("\(minutes)m").tag(Int?.some(minutes))
-        }
+        ForEach(estimateChoices, id: \.self) { Text("\($0)m").tag(Int?.some($0)) }
       }
       Toggle("Due date", isOn: $hasDue)
         .disabled(repeatRule != nil)
-        .help(repeatRule != nil ? "A task that repeats counts from its due date" : "")
       if hasDue {
         DatePicker("Due", selection: $dueDay, displayedComponents: .date)
         Picker("Kind", selection: $dueIsHard) {
@@ -166,8 +163,7 @@ private struct TaskCardEditor: View {
         tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule))
   }
 
-  /// A repeat counts from a due date, so turning one on gives a task with none the day Today shows, as a target
-  /// date.
+  /// A repeat counts from a due date: turning one on gives a task with none the day Today shows, as a target date.
   private func giveRepeatADueDate() {
     guard repeatRule != nil, !hasDue else { return }
     hasDue = true
