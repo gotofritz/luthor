@@ -30,12 +30,14 @@ extension Commands {
     return [envelope(EventID(ids.next()), .taskRenamed(renamed), log: log)]
   }
 
-  /// Makes the active project `projectID` sequential or parallel. The kind it has writes nothing.
+  /// Makes the open item `projectID` sequential or parallel, a project if it was not one. The kind it has writes
+  /// nothing.
   public func setKind(of projectID: TaskID, to kind: ProjectKind, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let project = try activeProject(projectID, in: LibraryState.replay(log))
-    guard project.kind != kind else { return [] }
+    let state = LibraryState.replay(log)
+    guard let item = state.openItem(projectID) else { throw .noActiveProject(projectID) }
+    guard item.kind != kind else { return [] }
     let changed = TaskKindChanged(taskID: projectID, kind: kind)
     return [envelope(EventID(ids.next()), .taskKindChanged(changed), log: log)]
   }
@@ -53,7 +55,7 @@ extension Commands {
   }
 
   private func openTask(_ taskID: TaskID, in state: LibraryState) throws(CommandError) -> TaskItem {
-    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     return task
   }
 

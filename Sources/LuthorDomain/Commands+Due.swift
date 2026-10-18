@@ -8,7 +8,7 @@ extension Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
-    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let due = date.map { DueDate(date: $0, isHard: isHard) }
     guard state.dueDate(of: taskID) != due else { return [] }
     let event = TaskDueSet(taskID: taskID, date: date, isHard: due?.isHard ?? false)

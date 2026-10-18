@@ -75,7 +75,7 @@ public struct Commands {
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let completion = [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
     return completion + recurrence(of: taskID, on: today, state: state, log: log + completion)
   }
@@ -153,7 +153,7 @@ public struct Commands {
   public func move(taskID: TaskID, toView viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     try requireView(viewID, in: state)
     guard task.viewID != viewID else { return [] }
     return [envelope(EventID(ids.next()), .taskMovedToView(TaskMovedToView(taskID: taskID, viewID: viewID)), log: log)]
@@ -182,7 +182,7 @@ public struct Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
-    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let project = try activeProject(projectID, in: state)
     guard task.viewID == project.viewID else { throw .otherView(taskID, projectID) }
     guard task.parentID != projectID else { return [] }
@@ -195,7 +195,7 @@ public struct Commands {
   public func prioritize(taskID: TaskID, as priority: Priority?, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard let task = LibraryState.replay(log).openTasks.first(where: { $0.id == taskID }) else {
+    guard let task = LibraryState.replay(log).openItem(taskID) else {
       throw .noOpenTask(taskID.rawValue)
     }
     guard task.priority != priority else { return [] }
@@ -208,7 +208,7 @@ public struct Commands {
   public func estimate(taskID: TaskID, as minutes: Int?, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard let task = LibraryState.replay(log).openTasks.first(where: { $0.id == taskID }) else {
+    guard let task = LibraryState.replay(log).openItem(taskID) else {
       throw .noOpenTask(taskID.rawValue)
     }
     guard task.estimate != minutes else { return [] }
@@ -257,8 +257,8 @@ public struct Commands {
   }
 
   func activeProject(_ projectID: TaskID, in state: LibraryState) throws(CommandError) -> Project {
-    guard let project = state.projects.first(where: { $0.id == projectID }) else { throw .noActiveProject(projectID) }
-    return project
+    guard let item = state.openItem(projectID) else { throw .noActiveProject(projectID) }
+    return state.project(item)
   }
 
   func requireView(_ viewID: ViewID, in state: LibraryState) throws(CommandError) {

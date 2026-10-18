@@ -50,7 +50,8 @@ extension LibraryState {
     }
     return Project(
       id: item.id, title: item.title, kind: item.kind ?? .parallel, viewID: item.viewID, parentID: item.parentID,
-      children: children, notes: item.notes, createdOn: item.createdOn)
+      children: children, notes: item.notes, createdOn: item.createdOn,
+      priority: item.priority, estimate: item.estimate)
   }
 
   /// Whether the item exists and is open.
