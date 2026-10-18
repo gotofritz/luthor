@@ -317,6 +317,60 @@ context menu.
 
 Usable: the weekly review.
 
+### 14a. Repeating tasks
+
+Routines (pay the rent, water the plants, the weekly report) are retyped
+today. A task can repeat; completing it creates the next one. Nothing is
+planned by itself: the next one shows up as a candidate when its time comes,
+under the due-date rules of slice 11. Done before the stress test and before
+the format freeze, because it adds events.
+
+- **The rule.** Every N days, weeks, months or years. Weekly can pick the
+  weekdays (Monday and Thursday); monthly keeps the day number, and a 31st
+  falls on the last day of a shorter month. It never ends; "until a date" and
+  "N times" are out of scope. Two modes, fixed by default:
+  - *Fixed*: the next due date is the first date of the rule after the
+    previous due date, and after today, so a week of missed days does not
+    pile up
+  - *After completion*: the completion day plus the interval
+- **It needs a due date.** The due date is the anchor and its kind (hard
+  deadline or target date) is kept. Setting a repeat on a task with none
+  gives it one: the day Today shows. Set from the Repeat field of the card
+  editor and from the context menu; the card says "Repeats every week on
+  Mon, Thu"
+- **Completing creates the next task** in the same command: a copy with the
+  same title, notes, project, priority, estimate, tags and rule, and the new
+  due date. Not copied: the day it was planned for, a delegation, the logged
+  time. The completed one stays in Completed as history. Editing the open
+  task changes what the next ones copy
+- **Skip this one** drops the task and creates the next, for "not this
+  week". **Stop repeating** clears the rule. **Drop Task** and **Send to
+  Someday** on a repeating task end the series (no next task): giving a task
+  up is explicit, and Skip is the way to pass over one. Reopening a completed
+  task leaves the next one as it is
+- **Events** (new types only, the format is still soft): `TaskRepeatSet(task,
+  rule?)`, where no rule clears it, and `TaskRecurred(previous, next, due)`,
+  which makes `next` a copy of `previous` as it is at that point in the
+  replay. The ID of `next` is worked out from the ID of `previous`, so two
+  Macs completing the same task write the same next task, and the reducer
+  keeps the first one in replay order and ignores the second. The due date is
+  worked out by the command from the injected clock, so the reducers still
+  never read the clock
+- **Pure rule.** `RepeatRule` is a domain value with a function from the
+  previous due date, the completion day and today to the next due date
+
+Known cost: there is no start (availability) date, so the next task is in the
+lists at once, a week early for a weekly task, though it only counts as a
+candidate under the due-date rules. A start date would be its own feature.
+
+Acceptance test: capture a task, give it a due date and a weekly repeat,
+complete it, and the next one is in the Inbox with the date a week on. Unit
+tests, table style: next date for each rule (month ends, leap years,
+weekdays, both modes, completed late), replay with the same event twice and
+in shuffled order, skip and stop. Guide and card editor updated with it.
+
+Usable: the routines stop being retyped.
+
 ### Stress test the desktop app (before 15)
 
 Not a build slice: time spent using the Mac app hard before the format is
@@ -371,15 +425,8 @@ This roadmap now ends at the desktop app.
 
 ### Later
 
-- Repeating tasks
-- Estimate suggestions from history, offered and never applied silently
-- Calendar integration: fixed commitments reduce a day's capacity
-- Perspectives as saved queries, scoped to a view
-- Per-device view lists: a work Mac that never shows (or never syncs)
-  private views, if logical isolation turns out not to be enough
-- Richer notes (markdown, attachments): notes are plain text with clickable
-  links, and longer writing lives in Joplin
-- CloudKit transport, if ever
+Nothing is listed here any more. What is not scheduled lives in GitHub
+issues, each worked out when it was taken off this list on 2026-10-18.
 
 ## Decisions (2026-10-16)
 
