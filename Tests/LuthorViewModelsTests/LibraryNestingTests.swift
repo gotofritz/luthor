@@ -110,19 +110,17 @@ struct NestedColumnsViewModelTests {
 }
 
 @MainActor
-@Suite("When a project is created while a project is shown")
+@Suite("When a project is created in the column of the project shown")
 struct SubprojectCreationViewModelTests {
   @Test("it is created inside the shown project")
-  func projectFieldCreatesASubproject() {
+  func plusButtonCreatesASubproject() {
     let (library, log) = makeInbox(homeLog)
     library.open(.project(TaskID("p4")))
-    library.projectDraft = "Roses"
 
-    library.createProject(kind: .parallel)
+    library.addProject(titled: "Roses", kind: .parallel, under: TaskID("p4"))
 
     #expect(log.events.last == projectCreated("id-2", "Roses", under: "p4", id: "id-1", on: "2026-10-19", lamport: 12))
     #expect(library.columns.last?.entries.map(\.id) == ["project-id-2"])
-    #expect(library.projectDraft == "")
   }
 }
 

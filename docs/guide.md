@@ -103,8 +103,10 @@ does not work yet. Navigating by keyboard alone is not possible yet either.
 ## Capturing a task
 
 Type in the capture field and press Return. The field is always focused, so
-capture needs no click. With a project shown, the task goes straight into
-that project; otherwise it goes to the Inbox of the current view.
+capture needs no click. The task goes to the Inbox of the current view. In
+the weekly review it goes into the project picked. The Projects place has no
+capture field: add tasks there with the plus button at the end of a column
+(see [Projects](#projects)).
 
 Add `!a`, `!b`, `!c` or `!someday` for a priority and `<n>m` for an estimate
 in minutes, anywhere in what you type: `call bank !a 15m` captures "call
@@ -129,18 +131,25 @@ took along cannot be reopened by itself; reopen the project.
 
 ## Cards
 
-Click a task and a card opens in the column after the list. Click a project
-and the column of its contents starts with the project's card, with its
-sub-projects and tasks listed below it.
+In the Projects place the last column is always a card. Click a task and its
+card opens in the column after the list. Click a project and the column of
+its contents opens, starting with the project's own name; the project's card
+is in the last column, where a task's card goes. Click the project's name at
+the head of its column, or the project again in the column before, to come
+back to its card from a task.
 
 A card is read-only. It shows the day the task or project was created
 ("Created 2026-10-19", left out for what was created before the app kept the
 day), for a task its due date ("Deadline 2026-10-23" or "Target date
 2026-10-23", in red once the day has passed), how it repeats ("Repeats every
-week on Mon, Thu") and its tags ("@calls @home"), and the notes ("No notes" if
-there are none). It does not repeat the
-title, which is in the column before it. Web addresses in notes
-(`https://…` or `www.…`) are clickable links.
+week on Mon, Thu") and its tags ("@calls @home"), and the notes. It does not repeat the
+title, which is in the column before it.
+
+The notes are a list of bullet points, one for each line. Each bullet has a
+small cross that deletes it, and below them the "Add a note" field adds a
+note on Return, without opening the editor. Web addresses in notes
+(`https://…` or `www.…`) are clickable links. A completed task or project
+shows its notes with no cross and no field.
 
 The pencil button at the top right of the card opens it for editing; nothing
 is written until OK:
@@ -150,7 +159,7 @@ is written until OK:
   target date), the Repeat field (see [Repeating tasks](#repeating-tasks)),
   the Tags field (names separated by commas; the tag button
   beside it adds one the view already has), its project, the estimate history
-  if there is one, and the notes in a text field. A project's card has the same fields, and the kind (parallel or
+  if there is one, and the notes in a text field, one bullet to a line. A project's card has the same fields, and the kind (parallel or
   sequential); it shows an estimate of its own or, failing that, the sum of its open tasks' estimates
 - A sequential project dims every child but its first open one, so the next
   actions change at once. The kind can also be switched from Kind in the
@@ -333,9 +342,17 @@ Projects show in Miller columns. The first column lists the top-level
 projects. Click a project to open it: a column of its sub-projects and tasks
 appears to its right, and so on down the tree.
 
-- Create a project with the field at the bottom of Projects, choosing
-  parallel or sequential. It goes inside the project shown, or is top-level
-  when none is open
+- The first row of every column after the first is the project it lists the
+  children of, by name. Click it to see that project's card
+- The plus button at the end of a column adds to it. It opens a field with a
+  choice beside it: a task, a parallel project or a sequential project (the
+  first column offers only the two projects, which are top-level there).
+  Return adds and keeps the field open for the next one; Escape closes it
+- Clicking the empty part of a column closes every column to its right: in the
+  first column no project is open any more, in a later one its project is
+  shown with no task picked
+- Clicking in a column scrolls the columns so that it moves to the left edge,
+  as in Finder, as far as the columns to its right leave room
 - Nest a project by dragging it onto another, or onto a column to move it
   into that column's project. Drag it onto the first column, or use Move to
   Top Level in its context menu, to make it top-level again. A project cannot
@@ -366,7 +383,8 @@ calendar marks the project itself. Its estimate is shown, not planned.
   copied. The copy is selected when the list shows it. An item that repeats
   is copied with its rule, so the copy starts a series of its own
 - **Add Tasks** (the button on a card, or in its context menu) makes the
-  item a project and shows it, ready for tasks to be captured into it. It
+  item a project and shows it, ready for tasks to be added with the plus
+  button of its column. It
   keeps its title, notes, view, creation day and everything set on it, and if
   it was in a project, it is a sub-project there, in the same place
 - **Delete Permanently…** (context menu of a task or a project, after a

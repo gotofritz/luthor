@@ -5,48 +5,6 @@ import LuthorViewModels
 import Testing
 
 @MainActor
-@Suite("When a project is created from the sidebar")
-struct ProjectCreationViewModelTests {
-  @Test("it is listed and the project field is cleared")
-  func createProjectListsItAndClearsTheDraft() {
-    let (library, log) = makeInbox()
-    library.projectDraft = "Move house"
-
-    library.createProject(kind: .sequential)
-
-    #expect(
-      log.events == [
-        projectCreated("id-2", "Move house", kind: .sequential, id: "id-1", on: "2026-10-19", lamport: 1)
-      ])
-    #expect(library.projects == [project("id-2", "Move house", kind: .sequential, createdOn: "2026-10-19")])
-    #expect(library.projectDraft == "")
-  }
-
-  @Test("a blank title creates nothing")
-  func blankProjectDraftCreatesNothing() {
-    let (library, log) = makeInbox()
-    library.projectDraft = "  "
-
-    library.createProject(kind: .parallel)
-
-    #expect(log.events == [])
-    #expect(library.errorMessage == nil)
-  }
-
-  @Test("a failed write keeps the project field")
-  func failedWriteKeepsTheProjectDraft() {
-    let (library, log) = makeInbox()
-    library.projectDraft = "Move house"
-    log.appendFailure = .ioFailure("disk full")
-
-    library.createProject(kind: .parallel)
-
-    #expect(library.projectDraft == "Move house")
-    #expect(library.errorMessage == "disk full")
-  }
-}
-
-@MainActor
 @Suite("When the sidebar shows a project")
 struct ProjectListViewModelTests {
   static let log = [

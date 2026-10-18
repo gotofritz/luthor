@@ -41,23 +41,24 @@ until promoted. The quick-capture syntax does both at once:
 
 Projects nest to any depth and show in Miller columns: the first column lists
 the top-level projects, and each project you open adds a column
-of its sub-projects and tasks. Create a project with the field at the bottom,
-choosing parallel (every child is active) or sequential (only the first open
-child is; the rest are dimmed); it goes inside the project shown, or top-level
-while none is open. Drag a project onto another to nest it, or onto the first
+of its sub-projects and tasks, headed by the project's name. The plus button
+at the end of a column adds a task or a project to it; a project is parallel
+(every child is active) or sequential (only the first open child is; the rest
+are dimmed). The last column is always a card: the task picked or, with none,
+the project shown. Drag a project onto another to nest it, or onto the first
 column to make it top-level. File a task by dragging it onto a project, or
 select it and press ⌥⌘1 to ⌥⌘9 for the first nine projects (Task → Move to
-Project). Typing in the capture field adds the task straight to the project
-shown. Next actions follow the whole tree: a task is one only if every
+Project). Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
 
 Completed and dropped tasks and projects disappear, but the Completed and dropped toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
-its column starts with a card, with its children below. A card is read-only:
-it shows the day it was created, the due date and the notes (web addresses are
-clickable), not the title, which is in the column before. The pencil opens it
+its column opens, with the project's card after it. A card is read-only:
+it shows the day it was created, the due date and the notes, not the title,
+which is in the column before. The notes are bullet points (web addresses are
+clickable), each deletable, with a field to add one without editing. The pencil opens it
 for editing (title, priority, estimate, due date, repeat, tags and notes for a task; title,
 kind and notes for a project), and OK keeps the changes or Cancel drops them.
 
