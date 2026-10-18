@@ -46,9 +46,9 @@ does updates this guide in the same PR (see the docs check in
 - **Weekly review**: looking over your projects so none goes stale. Each
   project has a next review day, one interval (a week unless you change it)
   after the day it was last reviewed, or created
-- **Project status**: a project is *active* or *dropped*. A dropped
-  project hands out no next actions, so none of its tasks is offered as a
-  candidate in Today, and it is not reviewed
+- **Dropped**: an item you gave up. Like a completed one it leaves the
+  lists, with the open items in it, and is not reviewed; the Completed and
+  dropped toggle lists it and Reopen brings it back
 - **Leftover**: an open task planned for a day before today. Nothing moves it
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
@@ -114,7 +114,7 @@ bank" with priority Critical and a 15-minute estimate, already clarified.
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
 
-A completed task or project disappears from the lists. The Completed toggle
+A completed or dropped task or project disappears from the lists. The Completed and dropped toggle
 in the bar above the columns, between the search box and the view switcher,
 brings them back: they show after the open ones, dimmed and struck through,
 in the place they belong (the Inbox, their project's column, or the Prios
@@ -150,8 +150,8 @@ is written until OK:
   target date), the Repeat field (see [Repeating tasks](#repeating-tasks)),
   the Tags field (names separated by commas; the tag button
   beside it adds one the view already has), its project, the estimate history
-  if there is one, and the notes in a text field. A project's card has the title field, the kind (parallel or
-  sequential), the estimate history and the notes
+  if there is one, and the notes in a text field. A project's card has the same fields, and the kind (parallel or
+  sequential); it shows an estimate of its own or, failing that, the sum of its open tasks' estimates
 - A sequential project dims every child but its first open one, so the next
   actions change at once. The kind can also be switched from Kind in the
   project's context menu
@@ -318,11 +318,10 @@ default. Off leaves one project out of the review; with the default off, only
 projects with an interval of their own are reviewed. Changing an interval
 changes the next review day at once.
 
-**Status.** Drop Project (the button, or the project's context menu) gives
-up a project: it stops handing out next actions, so its tasks show dimmed and
-none is offered as a candidate in Today (tasks already in a day's plan stay
-there), and it is no longer reviewed. Its tasks stay open and nothing is
-deleted. A dropped project shows a cross symbol in the Projects columns.
+**Dropping.** Drop Project (the button, or the project's context menu) gives
+up a project: it and its open tasks leave the lists and the review, and
+nothing is deleted. The Completed and dropped toggle lists it with a cross
+symbol, and Reopen brings it back with the tasks it took along.
 
 A project that was never reviewed counts from the day it was created, so a
 project older than a week is due the first time you look. A project created
@@ -350,20 +349,27 @@ appears to its right, and so on down the tree.
 - Rename a project, switch it between parallel and sequential, or add notes
   in its card (see [Cards](#cards))
 
-## Duplicating, deleting and growing a task
+## Duplicating, deleting and growing an item
 
-- **Duplicate** a task from its context menu, or select it and press ⇧⌘D
-  (Task → Duplicate). The copy is a new open task in the same project with
-  the same title, notes, priority, estimate, due date, tags and repeat. The
-  day it was planned for, a delegation and the time logged are not copied.
-  The copy is selected when the list shows it. A task that repeats is copied
-  with its rule, so the copy starts a series of its own
-- **Add Tasks** (the button on a task's card, or in its context menu) turns
-  the task into a project and shows it, ready for tasks to be captured into
-  it. The project has the task's title, notes, view and creation day, and if
-  the task was in a project, it is a sub-project there, in the same place.
-  A project has no priority, estimate, due date, tags, repeat, day planned or
-  delegation, so the task's are let go. Set them on the tasks you add
+A task and a project are the same kind of item. A project is an item that
+holds others, so it has everything a task has: priority, estimate, due date,
+repeat and tags. Its priority and tags are its own and do not pass down to its
+tasks. Only the tasks in it are planned: a project's due date ranks them as
+if it were theirs (a hard deadline on "File taxes" ranks its tasks), and the
+calendar marks the project itself. Its estimate is shown, not planned.
+
+- **Duplicate** an item from its context menu, or select it and press ⇧⌘D
+  (Task → Duplicate). The copy is a new open item in the same project with
+  the same title, notes, priority, estimate, due date, tags and repeat, and
+  for a project a copy of every task and sub-project in it that was not given
+  up. The day it was planned for, a delegation and the time logged are not
+  copied. The copy is selected when the list shows it. An item that repeats
+  is copied with its rule, so the copy starts a series of its own
+- **Add Tasks** (the button on a card, or in its context menu) makes the
+  item a project and shows it, ready for tasks to be captured into it. It
+  keeps its title, notes, view, creation day and everything set on it, and if
+  it was in a project, it is a sub-project there, in the same place. A task
+  can also be dragged onto another task to file it there
 - **Delete Permanently…** (context menu of a task or a project, after a
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in
@@ -385,7 +391,8 @@ date, a hard deadline or a target date, is kept by the next tasks.
 
 Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and
-the next due date. The day it was planned for, a delegation and the time
+the next due date. A project can repeat too: completing it makes the next
+project, holding fresh copies of its tasks, which have no due dates. The day it was planned for, a delegation and the time
 logged are not copied. The completed one stays in Completed. Nothing is
 planned by itself: the next task shows in the lists straight away (there is
 no start date), and as a candidate under the usual due-date rules. Editing

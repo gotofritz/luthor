@@ -52,7 +52,7 @@ shown. Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
 
-Completed tasks and projects disappear, but the Completed toggle in the top
+Completed and dropped tasks and projects disappear, but the Completed and dropped toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
 its column starts with a card, with its children below. A card is read-only:
@@ -92,11 +92,14 @@ counted from the due date or from the day it is done. Completing it makes the
 next one, due by the rule; Skip This One passes over one occurrence, Stop
 Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 
-A task can be duplicated (Duplicate in its context menu, or ⇧⌘D): the copy has the
-same title, notes, priority, estimate, due date, tags and repeat, in the same project, and is planned for no
-day. Add Tasks (on its card or in its context menu) turns a task into a project that you then add tasks to,
-keeping its title and notes. Delete Permanently… (context menu, after a confirmation) removes a task, or a
-project with its sub-projects and tasks, completed ones too, for good, where dropping only gives it up.
+A task and a project are the same kind of item: a project is an item that holds others. A project has
+the card of a task, with a priority, estimate, due date, repeat and tags, and a task can be filed under another
+task. Add Tasks (on a card or in its context menu) makes an item a project that you then add tasks to, keeping
+everything set on it. An item can be duplicated (Duplicate in its context menu, or ⇧⌘D): the copy has the
+same title, notes, priority, estimate, due date, tags and repeat, in the same project, planned for no
+day, and a project's copy holds copies of its tasks. Delete Permanently… (context menu, after a confirmation) removes an item,
+and what it holds, completed ones too, for good, where dropping only gives it up.
+A project's due date ranks the tasks in it, and its estimate is its own, else the sum of its open tasks'.
 
 Calendar (⇧⌘C) lists the days as rows, from two months back to a year ahead,
 Sundays tinted, with a mark on a day that has tasks planned for it and another
@@ -117,8 +120,8 @@ longest overdue first. Pick one to see its card and its tasks, which you can
 edit and add to in place, then Mark Reviewed (⇧⌘R) to move to the next. A
 project can be reviewed more or less often (or never) from its context menu or
 here, and Settings → Global sets the default for all of them. A project that
-is no longer wanted can be dropped (Drop Project: no next actions, not
-reviewed; its tasks stay open).
+is no longer wanted can be dropped (Drop Project: it and its open tasks leave
+the lists and the review; the Completed and dropped toggle lists them, and Reopen brings them back).
 
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to
