@@ -49,9 +49,10 @@ struct RepeatSetReplayTests {
 
   @Test("a task that is not open is ignored")
   func aTaskThatIsNotOpenIsIgnored() {
-    let state = LibraryState.replay(
-      [captured("t1", "water plants", lamport: 1), completed("t1", lamport: 2), repeatSet("t1", weekly, lamport: 3),
-        repeatSet("ghost", weekly, lamport: 3)])
+    let state = LibraryState.replay([
+      captured("t1", "water plants", lamport: 1), completed("t1", lamport: 2), repeatSet("t1", weekly, lamport: 3),
+      repeatSet("ghost", weekly, lamport: 3),
+    ])
 
     #expect(state.repeatRule(of: TaskID("t1")) == nil)
     #expect(state.repeatRule(of: TaskID("ghost")) == nil)
