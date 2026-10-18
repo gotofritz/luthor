@@ -362,9 +362,6 @@ This roadmap now ends at the desktop app.
 
 ### Later
 
-- Full keyboard navigation: reach the rail, every column, the top bar and
-  the view switcher without the mouse (the view switcher still gets no
-  shortcut)
 - Repeating tasks
 - Timer for actual minutes, and an in-progress state with it
 - Estimate suggestions from history, offered and never applied silently
