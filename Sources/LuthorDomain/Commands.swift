@@ -247,9 +247,15 @@ public struct Commands {
     return try changeSetting(.defaultViewID, to: viewID.rawValue, log: log)
   }
 
-  public func completeProject(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  /// Completes the open project `projectID` with what is open in it, as `complete` does a task. If it repeats,
+  /// the next project follows in the same command, holding a copy of its tasks.
+  public func completeProject(
+    _ projectID: TaskID,
+    today: CalendarDate? = nil,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
     try requireActive(projectID, log: log)
-    return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: projectID)), log: log)]
+    return try complete(taskID: projectID, today: today, log: log)
   }
 
   private func requireActive(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) {

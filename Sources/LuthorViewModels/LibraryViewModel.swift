@@ -297,9 +297,11 @@ public final class LibraryViewModel {
     replaceSelected { file($0, into: projectID) }
   }
 
-  /// Completes a project and its open tasks. If the sidebar showed it, it shows the inbox again.
+  /// Completes a project and its open tasks. If it repeats, the next one is made, due by its rule as of today.
+  /// If the sidebar showed it, it shows the inbox again.
   public func completeProject(_ projectID: TaskID) {
-    perform { (log) throws(CommandError) in try commands.completeProject(projectID, log: log) }
+    let day = clock()
+    perform { (log) throws(CommandError) in try commands.completeProject(projectID, today: day, log: log) }
   }
 
   /// Opens a completed task again; a task that its project's completion took along stays completed.

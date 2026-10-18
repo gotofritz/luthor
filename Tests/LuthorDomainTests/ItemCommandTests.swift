@@ -102,6 +102,30 @@ struct ContainerCommandTests {
     #expect(state.completedTasks.map(\.item.id) == [TaskID("t1")])
   }
 
+  @Test("a repeating project is completed with its next one, holding a copy of its tasks")
+  func completeARepeatingProject() throws {
+    let repeating = try makeCommands().setRepeat(
+      taskID: TaskID("p1"), to: RepeatRule(every: 1, unit: .week), dueIfNone: date("2026-10-19"), log: log)
+
+    let events = try makeCommands().completeProject(
+      TaskID("p1"), today: date("2026-10-19"), log: log + repeating)
+
+    let state = LibraryState.replay(log + repeating + events)
+    let next = try #require(state.projects.first)
+    #expect(next.id == TaskID.recurring(after: TaskID("p1")))
+    #expect(next.tasks.map(\.title) == ["book flights"])
+    #expect(state.dueDate(of: next.id)?.date == date("2026-10-26"))
+  }
+
+  @Test("a duplicated project gets a copy of its tasks")
+  func duplicateAProject() throws {
+    let events = try makeCommands().duplicate(taskID: TaskID("p1"), log: log)
+
+    let state = LibraryState.replay(log + events)
+    #expect(state.projects.map(\.title) == ["Trip", "Trip"])
+    #expect(state.projects.last?.tasks.map(\.title) == ["book flights"])
+  }
+
   @Test("a completed project is reopened by the task command too")
   func reopenAProject() throws {
     let done = try makeCommands().complete(taskID: TaskID("p1"), log: log)
