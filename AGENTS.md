@@ -294,10 +294,10 @@ Speed of capture and interaction is a feature: do not regress it.
 - Swift Testing (`import Testing`, `@Test`, `#expect`) for new tests
 - `swift-format` for formatting, SwiftLint for linting
 - GRDB for SQLite
-- Remote agent sessions have no Swift toolchain and cannot download one. Do
-  not ask whether to install Swift (Ubuntu archive, swift.org or anywhere
-  else): write the tests first, push, and use CI (`make check-ci`) as the
-  build, fixing what it reports
+- Remote agent sessions may have no Swift toolchain. Never ask the user
+  about installing one. If a route works without asking, install it and run
+  `make check-ci` locally; otherwise write the tests first, push, and use CI
+  (`make check-ci`) as the build, fixing what it reports
 
 ### Commands
 
