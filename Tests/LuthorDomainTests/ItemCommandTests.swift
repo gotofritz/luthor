@@ -21,7 +21,7 @@ struct ProjectFieldCommandTests {
   func priority() throws {
     let events = try makeCommands().prioritize(taskID: Self.trip, as: .important, log: log)
 
-    let project = try #require(LibraryState.replay(log + events).projects.first)
+    let project = try #require(LibraryState.replay(log + events).view(.default).projects.first)
     #expect(project.priority == .important)
   }
 
@@ -29,7 +29,7 @@ struct ProjectFieldCommandTests {
   func estimate() throws {
     let events = try makeCommands().estimate(taskID: Self.trip, as: 90, log: log)
 
-    let project = try #require(LibraryState.replay(log + events).projects.first)
+    let project = try #require(LibraryState.replay(log + events).view(.default).projects.first)
     #expect(project.estimate == 90)
   }
 
@@ -64,7 +64,7 @@ struct ProjectFieldCommandTests {
     let renamed = try makeCommands().rename(taskID: Self.trip, to: "Spring trip", log: log)
     let noted = try makeCommands().setNotes(taskID: Self.trip, to: "Lisbon", log: log + renamed)
 
-    let project = try #require(LibraryState.replay(log + renamed + noted).projects.first)
+    let project = try #require(LibraryState.replay(log + renamed + noted).view(.default).projects.first)
     #expect(project.title == "Spring trip")
     #expect(project.notes == "Lisbon")
   }
@@ -79,7 +79,7 @@ struct ContainerCommandTests {
     let events = try makeCommands().setKind(of: TaskID("t2"), to: .sequential, log: log + prioritized)
 
     let state = LibraryState.replay(log + prioritized + events)
-    let project = try #require(state.projects.first { $0.id == TaskID("t2") })
+    let project = try #require(state.view(.default).projects.first { $0.id == TaskID("t2") })
     #expect(project.kind == .sequential)
     #expect(project.priority == .critical)
   }
@@ -89,7 +89,7 @@ struct ContainerCommandTests {
     let events = try makeCommands().move(taskID: TaskID("t1"), to: TaskID("t2"), log: log)
 
     let state = LibraryState.replay(log + events)
-    let holder = try #require(state.projects.first { $0.id == TaskID("t2") })
+    let holder = try #require(state.view(.default).projects.first { $0.id == TaskID("t2") })
     #expect(holder.tasks.map(\.id) == [TaskID("t1")])
   }
 
@@ -98,8 +98,8 @@ struct ContainerCommandTests {
     let events = try makeCommands().complete(taskID: TaskID("p1"), log: log)
 
     let state = LibraryState.replay(log + events)
-    #expect(state.completedProjects.map(\.item.id) == [TaskID("p1")])
-    #expect(state.completedTasks.map(\.item.id) == [TaskID("t1")])
+    #expect(state.view(.default).completedProjects.map(\.item.id) == [TaskID("p1")])
+    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t1")])
   }
 
   @Test("a repeating project is completed with its next one, holding a copy of its tasks")
@@ -111,7 +111,7 @@ struct ContainerCommandTests {
       TaskID("p1"), today: date("2026-10-19"), log: log + repeating)
 
     let state = LibraryState.replay(log + repeating + events)
-    let next = try #require(state.projects.first)
+    let next = try #require(state.view(.default).projects.first)
     #expect(next.id == TaskID.recurring(after: TaskID("p1")))
     #expect(next.tasks.map(\.title) == ["book flights"])
     #expect(state.dueDate(of: next.id)?.date == date("2026-10-26"))
@@ -122,8 +122,8 @@ struct ContainerCommandTests {
     let events = try makeCommands().duplicate(taskID: TaskID("p1"), log: log)
 
     let state = LibraryState.replay(log + events)
-    #expect(state.projects.map(\.title) == ["Trip", "Trip"])
-    #expect(state.projects.last?.tasks.map(\.title) == ["book flights"])
+    #expect(state.view(.default).projects.map(\.title) == ["Trip", "Trip"])
+    #expect(state.view(.default).projects.last?.tasks.map(\.title) == ["book flights"])
   }
 
   @Test("a completed project is reopened by the task command too")
@@ -133,7 +133,7 @@ struct ContainerCommandTests {
     let events = try makeCommands().reopen(taskID: TaskID("p1"), log: log + done)
 
     let state = LibraryState.replay(log + done + events)
-    #expect(state.projects.map(\.id) == [TaskID("p1")])
+    #expect(state.view(.default).projects.map(\.id) == [TaskID("p1")])
   }
 
   @Test("an item that does not exist is still refused")

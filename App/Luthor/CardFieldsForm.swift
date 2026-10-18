@@ -13,6 +13,7 @@ struct CardFields {
   var repeatRule: RepeatRule?
   var tagsText: String
 
+  @MainActor
   init(library: LibraryViewModel, id: TaskID, priority: Priority?, estimate: Int?) {
     self.priority = priority
     self.estimate = estimate

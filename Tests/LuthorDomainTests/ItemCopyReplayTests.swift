@@ -21,10 +21,10 @@ struct DuplicateContainerReplayTests {
   func theCopyHoldsTheStructure() throws {
     let state = LibraryState.replay(Self.events)
 
-    let copy = try #require(state.projects.first { $0.id == TaskID("c1") })
+    let copy = try #require(state.view(.default).projects.first { $0.id == TaskID("c1") })
     #expect(copy.title == "Trip")
     #expect(copy.tasks.map(\.title) == ["book flights", "pack"])
-    let visas = try #require(state.projects.first { $0.parentID == TaskID("c1") })
+    let visas = try #require(state.view(.default).projects.first { $0.parentID == TaskID("c1") })
     #expect(visas.title == "Visas")
     #expect(visas.tasks.map(\.title) == ["passport"])
   }
@@ -33,16 +33,16 @@ struct DuplicateContainerReplayTests {
   func theOriginalIsUntouched() throws {
     let state = LibraryState.replay(Self.events)
 
-    let original = try #require(state.projects.first { $0.id == TaskID("p1") })
+    let original = try #require(state.view(.default).projects.first { $0.id == TaskID("p1") })
     #expect(original.tasks.map(\.id) == [TaskID("t1")])
-    #expect(state.completedTasks.map(\.item.id) == [TaskID("t2")])
+    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t2")])
   }
 
   @Test("the copies of the tasks get IDs worked out from the copy, so devices agree")
   func copiedIDsAreWorkedOut() throws {
     let state = LibraryState.replay(Self.events)
 
-    let copy = try #require(state.projects.first { $0.id == TaskID("c1") })
+    let copy = try #require(state.view(.default).projects.first { $0.id == TaskID("c1") })
     let expected = ["t1", "t2"].map { TaskID.copied(TaskID($0), under: TaskID("c1")) }
     #expect(copy.tasks.map(\.id) == expected)
   }
@@ -52,7 +52,7 @@ struct DuplicateContainerReplayTests {
     let state = LibraryState.replay(Self.events)
     let shuffled = LibraryState.replay(Self.events.reversed())
 
-    #expect(shuffled.projects == state.projects)
+    #expect(shuffled.view(.default).projects == state.view(.default).projects)
   }
 
   @Test("the copy keeps the priority and estimate of what it copies")
@@ -65,7 +65,7 @@ struct DuplicateContainerReplayTests {
 
     let state = LibraryState.replay(events)
 
-    let copy = try #require(state.projects.first { $0.id == TaskID("c1") })
+    let copy = try #require(state.view(.default).projects.first { $0.id == TaskID("c1") })
     #expect(copy.tasks.first?.priority == .important)
     #expect(copy.tasks.first?.estimate == 30)
   }
@@ -86,7 +86,7 @@ struct RecurContainerReplayTests {
   func theNextProjectHoldsTheTasks() throws {
     let state = LibraryState.replay(Self.events)
 
-    let next = try #require(state.projects.first { $0.id == TaskID("n1") })
+    let next = try #require(state.view(.default).projects.first { $0.id == TaskID("n1") })
     #expect(next.tasks.map(\.title) == ["book flights", "pack"])
     #expect(state.dueDate(of: TaskID("n1"))?.date == date("2026-11-02"))
     #expect(next.tasks.allSatisfy { state.dueDate(of: $0.id) == nil })
