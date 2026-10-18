@@ -195,7 +195,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; CardViews: the task card column, the project card above
-                             its column (read-only, a pencil opens the editor with OK and Cancel), notes
+                             its column (read-only, a pencil opens the editor with OK and Cancel); NotesViews: notes
                              with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
