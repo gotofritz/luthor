@@ -363,6 +363,16 @@ Permanently… (context menu, after a confirmation).
 Usable: test and wrong items can be removed, and a task that grows can become
 a project.
 
+### 14c. One kind of item (design only, then three PRs)
+
+From issue #50. A project is a task with children, so the two models become
+one before the format freezes. The design is
+[`20261018_unify_tasks_projects.md`](20261018_unify_tasks_projects.md): one
+`TaskID`, any item takes children, the `Project*` events fold into the task
+ones, and the log is started afresh (test data only, no migration). Three PRs:
+the domain with no visible change, then any item takes children in the UI, then
+planning learns containers. Not started.
+
 ### Stress test the desktop app (before 15)
 
 Not a build slice: time spent using the Mac app hard before the format is
@@ -909,8 +919,9 @@ issues, each worked out when it was taken off this list on 2026-10-18.
 1. **Tasks and projects stay two models for now** (issue #50). Merging them
    (a project is a task with children, with target dates and every other task
    field) touches the reducer, planning, calendar, review and the columns, and
-   needs a log migration. It is the right direction, and cheapest before the
-   format freezes in slice 15, so it is its own slice. Until then Add Tasks
+   needs the log started afresh (test data only). It is the right direction, and cheapest before the
+   format freezes in slice 15, so it is its own slice (14c, designed in
+   `20261018_unify_tasks_projects.md`). Until then Add Tasks
    promotes a task to a project: priority, estimate, due date, tags, repeat,
    the day planned and a delegation are let go, as a project holds none of
    them. Not confirmed with the owner yet
