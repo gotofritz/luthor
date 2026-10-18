@@ -253,6 +253,13 @@ struct ProjectCard: View {
           }
         }
       }
+      if let minutes = library.rolledUpEstimate(of: project.id) {
+        Label(
+          project.estimate == nil ? "\(minutes)m from its tasks" : "\(minutes)m",
+          systemImage: "hourglass"
+        )
+        .font(.callout)
+      }
       if let due = library.dueDate(of: project.id) {
         DueLine(due: due, today: library.today)
       }

@@ -198,6 +198,7 @@ private struct ProjectRow: View {
         }
       } else {
         Button("Complete Project") { library.completeProject(project.id) }
+        ItemFieldMenuItems(library: library, taskID: project.id)
         Menu("Kind") {
           Button("Parallel", systemImage: ProjectKind.parallel.symbol) {
             library.setKind(of: project.id, to: .parallel)
@@ -234,9 +235,6 @@ private struct TaskRow: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
   @State private var confirmingDelete = false
-
-  /// Estimates offered on the context and Task menus, in minutes.
-  static let estimateChoices = [5, 15, 30, 60]
 
   private var isCompleted: Bool {
     library.completedTaskIDs.contains(task.id)
@@ -309,40 +307,54 @@ private struct TaskRow: View {
         Button("Reopen") { library.reopen(task.id) }
       }
     } else {
-      Menu("Priority") {
-        ForEach(Priority.allCases, id: \.self) { priority in
-          Button(priority.title, systemImage: priority.symbol) { library.prioritize(task.id, as: priority) }
-        }
-        Divider()
-        Button("None") { library.prioritize(task.id, as: nil) }
-      }
-      Menu("Estimate") {
-        ForEach(Self.estimateChoices, id: \.self) { minutes in
-          Button("\(minutes)m") { library.estimate(task.id, as: minutes) }
-        }
-        Divider()
-        Button("None") { library.estimate(task.id, as: nil) }
-      }
-      RepeatMenuItems(library: library, taskID: task.id)
-      Button("Duplicate") { library.duplicate(task.id) }
+      ItemFieldMenuItems(library: library, taskID: task.id)
       Button("Add Tasks") { library.addTasks(to: task.id) }
-      Menu("Tags") {
-        ForEach(library.tags) { item in
-          Button {
-            library.toggleTag(item.id, on: task.id)
-          } label: {
-            if library.tagItems(of: task.id).contains(where: { $0.id == item.id }) {
-              Label(item.name, systemImage: "checkmark")
-            } else {
-              Text(item.name)
-            }
-          }
-        }
-      }
-      .disabled(library.tags.isEmpty)
     }
     Divider()
     Button("Delete Permanently…", role: .destructive) { confirmingDelete = true }
+  }
+}
+
+/// The menu items a task and a project share, as both are the same kind of item: priority, estimate, repeat,
+/// duplicate and tags.
+private struct ItemFieldMenuItems: View {
+  let library: LibraryViewModel
+  let taskID: TaskID
+
+  /// Estimates offered in the menu, in minutes.
+  private static let estimateChoices = [5, 15, 30, 60]
+
+  var body: some View {
+    Menu("Priority") {
+      ForEach(Priority.allCases, id: \.self) { priority in
+        Button(priority.title, systemImage: priority.symbol) { library.prioritize(taskID, as: priority) }
+      }
+      Divider()
+      Button("None") { library.prioritize(taskID, as: nil) }
+    }
+    Menu("Estimate") {
+      ForEach(Self.estimateChoices, id: \.self) { minutes in
+        Button("\(minutes)m") { library.estimate(taskID, as: minutes) }
+      }
+      Divider()
+      Button("None") { library.estimate(taskID, as: nil) }
+    }
+    RepeatMenuItems(library: library, taskID: taskID)
+    Button("Duplicate") { library.duplicate(taskID) }
+    Menu("Tags") {
+      ForEach(library.tags) { item in
+        Button {
+          library.toggleTag(item.id, on: taskID)
+        } label: {
+          if library.tagItems(of: taskID).contains(where: { $0.id == item.id }) {
+            Label(item.name, systemImage: "checkmark")
+          } else {
+            Text(item.name)
+          }
+        }
+      }
+    }
+    .disabled(library.tags.isEmpty)
   }
 }
 

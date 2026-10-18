@@ -12,6 +12,12 @@ extension LibraryViewModel {
     if !isCompleted { editingCard = card }
   }
 
+  /// A project's estimate as its card shows it: its own, else the sum of its open tasks' estimates; `nil` if
+  /// there is none. It is shown and never planned.
+  public func rolledUpEstimate(of projectID: TaskID) -> Int? {
+    state.rolledUpEstimate(of: projectID)
+  }
+
   /// Leaves edit mode and drops what was typed.
   public func cancelCardEdit() {
     editingCard = nil

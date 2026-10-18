@@ -84,6 +84,16 @@ struct TaskCardEditModeTests {
     #expect(log.events == editLog)
   }
 
+  @Test("its estimate is its own if it has one, else the sum of its open tasks'")
+  func theEstimateRollsUp() {
+    let (library, _) = makeLibrary(editLog + [estimated("t1", as: 30, lamport: 5)])
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 30)
+
+    library.estimate(TaskID("p1"), as: 90)
+
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 90)
+  }
+
   @Test("OK with a blank title writes nothing and stays in edit mode")
   func blankTitleStaysInEditMode() {
     let (library, log) = makeLibrary()
@@ -194,6 +204,16 @@ struct ProjectCardEditModeTests {
     #expect(library.dueDate(of: TaskID("p1")) == due)
     #expect(library.repeatRule(of: TaskID("p1")) == RepeatRule(every: 1, unit: .year))
     #expect(library.tagItems(of: TaskID("p1")).map(\.name) == ["travel"])
+  }
+
+  @Test("its estimate is its own if it has one, else the sum of its open tasks'")
+  func theEstimateRollsUp() {
+    let (library, _) = makeLibrary(editLog + [estimated("t1", as: 30, lamport: 5)])
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 30)
+
+    library.estimate(TaskID("p1"), as: 90)
+
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 90)
   }
 
   @Test("OK with a blank title writes nothing and stays in edit mode")
