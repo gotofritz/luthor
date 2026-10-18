@@ -88,6 +88,8 @@ private struct EventLineDTO: Codable {
     case projectReviewIntervalSet = "ProjectReviewIntervalSet"
     case projectReviewed = "ProjectReviewed"
     case projectDropped = "ProjectDropped"
+    case taskRepeatSet = "TaskRepeatSet"
+    case taskRecurred = "TaskRecurred"
   }
 
   init(from decoder: any Decoder) throws {
@@ -129,8 +131,8 @@ private struct EventLineDTO: Codable {
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .projectReviewIntervalSet,
-        .projectReviewed, .projectDropped:
-        try Self.reviewPayload(type, in: container)
+        .projectReviewed, .projectDropped, .taskRepeatSet, .taskRecurred:
+        try Self.laterPayload(type, in: container)
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -140,9 +142,9 @@ private struct EventLineDTO: Codable {
     )
   }
 
-  /// The payload of a review event, the daily or the weekly one. Split from `init(from:)` (SwiftLint
-  /// function_body_length) rather than suppressed.
-  private static func reviewPayload(
+  /// The payload of a review event, the daily or the weekly one, or of a repeat event. Split from
+  /// `init(from:)` (SwiftLint function_body_length) rather than suppressed.
+  private static func laterPayload(
     _ type: EventType,
     in container: KeyedDecodingContainer<CodingKeys>
   ) throws -> EventPayload {
@@ -155,9 +157,11 @@ private struct EventLineDTO: Codable {
       .projectReviewIntervalSet(try container.decode(ProjectReviewIntervalSet.self, forKey: .data))
     case .projectReviewed: .projectReviewed(try container.decode(ProjectReviewed.self, forKey: .data))
     case .projectDropped: .projectDropped(try container.decode(ProjectDropped.self, forKey: .data))
+    case .taskRepeatSet: .taskRepeatSet(try container.decode(TaskRepeatSet.self, forKey: .data))
+    case .taskRecurred: .taskRecurred(try container.decode(TaskRecurred.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
-        forKey: .type, in: container, debugDescription: "not a review event: \(type.rawValue)")
+        forKey: .type, in: container, debugDescription: "not a review or repeat event: \(type.rawValue)")
     }
   }
 
@@ -205,6 +209,8 @@ private struct EventLineDTO: Codable {
     case .projectReviewIntervalSet(let data): try write(.projectReviewIntervalSet, data, to: &container)
     case .projectReviewed(let data): try write(.projectReviewed, data, to: &container)
     case .projectDropped(let data): try write(.projectDropped, data, to: &container)
+    case .taskRepeatSet(let data): try write(.taskRepeatSet, data, to: &container)
+    case .taskRecurred(let data): try write(.taskRecurred, data, to: &container)
     }
   }
 

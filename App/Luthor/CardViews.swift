@@ -39,6 +39,9 @@ struct TaskCardColumn: View {
       if let due = library.dueDate(of: task.id) {
         DueLine(due: due, today: library.today)
       }
+      if let rule = library.repeatRule(of: task.id) {
+        RepeatLine(rule: rule)
+      }
       if let tags = tagLine(of: library.tagItems(of: task.id)) {
         Label(tags, systemImage: "tag")
           .font(.callout)
@@ -73,6 +76,7 @@ private struct TaskCardEditor: View {
   @State private var hasDue: Bool
   @State private var dueDay: Date
   @State private var dueIsHard: Bool
+  @State private var repeatRule: RepeatRule?
   @State private var tagsText: String
   @State private var notes: String
 
@@ -86,6 +90,7 @@ private struct TaskCardEditor: View {
     _hasDue = State(initialValue: due != nil)
     _dueDay = State(initialValue: due?.date.startOfDay ?? Date())
     _dueIsHard = State(initialValue: due?.isHard ?? true)
+    _repeatRule = State(initialValue: library.repeatRule(of: task.id))
     _tagsText = State(initialValue: library.tagItems(of: task.id).map(\.name).joined(separator: ", "))
     _notes = State(initialValue: task.notes ?? "")
   }
@@ -109,6 +114,8 @@ private struct TaskCardEditor: View {
         }
       }
       Toggle("Due date", isOn: $hasDue)
+        .disabled(repeatRule != nil)
+        .help(repeatRule != nil ? "A task that repeats counts from its due date" : "")
       if hasDue {
         DatePicker("Due", selection: $dueDay, displayedComponents: .date)
         Picker("Kind", selection: $dueIsHard) {
@@ -117,6 +124,8 @@ private struct TaskCardEditor: View {
         }
         .pickerStyle(.segmented)
       }
+      RepeatEditor(rule: $repeatRule)
+        .onChange(of: repeatRule) { giveRepeatADueDate() }
       tagsField
       if let history = library.estimateHistory(ofTask: task.id) {
         LabeledContent("History", value: history.summary)
@@ -154,7 +163,16 @@ private struct TaskCardEditor: View {
       ofTask: task.id,
       TaskCardDraft(
         title: title, priority: priority, estimate: estimate, due: due, notes: notes,
-        tags: TaskCardDraft.tagNames(in: tagsText)))
+        tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule))
+  }
+
+  /// A repeat counts from a due date, so turning one on gives a task with none the day Today shows, as a target
+  /// date.
+  private func giveRepeatADueDate() {
+    guard repeatRule != nil, !hasDue else { return }
+    hasDue = true
+    dueDay = library.planDate.startOfDay ?? Date()
+    dueIsHard = false
   }
 
   /// The choices, plus the estimate the task has when it is none of them.

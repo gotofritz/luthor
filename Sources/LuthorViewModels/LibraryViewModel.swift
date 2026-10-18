@@ -339,8 +339,10 @@ public final class LibraryViewModel {
     selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
+  /// Completes a task. If it repeats, the next one is made, due by its rule as of today.
   public func complete(_ taskID: TaskID) {
-    perform { (log) throws(CommandError) in try commands.complete(taskID: taskID, log: log) }
+    let day = clock()
+    perform { (log) throws(CommandError) in try commands.complete(taskID: taskID, today: day, log: log) }
   }
 
   /// Moves the selection up (negative) or down (positive), stopping at the ends. With nothing selected,

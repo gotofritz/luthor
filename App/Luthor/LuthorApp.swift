@@ -180,6 +180,8 @@ struct LuthorApp: App {
           .keyboardShortcut("l", modifiers: .command)
         Button("Send to Someday") { library.sendSelectedToSomeday() }
           .keyboardShortcut("y", modifiers: .command)
+        Button("Skip This One") { library.skipSelected() }
+          .disabled(library.selection.flatMap { library.repeatRule(of: $0) } == nil)
         Button("Drop Task") { library.dropSelected() }
           .keyboardShortcut(.delete, modifiers: [.command, .shift])
       }

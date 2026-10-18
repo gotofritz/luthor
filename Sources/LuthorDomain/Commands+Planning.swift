@@ -95,10 +95,15 @@ extension Commands {
     return [envelope(EventID(ids.next()), .taskDropped(TaskDropped(taskID: taskID)), log: log)]
   }
 
-  /// Takes the open task `taskID` off its day and gives it the someday priority.
+  /// Takes the open task `taskID` off its day and gives it the someday priority. A task that repeats stops: a
+  /// task not committed to has no next one.
   public func sendToSomeday(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     var events = try unschedule(taskID: taskID, log: log)
     events += try prioritize(taskID: taskID, as: .someday, log: log + events)
+    if LibraryState.replay(log).repeatRule(of: taskID) != nil {
+      let stopped = TaskRepeatSet(taskID: taskID, rule: nil)
+      events.append(envelope(EventID(ids.next()), .taskRepeatSet(stopped), log: log + events))
+    }
     return events
   }
 }

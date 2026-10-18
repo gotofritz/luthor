@@ -30,6 +30,23 @@ public struct TaskID: Hashable, Codable, Sendable {
   public init(_ rawValue: String) {
     self.rawValue = rawValue
   }
+
+  /// The ID of the task that repeats `previous`, worked out from it so that two devices completing the same
+  /// task write the same next one. It is a fixed-length hash, so a long series of tasks does not grow the IDs.
+  public static func recurring(after previous: TaskID) -> TaskID {
+    var low: UInt64 = 0xcbf2_9ce4_8422_2325
+    var high: UInt64 = 0x8422_2325_cbf2_9ce4
+    for byte in previous.rawValue.utf8 {
+      low = (low ^ UInt64(byte)) &* 0x0000_0100_0000_01b3
+      high = (high &+ UInt64(byte)) &* 0x0000_0100_0000_01b3 ^ (high >> 29)
+    }
+    return TaskID("r" + hex(high) + hex(low))
+  }
+
+  private static func hex(_ value: UInt64) -> String {
+    let digits = String(value, radix: 16)
+    return String(repeating: "0", count: 16 - digits.count) + digits
+  }
 }
 
 public struct ProjectID: Hashable, Codable, Sendable {

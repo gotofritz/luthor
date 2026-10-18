@@ -293,6 +293,9 @@ struct DecisionMenuItems: View {
     }
     Button("Delegate…") { library.delegatingTaskID = taskID }
     Button("Send to Someday") { library.sendToSomeday(taskID) }
+    if library.repeatRule(of: taskID) != nil {
+      Button("Skip This One") { library.skip(taskID) }
+    }
     Button("Drop Task") { library.dropTask(taskID) }
   }
 }
