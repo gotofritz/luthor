@@ -12,6 +12,7 @@ extension LibraryViewModel {
     calendarDate = date
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 

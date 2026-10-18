@@ -352,10 +352,15 @@ appears to its right, and so on down the tree.
 
 - The first row of every column after the first is the project it lists the
   children of, by name. Click it to see that project's card
-- The plus button at the end of a column adds to it. It opens a field with a
-  choice beside it: a task, a parallel project or a sequential project (the
-  first column offers only the two projects, which are top-level there).
-  Return adds and keeps the field open for the next one; Escape closes it
+- The plus button at the end of a column adds to it. One press shows a box
+  above the button, which cannot be typed in, and replaces the card in the next
+  column with the card of the new item, in edit mode with the title focused.
+  The box shows the title as you type it. The card has a choice of a task, a
+  parallel project or a sequential project (the first column offers only the
+  two projects, which are top-level there), and the fields of any card. A new
+  item starts with priority optional and an estimate of 5 minutes; change or
+  clear them on the card. Nothing is written until OK (or Return in the title);
+  Cancel, Escape, or clicking anywhere else drops the item
 - Clicking the empty part of a column closes every column to its right: in the
   first column no project is open any more, in a later one its project is
   shown with no task picked
@@ -391,8 +396,8 @@ calendar marks the project itself. Its estimate is shown, not planned.
   copied. The copy is selected when the list shows it. An item that repeats
   is copied with its rule, so the copy starts a series of its own
 - **Add Tasks** (the button on a card, or in its context menu) makes the
-  item a project and shows it, ready for tasks to be added with the plus
-  button of its column. It
+  item a project, shows it and starts a new task in it, so the card of that
+  task is ready to type in: no second press of the plus button. It
   keeps its title, notes, view, creation day and everything set on it, and if
   it was in a project, it is a sub-project there, in the same place
 - **Delete Permanently…** (context menu of a task or a project, after a

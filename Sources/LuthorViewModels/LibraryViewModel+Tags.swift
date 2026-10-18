@@ -8,6 +8,7 @@ extension LibraryViewModel {
     selectedTagID = tagID
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 

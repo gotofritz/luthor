@@ -998,3 +998,23 @@ Miller column rework. No new event: the notes stay one plain text.
 6. **Clicking the empty part of a column closes what lies beyond it**, the
    same as picking nothing there. In the first column that leaves no project
    shown; in a later one the column's project is shown with no task picked
+
+## Decisions (2026-10-18, issue #60)
+
+Editing improvements to the plus button. No new event: the item is made in one
+write when OK is pressed.
+
+1. **The plus button starts a draft, not a field.** It closes the columns
+   after its own, shows a read-only box with the title above the button, and
+   puts the new item's card in edit mode in the next column. The box follows
+   the title as it is typed. The draft lives in the view model (`newItem`) and
+   writes nothing until OK; Cancel, Escape or going anywhere else drops it
+2. **New items start with priority optional (C) and an estimate of 5
+   minutes**, for tasks and projects added this way. Quick capture and the
+   inbox are unchanged: a task there has what the capture syntax gives it
+3. **Add Tasks starts the first task at once.** Promoting a task to a project
+   now also starts a new task in it, so one press does both
+4. **Pressing the plus of the column whose item is being edited keeps what
+   was typed**; the plus of another column starts a fresh item
+5. **After OK a task is selected and a project is opened**, so its card or
+   column is shown, rather than the field staying open for another item

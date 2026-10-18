@@ -29,6 +29,53 @@ struct ColumnPlusButtonFlowTests {
 }
 
 @MainActor
+@Suite("Given Miller columns, when an item is added with one press of the plus button and its card")
+struct NewItemCardFlowTests {
+  @Test("the title shows in the column as it is typed, and OK makes the task with priority optional and 5 minutes")
+  func aTaskIsMadeFromItsCard() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let library = launchApp(on: dir.file("events.jsonl"))
+    let europe = try library.createProject("Europe", kind: .parallel)
+    library.open(.project(europe))
+
+    library.beginNewItem(under: europe, kind: .task)
+    library.setNewItemTitle("book fl")
+    library.setNewItemTitle("book flights")
+
+    #expect(library.newItem?.card.title == "book flights")
+    #expect(library.columns.last?.parentID == europe)
+    #expect(library.tasks.isEmpty)
+    library.saveNewItem(try #require(library.newItem?.card))
+
+    let relaunched = launchApp(on: dir.file("events.jsonl"))
+    relaunched.open(.project(europe))
+    let flights = try #require(relaunched.tasks.first)
+    #expect(flights.title == "book flights")
+    #expect(flights.priority == .optional)
+    #expect(flights.estimate == 5)
+  }
+
+  @Test("Add Tasks on a task makes it a project and starts the first task in it, so one OK adds it")
+  func addTasksNeedsNoSecondPress() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let library = launchApp(on: dir.file("events.jsonl"))
+    library.capture("plan trip")
+    let trip = try library.task("plan trip")
+
+    library.addTasks(to: trip)
+    library.setNewItemTitle("book flights")
+    library.saveNewItem(try #require(library.newItem?.card))
+
+    let relaunched = launchApp(on: dir.file("events.jsonl"))
+    relaunched.open(.project(trip))
+    #expect(relaunched.tasks.map(\.title) == ["book flights"])
+    #expect(relaunched.shownProject?.title == "plan trip")
+  }
+}
+
+@MainActor
 @Suite("Given a project with a task, when the columns are clicked")
 struct ColumnCardFlowTests {
   @Test("the last column shows the task card, and the parent project again brings the project card back")

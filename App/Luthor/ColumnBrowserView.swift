@@ -8,7 +8,7 @@ import SwiftUI
 /// picked with its card, and its tasks. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
 /// in the order they were added, headed by the project itself and ended by a plus button that adds to it. The
-/// last column is the card of the task picked or, with none, of the project shown. The priorities are the four
+/// last column is the card of the item being added, else of the task picked or, with none, of the project shown. The priorities are the four
 /// priorities and no priority, picked like the rows of any
 /// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
 /// one picked. Tasks that are not next actions are dimmed. Drag a task onto a
@@ -72,9 +72,19 @@ struct ColumnBrowserView: View {
     }
   }
 
-  /// The card of the task picked, or of the project shown.
+  /// The card of the item being added, else of the task picked, or of the project shown.
   @ViewBuilder
   private var cardColumn: some View {
+    if let item = library.newItem {
+      NewItemCardColumn(library: library, item: item)
+      Divider()
+    } else {
+      pickedCardColumn
+    }
+  }
+
+  @ViewBuilder
+  private var pickedCardColumn: some View {
     switch library.cardTarget {
     case .task:
       if let task = library.selectedTask {

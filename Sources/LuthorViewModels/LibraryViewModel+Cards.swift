@@ -33,7 +33,7 @@ extension LibraryViewModel {
 
   /// The events that make an item's card what the draft says: title, priority, estimate, due date, repeat,
   /// notes and tags, the same for a task and a project.
-  private func cardEvents(of taskID: TaskID, _ draft: TaskCardDraft, log: [EventEnvelope]) throws(CommandError)
+  func cardEvents(of taskID: TaskID, _ draft: TaskCardDraft, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
     let day = planDate

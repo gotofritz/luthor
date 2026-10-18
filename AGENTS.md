@@ -197,7 +197,8 @@ Sources/
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
-                             Add Tasks in LibraryViewModel+Structure.swift, adding a task or project from a column's plus button, notes
+                             Add Tasks in LibraryViewModel+Structure.swift, a new item started from a column's plus button (a draft in
+                             `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, notes
                              on a card, deselecting a column and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
                              filling the published state (columns, lists, completed items) in
@@ -209,7 +210,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked and the card at their end; ProjectColumnsView: a project's column, headed by its name and
-                             ended by a plus button; CardViews: the task card column, the project card in the
+                             ended by a plus button and, while an item is being added, a box with its title; NewItemViews: the card
+                             of an item being added, in edit mode; CardViews: the task card column, the project card in the
                              last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
                              priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
                              as deletable bullets with clickable links and a field that adds one; SettingsColumnsView: Global/Local/This Mac setting families,

@@ -318,7 +318,7 @@ private struct CreatedLine: View {
 }
 
 /// OK keeps what was typed on a card, Cancel drops it.
-private struct EditButtons: View {
+struct EditButtons: View {
   let save: () -> Void
   let cancel: () -> Void
 

@@ -105,3 +105,30 @@ public struct TaskCardDraft: Equatable, Sendable {
     return names
   }
 }
+
+/// What the plus button at the end of a column can add.
+public enum NewItemKind: Hashable, Sendable {
+  case task
+  case project(ProjectKind)
+}
+
+/// An item the plus button of a column started, until OK makes it. The card in the column after the column
+/// edits it; nothing is written before OK.
+public struct NewItemDraft: Equatable, Sendable {
+  /// The priority and estimate a new item starts with: optional, and five minutes.
+  public static let defaultPriority = Priority.optional
+  public static let defaultEstimate = 5
+
+  /// The project the item is added to; `nil` for a top-level project.
+  public let parentID: TaskID?
+  public var kind: NewItemKind
+  /// What the card holds so far, the title as typed.
+  public var card: TaskCardDraft
+
+  public init(parentID: TaskID?, kind: NewItemKind) {
+    self.parentID = parentID
+    self.kind = kind
+    card = TaskCardDraft(
+      title: "", priority: Self.defaultPriority, estimate: Self.defaultEstimate, due: nil, notes: "")
+  }
+}

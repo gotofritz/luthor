@@ -31,11 +31,11 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.delete(projectID: projectID, log: log) }
   }
 
-  /// Turns a task into a project, which the columns then show, ready for tasks to be captured into it.
+  /// Turns a task into a project, which the columns then show, with a new task already being edited in it.
   public func addTasks(to taskID: TaskID) {
     let events = perform { (log) throws(CommandError) in try commands.promote(taskID: taskID, log: log) }
     for case .taskKindChanged(let changed) in events.map(\.payload) {
-      open(.project(changed.taskID))
+      beginNewItem(under: changed.taskID, kind: .task)
     }
   }
 }

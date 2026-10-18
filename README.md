@@ -42,7 +42,8 @@ until promoted. The quick-capture syntax does both at once:
 Projects nest to any depth and show in Miller columns: the first column lists
 the top-level projects, and each project you open adds a column
 of its sub-projects and tasks, headed by the project's name. The plus button
-at the end of a column adds a task or a project to it; a project is parallel
+at the end of a column starts a task or a project in it, edited on a card in the next column (priority optional
+and 5 minutes to begin with) and kept with OK; a project is parallel
 (every child is active) or sequential (only the first open child is; the rest
 are dimmed). The last column is always a card: the task picked or, with none,
 the project shown. Drag a project onto another to nest it, or onto the first
@@ -94,7 +95,7 @@ next one, due by the rule; Skip This One passes over one occurrence, Stop
 Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 
 A task and a project are the same kind of item: a project is an item that holds others. A project has
-the card of a task, with a priority, estimate, due date, repeat and tags. Add Tasks (on a card or in its context menu) makes an item a project that you then add tasks to, keeping
+the card of a task, with a priority, estimate, due date, repeat and tags. Add Tasks (on a card or in its context menu) makes an item a project and starts a task in it, keeping
 everything set on it. An item can be duplicated (Duplicate in its context menu, or ⇧⌘D): the copy has the
 same title, notes, priority, estimate, due date, tags and repeat, in the same project, planned for no
 day, and a project's copy holds copies of its tasks. Delete Permanently… (context menu, after a confirmation) removes an item,
