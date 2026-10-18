@@ -96,6 +96,7 @@ extension LibraryState {
       reviewRecords.plannedDays.removeValue(forKey: id)
       projectReviews.intervals.removeValue(forKey: id)
       projectReviews.reviewedOn.removeValue(forKey: id)
+      projectReviews.chosenNext.removeValue(forKey: id)
     }
     reviewRecords.taskMinutes = reviewRecords.taskMinutes.filter { !doomed.contains($0.key.taskID) }
   }

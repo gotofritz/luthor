@@ -112,7 +112,8 @@ Sources/
     RepeatEvents.swift       TaskRepeatSet, TaskRecurred (next task copied from the previous one; its ID is
                              TaskID.recurring(after:), so two devices make the same one)
     ProjectReviewEvents.swift  ReviewInterval (off or every n days; n on the wire, 0 for off), ReviewDefaultSet,
-                             ReviewIntervalSet, TaskReviewed
+                             ReviewIntervalSet, ReviewDateSet (a chosen next
+                             review), TaskReviewed
     Identifiers.swift        EventID, DeviceID, TaskID (one ID for tasks and projects; derived IDs for the next
                              of a repeat and for copies in a copied subtree), TagID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
@@ -122,8 +123,8 @@ Sources/
     Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
-    Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
-                             drop it
+    Commands+ProjectReview.swift  weekly project review: default and per-project interval, choose the next review,
+                             review a project, drop it
     Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
@@ -151,7 +152,7 @@ Sources/
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
     LibraryState+ProjectReview.swift  weekly project review: applying its events, effective interval,
-                             nextReviewDate(of:), projectsDueForReview(in:today:) → ProjectReviewItem
+                             nextReviewDate(of:) (a chosen day, else an interval after the last review), projectsDueForReview(in:today:) → ProjectReviewItem
     LibraryState+Repeat.swift  applying TaskRepeatSet and TaskRecurred, repeatRule(of:)
     LibraryState+Structure.swift  applying the structure events; copyTask (with the subtree), shared by
                              TaskRecurred and TaskDuplicated; hasProject

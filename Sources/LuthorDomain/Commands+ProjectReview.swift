@@ -27,14 +27,29 @@ extension Commands {
     return [envelope(EventID(ids.next()), .reviewIntervalSet(set), log: log)]
   }
 
+  /// Sets the day the active project `projectID` is reviewed next, in place of one interval after the last
+  /// review; reviewing it drops the day. Setting the day it already falls on writes nothing.
+  public func setNextReview(of projectID: TaskID, to date: CalendarDate, log: [EventEnvelope])
+    throws(CommandError) -> [EventEnvelope]
+  {
+    let state = LibraryState.replay(log)
+    _ = try activeProject(projectID, in: state)
+    guard state.nextReviewDate(of: projectID) != date else { return [] }
+    let set = ReviewDateSet(taskID: projectID, date: date)
+    return [envelope(EventID(ids.next()), .reviewDateSet(set), log: log)]
+  }
+
   /// Marks the open project `projectID` reviewed on `date`, which is today. A project that was dropped is
-  /// refused. Reviewing a project on the day it was last reviewed writes nothing.
+  /// refused. Reviewing a project on the day it was last reviewed writes nothing, unless it was given a next
+  /// review since, which reviewing drops.
   public func reviewProject(_ projectID: TaskID, on date: CalendarDate, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
     _ = try activeProject(projectID, in: state)
-    guard state.lastReviewDate(of: projectID) != date else { return [] }
+    guard state.lastReviewDate(of: projectID) != date || state.chosenReviewDate(of: projectID) != nil else {
+      return []
+    }
     let reviewed = TaskReviewed(taskID: projectID, date: date)
     return [envelope(EventID(ids.next()), .taskReviewed(reviewed), log: log)]
   }

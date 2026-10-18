@@ -54,6 +54,19 @@ public struct ProjectColumn: Equatable, Sendable, Identifiable {
   }
 }
 
+/// How and when a project is reviewed, as its card in edit mode sets it.
+public struct ProjectReviewDraft: Equatable, Sendable {
+  /// How often the project is reviewed; `nil` follows the default.
+  public var interval: ReviewInterval?
+  /// The day to review it next; `nil` leaves the day as the interval works it out.
+  public var nextReview: CalendarDate?
+
+  public init(interval: ReviewInterval?, nextReview: CalendarDate?) {
+    self.interval = interval
+    self.nextReview = nextReview
+  }
+}
+
 /// What a task's card in edit mode holds until OK keeps it.
 public struct TaskCardDraft: Equatable, Sendable {
   public var title: String
@@ -65,10 +78,12 @@ public struct TaskCardDraft: Equatable, Sendable {
   public var tags: [String]
   /// How the task is to repeat; `nil` for a task that does not.
   public var repeatRule: RepeatRule?
+  /// How and when a project is reviewed, as its card sets it; `nil` leaves the review as it is, as for a task.
+  public var review: ProjectReviewDraft?
 
   public init(
     title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String, tags: [String] = [],
-    repeatRule: RepeatRule? = nil
+    repeatRule: RepeatRule? = nil, review: ProjectReviewDraft? = nil
   ) {
     self.title = title
     self.priority = priority
@@ -77,6 +92,7 @@ public struct TaskCardDraft: Equatable, Sendable {
     self.notes = notes
     self.tags = tags
     self.repeatRule = repeatRule
+    self.review = review
   }
 
   /// The tag names in text typed as a comma-separated list: no blanks, no leading `@`, and a name given

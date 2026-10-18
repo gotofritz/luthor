@@ -59,6 +59,19 @@ public struct ReviewIntervalSet: Equatable, Codable, Sendable {
   }
 }
 
+/// Sets the day a project is reviewed next, in place of one interval after it was last reviewed, so that
+/// projects made together can be spread over the weeks. Reviewing the project drops it, and the next review
+/// counts from the day reviewed again.
+public struct ReviewDateSet: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  public let date: CalendarDate
+
+  public init(taskID: TaskID, date: CalendarDate) {
+    self.taskID = taskID
+    self.date = date
+  }
+}
+
 /// Marks an open project reviewed on a day. Its next review falls one interval after that day.
 public struct TaskReviewed: Equatable, Codable, Sendable {
   public let taskID: TaskID

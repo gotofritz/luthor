@@ -84,6 +84,73 @@ struct TaskCardEditModeTests {
     #expect(log.events == editLog)
   }
 
+  @Test("OK keeps the review interval and next review day it was given")
+  func okKeepsTheReviewFields() {
+    let (library, _) = makeLibrary()
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(
+        title: "Holiday", priority: nil, estimate: nil, due: nil, notes: "",
+        review: ProjectReviewDraft(interval: .every(days: 14), nextReview: date("2026-11-02"))),
+      kind: .parallel)
+
+    #expect(library.reviewOverride(of: TaskID("p1")) == .every(days: 14))
+    #expect(library.nextReviewDate(of: TaskID("p1")) == date("2026-11-02"))
+  }
+
+  @Test("OK with no next review day lets it follow the new interval")
+  func okWithNoNextReviewDayFollowsTheInterval() {
+    let (library, _) = makeLibrary()
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(
+        title: "Holiday", priority: nil, estimate: nil, due: nil, notes: "",
+        review: ProjectReviewDraft(interval: .every(days: 14), nextReview: nil)),
+      kind: .parallel)
+
+    #expect(library.nextReviewDate(of: TaskID("p1")) == date("2026-10-15"))
+  }
+
+  @Test("OK with no interval of its own goes back to the default")
+  func okWithNoOwnIntervalGoesBackToTheDefault() {
+    let (library, _) = makeLibrary(editLog + [reviewIntervalSet("p1", to: .every(days: 3), lamport: 5)])
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(
+        title: "Holiday", priority: nil, estimate: nil, due: nil, notes: "",
+        review: ProjectReviewDraft(interval: nil, nextReview: nil)),
+      kind: .parallel)
+
+    #expect(library.reviewOverride(of: TaskID("p1")) == nil)
+  }
+
+  @Test("OK with a draft that says nothing about review leaves it as it was")
+  func okWithoutReviewLeavesItAsItWas() {
+    let events =
+      editLog + [
+        reviewIntervalSet("p1", to: .every(days: 3), lamport: 5), reviewDateSet("p1", to: "2026-11-02", lamport: 6),
+      ]
+    let (library, _) = makeLibrary(events)
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(title: "Holiday", priority: nil, estimate: nil, due: nil, notes: ""), kind: .parallel)
+
+    #expect(library.reviewOverride(of: TaskID("p1")) == .every(days: 3))
+    #expect(library.nextReviewDate(of: TaskID("p1")) == date("2026-11-02"))
+  }
+
   @Test("its estimate is its own if it has one, else the sum of its open tasks'")
   func theEstimateRollsUp() {
     let (library, _) = makeLibrary(editLog + [estimated("t1", as: 30, lamport: 5)])

@@ -206,3 +206,58 @@ struct ProjectStatusFlowTests {
     #expect(relaunched.projectReview.map(\.project.id) == [swift])
   }
 }
+
+@MainActor
+@Suite("Given two projects due for review, when I move the next review of one on its card")
+struct WeeklyReviewStaggerFlowTests {
+  @Test("it leaves the list until that day, and a relaunch still has it there")
+  func itLeavesTheListUntilThatDay() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let url = dir.file("events.jsonl")
+    let (house, swift) = try twoProjects(at: url)
+    let library = launchApp(on: url, today: date("2026-10-21"))
+    library.show(.weeklyReview)
+    library.editCard(.project(house))
+
+    library.saveCard(
+      ofProject: house,
+      TaskCardDraft(
+        title: "Move house", priority: nil, estimate: nil, due: nil, notes: "",
+        review: ProjectReviewDraft(interval: nil, nextReview: date("2026-10-28"))),
+      kind: .parallel)
+
+    #expect(library.nextReviewDate(of: house) == date("2026-10-28"))
+    #expect(library.projectReview.map(\.project.id) == [swift])
+    let relaunched = launchApp(on: url, today: date("2026-10-27"))
+    relaunched.show(.weeklyReview)
+    #expect(relaunched.projectReview.map(\.project.id) == [swift])
+    let later = launchApp(on: url, today: date("2026-10-28"))
+    later.show(.weeklyReview)
+    #expect(later.projectReview.map(\.project.id) == [swift, house])
+  }
+
+  @Test("reviewing it then counts a week from the day reviewed, not from the day chosen")
+  func reviewingCountsFromTheDayReviewed() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let url = dir.file("events.jsonl")
+    let (house, _) = try twoProjects(at: url)
+    let library = launchApp(on: url, today: date("2026-10-21"))
+    library.show(.weeklyReview)
+    library.editCard(.project(house))
+    library.saveCard(
+      ofProject: house,
+      TaskCardDraft(
+        title: "Move house", priority: nil, estimate: nil, due: nil, notes: "",
+        review: ProjectReviewDraft(interval: nil, nextReview: date("2026-10-28"))),
+      kind: .parallel)
+    let later = launchApp(on: url, today: date("2026-10-29"))
+    later.show(.weeklyReview)
+    later.showReviewProject(house)
+
+    later.markProjectReviewed()
+
+    #expect(later.nextReviewDate(of: house) == date("2026-11-05"))
+  }
+}

@@ -18,6 +18,8 @@ struct ProjectReviewRecords: Equatable, Sendable {
   var intervals: [TaskID: ReviewInterval] = [:]
   /// The day each project was last reviewed.
   var reviewedOn: [TaskID: CalendarDate] = [:]
+  /// The day the projects that were given one are to be reviewed next, until they are reviewed.
+  var chosenNext: [TaskID: CalendarDate] = [:]
 }
 
 // The weekly project review: how the events change the state, and the pure functions that turn it into the
@@ -36,6 +38,10 @@ extension LibraryState {
     case .taskReviewed(let reviewed):
       guard isOpen(reviewed.taskID) else { return }
       projectReviews.reviewedOn[reviewed.taskID] = reviewed.date
+      projectReviews.chosenNext.removeValue(forKey: reviewed.taskID)
+    case .reviewDateSet(let set):
+      guard isOpen(set.taskID) else { return }
+      projectReviews.chosenNext[set.taskID] = set.date
     default:
       break
     }
@@ -56,17 +62,23 @@ extension LibraryState {
     projectReviews.intervals[projectID]
   }
 
+  /// The day the project was given as its next review, which reviewing it drops; `nil` while it has none.
+  public func chosenReviewDate(of projectID: TaskID) -> CalendarDate? {
+    projectReviews.chosenNext[projectID]
+  }
+
   /// The day the project was last reviewed; `nil` while it never was.
   public func lastReviewDate(of projectID: TaskID) -> CalendarDate? {
     projectReviews.reviewedOn[projectID]
   }
 
-  /// The day the project is to be reviewed next: one interval after the day it was last reviewed, or created.
-  /// A project created before the day was kept counts from 1970-01-01, so it is due at once. `nil` for a
-  /// project that is not open, that was completed or dropped, or whose review is off.
+  /// The day the project is to be reviewed next: the one it was given, else one interval after the day it was
+  /// last reviewed, or created. A project created before the day was kept counts from 1970-01-01, so it is due
+  /// at once. `nil` for a project that is not open, that was completed or dropped, or whose review is off.
   public func nextReviewDate(of projectID: TaskID) -> CalendarDate? {
     guard let project = openItem(projectID), project.kind != nil, let days = reviewInterval(of: projectID).days
     else { return nil }
+    if let chosen = projectReviews.chosenNext[projectID] { return chosen }
     let since = projectReviews.reviewedOn[projectID] ?? project.createdOn ?? CalendarDate(daysSinceEpoch: 0)
     return since.adding(days: days)
   }

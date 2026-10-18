@@ -327,6 +327,14 @@ default. Off leaves one project out of the review; with the default off, only
 projects with an interval of their own are reviewed. Changing an interval
 changes the next review day at once.
 
+**Choosing the next review day.** A project card shows its next review day
+and how often it is reviewed. To spread projects made together over the weeks,
+press the pencil on the card and pick a day under Next review (and, if you
+like, a different interval under Review), then OK. The project is left out of
+the review until that day. Mark Reviewed drops the chosen day, and the next
+review is an interval after the day reviewed. A project whose review is off
+shows "Review off" and has no day to pick.
+
 **Dropping.** Drop Project (the button, or the project's context menu) gives
 up a project: it and its open tasks leave the lists and the review, and
 nothing is deleted. The Completed and dropped toggle lists it with a cross

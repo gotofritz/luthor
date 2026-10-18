@@ -62,3 +62,19 @@ public func projectDropped(
     payload: .taskDropped(TaskDropped(taskID: TaskID(project)))
   )
 }
+
+/// Builds a `ReviewDateSet` envelope with short, readable defaults.
+public func reviewDateSet(
+  _ project: String,
+  to day: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 3
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "review-date-\(project)-\(day)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .reviewDateSet(ReviewDateSet(taskID: TaskID(project), date: date(day)))
+  )
+}

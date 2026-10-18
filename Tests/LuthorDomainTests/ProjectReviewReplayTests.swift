@@ -49,6 +49,63 @@ struct NextReviewReplayTests {
     #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == date("2026-11-03"))
   }
 
+  @Test("a chosen next review replaces the day worked out, and keeps the interval")
+  func aChosenNextReviewReplacesTheDayWorkedOut() {
+    let state = LibraryState.replay(projects + [reviewDateSet("p1", to: "2026-11-02")])
+
+    #expect(state.nextReviewDate(of: TaskID("p1")) == date("2026-11-02"))
+    #expect(state.nextReviewDate(of: TaskID("p2")) == date("2026-10-21"))
+    #expect(state.reviewInterval(of: TaskID("p1")) == .every(days: 7))
+  }
+
+  @Test("choosing again replaces the day, in whichever order the events arrive")
+  func choosingAgainReplacesTheDay() {
+    let first = reviewDateSet("p1", to: "2026-11-02", lamport: 3)
+    let second = reviewDateSet("p1", to: "2026-11-09", lamport: 4)
+
+    #expect(LibraryState.replay(projects + [first, second]).nextReviewDate(of: TaskID("p1")) == date("2026-11-09"))
+    #expect(LibraryState.replay(projects + [second, first]).nextReviewDate(of: TaskID("p1")) == date("2026-11-09"))
+  }
+
+  @Test("a chosen next review keeps a project out of the list until then")
+  func aChosenNextReviewKeepsAProjectOutOfTheList() {
+    let state = LibraryState.replay(projects + [reviewDateSet("p1", to: "2026-10-26")])
+
+    #expect(state.projectsDueForReview(in: .default, today: monday).map(\.project.id) == [TaskID("p2")])
+    #expect(
+      state.projectsDueForReview(in: .default, today: date("2026-10-26")).map(\.project.id)
+        == [TaskID("p1"), TaskID("p2")])
+  }
+
+  @Test("reviewing counts from the day reviewed again, and drops the chosen day")
+  func reviewingDropsTheChosenDay() {
+    let events = projects + [reviewDateSet("p1", to: "2026-11-30"), projectReviewed("p1", on: "2026-10-20", lamport: 4)]
+
+    #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == date("2026-10-27"))
+  }
+
+  @Test("a day chosen after a review stands")
+  func aDayChosenAfterAReviewStands() {
+    let events = projects + [projectReviewed("p1", on: "2026-10-20"), reviewDateSet("p1", to: "2026-11-30", lamport: 4)]
+
+    #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == date("2026-11-30"))
+  }
+
+  @Test("with review off a chosen day is not a next review")
+  func withReviewOffAChosenDayIsNotANextReview() {
+    let events = projects + [reviewDateSet("p1", to: "2026-11-02"), reviewIntervalSet("p1", to: .off, lamport: 4)]
+
+    #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == nil)
+  }
+
+  @Test("a day chosen for a project that is not open is ignored")
+  func aDayChosenForAProjectThatIsNotOpenIsIgnored() {
+    let events = projects + [projectDropped("p1"), reviewDateSet("p1", to: "2026-11-02", lamport: 4)]
+    let state = LibraryState.replay(events)
+
+    #expect(state.nextReviewDate(of: TaskID("p1")) == nil)
+  }
+
   @Test("the default interval is a number of days for all projects")
   func theDefaultIntervalIsANumberOfDays() {
     let state = LibraryState.replay(projects + [reviewDefaultSet(.every(days: 14))])

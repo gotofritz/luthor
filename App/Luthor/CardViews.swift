@@ -127,8 +127,8 @@ struct ProjectCardColumn: View {
 }
 
 /// The card of a project. Like a task card it shows the day the project was created, whether it is completed or
-/// dropped, the day it is to be reviewed next and its notes, not the title the column before it shows, until the
-/// pencil opens the editor of the title, kind and notes. A completed project shows its card too, with no pencil
+/// dropped, the day it is to be reviewed next and how often, and its notes, not the title the column before it
+/// shows, until the pencil opens the editor of the title, kind, review and notes. A completed project shows its card too, with no pencil
 /// until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
@@ -184,9 +184,16 @@ struct ProjectCard: View {
           .font(.callout)
       }
       if let next = library.nextReviewDate(of: project.id) {
-        Label("Next review \(next.isoString)", systemImage: "eyeglasses")
+        Label(
+          "Next review \(next.isoString), \(library.reviewInterval(of: project.id).title.lowercased())",
+          systemImage: "eyeglasses"
+        )
+        .font(.callout)
+        .foregroundStyle(next < library.today ? Color.red : Color.primary)
+      } else if !isCompleted {
+        Label("Review off", systemImage: "eyeglasses")
           .font(.callout)
-          .foregroundStyle(next < library.today ? Color.red : Color.primary)
+          .foregroundStyle(.secondary)
       }
       CardNotesView(library: library, itemID: project.id, notes: project.notes, canAdd: !isCompleted)
     }
@@ -201,6 +208,7 @@ private struct ProjectCardEditor: View {
   @State private var title: String
   @State private var kind: ProjectKind
   @State private var fields: CardFields
+  @State private var review: ReviewFields
   @State private var notes: String
 
   init(library: LibraryViewModel, project: Project) {
@@ -208,6 +216,7 @@ private struct ProjectCardEditor: View {
     self.project = project
     _title = State(initialValue: project.title)
     _kind = State(initialValue: project.kind)
+    _review = State(initialValue: ReviewFields(library: library, id: project.id))
     _fields = State(
       initialValue: CardFields(
         library: library, id: project.id, priority: project.priority, estimate: project.estimate))
@@ -226,6 +235,7 @@ private struct ProjectCardEditor: View {
       }
       .pickerStyle(.segmented)
       CardFieldsForm(library: library, fields: $fields, currentEstimate: project.estimate, submit: save)
+      ProjectReviewFieldsForm(library: library, fields: $review)
       if let history = library.estimateHistory(ofProject: project.id) {
         LabeledContent("History", value: history.summary)
       }
@@ -236,7 +246,9 @@ private struct ProjectCardEditor: View {
   }
 
   private func save() {
-    library.saveCard(ofProject: project.id, fields.draft(title: title, notes: notes), kind: kind)
+    var draft = fields.draft(title: title, notes: notes)
+    draft.review = review.draft()
+    library.saveCard(ofProject: project.id, draft, kind: kind)
   }
 }
 
