@@ -18,6 +18,7 @@ public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case today
   case calendar
   case review
+  case weeklyReview
   case projects
   case priorities
   case tags

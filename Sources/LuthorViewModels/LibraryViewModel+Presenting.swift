@@ -77,6 +77,7 @@ extension LibraryViewModel {
     carryOver = state.carryOver(in: currentView, today: today)
     presentCalendar()
     presentTags()
+    presentProjectReview()
     presentTasks(of: view, completed: completed)
     presentCompletion(completed)
     if let selected = selection, index(of: selected) == nil { selection = nil }
@@ -135,9 +136,9 @@ extension LibraryViewModel {
   }
 
   /// Fills the list of the place the rail has picked: the leftovers, the plan and its candidates, the tasks
-  /// not done on the day reviewed, the tasks of the day picked on the calendar, the tasks with a priority
-  /// picked, the tasks with the tag picked, the project shown, or the inbox; completed tasks follow the open
-  /// ones.
+  /// not done on the day reviewed, the tasks of the project picked in the weekly review, the tasks of the day
+  /// picked on the calendar, the tasks with a priority picked, the tasks with the tag picked, the project
+  /// shown, or the inbox; completed tasks follow the open ones.
   private func presentTasks(of view: ViewState, completed: Completion) {
     let completedItems = completed.tasks.map(\.item)
     switch section {
@@ -147,6 +148,9 @@ extension LibraryViewModel {
     case .review:
       tasks = review.notDone.map(\.task)
       nextActions = Set(tasks.map(\.id))
+    case .weeklyReview:
+      tasks = projectReview.first { $0.project.id == reviewProjectID }?.project.tasks ?? []
+      nextActions = Set(view.nextActions.map(\.id)).intersection(tasks.map(\.id))
     case .calendar:
       tasks = calendarEntries.map(\.task)
       nextActions = Set(tasks.map(\.id))
