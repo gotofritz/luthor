@@ -317,6 +317,15 @@ context menu.
 
 Usable: the weekly review.
 
+### Stress test the desktop app (before 15)
+
+Not a build slice: time spent using the Mac app hard before the format is
+frozen and before iOS starts. Real tasks every day, two Macs at once, and a
+big synthetic log, where launch replay time and capture latency are measured
+(the first item of slice 16). It ends with a list of issues. Whatever it
+finds in the event format is fixed in the audit step of slice 15, while the
+format is still soft.
+
 ### 15. Freeze the event format
 
 Safety work, no new feature: it keeps the log, the only copy of the tasks,
