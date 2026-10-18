@@ -407,7 +407,8 @@ calendar marks the project itself. Its estimate is shown, not planned.
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in
   them, completed ones too. There is no undo; the choice to complete or
-  drop is there for what you may want back
+  drop is there for what you may want back. If the columns showed the deleted
+  project, or went through it, they show its parent afterwards
 
 ## Repeating tasks
 
