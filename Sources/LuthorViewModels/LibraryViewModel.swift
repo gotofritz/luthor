@@ -21,6 +21,15 @@ public final class LibraryViewModel {
   /// The priorities picked in the priorities section, `nil` being no priority; the list shows the tasks of
   /// all of them.
   public internal(set) var selectedPriorities: Set<Priority?> = []
+  /// The tags of the view in creation order, how many open tasks each carries, and the one picked in the Tags
+  /// place (`nil` until one is), whose open tasks that place lists.
+  public internal(set) var tags: [TagItem] = []
+  public internal(set) var tagTaskCounts: [TagID: Int] = [:]
+  public internal(set) var selectedTagID: TagID?
+  /// What Today's candidates are narrowed to; nothing is, until it is set. The tasks planned for the day stay.
+  public var candidateFilter = TaskFilter() {
+    didSet { present() }
+  }
   /// Every active project of the view, nested or not, in creation order.
   public internal(set) var projects: [Project] = []
   /// The active projects of the view and, while completed items are listed, the completed ones: whatever a
@@ -104,6 +113,7 @@ public final class LibraryViewModel {
 
   /// Shows another view, at its inbox, with no task selected.
   public func showView(_ viewID: ViewID) {
+    candidateFilter = TaskFilter()
     currentView = viewID
     section = .inbox
     sidebarSelection = .inbox

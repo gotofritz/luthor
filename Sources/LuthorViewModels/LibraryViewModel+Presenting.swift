@@ -71,11 +71,12 @@ extension LibraryViewModel {
     shownProject = path.last.flatMap { id in known.first { $0.id == id } }
     columns = projectColumns(of: view, completed: completed)
     today = clock()
-    plan = state.plan(for: currentView, on: planDate, today: today)
+    plan = state.plan(for: currentView, on: planDate, today: today, matching: candidateFilter)
     waiting = state.waitingFor(in: currentView, today: today)
     review = state.dayReview(for: currentView, on: planDate, today: today)
     carryOver = state.carryOver(in: currentView, today: today)
     presentCalendar()
+    presentTags()
     presentTasks(of: view, completed: completed)
     presentCompletion(completed)
     if let selected = selection, index(of: selected) == nil { selection = nil }
@@ -135,34 +136,43 @@ extension LibraryViewModel {
 
   /// Fills the list of the place the rail has picked: the leftovers, the plan and its candidates, the tasks
   /// not done on the day reviewed, the tasks of the day picked on the calendar, the tasks with a priority
-  /// picked, the project shown, or the inbox; completed tasks follow the open ones.
+  /// picked, the tasks with the tag picked, the project shown, or the inbox; completed tasks follow the open
+  /// ones.
   private func presentTasks(of view: ViewState, completed: Completion) {
     let completedItems = completed.tasks.map(\.item)
-    if section == .today {
+    switch section {
+    case .today:
       tasks = (carryOver.map(\.entry) + plan.entries + plan.candidates).map(\.task)
       nextActions = Set(tasks.map(\.id))
-    } else if section == .review {
+    case .review:
       tasks = review.notDone.map(\.task)
       nextActions = Set(tasks.map(\.id))
-    } else if section == .calendar {
+    case .calendar:
       tasks = calendarEntries.map(\.task)
       nextActions = Set(tasks.map(\.id))
-    } else if section == .priorities {
+    case .priorities:
       tasks =
         view.tasks(prioritised: selectedPriorities)
         + completedItems.filter { selectedPriorities.contains($0.priority) }
       let actionable = Set(view.nextActions.map(\.id))
       nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
-    } else if let projectID = shownProjectID {
-      tasks = (projects.first { $0.id == projectID }?.tasks ?? []) + completedItems.filter { $0.projectID == projectID }
-      let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
-        guard case .task(let task) = entry else { return nil }
-        return task.id
+    case .tags:
+      tasks = selectedTagID.map { state.tasks(tagged: $0) } ?? []
+      let actionable = Set(view.nextActions.map(\.id))
+      nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
+    case .inbox, .projects, .settings:
+      if let projectID = shownProjectID {
+        tasks =
+          (projects.first { $0.id == projectID }?.tasks ?? []) + completedItems.filter { $0.projectID == projectID }
+        let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
+          guard case .task(let task) = entry else { return nil }
+          return task.id
+        }
+        nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
+      } else {
+        tasks = view.inbox + completedItems.filter { $0.projectID == nil }
+        nextActions = Set(view.inbox.map(\.id))
       }
-      nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
-    } else {
-      tasks = view.inbox + completedItems.filter { $0.projectID == nil }
-      nextActions = Set(view.inbox.map(\.id))
     }
   }
 
