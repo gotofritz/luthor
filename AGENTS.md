@@ -98,7 +98,8 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
-                             TaskCaptured and ProjectCreated carry the optional day created (`createdOn`);
+                             TaskCaptured carries the optional day created (`createdOn`), parent and kind (a
+                             project is an item with a kind); TaskMoved, TaskKindChanged;
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
                              TaskDelegated/Reclaimed, TaskDropped, TaskDueSet
@@ -111,11 +112,12 @@ Sources/
     RepeatEvents.swift       TaskRepeatSet, TaskRecurred (next task copied from the previous one; its ID is
                              TaskID.recurring(after:), so two devices make the same one)
     ProjectReviewEvents.swift  ReviewInterval (off or every n days; n on the wire, 0 for off), ReviewDefaultSet,
-                             ProjectReviewIntervalSet, ProjectReviewed, ProjectDropped
-    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, TagID, ViewID (+ ViewID.default)
+                             ReviewIntervalSet, TaskReviewed
+    Identifiers.swift        EventID, DeviceID, TaskID (one ID for tasks and projects; derived IDs for the next
+                             of a repeat and for copies in a copied subtree), TagID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
-    Commands+Completion.swift  reopen a completed task or project
+    Commands+Completion.swift  reopen a completed or dropped task or project
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
@@ -123,36 +125,43 @@ Sources/
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
                              drop it
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
-    StructureEvents.swift    TaskDuplicated, TaskDeleted, ProjectDeleted, TaskPromotedToProject
-    Commands+Structure.swift duplicate a task, delete a task or project for good, promote a task to a project
+    StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
+    Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
-    LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
+    LibraryState.swift       reducer: LibraryState.replay(events) → views; one item store (a task and a project
+                             are the same TaskItem; a kind makes it a project), tasks and projects
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, due dates, delegations, plan orders and
                              day capacities
-    Project.swift            Project (with its ProjectStatus: active, dropped) and ProjectChild
-    LibraryState+Completion.swift  Completed<Item>; keeping completed tasks and projects, and reopening them
-    LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:)
+    LibraryState+Items.swift capturing, filing and moving items; the lists of open and finished tasks and
+                             projects derived from the store; subtree(of:), descendants(of:),
+                             rolledUpEstimate(of:)
+    Project.swift            Project (an item with a kind: own priority and estimate, children) and ProjectChild
+    LibraryState+Completion.swift  Completed<Item> (completed or dropped); finishing an item with its subtree,
+                             and reopening it
+    LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:) and
+                             effectiveDueDate(of:) (own, else the nearest ancestor's)
     LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
-                             counts per day) and calendarEntries(for:on:today:) → CalendarEntry (a day's tasks)
+                             counts per day, the item that carries a date being the one marked) and calendarEntries(for:on:today:) →
+                             CalendarEntry (a day's tasks and projects)
     LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
     LibraryState+ProjectReview.swift  weekly project review: applying its events, effective interval,
                              nextReviewDate(of:), projectsDueForReview(in:today:) → ProjectReviewItem
     LibraryState+Repeat.swift  applying TaskRepeatSet and TaskRecurred, repeatRule(of:)
-    LibraryState+Structure.swift  applying the structure events; copyTask, shared by TaskRecurred and
-                             TaskDuplicated; hasProject
+    LibraryState+Structure.swift  applying the structure events; copyTask (with the subtree), shared by
+                             TaskRecurred and TaskDuplicated; hasProject
     LibraryState+Tags.swift  TagItem, applying the tag events, tags(in:/of:), tasks(tagged:), taskCounts; TaskFilter
                              (tags, priority, project, deadline) and tasks(in:matching:)
     LibraryState+Cards.swift  applying rename, notes and kind events
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
-                             someday and dropped projects; tasks by priority
+                             someday; tasks by priority
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
-                             DayPlan (ordered entries with reasons, candidates, DayCapacity; due hard
-                             deadlines rank after priority), waitingFor(in:today:)
+                             DayPlan (ordered entries with reasons, candidates, DayCapacity; effective hard
+                             deadlines rank after priority; only tasks, never projects), waitingFor(in:today:)
     Settings.swift           SettingKey, Weekday, Settings (typed planning numbers); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
@@ -175,7 +184,8 @@ Sources/
   LuthorViewModels/          @Observable view models, no SwiftUI
     LibraryViewModel.swift   LibraryViewModel: current view, navigation section, picked priorities,
                              project columns, list, drops, injected clock; the card being edited
-                             (`editingCard`), with edit, cancel and save in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
+                             (`editingCard`), with edit, cancel and save (a task's and a project's card share one draft) and
+                             a project's rolled-up estimate in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn/TaskCardDraft types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
@@ -195,7 +205,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; CardViews: the task card column, the project card above
-                             its column (read-only, a pencil opens the editor with OK and Cancel); NotesViews: notes
+                             its column (read-only, a pencil opens the editor with OK and Cancel; both edit priority, estimate, due date,
+                             repeat and tags through one shared form); NotesViews: notes
                              with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
