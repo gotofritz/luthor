@@ -8,6 +8,7 @@ extension LibraryViewModel {
     reviewProjectID = projectID
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 

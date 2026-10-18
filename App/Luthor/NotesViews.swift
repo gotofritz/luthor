@@ -3,7 +3,7 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The notes of a read-only card: a bullet for each line, web addresses made clickable, each with a button that
+/// The notes of a read-only card: a bullet for each line (drawn by `LinkedText`), web addresses made clickable, each with a button that
 /// deletes it, and below them a field that adds a note without opening the editor. A card that cannot be changed
 /// (`canAdd` false) shows the bullets alone.
 struct CardNotesView: View {
@@ -26,10 +26,8 @@ struct CardNotesView: View {
           .foregroundStyle(.secondary)
       }
       ForEach(Array(bullets.enumerated()), id: \.offset) { position, bullet in
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text("•")
-          Text(Self.linkified(bullet))
-            .textSelection(.enabled)
+        HStack(alignment: .top, spacing: 6) {
+          LinkedText(text: bullet)
             .frame(maxWidth: .infinity, alignment: .leading)
           if canAdd {
             Button {
@@ -55,16 +53,6 @@ struct CardNotesView: View {
   private func add() {
     library.appendNote(draft, to: itemID)
     draft = ""
-  }
-
-  /// The text with each web address a link.
-  static func linkified(_ text: String) -> AttributedString {
-    var linked = AttributedString(text)
-    for link in NoteLinks.links(in: text) {
-      guard let range = Range(link.range, in: linked) else { continue }
-      linked[range].link = link.url
-    }
-    return linked
   }
 }
 

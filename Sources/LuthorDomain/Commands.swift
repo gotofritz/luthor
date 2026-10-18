@@ -32,6 +32,8 @@ public enum CommandError: Error, Equatable {
   case notRepeating(TaskID)
   /// The project does not exist: it never did, or it was deleted.
   case unknownProject(TaskID)
+  /// The project has an open task or sub-project in it, so it cannot be made a task.
+  case projectHasChildren(TaskID)
 }
 
 /// Turns user intentions into new events, given the current log.

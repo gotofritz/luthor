@@ -25,17 +25,31 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.delete(taskID: taskID, log: log) }
   }
 
-  /// Deletes a project for good, with its sub-projects and every task in them. If the columns showed it, they
-  /// show the inbox again.
+  /// Deletes a project for good, with its sub-projects and every task in them. If the columns showed it, or
+  /// went through it, they show its parent, or with no parent the inbox.
   public func deleteProject(_ projectID: TaskID) {
-    perform { (log) throws(CommandError) in try commands.delete(projectID: projectID, log: log) }
+    let parentID = knownProjects.first { $0.id == projectID }?.parentID
+    let wasOnPath = path.contains(projectID)
+    let events = perform { (log) throws(CommandError) in try commands.delete(projectID: projectID, log: log) }
+    if wasOnPath, !events.isEmpty, let parentID { open(.project(parentID)) }
   }
 
-  /// Turns a task into a project, which the columns then show, ready for tasks to be captured into it.
+  /// Turns a task into a project, which the columns then show, with a new task already being edited in it.
   public func addTasks(to taskID: TaskID) {
     let events = perform { (log) throws(CommandError) in try commands.promote(taskID: taskID, log: log) }
     for case .taskKindChanged(let changed) in events.map(\.payload) {
-      open(.project(changed.taskID))
+      beginNewItem(under: changed.taskID, kind: .task)
     }
+  }
+
+  /// Turns a project with nothing in it back into a task. If the columns showed it, they show its parent, or
+  /// with no parent the inbox, and the task is selected where the list has it.
+  public func turnIntoTask(_ projectID: TaskID) {
+    let parentID = knownProjects.first { $0.id == projectID }?.parentID
+    let wasShown = shownProjectID == projectID
+    let events = perform { (log) throws(CommandError) in try commands.demote(projectID: projectID, log: log) }
+    guard wasShown, !events.isEmpty else { return }
+    open(parentID.map { .project($0) } ?? .inbox)
+    if index(of: projectID) != nil { selection = projectID }
   }
 }

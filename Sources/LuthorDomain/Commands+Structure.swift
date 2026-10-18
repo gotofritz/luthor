@@ -33,4 +33,17 @@ extension Commands {
     let changed = TaskKindChanged(taskID: taskID, kind: .parallel)
     return [envelope(EventID(ids.next()), .taskKindChanged(changed), log: log)]
   }
+
+  /// Turns the open project `projectID` back into a task. It stays the same item, with its title, notes,
+  /// fields and place. A project with an open task or sub-project in it is refused; an item that is a task
+  /// already writes nothing.
+  public func demote(projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    let state = LibraryState.replay(log)
+    guard let item = state.openItem(projectID) else { throw .noOpenTask(projectID.rawValue) }
+    guard item.kind != nil else { return [] }
+    let project = state.view(item.viewID).projects.first { $0.id == projectID }
+    guard project?.children.isEmpty ?? true else { throw .projectHasChildren(projectID) }
+    let changed = TaskKindChanged(taskID: projectID, kind: nil)
+    return [envelope(EventID(ids.next()), .taskKindChanged(changed), log: log)]
+  }
 }

@@ -25,6 +25,17 @@ struct CardFields {
     tagsText = library.tagItems(of: id).map(\.name).joined(separator: ", ")
   }
 
+  /// The fields of an item that does not exist yet, so with no due date, repeat or tags.
+  init(priority: Priority?, estimate: Int?) {
+    self.priority = priority
+    self.estimate = estimate
+    hasDue = false
+    dueDay = Date()
+    dueIsHard = true
+    repeatRule = nil
+    tagsText = ""
+  }
+
   func draft(title: String, notes: String) -> TaskCardDraft {
     let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
     return TaskCardDraft(

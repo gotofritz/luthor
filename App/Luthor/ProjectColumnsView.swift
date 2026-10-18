@@ -23,7 +23,7 @@ struct ColumnView: View {
   var body: some View {
     List(selection: selection) {
       if let project = headProject {
-        Label(project.title, systemImage: project.kind.symbol)
+        Label(project.title, systemImage: "arrowtriangle.down.fill")
           .font(.headline)
           .tag(ColumnSelection.header)
           .contentShape(Rectangle())
@@ -95,11 +95,48 @@ struct ColumnView: View {
   }
 }
 
-/// What the plus button at the end of a column can add.
-private enum NewItem: Hashable {
-  case task
-  case project(ProjectKind)
+/// The plus button at the end of a column. It starts a new item in the project the column lists, a task or
+/// a project (the first column lists top-level projects and starts only those); the card in the next column
+/// edits it, and the row above the button shows its title as it is typed.
+private struct AddItemRow: View {
+  let library: LibraryViewModel
+  /// The project the column lists; `nil` for the first column.
+  let parentID: TaskID?
 
+  var body: some View {
+    if let item = library.newItem, item.parentID == parentID {
+      NewItemRow(item: item)
+    }
+    Button {
+      library.beginNewItem(under: parentID, kind: parentID == nil ? .project(.parallel) : .task)
+    } label: {
+      Image(systemName: "plus")
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .buttonStyle(.borderless)
+    .help(parentID == nil ? "Add a project" : "Add a task or a project")
+    .accessibilityLabel("Add")
+  }
+}
+
+/// The item being added, in the column it will land in: a box that shows the title as it is typed on the
+/// card, and cannot be typed in.
+private struct NewItemRow: View {
+  let item: NewItemDraft
+
+  var body: some View {
+    let title = item.card.title
+    Label(title.isEmpty ? "New \(item.kind.name)" : title, systemImage: item.kind.symbol)
+      .foregroundStyle(title.isEmpty ? .secondary : .primary)
+      .padding(6)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .overlay(RoundedRectangle(cornerRadius: 6).stroke(.secondary.opacity(0.5)))
+      .accessibilityLabel("New item: \(title)")
+  }
+}
+
+extension NewItemKind {
+  /// The SF Symbol of the kind: a task's circle, or its project's.
   var symbol: String {
     switch self {
     case .task: "circle"
@@ -107,72 +144,12 @@ private enum NewItem: Hashable {
     }
   }
 
-  var title: String {
+  /// What the kind is called, in lower case.
+  var name: String {
     switch self {
-    case .task: "Task"
-    case .project(.parallel): "Parallel project"
-    case .project(.sequential): "Sequential project"
+    case .task: "task"
+    case .project(.parallel): "parallel project"
+    case .project(.sequential): "sequential project"
     }
-  }
-}
-
-/// The plus button at the end of a column. It opens a field that adds a task or a project, as picked beside it,
-/// to the project the column lists; the first column lists top-level projects and adds only those. Return adds and
-/// keeps the field open for the next one, Escape closes it.
-private struct AddItemRow: View {
-  let library: LibraryViewModel
-  /// The project the column lists; `nil` for the first column.
-  let parentID: TaskID?
-  @State private var isAdding = false
-  @State private var title = ""
-  @State private var kind: NewItem
-  @FocusState private var focused: Bool
-
-  init(library: LibraryViewModel, parentID: TaskID?) {
-    self.library = library
-    self.parentID = parentID
-    _kind = State(initialValue: parentID == nil ? .project(.parallel) : .task)
-  }
-
-  private var choices: [NewItem] {
-    (parentID == nil ? [] : [NewItem.task]) + [.project(.parallel), .project(.sequential)]
-  }
-
-  var body: some View {
-    if isAdding {
-      VStack(alignment: .leading, spacing: 6) {
-        TextField("New \(kind.title.lowercased())", text: $title)
-          .textFieldStyle(.roundedBorder)
-          .focused($focused)
-          .onAppear { focused = true }
-          .onSubmit(add)
-          .onExitCommand { isAdding = false }
-        Picker("Add", selection: $kind) {
-          ForEach(choices, id: \.self) { choice in
-            Image(systemName: choice.symbol).help(choice.title).tag(choice)
-          }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-      }
-    } else {
-      Button {
-        isAdding = true
-      } label: {
-        Image(systemName: "plus")
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .buttonStyle(.borderless)
-      .help(parentID == nil ? "Add a project" : "Add a task or a project")
-      .accessibilityLabel("Add")
-    }
-  }
-
-  private func add() {
-    switch kind {
-    case .task: library.addTask(titled: title, to: parentID)
-    case .project(let projectKind): library.addProject(titled: title, kind: projectKind, under: parentID)
-    }
-    if library.errorMessage == nil { title = "" }
   }
 }

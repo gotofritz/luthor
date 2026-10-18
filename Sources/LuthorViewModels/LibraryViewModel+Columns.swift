@@ -49,6 +49,7 @@ extension LibraryViewModel {
       sidebarSelection = .inbox
       selection = nil
       editingCard = nil
+      newItem = nil
       present()
       return
     }

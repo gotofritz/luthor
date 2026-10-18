@@ -290,3 +290,41 @@ struct PromoteReplayTests {
     #expect(state.view(.default).openTasks.map(\.id) == [TaskID("t2")])
   }
 }
+
+@Suite("When a project is made into a task")
+struct DemoteReplayTests {
+  private let nested: [EventEnvelope] = [
+    projectCreated("p1", "Holiday", lamport: 1),
+    projectCreated("p2", "Pack", under: "p1", lamport: 2),
+    prioritized("p2", as: .important, lamport: 3),
+    noted("p2", "check weight", lamport: 3),
+  ]
+
+  @Test("it is a task in its parent again, with what was set on it")
+  func itIsATaskInItsParent() throws {
+    let view = LibraryState.replay(nested + [demoted("p2", lamport: 4)]).view(.default)
+
+    #expect(view.projects.map(\.id) == [TaskID("p1")])
+    let task = try #require(view.projects.first?.tasks.first)
+    #expect(task.id == TaskID("p2"))
+    #expect(task.title == "Pack")
+    #expect(task.priority == .important)
+    #expect(task.notes == "check weight")
+    #expect(task.kind == nil)
+  }
+
+  @Test("tasks can be made into a project again, and a project into a task again")
+  func itCanGoBackAndForth() {
+    let state = LibraryState.replay(nested + [demoted("p2", lamport: 4), promoted("p2", lamport: 5)])
+
+    #expect(state.view(.default).projects.map(\.id) == [TaskID("p1"), TaskID("p2")])
+  }
+
+  @Test("a top-level one is a task with no parent")
+  func aTopLevelOneHasNoParent() {
+    let view = LibraryState.replay(nested + [demoted("p1", lamport: 4)]).view(.default)
+
+    #expect(view.openTasks.map(\.id) == [TaskID("p1")])
+    #expect(view.openTasks.first?.parentID == nil)
+  }
+}

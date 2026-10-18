@@ -86,10 +86,18 @@ public final class LibraryViewModel {
   public internal(set) var reopenableProjectIDs: Set<TaskID> = []
   public var draft = ""
   public var selection: TaskID? {
-    didSet { if selection != oldValue { editingCard = nil } }
+    didSet {
+      if selection != oldValue {
+        editingCard = nil
+        newItem = nil
+      }
+    }
   }
   /// The card being edited, if any. Cards are read-only until Edit puts one here; OK and Cancel take it out.
   public internal(set) var editingCard: CardTarget?
+  /// The item the plus button of a column started, edited on the card in the column after it until OK
+  /// makes it; Cancel, or going anywhere else, drops it.
+  public internal(set) var newItem: NewItemDraft?
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
@@ -125,6 +133,7 @@ public final class LibraryViewModel {
     sidebarSelection = .inbox
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 
@@ -207,6 +216,7 @@ public final class LibraryViewModel {
     sidebarSelection = item
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 
@@ -217,6 +227,7 @@ public final class LibraryViewModel {
     if section != .projects { sidebarSelection = .inbox }
     selection = nil
     editingCard = nil
+    newItem = nil
     present()
   }
 

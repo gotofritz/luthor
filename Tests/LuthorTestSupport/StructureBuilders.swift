@@ -63,3 +63,18 @@ public func promoted(
     payload: .taskKindChanged(TaskKindChanged(taskID: TaskID(task), kind: .parallel))
   )
 }
+
+/// Builds the `TaskKindChanged` envelope that turns a project back into a task, with short, readable defaults.
+public func demoted(
+  _ project: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 5
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "demote-\(project)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskKindChanged(TaskKindChanged(taskID: TaskID(project), kind: nil))
+  )
+}

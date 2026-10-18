@@ -140,12 +140,13 @@ public struct TaskNoted: Equatable, Codable, Sendable {
   }
 }
 
-/// Makes an open item a sequential or a parallel project. A task it is applied to becomes a project.
+/// Makes an open item a sequential or a parallel project. A task it is applied to becomes a project. With no
+/// kind it makes a project a task again.
 public struct TaskKindChanged: Equatable, Codable, Sendable {
   public let taskID: TaskID
-  public let kind: ProjectKind
+  public let kind: ProjectKind?
 
-  public init(taskID: TaskID, kind: ProjectKind) {
+  public init(taskID: TaskID, kind: ProjectKind?) {
     self.taskID = taskID
     self.kind = kind
   }

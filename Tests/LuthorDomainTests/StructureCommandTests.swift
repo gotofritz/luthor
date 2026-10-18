@@ -100,3 +100,48 @@ struct PromoteCommandTests {
     }
   }
 }
+
+@Suite("When a project is made into a task by command")
+struct DemoteCommandTests {
+  private let demoteLog: [EventEnvelope] = [
+    projectCreated("p1", "Holiday", lamport: 1),
+    projectCreated("p2", "Pack", lamport: 2),
+    captured("t1", "passport", lamport: 3), moved("t1", to: "p2", lamport: 4),
+    projectCreated("p3", "Spain", under: "p1", lamport: 5),
+    captured("t2", "buy milk", lamport: 6),
+  ]
+
+  @Test("a project with nothing in it writes one TaskKindChanged with no kind")
+  func itWritesOneTaskKindChanged() throws {
+    let events = try makeCommands().demote(projectID: TaskID("p3"), log: demoteLog)
+
+    #expect(events == [demoted("p3", id: "id-1", lamport: 7)])
+  }
+
+  @Test("a project with a task or a sub-project in it is refused", arguments: ["p1", "p2"])
+  func aProjectWithChildrenIsRefused(project: String) {
+    #expect(throws: CommandError.projectHasChildren(TaskID(project))) {
+      try makeCommands().demote(projectID: TaskID(project), log: demoteLog)
+    }
+  }
+
+  @Test("a project whose tasks are all done counts as having none")
+  func aProjectWithOnlyDoneChildrenIsAccepted() throws {
+    let events = try makeCommands().demote(
+      projectID: TaskID("p2"), log: demoteLog + [completed("t1", lamport: 7)])
+
+    #expect(events == [demoted("p2", id: "id-1", lamport: 8)])
+  }
+
+  @Test("a task is already one and writes nothing")
+  func aTaskWritesNothing() throws {
+    #expect(try makeCommands().demote(projectID: TaskID("t2"), log: demoteLog).isEmpty)
+  }
+
+  @Test("an item that is not open is refused", arguments: ["ghost"])
+  func anItemThatIsNotOpenIsRefused(item: String) {
+    #expect(throws: CommandError.noOpenTask(item)) {
+      try makeCommands().demote(projectID: TaskID(item), log: demoteLog)
+    }
+  }
+}

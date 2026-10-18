@@ -148,7 +148,8 @@ title, which is in the column before it.
 The notes are a list of bullet points, one for each line. Each bullet has a
 small cross that deletes it, and below them the "Add a note" field adds a
 note on Return, without opening the editor. Web addresses in notes
-(`https://…` or `www.…`) are clickable links. A completed task or project
+(`https://…` or `www.…`) are clickable links, and the pointer turns into a
+hand over one. A completed task or project
 shows its notes with no cross and no field.
 
 The pencil button at the top right of the card opens it for editing; nothing
@@ -351,11 +352,18 @@ projects. Click a project to open it: a column of its sub-projects and tasks
 appears to its right, and so on down the tree.
 
 - The first row of every column after the first is the project it lists the
-  children of, by name. Click it to see that project's card
-- The plus button at the end of a column adds to it. It opens a field with a
-  choice beside it: a task, a parallel project or a sequential project (the
-  first column offers only the two projects, which are top-level there).
-  Return adds and keeps the field open for the next one; Escape closes it
+  children of, by name, with a down triangle beside it. Click it to see that
+  project's card
+- The plus button at the end of a column adds to it. One press shows a box
+  above the button, which cannot be typed in, and replaces the card in the next
+  column with the card of the new item, in edit mode with the title focused.
+  The box shows the title as you type it. The card has a choice of a task, a
+  parallel project or a sequential project (the first column offers only the
+  two projects, which are top-level there), and the fields of any card. A new
+  task starts with priority optional and an estimate of 5 minutes, a project
+  with neither; switching the kind on the card swaps these defaults, unless
+  you have changed that field yourself. Nothing is written until OK (or
+  Return in the title); Cancel, Escape, or clicking anywhere else drops the item
 - Clicking the empty part of a column closes every column to its right: in the
   first column no project is open any more, in a later one its project is
   shown with no task picked
@@ -391,15 +399,21 @@ calendar marks the project itself. Its estimate is shown, not planned.
   copied. The copy is selected when the list shows it. An item that repeats
   is copied with its rule, so the copy starts a series of its own
 - **Add Tasks** (the button on a card, or in its context menu) makes the
-  item a project and shows it, ready for tasks to be added with the plus
-  button of its column. It
+  item a project, shows it and starts a new task in it, so the card of that
+  task is ready to type in: no second press of the plus button. It
   keeps its title, notes, view, creation day and everything set on it, and if
   it was in a project, it is a sub-project there, in the same place
+- **Turn into Task** (context menu of a project with nothing in it) makes
+  the project a task again, in the same place, with everything set on it.
+  If the columns were showing it, they show its parent and the task is
+  selected. A project with an open task or sub-project in it has no such
+  entry: complete, move or delete what is in it first
 - **Delete Permanently…** (context menu of a task or a project, after a
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in
   them, completed ones too. There is no undo; the choice to complete or
-  drop is there for what you may want back
+  drop is there for what you may want back. If the columns showed the deleted
+  project, or went through it, they show its parent afterwards
 
 ## Repeating tasks
 
