@@ -345,8 +345,9 @@ enter v1.
 ### 16. Speed pass
 
 - Measure launch replay time and capture latency on the real log
-- Only if needed: GRDB projections, snapshotting, global capture hotkey,
-  command palette
+- Only if needed: GRDB projections, snapshotting
+- The global capture hotkey (#34) and the command palette (#35) were cut on
+  2026-10-18: not core, so they wait in issues, to be done if at all later
 
 ### 17. ~~Dropbox API sync~~ (moved)
 
