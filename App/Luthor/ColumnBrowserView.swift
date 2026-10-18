@@ -51,7 +51,7 @@ struct ColumnBrowserView: View {
     case .projects:
       ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
         ColumnView(library: library, column: column, position: position) {
-          withAnimation { proxy.scrollTo(column.id) }
+          withAnimation { proxy.scrollTo(column.id, anchor: .leading) }
         }
         .id(column.id)
         Divider()

@@ -990,8 +990,9 @@ Miller column rework. No new event: the notes stay one plain text.
 4. **Clicking the project that is already open deselects what is picked
    beyond it.** The list reports changes of selection only, so a click now
    also goes through the view model (`open`), which clears the task picked
-5. **Clicking a column scrolls it fully into view**, by the least scroll
-   that does it
+5. **Clicking a column scrolls it to the left edge**, as Finder does, as far
+   as the columns after it leave room. This also shows a column that was half
+   out of view in full
 6. **Clicking the empty part of a column closes what lies beyond it**, the
    same as picking nothing there. In the first column that leaves no project
    shown; in a later one the column's project is shown with no task picked

@@ -17,7 +17,7 @@ struct ColumnView: View {
   let column: ProjectColumn
   /// Where the column is among the columns; the first lists the top-level projects.
   let position: Int
-  /// Scrolls the column fully into view; called on every click in it.
+  /// Scrolls the column to the left edge, as Finder does; called on every click in it.
   let reveal: () -> Void
 
   var body: some View {

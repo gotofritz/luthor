@@ -351,8 +351,8 @@ appears to its right, and so on down the tree.
 - Clicking the empty part of a column closes every column to its right: in the
   first column no project is open any more, in a later one its project is
   shown with no task picked
-- Clicking an item in a column that is partly out of view scrolls the
-  columns so that the column shows in full
+- Clicking in a column scrolls the columns so that it moves to the left edge,
+  as in Finder, as far as the columns to its right leave room
 - Nest a project by dragging it onto another, or onto a column to move it
   into that column's project. Drag it onto the first column, or use Move to
   Top Level in its context menu, to make it top-level again. A project cannot
