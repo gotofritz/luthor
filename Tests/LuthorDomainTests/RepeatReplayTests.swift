@@ -163,7 +163,7 @@ struct RecurrenceReplayTests {
     let state = LibraryState.replay(events)
 
     #expect(state.view(.default).openTasks.map(\.id) == [TaskID("t2")])
-    #expect(state.view(.default).completedTasks.map(\.id) == [TaskID("t1")])
+    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t1")])
     #expect(state.view(.default).completedTasks.first?.isDropped == true)
   }
 
