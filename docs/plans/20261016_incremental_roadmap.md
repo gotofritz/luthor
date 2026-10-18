@@ -320,10 +320,28 @@ Usable: the weekly review.
 
 ### 15. Freeze the event format
 
-- Write down every event type and field as v1
-- Golden-file tests: a checked-in fixture log must always replay to the same
-  state
-- From here, `AGENTS.md` event rules are strict
+Safety work, no new feature: it keeps the log, the only copy of the tasks,
+from being broken by a later change. One PR, after slice 14 so its events
+enter v1.
+
+- **Audit first.** The format is still soft, so this is the last cheap
+  moment to fix warts (event and field names, field shapes, raw values such
+  as `Priority` "A", setting key strings). Fixes ship with a one-off
+  migration script over the log. Whatever is left becomes permanent
+- **Unknown events are skipped, not fatal.** Replay ignores an event type it
+  does not know and leaves it untouched in the log, so an older build can
+  open a log written by a newer one (unknown setting keys already behave
+  this way). Today the decoder throws `unreadableLine` and the app refuses
+  to open the log
+- **Golden fixture.** One synthetic, checked-in log with every event type
+  and every optional field (`createdOn`, due dates…) must always replay to
+  the same state; the same events in shuffled order, and with duplicates,
+  give the same state. Never the real log. A PR that adds an event adds
+  lines to the fixture
+- **Strict rules from here.** The `AGENTS.md` event rules (never rename or
+  change the meaning of a field; add a new event type or an optional field)
+  now apply in full. The fixture and the `EventType` enum are the spec; no
+  separate format document
 
 ### 16. Speed pass
 
@@ -805,3 +823,13 @@ Usable: the weekly review.
    picks the one that takes its place, or none when the list is empty
 6. **`Project` moved to its own file** (`Project.swift`) with its new status,
    to keep `LibraryState.swift` under SwiftLint's file length
+
+## Decisions (2026-10-18, slice 15)
+
+1. **Slice 15 is cut down.** No separate "every event type and field as v1"
+   document: the golden fixture and the `EventType` enum are the spec, as
+   the only reader is the owner. Added instead: an audit and fix pass while
+   the format is still soft, and skipping unknown events on replay, so an
+   older build survives a newer log
+2. **Not deferred to slice 17.** The guard is cheap, protects the log now
+   that two Macs share it, and slice 14 lands first so its events are in v1
