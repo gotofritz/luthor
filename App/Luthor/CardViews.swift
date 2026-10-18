@@ -4,9 +4,9 @@ import LuthorViewModels
 import SwiftUI
 
 /// The card of the task selected, in a column of its own after the list the task is in. It shows the day the
-/// task was created, its due date and its notes, and not the title, which the list before it already shows;
-/// the pencil turns it into the editor of the title, priority, estimate, due date and notes, closed by OK or
-/// Cancel. A completed task shows its card too, with no pencil until it is reopened.
+/// task was created, its due date, its tags and its notes, and not the title, which the list before it already shows;
+/// the pencil turns it into the editor of the title, priority, estimate, due date, tags and notes, closed by OK
+/// or Cancel. A completed task shows its card too, with no pencil until it is reopened.
 struct TaskCardColumn: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
@@ -39,6 +39,10 @@ struct TaskCardColumn: View {
       if let due = library.dueDate(of: task.id) {
         DueLine(due: due, today: library.today)
       }
+      if let tags = tagLine(of: library.tagItems(of: task.id)) {
+        Label(tags, systemImage: "tag")
+          .font(.callout)
+      }
       NotesView(notes: task.notes)
     }
   }
@@ -69,6 +73,7 @@ private struct TaskCardEditor: View {
   @State private var hasDue: Bool
   @State private var dueDay: Date
   @State private var dueIsHard: Bool
+  @State private var tagsText: String
   @State private var notes: String
 
   init(library: LibraryViewModel, task: TaskItem) {
@@ -81,6 +86,7 @@ private struct TaskCardEditor: View {
     _hasDue = State(initialValue: due != nil)
     _dueDay = State(initialValue: due?.date.startOfDay ?? Date())
     _dueIsHard = State(initialValue: due?.isHard ?? true)
+    _tagsText = State(initialValue: library.tagItems(of: task.id).map(\.name).joined(separator: ", "))
     _notes = State(initialValue: task.notes ?? "")
   }
 
@@ -111,6 +117,7 @@ private struct TaskCardEditor: View {
         }
         .pickerStyle(.segmented)
       }
+      tagsField
       if let history = library.estimateHistory(ofTask: task.id) {
         LabeledContent("History", value: history.summary)
       }
@@ -121,11 +128,33 @@ private struct TaskCardEditor: View {
     }
   }
 
+  /// The tags as typed, separated by commas, and a menu to add one the view already has.
+  private var tagsField: some View {
+    HStack {
+      TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
+        .textFieldStyle(.roundedBorder)
+        .onSubmit(save)
+      Menu {
+        ForEach(library.tags) { item in
+          Button(item.name) { tagsText = (TaskCardDraft.tagNames(in: tagsText) + [item.name]).joined(separator: ", ") }
+        }
+      } label: {
+        Image(systemName: "tag")
+      }
+      .menuStyle(.borderlessButton)
+      .fixedSize()
+      .disabled(library.tags.isEmpty)
+      .help("Add a tag")
+    }
+  }
+
   private func save() {
     let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
     library.saveCard(
       ofTask: task.id,
-      TaskCardDraft(title: title, priority: priority, estimate: estimate, due: due, notes: notes))
+      TaskCardDraft(
+        title: title, priority: priority, estimate: estimate, due: due, notes: notes,
+        tags: TaskCardDraft.tagNames(in: tagsText)))
   }
 
   /// The choices, plus the estimate the task has when it is none of them.

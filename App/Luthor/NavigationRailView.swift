@@ -60,6 +60,7 @@ extension NavigationSection {
     case .review: "checklist"
     case .projects: "folder"
     case .priorities: "flag"
+    case .tags: "tag"
     case .settings: "gear"
     }
   }
@@ -72,6 +73,7 @@ extension NavigationSection {
     case .review: "Review"
     case .projects: "Projects"
     case .priorities: "Prios"
+    case .tags: "Tags"
     case .settings: "Settings"
     }
   }

@@ -157,10 +157,13 @@ private struct CandidatesColumn: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      Text("Candidates")
-        .font(.headline)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+      HStack {
+        Text("Candidates")
+          .font(.headline)
+        Spacer()
+        CandidateFilterMenu(library: library)
+      }
+      .padding(12)
       Divider()
       List(selection: $library.selection) {
         ForEach(library.plan.candidates, id: \.task.id) { entry in

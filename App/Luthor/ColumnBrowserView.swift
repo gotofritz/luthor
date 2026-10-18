@@ -7,7 +7,8 @@ import SwiftUI
 /// of the one picked. Review is the day looked back on. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
 /// in the order they were added. The priorities are the four priorities and no priority, picked like the rows of any
-/// list, then the tasks that have one of the picked. Tasks that are not next actions are dimmed. Drag a task onto a
+/// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
+/// one picked. Tasks that are not next actions are dimmed. Drag a task onto a
 /// project to file it, a project onto another to nest it, or onto a column to move it into that column's
 /// project; the first column makes it top-level.
 struct ColumnBrowserView: View {
@@ -36,6 +37,11 @@ struct ColumnBrowserView: View {
           }
         case .priorities:
           PriorityColumn(library: library)
+          Divider()
+          TaskListColumn(library: library)
+          Divider()
+        case .tags:
+          TagColumn(library: library)
           Divider()
           TaskListColumn(library: library)
           Divider()
@@ -226,6 +232,12 @@ private struct TaskRow: View {
       Text(task.title)
         .strikethrough(isCompleted)
         .foregroundStyle(isNextAction && !isCompleted ? .primary : .secondary)
+      if let tags = tagLine(of: library.tagItems(of: task.id)) {
+        Text(tags)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+      }
       Spacer()
       if let estimate = task.estimate {
         Text("\(estimate)m")
@@ -286,6 +298,20 @@ private struct TaskRow: View {
         Divider()
         Button("None") { library.estimate(task.id, as: nil) }
       }
+      Menu("Tags") {
+        ForEach(library.tags) { item in
+          Button {
+            library.toggleTag(item.id, on: task.id)
+          } label: {
+            if library.tagItems(of: task.id).contains(where: { $0.id == item.id }) {
+              Label(item.name, systemImage: "checkmark")
+            } else {
+              Text(item.name)
+            }
+          }
+        }
+      }
+      .disabled(library.tags.isEmpty)
     }
   }
 }
