@@ -208,7 +208,9 @@ struct RecurrenceReplayTests {
 
     let state = LibraryState.replay(events)
 
-    #expect(state.view(.default).inbox.map(\.id) == [TaskID("t2")])
+    let open = state.view(.default).openTasks
+    #expect(open.map(\.id) == [TaskID("t2")])
+    #expect(open.first?.projectID == nil)
   }
 }
 
