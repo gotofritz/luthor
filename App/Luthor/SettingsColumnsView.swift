@@ -76,6 +76,13 @@ private struct GlobalSettingsColumn: View {
             value: capacityBinding(weekday), in: 0...720, step: 15)
         }
       }
+      Section("Project review") {
+        Picker("Review projects", selection: reviewDefaultBinding) {
+          ForEach(ReviewInterval.options(including: library.reviewDefault), id: \.self) { interval in
+            Text(interval.title).tag(interval)
+          }
+        }
+      }
       Section("Views") {
         Picker("Default view", selection: defaultViewBinding) {
           ForEach(library.views, id: \.id) { view in
@@ -104,6 +111,10 @@ private struct GlobalSettingsColumn: View {
     Binding(
       get: { library.globalSettings.capacity[weekday] ?? weekday.builtInCapacityMinutes },
       set: { library.changeGlobalCapacity(weekday, minutes: $0) })
+  }
+
+  private var reviewDefaultBinding: Binding<ReviewInterval> {
+    Binding(get: { library.reviewDefault }, set: { library.setReviewDefault($0) })
   }
 
   private var defaultViewBinding: Binding<ViewID> {

@@ -4,7 +4,8 @@ import SwiftUI
 
 /// The Miller columns of the place the navigation rail has picked. The inbox is a list of its tasks. Today
 /// is the plan of a day, its candidates and the tasks waited for. The calendar is a list of days and the tasks
-/// of the one picked. Review is the day looked back on. The
+/// of the one picked. Review is the day looked back on. The weekly review is the projects due for review, the one
+/// picked with its card, and its tasks. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
 /// in the order they were added. The priorities are the four priorities and no priority, picked like the rows of any
 /// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
@@ -29,6 +30,9 @@ struct ColumnBrowserView: View {
           Divider()
         case .review:
           ReviewColumnsView(library: library)
+          Divider()
+        case .weeklyReview:
+          WeeklyReviewColumnsView(library: library)
           Divider()
         case .projects:
           ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
@@ -144,8 +148,9 @@ private struct PriorityColumn: View {
   }
 }
 
-/// The tasks of the inbox, or of the priorities picked.
-private struct TaskListColumn: View {
+/// The tasks of the inbox, of the priorities picked, of the tag picked, or of the project the weekly review
+/// picked.
+struct TaskListColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
@@ -171,7 +176,12 @@ private struct ProjectRow: View {
     HStack {
       Label(project.title, systemImage: project.kind.symbol)
         .strikethrough(isCompleted)
-        .foregroundStyle(isCompleted ? .secondary : .primary)
+        .foregroundStyle(isCompleted || project.status != .active ? .secondary : .primary)
+      if project.status != .active {
+        Image(systemName: project.status.symbol)
+          .foregroundStyle(.secondary)
+          .help(project.status.title)
+      }
       Spacer()
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
@@ -197,6 +207,7 @@ private struct ProjectRow: View {
           }
           .disabled(project.kind == .sequential)
         }
+        ProjectReviewMenuItems(library: library, project: project)
         if project.parentID != nil {
           Button("Move to Top Level") { library.nest(project.id, under: nil) }
         }

@@ -76,7 +76,7 @@ struct LibraryView: View {
   }
 
   private var captureField: some View {
-    TextField("New task in \(shownProject?.title ?? "Inbox")", text: $library.draft)
+    TextField("New task in \(captureTarget)", text: $library.draft)
       .textFieldStyle(.plain)
       .font(.title3)
       .padding(12)
@@ -122,12 +122,21 @@ struct LibraryView: View {
     library.shownProject
   }
 
+  /// Where a captured task goes: the project the weekly review has picked, the project shown, or the inbox.
+  private var captureTarget: String {
+    if library.section == .weeklyReview {
+      return library.projectReview.first { $0.project.id == library.reviewProjectID }?.project.title ?? "Inbox"
+    }
+    return shownProject?.title ?? "Inbox"
+  }
+
   private var title: String {
     switch library.section {
     case .inbox: "Inbox"
     case .today: "Today"
     case .calendar: "Calendar"
     case .review: "Review"
+    case .weeklyReview: "Weekly Review"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
     case .tags: "Tags"
