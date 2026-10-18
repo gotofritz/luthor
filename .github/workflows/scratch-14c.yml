@@ -22,13 +22,17 @@ jobs:
         run: make tools
       - name: Format check
         if: always()
-        run: make format-check 2>&1 | head -n 200
+        run: |
+          make format-check 2>&1 | head -n 200
       - name: SwiftLint
         if: always()
-        run: make swiftlint 2>&1 | head -n 200
+        run: |
+          make swiftlint 2>&1 | head -n 200
       - name: Coverage
         if: always()
-        run: make coverage 2>&1 | grep -E "error|✘|failed|Test run|coverage|Coverage|%|below" | head -n 200
+        run: |
+          make coverage 2>&1 | grep -E "error|✘|failed|Test run|coverage|Coverage|%|below" | head -n 200
       - name: App
         if: always()
-        run: make app 2>&1 | grep -E "error|warning: unre|\*\* BUILD" | head -n 100
+        run: |
+          make app 2>&1 | grep -E "error|warning: unre|\*\* BUILD" | head -n 100
