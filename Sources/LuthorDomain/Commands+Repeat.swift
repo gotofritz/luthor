@@ -48,7 +48,7 @@ extension Commands {
     guard let rule = state.repeatRule(of: taskID) else { return [] }
     let next = TaskID.recurring(after: taskID)
     let due = state.dueDate(of: taskID)?.date
-    guard !state.hasTask(next), let completedOn = today ?? due else { return [] }
+    guard !state.wasEverTask(next), let completedOn = today ?? due else { return [] }
     let nextDue = rule.nextDue(after: due ?? completedOn, completedOn: completedOn, today: completedOn)
     let recurred = TaskRecurred(previous: taskID, next: next, due: nextDue)
     return [envelope(EventID(ids.next()), .taskRecurred(recurred), log: log)]

@@ -47,7 +47,7 @@ extension LibraryState {
   }
 
   /// Whether a task with this ID was ever captured or made by a repeat, open, completed or dropped.
-  func hasTask(_ taskID: TaskID) -> Bool {
+  func wasEverTask(_ taskID: TaskID) -> Bool {
     captureOrder[taskID] != nil
   }
 }
