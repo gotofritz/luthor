@@ -64,20 +64,22 @@ struct TagReplayTests {
 
   @Test("a task has its tags in the order they were created")
   func aTaskHasItsTagsInCreationOrder() {
-    let events = work + [
-      tagCreated("home", "home", lamport: 2), tagged("t1", with: "home", lamport: 3),
-      tagged("t1", with: "calls", lamport: 4),
-    ]
+    let events =
+      work + [
+        tagCreated("home", "home", lamport: 2), tagged("t1", with: "home", lamport: 3),
+        tagged("t1", with: "calls", lamport: 4),
+      ]
 
     #expect(LibraryState.replay(events).tags(of: TaskID("t1")).map(\.name) == ["calls", "home"])
   }
 
   @Test("untagging takes the tag off and leaves the others")
   func untaggingTakesTheTagOff() {
-    let events = work + [
-      tagCreated("home", "home", lamport: 2), tagged("t1", with: "calls", lamport: 3),
-      tagged("t1", with: "home", lamport: 4), untagged("t1", from: "calls", lamport: 5),
-    ]
+    let events =
+      work + [
+        tagCreated("home", "home", lamport: 2), tagged("t1", with: "calls", lamport: 3),
+        tagged("t1", with: "home", lamport: 4), untagged("t1", from: "calls", lamport: 5),
+      ]
     let state = LibraryState.replay(events)
 
     #expect(state.tags(of: TaskID("t1")).map(\.name) == ["home"])
@@ -131,10 +133,11 @@ struct TagReplayTests {
 
   @Test("taking a project to another view takes the tags off its tasks")
   func takingAProjectToAnotherViewTakesTheTagsOffItsTasks() {
-    let events = work + [
-      projectCreated("p1", "taxes", lamport: 1), moved("t1", to: "p1", lamport: 2),
-      tagged("t1", with: "calls", lamport: 3), projectMovedToView("p1", toView: "work", lamport: 4),
-    ]
+    let events =
+      work + [
+        projectCreated("p1", "taxes", lamport: 1), moved("t1", to: "p1", lamport: 2),
+        tagged("t1", with: "calls", lamport: 3), projectMovedToView("p1", toView: "work", lamport: 4),
+      ]
 
     #expect(LibraryState.replay(events).tags(of: TaskID("t1")).isEmpty)
   }
@@ -149,10 +152,11 @@ struct TagReplayTests {
 
   @Test("a view counts the open tasks of each of its tags, zero for a tag no open task carries")
   func aViewCountsTheOpenTasksOfEachTag() {
-    let events = work + [
-      captured("t3", "pay tax", lamport: 1), tagCreated("home", "home", lamport: 2),
-      tagged("t1", with: "calls", lamport: 3), tagged("t3", with: "calls", lamport: 3), completed("t3", lamport: 4),
-    ]
+    let events =
+      work + [
+        captured("t3", "pay tax", lamport: 1), tagCreated("home", "home", lamport: 2),
+        tagged("t1", with: "calls", lamport: 3), tagged("t3", with: "calls", lamport: 3), completed("t3", lamport: 4),
+      ]
 
     let counts = LibraryState.replay(events).taskCounts(ofTagsIn: .default)
 
