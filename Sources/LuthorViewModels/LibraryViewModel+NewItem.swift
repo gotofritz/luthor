@@ -13,7 +13,11 @@ extension LibraryViewModel {
     } else {
       deselectColumn(of: nil)
     }
-    newItem = kept?.parentID == parentID ? kept : NewItemDraft(parentID: parentID, kind: kind)
+    if let kept, kept.parentID == parentID {
+      newItem = kept
+    } else {
+      newItem = NewItemDraft(parentID: parentID, kind: kind)
+    }
   }
 
   /// Sets the title typed on the card of the new item, which the column shows as it goes.
