@@ -204,7 +204,11 @@ extension LibraryState {
   ) -> DayPlan {
     let viewState = view(viewID)
     let planning = settings(for: viewID)
-    let deadlines = dueDates.filter { $0.value.isHard && $0.value.date <= date }.mapValues(\.date)
+    let deadlines = Dictionary(
+      uniqueKeysWithValues: viewState.openTasks.compactMap { task -> (TaskID, CalendarDate)? in
+        guard let due = effectiveDueDate(of: task.id), due.isHard, due.date <= date else { return nil }
+        return (task.id, due.date)
+      })
     let ranking = PlanRanking(viewState, deadlines: deadlines)
     let key = DayKey(viewID: viewID, date: date)
     let manualPosition = Dictionary(

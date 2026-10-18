@@ -40,13 +40,16 @@ public struct CalendarEntry: Equatable, Sendable {
 // The calendar: which days have tasks, and which tasks a day has. Both are pure functions of the state, so
 // the calendar stores nothing of its own.
 extension LibraryState {
-  /// `days` days in a row from `start`, each with the view's open tasks planned for it and due on it.
+  /// `days` days in a row from `start`, each with the view's open tasks planned for it and the open items, tasks
+  /// and projects, that carry a due date on it.
   public func calendar(for viewID: ViewID, from start: CalendarDate, days: Int) -> [CalendarDay] {
     var planned: [CalendarDate: Int] = [:]
     var due: [CalendarDate: Int] = [:]
     for task in view(viewID).openTasks {
       if let day = scheduledDates[task.id] { planned[day, default: 0] += 1 }
-      if let day = dueDates[task.id]?.date { due[day, default: 0] += 1 }
+    }
+    for item in openItems(in: viewID) {
+      if let day = dueDates[item.id]?.date { due[day, default: 0] += 1 }
     }
     return (0..<max(days, 0)).map { offset in
       let day = start.adding(days: offset)
@@ -62,7 +65,7 @@ extension LibraryState {
     func entry(_ task: TaskItem, isPlanned: Bool) -> CalendarEntry {
       CalendarEntry(task: task, isPlanned: isPlanned, due: dueDates[task.id].flatMap { $0.date == date ? $0 : nil })
     }
-    let dueOnly = view(viewID).openTasks.filter { !plannedIDs.contains($0.id) && dueDates[$0.id]?.date == date }
+    let dueOnly = openItems(in: viewID).filter { !plannedIDs.contains($0.id) && dueDates[$0.id]?.date == date }
     return planned.map { entry($0, isPlanned: true) } + dueOnly.map { entry($0, isPlanned: false) }
   }
 }

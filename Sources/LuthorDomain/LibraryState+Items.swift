@@ -79,6 +79,25 @@ extension LibraryState {
     }
   }
 
+  /// The open items of the view, tasks and projects, in capture order.
+  func openItems(in viewID: ViewID) -> [TaskItem] {
+    order.compactMap { id in
+      guard let stored = items[id], stored.status.isOpen, stored.item.viewID == viewID else { return nil }
+      return stored.item
+    }
+  }
+
+  /// What a project's estimate is taken to be: its own if it has one, else the sum of the estimates of the open
+  /// tasks in it at any depth; `nil` if none of them has one. Never both added, and never planned.
+  public func rolledUpEstimate(of projectID: TaskID) -> Int? {
+    if let own = openItem(projectID)?.estimate { return own }
+    let estimates = descendants(of: projectID).compactMap { id -> Int? in
+      guard let item = openItem(id), item.kind == nil else { return nil }
+      return item.estimate
+    }
+    return estimates.isEmpty ? nil : estimates.reduce(0, +)
+  }
+
   /// The item if it is open or completed, a task or a project; `nil` for one that was given up or does not exist.
   func existingItem(_ id: TaskID) -> TaskItem? {
     guard let stored = items[id] else { return nil }

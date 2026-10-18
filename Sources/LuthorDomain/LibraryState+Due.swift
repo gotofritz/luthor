@@ -18,8 +18,21 @@ extension LibraryState {
     dueDates[due.taskID] = due.date.map { DueDate(date: $0, isHard: due.isHard) }
   }
 
-  /// When the task is due; `nil` if it has no due date.
+  /// When the item is due by its own due date; `nil` if it has none.
   public func dueDate(of taskID: TaskID) -> DueDate? {
     dueDates[taskID]
+  }
+
+  /// When the item is due for ranking: its own due date, else the nearest ancestor's, hard or target as set
+  /// there. A hard deadline on a project so ranks the tasks in it. The calendar shows a date only on the item
+  /// that carries it.
+  public func effectiveDueDate(of taskID: TaskID) -> DueDate? {
+    var current: TaskID? = taskID
+    var visited: Set<TaskID> = []
+    while let id = current, visited.insert(id).inserted {
+      if let due = dueDates[id] { return due }
+      current = items[id]?.item.parentID
+    }
+    return nil
   }
 }
