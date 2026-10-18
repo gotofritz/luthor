@@ -25,7 +25,7 @@ and renames views; the app reopens on the view last used on that Mac. Task → M
 project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
-to look at: Inbox (a list of its tasks), Today, Calendar, Review, Projects, Prios or Tags, with
+to look at: Inbox (a list of its tasks), Today, Calendar, Review, Weekly (the glasses), Projects, Prios or Tags, with
 Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
 (not working yet) and the view switcher.
 
@@ -99,10 +99,20 @@ back to the list, delegate, someday, drop). What a task was estimated and what
 it took is shown on the review and on the cards, and never applied to the
 estimate.
 
+Weekly (the glasses icon) is the weekly project review. Projects are due for
+review once a week by default; the place lists those whose review is due, the
+longest overdue first. Pick one to see its card and its tasks, which you can
+edit and add to in place, then Mark Reviewed (⇧⌘R) to move to the next. A
+project can be reviewed more or less often (or never) from its context menu or
+here, and Settings → Global sets the default for all of them. A project can be
+put on hold (no next actions, so none of its tasks is offered in Today, but
+still reviewed) or dropped (no next actions, not reviewed); Resume brings
+either back.
+
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
-weekday) and a default view;
+weekday), how often projects are reviewed and a default view;
 Local overrides the buffer and capacity for the current view only, and
 follows the global value until switched on. A third family, This Mac, chooses
 where the tasks live (see below).

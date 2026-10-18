@@ -106,6 +106,9 @@ Sources/
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
     TagEvents.swift          TagCreated, TaskTagged, TaskUntagged
+    ProjectReviewEvents.swift  ReviewInterval (off or every n days; n on the wire, 0 for off), ReviewDefaultSet,
+                             ProjectReviewIntervalSet, ProjectReviewed, ProjectPutOnHold, ProjectResumed,
+                             ProjectDropped
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, TagID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
@@ -113,6 +116,8 @@ Sources/
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
+    Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
+                             put a project on hold, resume it, drop it
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
@@ -120,6 +125,7 @@ Sources/
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, due dates, delegations, plan orders and
                              day capacities
+    Project.swift            Project (with its ProjectStatus: active, on hold, dropped) and ProjectChild
     LibraryState+Completion.swift  Completed<Item>; keeping completed tasks and projects, and reopening them
     LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:)
     LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
@@ -127,12 +133,14 @@ Sources/
     LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
+    LibraryState+ProjectReview.swift  weekly project review: applying its events, effective interval,
+                             nextReviewDate(of:), projectsDueForReview(in:today:) → ProjectReviewItem
     LibraryState+Tags.swift  TagItem, applying the tag events, tags(in:/of:), tasks(tagged:), taskCounts; TaskFilter
                              (tags, priority, project, deadline) and tasks(in:matching:)
     LibraryState+Cards.swift  applying rename, notes and kind events
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
-                             someday; tasks by priority
+                             someday and projects that are on hold or dropped; tasks by priority
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; due hard
                              deadlines rank after priority), waitingFor(in:today:)
@@ -163,7 +171,8 @@ Sources/
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
-                             reviewing a day in LibraryViewModel+Review.swift, the Tags place, tagging and the
+                             reviewing a day in LibraryViewModel+Review.swift, the weekly project review (due list, mark
+                             reviewed, intervals, hold/resume/drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
@@ -181,6 +190,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              CalendarView: the list of days and the tasks of the one picked;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              TagsView: the Tags place's tag column and Today's candidate filter menu;
+                             WeeklyReviewView: the weekly review's due list, project card with its
+                             buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,

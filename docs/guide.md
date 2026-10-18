@@ -36,6 +36,12 @@ does updates this guide in the same PR (see the docs check in
 - **Tag**: a label such as `@calls` or `@deep-work`, put on any number of
   tasks and shown with an `@`. A tag belongs to one view, so `@calls` at work
   and `@calls` at home are different tags
+- **Weekly review**: looking over your projects so none goes stale. Each
+  project has a next review day, one interval (a week unless you change it)
+  after the day it was last reviewed, or created
+- **Project status**: a project is *active*, *on hold* or *dropped*. An
+  on-hold or dropped project hands out no next actions, so none of its tasks
+  is offered as a candidate in Today. On hold is still reviewed; dropped is not
 - **Leftover**: an open task planned for a day before today. Nothing moves it
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
@@ -60,6 +66,8 @@ It does not expand. Click a place to look at it:
 - **Today**: the plan of a day, with its capacity (see Today)
 - **Calendar**: the days, and the tasks of the one you pick (see Calendar)
 - **Review**: the day looked back on (see Review)
+- **Weekly** (the glasses): the projects whose review is due (see Weekly
+  review)
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
@@ -269,6 +277,47 @@ unplanned time instead. A task that was decided on has left the day it was
 decided from, so the review of that day lists only what was done and what is
 still undecided.
 
+## Weekly review
+
+The Weekly place (the glasses icon, after Review) keeps projects from going
+stale. Its first column lists the projects of the current view whose review is
+due, the longest overdue first, each with the day the review fell due. A
+project is due once its next review day is today or has passed, so a project
+reviewed on a Monday is due again the Monday after. Sub-projects are reviewed
+as projects of their own. The first project is picked for you.
+
+- The second column is the picked project's card (its next review day, in
+  red when overdue; the pencil edits it as anywhere else) with the buttons
+  below it: **Mark Reviewed**, how often it is reviewed, and its status
+- The third column lists its tasks, which you can complete, give a priority,
+  estimate or tags, open and edit, exactly as in the Projects place. The
+  capture field at the top adds a new task to the project picked
+- **Mark Reviewed** (⇧⌘R, Plan → Mark Project Reviewed) records today as the
+  day it was reviewed and picks the next project. The project is due again an
+  interval later
+- Plan → Show Weekly Review opens the place
+
+**How often.** Every project is reviewed weekly until you say otherwise.
+Settings → Global → Project review sets the default (Off, Daily, Every 3
+days, Weekly, Every 14 days, Every 30 days) for all projects. A project's own
+interval overrides it: pick it in the review, or from Review in the project's
+context menu in Projects. Choosing Default goes back to following the
+default. Off leaves one project out of the review; with the default off, only
+projects with an interval of their own are reviewed. Changing an interval
+changes the next review day at once.
+
+**Status.** Put on Hold (the button, or the project's context menu) stops a
+project handing out next actions: its tasks show dimmed and none is offered
+as a candidate in Today (tasks already in a day's plan stay there). It is
+still reviewed, so you can resume it. Drop gives up a project: no next
+actions and no review. Its tasks stay open and nothing is deleted. Resume
+brings either back. On-hold and dropped projects show a pause or cross
+symbol in the Projects columns.
+
+A project that was never reviewed counts from the day it was created, so a
+project older than a week is due the first time you look. A project created
+before the app kept the day is due at once.
+
 ## Projects
 
 Projects show in Miller columns. The first column lists the top-level
@@ -339,8 +388,9 @@ Settings shows two families in its first column: Global and Local.
 - **Global** sets the numbers every view falls back to: the default estimate
   for a task given no estimate (5 minutes), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
-  minutes (8 hours on weekdays, none at the weekend). It also picks the
-  default view
+  minutes (8 hours on weekdays, none at the weekend). It sets how often
+  projects are reviewed (weekly; see Weekly review), and picks the default
+  view
 - **Local** overrides the buffer and the weekday capacity for the view
   currently shown. Each is a toggle: off, it follows the global value
   (shown greyed with "(global)"); on, it shows its own value to change.
