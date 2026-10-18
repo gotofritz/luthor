@@ -11,6 +11,21 @@ public struct Completed<Item: Equatable & Sendable>: Equatable, Sendable {
 }
 
 extension LibraryState {
+  /// Applies the events that complete a task or bring a completed task or project back; any other event
+  /// changes nothing.
+  mutating func applyCompletion(_ payload: EventPayload) {
+    switch payload {
+    case .taskCompleted(let completed):
+      complete(completed.taskID)
+    case .taskReopened(let reopened):
+      reopen(reopened.taskID)
+    case .projectReopened(let reopened):
+      reopen(reopened.projectID)
+    default:
+      break
+    }
+  }
+
   /// Ignores a task that already exists, open or completed.
   mutating func capture(_ captured: TaskCaptured) {
     guard captureOrder[captured.taskID] == nil else { return }

@@ -167,6 +167,7 @@ struct TaskListColumn: View {
 private struct ProjectRow: View {
   @Bindable var library: LibraryViewModel
   let project: Project
+  @State private var confirmingDelete = false
 
   private var isCompleted: Bool {
     library.completedProjectIDs.contains(project.id)
@@ -218,6 +219,13 @@ private struct ProjectRow: View {
         }
         .disabled(library.views.count < 2)
       }
+      Divider()
+      Button("Delete Permanently…", role: .destructive) { confirmingDelete = true }
+    }
+    .confirmationDialog("Delete “\(project.title)” permanently?", isPresented: $confirmingDelete) {
+      Button("Delete", role: .destructive) { library.deleteProject(project.id) }
+    } message: {
+      Text("The project, its sub-projects and every task in them are removed for good.")
     }
   }
 }
@@ -225,6 +233,7 @@ private struct ProjectRow: View {
 private struct TaskRow: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
+  @State private var confirmingDelete = false
 
   /// Estimates offered on the context and Task menus, in minutes.
   static let estimateChoices = [5, 15, 30, 60]
@@ -263,6 +272,11 @@ private struct TaskRow: View {
     }
     .draggable(task.id.rawValue)
     .contextMenu { menu }
+    .confirmationDialog("Delete “\(task.title)” permanently?", isPresented: $confirmingDelete) {
+      Button("Delete", role: .destructive) { library.deleteTask(task.id) }
+    } message: {
+      Text("The task is removed for good.")
+    }
   }
 
   /// Completes the task; on a completed task that can be reopened, reopens it.
@@ -310,6 +324,8 @@ private struct TaskRow: View {
         Button("None") { library.estimate(task.id, as: nil) }
       }
       RepeatMenuItems(library: library, taskID: task.id)
+      Button("Duplicate") { library.duplicate(task.id) }
+      Button("Add Tasks") { library.addTasks(to: task.id) }
       Menu("Tags") {
         ForEach(library.tags) { item in
           Button {
@@ -325,6 +341,8 @@ private struct TaskRow: View {
       }
       .disabled(library.tags.isEmpty)
     }
+    Divider()
+    Button("Delete Permanently…", role: .destructive) { confirmingDelete = true }
   }
 }
 

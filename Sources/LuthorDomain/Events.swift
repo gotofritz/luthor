@@ -64,6 +64,10 @@ public enum EventPayload: Equatable, Sendable {
   case projectDropped(ProjectDropped)
   case taskRepeatSet(TaskRepeatSet)
   case taskRecurred(TaskRecurred)
+  case taskDuplicated(TaskDuplicated)
+  case taskDeleted(TaskDeleted)
+  case projectDeleted(ProjectDeleted)
+  case taskPromoted(TaskPromotedToProject)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.

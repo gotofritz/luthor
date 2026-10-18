@@ -47,6 +47,10 @@ struct TaskCardColumn: View {
           .font(.callout)
       }
       NotesView(notes: task.notes)
+      if !isCompleted {
+        Button("Add Tasks") { library.addTasks(to: task.id) }
+          .help("Turn this task into a project and add tasks to it")
+      }
     }
   }
 

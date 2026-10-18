@@ -130,6 +130,9 @@ struct LuthorApp: App {
           Button("None") { library.estimateSelected(as: nil) }
         }
         .disabled(library.selection == nil)
+        Button("Duplicate") { library.duplicateSelected() }
+          .keyboardShortcut("d", modifiers: [.command, .shift])
+          .disabled(library.selection == nil)
         Divider()
         // ⌥⌘1 to ⌥⌘9 file the selected task into the first nine projects.
         Menu("Move to Project") {

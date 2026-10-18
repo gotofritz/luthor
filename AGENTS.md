@@ -123,6 +123,8 @@ Sources/
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
                              drop it
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
+    StructureEvents.swift    TaskDuplicated, TaskDeleted, ProjectDeleted, TaskPromotedToProject
+    Commands+Structure.swift duplicate a task, delete a task or project for good, promote a task to a project
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
     LibraryState.swift       reducer: LibraryState.replay(events) → views; tasks and projects
@@ -140,6 +142,8 @@ Sources/
     LibraryState+ProjectReview.swift  weekly project review: applying its events, effective interval,
                              nextReviewDate(of:), projectsDueForReview(in:today:) → ProjectReviewItem
     LibraryState+Repeat.swift  applying TaskRepeatSet and TaskRecurred, repeatRule(of:)
+    LibraryState+Structure.swift  applying the structure events; copyTask, shared by TaskRecurred and
+                             TaskDuplicated; hasProject
     LibraryState+Tags.swift  TagItem, applying the tag events, tags(in:/of:), tasks(tagged:), taskCounts; TaskFilter
                              (tags, priority, project, deadline) and tasks(in:matching:)
     LibraryState+Cards.swift  applying rename, notes and kind events
@@ -179,7 +183,8 @@ Sources/
                              reviewing a day in LibraryViewModel+Review.swift, the weekly project review (due list, mark
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
-                             skip) in LibraryViewModel+Repeat.swift and the card's repeat summary in RepeatSummary.swift,
+                             skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
+                             Add Tasks in LibraryViewModel+Structure.swift and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)

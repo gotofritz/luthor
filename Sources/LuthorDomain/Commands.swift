@@ -32,6 +32,8 @@ public enum CommandError: Error, Equatable {
   case projectDropped(ProjectID)
   /// The task does not repeat, so there is no occurrence to skip.
   case notRepeating(TaskID)
+  /// The project is neither active nor completed: it never existed, or it was deleted.
+  case unknownProject(ProjectID)
 }
 
 /// Turns user intentions into new events, given the current log.

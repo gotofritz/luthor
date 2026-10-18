@@ -346,6 +346,23 @@ due-date rules. A start date would be its own feature.
 
 Usable: the routines stop being retyped.
 
+### 14b. Duplicate, delete, and tasks that become projects ✅
+
+From issues #49, #50 and #51. `TaskDuplicated(source, copy, createdOn?)` makes
+an open task out of another, with its title, notes, priority, estimate, due
+date, tags and repeat, in the same project and planned for no day; it shares
+its copying with `TaskRecurred`. `TaskDeleted` and `ProjectDeleted` remove a
+task, or a project with its sub-projects and every task in them, open or
+completed, for good; the events stay in the log as tombstones, the reducer
+forgets everything about the target. `TaskPromotedToProject(task, project)`
+turns an open task into a parallel project with its title, notes, view and
+creation day, at the task's place in the project it was filed in. The app has
+Duplicate (⇧⌘D, context menu), Add Tasks (card, context menu) and Delete
+Permanently… (context menu, after a confirmation).
+
+Usable: test and wrong items can be removed, and a task that grows can become
+a project.
+
 ### Stress test the desktop app (before 15)
 
 Not a build slice: time spent using the Mac app hard before the format is
@@ -886,3 +903,26 @@ issues, each worked out when it was taken off this list on 2026-10-18.
    older build survives a newer log
 2. **Not deferred to slice 17.** The guard is cheap, protects the log now
    that two Macs share it, and slice 14 lands first so its events are in v1
+
+## Decisions (2026-10-18, issues #49 to #51)
+
+1. **Tasks and projects stay two models for now** (issue #50). Merging them
+   (a project is a task with children, with target dates and every other task
+   field) touches the reducer, planning, calendar, review and the columns, and
+   needs a log migration. It is the right direction, and cheapest before the
+   format freezes in slice 15, so it is its own slice. Until then Add Tasks
+   promotes a task to a project: priority, estimate, due date, tags, repeat,
+   the day planned and a delegation are let go, as a project holds none of
+   them. Not confirmed with the owner yet
+2. **Delete is a tombstone event, not an edit of the log.** `TaskDeleted` and
+   `ProjectDeleted` keep the append-only rule; the reducer forgets the task
+   or project and its data, but keeps the task's place in the capture order
+   so capturing it again or reopening it brings nothing back
+3. **Deleting a project deletes everything under it**, sub-projects and tasks,
+   completed ones too, including a sub-project completed on its own. The app
+   asks first; there is no undo
+4. **A copy is planned for no day and has no delegation**, as the next task of
+   a repeat is. It does keep the repeat rule, so duplicating a repeating task
+   starts a second series. Projects cannot be duplicated yet
+5. **The copy is a new task with the same title.** No "copy of" suffix
+

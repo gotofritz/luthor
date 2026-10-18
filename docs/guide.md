@@ -26,6 +26,10 @@ does updates this guide in the same PR (see the docs check in
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
   children are in the order they were added. *Parallel*: every child is
   active. *Sequential*: only the first open child is; the others are dimmed
+- **Delete**: removing a task or a project for good. Dropping a task gives
+  it up but is a decision you made; deleting is for the ones that are wrong,
+  or that you only made to try the app. Nothing of a deleted task or project
+  is left to show or to reopen
 - **Plan**: the tasks you decided to do on one day in one view, in order. The
   work day and the evening are planned apart. A task keeps its identity when
   moved from day to day: rescheduling never duplicates it
@@ -345,6 +349,26 @@ appears to its right, and so on down the tree.
   [Completing a task](#completing-a-task))
 - Rename a project, switch it between parallel and sequential, or add notes
   in its card (see [Cards](#cards))
+
+## Duplicating, deleting and growing a task
+
+- **Duplicate** a task from its context menu, or select it and press ⇧⌘D
+  (Task → Duplicate). The copy is a new open task in the same project with
+  the same title, notes, priority, estimate, due date, tags and repeat. The
+  day it was planned for, a delegation and the time logged are not copied.
+  The copy is selected when the list shows it. A task that repeats is copied
+  with its rule, so the copy starts a series of its own
+- **Add Tasks** (the button on a task's card, or in its context menu) turns
+  the task into a project and shows it, ready for tasks to be captured into
+  it. The project has the task's title, notes, view and creation day, and if
+  the task was in a project, it is a sub-project there, in the same place.
+  A project has no priority, estimate, due date, tags, repeat, day planned or
+  delegation, so the task's are let go. Set them on the tasks you add
+- **Delete Permanently…** (context menu of a task or a project, after a
+  confirmation) removes it for good, whether it is open, dropped or
+  completed. Deleting a project deletes its sub-projects and every task in
+  them, completed ones too. There is no undo; the choice to complete or
+  drop is there for what you may want back
 
 ## Repeating tasks
 
