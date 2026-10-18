@@ -28,8 +28,7 @@ struct CardNotesView: View {
       ForEach(Array(bullets.enumerated()), id: \.offset) { position, bullet in
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           Text("•")
-          Text(Self.linkified(bullet))
-            .textSelection(.enabled)
+          LinkedText(text: bullet)
             .frame(maxWidth: .infinity, alignment: .leading)
           if canAdd {
             Button {
@@ -55,16 +54,6 @@ struct CardNotesView: View {
   private func add() {
     library.appendNote(draft, to: itemID)
     draft = ""
-  }
-
-  /// The text with each web address a link.
-  static func linkified(_ text: String) -> AttributedString {
-    var linked = AttributedString(text)
-    for link in NoteLinks.links(in: text) {
-      guard let range = Range(link.range, in: linked) else { continue }
-      linked[range].link = link.url
-    }
-    return linked
   }
 }
 

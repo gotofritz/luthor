@@ -214,7 +214,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              of an item being added, in edit mode; CardViews: the task card column, the project card in the
                              last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
                              priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
-                             as deletable bullets with clickable links and a field that adds one; SettingsColumnsView: Global/Local/This Mac setting families,
+                             as deletable bullets with clickable links and a field that adds one; LinkedText: a note as an AppKit text view, so
+                             the pointer is a hand over a link; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
                              CalendarView: the list of days and the tasks of the one picked;
