@@ -255,9 +255,8 @@ struct ProjectCardEditModeTests {
   @Test("a project created today shows today as the day it was created")
   func createdProjectHasTheDayItWasCreated() {
     let (library, _) = makeLibrary([])
-    library.projectDraft = "Taxes"
 
-    library.createProject(kind: .parallel)
+    library.addProject(titled: "Taxes", kind: .parallel, under: nil)
 
     #expect(library.projects.map(\.createdOn) == [date("2026-10-19")])
   }

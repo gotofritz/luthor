@@ -52,10 +52,9 @@ extension LibraryViewModel {
     submit()
   }
 
-  /// Types a title into the new project field and creates the project.
+  /// Presses the plus button of the first column, typing a title and picking the kind of project.
   func createProject(_ title: String, kind: ProjectKind) throws -> TaskID {
-    projectDraft = title
-    createProject(kind: kind)
+    addProject(titled: title, kind: kind, under: nil)
     return try #require(projects.first { $0.title == title }).id
   }
 

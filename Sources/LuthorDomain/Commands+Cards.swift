@@ -18,6 +18,30 @@ extension Commands {
     return [envelope(EventID(ids.next()), .taskNoted(TaskNoted(taskID: taskID, notes: notes)), log: log)]
   }
 
+  /// Adds a bullet to the notes of the open task or project `taskID` for each non-blank line of `text`, after
+  /// the bullets it has. Blank text writes nothing.
+  public func appendNote(taskID: TaskID, _ text: String, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let added = NoteBullets.bullets(in: text)
+    guard !added.isEmpty else { return [] }
+    let notes = NoteBullets.notes(from: NoteBullets.bullets(in: task.notes) + added)
+    return try setNotes(taskID: taskID, to: notes, log: log)
+  }
+
+  /// Deletes the bullet at `position` from the notes of the open task or project `taskID`. A position with no
+  /// bullet writes nothing.
+  public func deleteNote(taskID: TaskID, at position: Int, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    let task = try openTask(taskID, in: LibraryState.replay(log))
+    var bullets = NoteBullets.bullets(in: task.notes)
+    guard bullets.indices.contains(position) else { return [] }
+    bullets.remove(at: position)
+    return try setNotes(taskID: taskID, to: NoteBullets.notes(from: bullets), log: log)
+  }
+
   /// Gives the active project `projectID` another title. A blank title is refused; the title it has writes
   /// nothing.
   public func renameProject(_ projectID: TaskID, to title: String, log: [EventEnvelope]) throws(CommandError)

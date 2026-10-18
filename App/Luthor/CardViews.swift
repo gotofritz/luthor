@@ -6,7 +6,8 @@ import SwiftUI
 /// The card of the task selected, in a column of its own after the list the task is in. It shows the day the
 /// task was created, its due date, its tags and its notes, and not the title, which the list before it already shows;
 /// the pencil turns it into the editor of the title, priority, estimate, due date, tags and notes, closed by OK
-/// or Cancel. A completed task shows its card too, with no pencil until it is reopened.
+/// or Cancel. The notes are bullets, each with a button that deletes it, and a field below them adds one without
+/// the editor. A completed task shows its card too, with no pencil and no field until it is reopened.
 struct TaskCardColumn: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
@@ -46,7 +47,7 @@ struct TaskCardColumn: View {
         Label(tags, systemImage: "tag")
           .font(.callout)
       }
-      NotesView(notes: task.notes)
+      CardNotesView(library: library, itemID: task.id, notes: task.notes, canAdd: !isCompleted)
       if !isCompleted {
         Button("Add Tasks") { library.addTasks(to: task.id) }
           .help("Turn this task into a project and add tasks to it")
@@ -111,10 +112,24 @@ private struct TaskCardEditor: View {
   }
 }
 
-/// The card of the project whose column it heads, above its tasks and sub-projects. Like a task card it
-/// shows the day the project was created, whether it is completed or dropped, the day it is to be reviewed next and its notes, not the
-/// title the column before it shows, until the pencil opens the editor of the title, kind and notes. A
-/// completed project shows its card too, with no pencil until it is reopened.
+/// The card of the project shown, in a column of its own after the project's column, where a task's card goes
+/// when one is picked.
+struct ProjectCardColumn: View {
+  @Bindable var library: LibraryViewModel
+  let project: Project
+
+  var body: some View {
+    ScrollView {
+      ProjectCard(library: library, project: project)
+    }
+    .frame(width: 300)
+  }
+}
+
+/// The card of a project. Like a task card it shows the day the project was created, whether it is completed or
+/// dropped, the day it is to be reviewed next and its notes, not the title the column before it shows, until the
+/// pencil opens the editor of the title, kind and notes. A completed project shows its card too, with no pencil
+/// until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
   let project: Project
@@ -173,7 +188,7 @@ struct ProjectCard: View {
           .font(.callout)
           .foregroundStyle(next < library.today ? Color.red : Color.primary)
       }
-      NotesView(notes: project.notes)
+      CardNotesView(library: library, itemID: project.id, notes: project.notes, canAdd: !isCompleted)
     }
   }
 }

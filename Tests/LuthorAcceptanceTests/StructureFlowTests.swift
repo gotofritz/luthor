@@ -71,8 +71,7 @@ struct DeleteFlowTests {
     let garden = try library.createProject("Garden", kind: .parallel)
     library.open(.project(test))
     library.capture("test task")
-    library.projectDraft = "Test sub-project"
-    library.createProject(kind: .parallel)
+    library.addProject(titled: "Test sub-project", kind: .parallel, under: test)
     library.open(.project(garden))
     library.capture("water")
 

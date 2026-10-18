@@ -7,7 +7,9 @@ import SwiftUI
 /// of the one picked. Review is the day looked back on. The weekly review is the projects due for review, the one
 /// picked with its card, and its tasks. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
-/// in the order they were added. The priorities are the four priorities and no priority, picked like the rows of any
+/// in the order they were added, headed by the project itself and ended by a plus button that adds to it. The
+/// last column is the card of the task picked or, with none, of the project shown. The priorities are the four
+/// priorities and no priority, picked like the rows of any
 /// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
 /// one picked. Tasks that are not next actions are dimmed. Drag a task onto a
 /// project to file it, a project onto another to nest it, or onto a column to move it into that column's
@@ -16,114 +18,77 @@ struct ColumnBrowserView: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
-    ScrollView(.horizontal) {
-      HStack(spacing: 0) {
-        switch library.section {
-        case .inbox:
-          TaskListColumn(library: library)
-          Divider()
-        case .today:
-          TodayColumnsView(library: library)
-          Divider()
-        case .calendar:
-          CalendarColumnsView(library: library)
-          Divider()
-        case .review:
-          ReviewColumnsView(library: library)
-          Divider()
-        case .weeklyReview:
-          WeeklyReviewColumnsView(library: library)
-          Divider()
-        case .projects:
-          ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
-            ColumnView(library: library, column: column, position: position)
-            Divider()
+    ScrollViewReader { proxy in
+      ScrollView(.horizontal) {
+        HStack(spacing: 0) {
+          columns(revealing: proxy)
+          if library.section != .settings {
+            cardColumn
           }
-        case .priorities:
-          PriorityColumn(library: library)
-          Divider()
-          TaskListColumn(library: library)
-          Divider()
-        case .tags:
-          TagColumn(library: library)
-          Divider()
-          TaskListColumn(library: library)
-          Divider()
-        case .settings:
-          SettingsColumnsView(library: library)
-          Divider()
-        }
-        if library.section != .settings, let task = library.selectedTask {
-          TaskCardColumn(library: library, task: task)
-          Divider()
         }
       }
     }
   }
-}
 
-/// What a click in a column picks.
-private enum ColumnSelection: Hashable {
-  case project(TaskID)
-  case task(TaskID)
-}
-
-/// One column: the top-level projects, or the children of one project.
-private struct ColumnView: View {
-  @Bindable var library: LibraryViewModel
-  let column: ProjectColumn
-  /// Where the column is among the columns; the first lists the top-level projects.
-  let position: Int
-
-  var body: some View {
-    VStack(spacing: 0) {
-      if let project = library.shownProject, project.id == column.parentID {
-        ProjectCard(library: library, project: project)
+  @ViewBuilder
+  private func columns(revealing proxy: ScrollViewProxy) -> some View {
+    switch library.section {
+    case .inbox:
+      TaskListColumn(library: library)
+      Divider()
+    case .today:
+      TodayColumnsView(library: library)
+      Divider()
+    case .calendar:
+      CalendarColumnsView(library: library)
+      Divider()
+    case .review:
+      ReviewColumnsView(library: library)
+      Divider()
+    case .weeklyReview:
+      WeeklyReviewColumnsView(library: library)
+      Divider()
+    case .projects:
+      ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
+        ColumnView(library: library, column: column, position: position) {
+          withAnimation { proxy.scrollTo(column.id) }
+        }
+        .id(column.id)
         Divider()
       }
-      list
-    }
-    .frame(width: 260)
-    .dropDestination(for: String.self) { payloads, _ in
-      library.drop(payloads, on: column.parentID)
-    }
-  }
-
-  private var list: some View {
-    List(selection: selection) {
-      ForEach(column.entries) { entry in
-        switch entry {
-        case .project(let project):
-          ProjectRow(library: library, project: project)
-            .tag(ColumnSelection.project(project.id))
-        case .task(let task):
-          TaskRow(library: library, task: task)
-            .tag(ColumnSelection.task(task.id))
-        }
-      }
+    case .priorities:
+      PriorityColumn(library: library)
+      Divider()
+      TaskListColumn(library: library)
+      Divider()
+    case .tags:
+      TagColumn(library: library)
+      Divider()
+      TaskListColumn(library: library)
+      Divider()
+    case .settings:
+      SettingsColumnsView(library: library)
+      Divider()
     }
   }
 
-  /// The project of the path this column leads to, or the selected task of the project shown.
-  private var selection: Binding<ColumnSelection?> {
-    Binding(
-      get: {
-        if position < library.path.count { return .project(library.path[position]) }
-        if column.parentID == nil { return nil }
-        return library.selection.map(ColumnSelection.task)
-      },
-      set: { picked in
-        switch picked {
-        case .project(let projectID):
-          library.open(.project(projectID))
-        case .task(let taskID):
-          if let parentID = column.parentID, library.path.last != parentID { library.open(.project(parentID)) }
-          library.selection = taskID
-        case nil:
-          break
-        }
+  /// The card of the task picked, or of the project shown.
+  @ViewBuilder
+  private var cardColumn: some View {
+    switch library.cardTarget {
+    case .task:
+      if let task = library.selectedTask {
+        TaskCardColumn(library: library, task: task)
+        Divider()
       }
-    )
+    case .project:
+      if let project = library.shownProject {
+        ProjectCardColumn(library: library, project: project)
+        Divider()
+      }
+    case nil:
+      EmptyView()
+    }
   }
 }
 
@@ -164,7 +129,7 @@ struct TaskListColumn: View {
   }
 }
 
-private struct ProjectRow: View {
+struct ProjectRow: View {
   @Bindable var library: LibraryViewModel
   let project: Project
   @State private var confirmingDelete = false
@@ -231,7 +196,7 @@ private struct ProjectRow: View {
   }
 }
 
-private struct TaskRow: View {
+struct TaskRow: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
   @State private var confirmingDelete = false

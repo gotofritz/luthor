@@ -132,8 +132,7 @@ struct ViewSwitchingViewModelTests {
     library.showView(ViewID("work"))
     library.draft = "book a room"
     library.submit()
-    library.projectDraft = "Offsite"
-    library.createProject(kind: .parallel)
+    library.addProject(titled: "Offsite", kind: .parallel, under: nil)
 
     #expect(
       log.events.suffix(2) == [

@@ -969,3 +969,26 @@ should change.
 9. **A copy of a project holds copies of everything in it that was not given
    up**, completed ones included, as open tasks with IDs worked out from the
    copy's, so two devices make the same ones
+
+## Decisions (2026-10-18, issue #55)
+
+Miller column rework. No new event: the notes stay one plain text.
+
+1. **Notes are bullets by line.** A note is a non-blank line of the notes
+   text; adding one appends a line, deleting one removes its line. Existing
+   notes that already have several lines become several bullets. Appending or
+   deleting rewrites the notes with each line trimmed and blank lines dropped.
+   The editor still shows the whole text, one bullet to a line
+2. **The plus button replaces the New project field and, in Projects, the
+   capture field.** Each column ends with a plus that opens a field with a
+   choice of task, parallel project or sequential project. The first column
+   lists top-level projects, so it offers only the two projects. The Inbox and
+   the weekly review keep their capture field
+3. **A project's column starts with the project's name**, which picks its
+   card. The card of the project shown sits in the last column, where a task's
+   card goes, and a task picked takes its place
+4. **Clicking the project that is already open deselects what is picked
+   beyond it.** The list reports changes of selection only, so a click now
+   also goes through the view model (`open`), which clears the task picked
+5. **Clicking a column scrolls it fully into view**, by the least scroll
+   that does it

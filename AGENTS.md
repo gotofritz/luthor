@@ -124,7 +124,9 @@ Sources/
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
                              drop it
-    Commands+Cards.swift     rename, notes and project kind, as edited on a card
+    Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
+                             from an item's notes
+    NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
     StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
     Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
@@ -194,7 +196,8 @@ Sources/
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
-                             Add Tasks in LibraryViewModel+Structure.swift and the card's repeat summary in RepeatSummary.swift,
+                             Add Tasks in LibraryViewModel+Structure.swift, adding a task or project from a column's plus button, notes
+                             on a card and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
@@ -204,10 +207,11 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
-                             the place picked; CardViews: the task card column, the project card above
-                             its column (read-only, a pencil opens the editor with OK and Cancel; both edit priority, estimate, due date,
-                             repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
-                             with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
+                             the place picked and the card at their end; ProjectColumnsView: a project's column, headed by its name and
+                             ended by a plus button; CardViews: the task card column, the project card in the
+                             last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
+                             priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
+                             as deletable bullets with clickable links and a field that adds one; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
                              CalendarView: the list of days and the tasks of the one picked;

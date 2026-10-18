@@ -5,14 +5,13 @@ import LuthorViewModels
 import SwiftUI
 
 /// The window: the navigation rail on the left; on the right a bar with the search box and the view
-/// switcher, the capture field, the columns of the place picked and, in the projects, the new project
-/// field. The capture field keeps the focus: Return captures into the inbox or the project shown, ↑ and ↓
-/// select one of its tasks, ⌘Return completes it.
+/// switcher, the capture field and the columns of the place picked. The capture field keeps the focus: Return
+/// captures into the inbox or the project shown, ↑ and ↓ select one of its tasks, ⌘Return completes it. In the
+/// projects there is no capture field: each column has a plus button that adds to it.
 struct LibraryView: View {
   @Bindable var library: LibraryViewModel
   let configuration: LuthorConfiguration
   @FocusState private var captureFocused: Bool
-  @State private var newProjectKind = ProjectKind.parallel
 
   var body: some View {
     HStack(spacing: 0) {
@@ -21,7 +20,9 @@ struct LibraryView: View {
       VStack(spacing: 0) {
         topBar
         Divider()
-        captureField
+        if library.section != .projects {
+          captureField
+        }
         if let message = library.errorMessage {
           Text(message)
             .foregroundStyle(.red)
@@ -30,10 +31,6 @@ struct LibraryView: View {
         }
         Divider()
         ColumnBrowserView(library: library)
-        if library.section == .projects {
-          Divider()
-          newProjectField
-        }
       }
     }
     .navigationTitle(title)
@@ -90,23 +87,6 @@ struct LibraryView: View {
         library.moveSelection(by: -1)
         return .handled
       }
-  }
-
-  /// Creates a project of the kind picked next to it, inside the project shown, or top-level from the inbox.
-  private var newProjectField: some View {
-    HStack(spacing: 6) {
-      TextField(shownProjectID == nil ? "New project" : "New project in \(title)", text: $library.projectDraft)
-        .textFieldStyle(.roundedBorder)
-        .onSubmit { library.createProject(kind: newProjectKind) }
-      Picker("Kind", selection: $newProjectKind) {
-        Image(systemName: ProjectKind.parallel.symbol).help("Parallel").tag(ProjectKind.parallel)
-        Image(systemName: ProjectKind.sequential.symbol).help("Sequential").tag(ProjectKind.sequential)
-      }
-      .pickerStyle(.segmented)
-      .labelsHidden()
-      .fixedSize()
-    }
-    .padding(8)
   }
 
   private var isDelegating: Binding<Bool> {

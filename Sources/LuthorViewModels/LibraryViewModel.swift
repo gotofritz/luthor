@@ -85,8 +85,6 @@ public final class LibraryViewModel {
   public internal(set) var reopenableTaskIDs: Set<TaskID> = []
   public internal(set) var reopenableProjectIDs: Set<TaskID> = []
   public var draft = ""
-  /// Title of the next project to create.
-  public var projectDraft = ""
   public var selection: TaskID? {
     didSet { if selection != oldValue { editingCard = nil } }
   }
@@ -196,17 +194,7 @@ public final class LibraryViewModel {
 
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
   public func submit() {
-    let title = draft
-    let projectID = captureProjectID
-    let viewID = currentView
-    let day = clock()
-    perform { (log) throws(CommandError) in
-      if let projectID {
-        try commands.capture(title: title, into: projectID, today: day, log: log)
-      } else {
-        try commands.capture(title: title, in: viewID, today: day, log: log)
-      }
-    }
+    addTask(titled: draft, to: captureProjectID)
     if errorMessage == nil { draft = "" }
   }
 
@@ -268,23 +256,6 @@ public final class LibraryViewModel {
   public func estimateSelected(as minutes: Int?) {
     guard let selected = selection else { return }
     estimate(selected, as: minutes)
-  }
-
-  /// Creates a project titled by the project draft, inside the project shown, or top-level while the
-  /// inbox is shown. A blank draft creates nothing; a failed write keeps the draft.
-  public func createProject(kind: ProjectKind) {
-    let title = projectDraft
-    let viewID = currentView
-    let parentID = shownProjectID
-    let day = clock()
-    perform { (log) throws(CommandError) in
-      if let parentID {
-        try commands.createProject(title: title, kind: kind, under: parentID, today: day, log: log)
-      } else {
-        try commands.createProject(title: title, kind: kind, in: viewID, today: day, log: log)
-      }
-    }
-    if errorMessage == nil { projectDraft = "" }
   }
 
   /// Files a task into a project.
