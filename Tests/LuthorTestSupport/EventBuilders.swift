@@ -227,11 +227,12 @@ public func project(
   tasks: [TaskItem] = [],
   children: [ProjectChild]? = nil,
   notes: String? = nil,
-  createdOn day: String? = nil
+  createdOn day: String? = nil,
+  status: ProjectStatus = .active
 ) -> Project {
   Project(
     id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(ProjectID.init),
-    children: children ?? tasks.map(ProjectChild.task), notes: notes, createdOn: day.map(date))
+    children: children ?? tasks.map(ProjectChild.task), notes: notes, createdOn: day.map(date), status: status)
 }
 
 /// A sub-project as a child of its parent.
