@@ -15,8 +15,18 @@ private let gardenLog = [
 @MainActor
 @Suite("When the plus button of a column is pressed")
 struct NewItemStartViewModelTests {
-  @Test("a new item is being edited, seeded with priority optional and an estimate of 5 minutes")
-  func aNewItemIsSeededWithDefaults() {
+  @Test("a new project starts with no priority and no estimate")
+  func aNewProjectHasNoDefaults() {
+    let (library, _) = makeInbox(gardenLog)
+
+    library.beginNewItem(under: TaskID("p1"), kind: .project(.parallel))
+
+    #expect(library.newItem?.card.priority == nil)
+    #expect(library.newItem?.card.estimate == nil)
+  }
+
+  @Test("a new task is being edited, seeded with priority optional and an estimate of 5 minutes")
+  func aNewTaskIsSeededWithDefaults() {
     let (library, log) = makeInbox(gardenLog)
 
     library.beginNewItem(under: TaskID("p1"), kind: .task)
@@ -101,6 +111,75 @@ struct NewItemStartViewModelTests {
 }
 
 @MainActor
+@Suite("When the kind of a new item is changed on its card")
+struct NewItemKindSwitchViewModelTests {
+  @Test("a project drops the defaults of a task")
+  func aProjectDropsTheDefaults() {
+    let (library, _) = makeInbox(gardenLog)
+    library.beginNewItem(under: TaskID("p1"), kind: .task)
+
+    library.setNewItemKind(.project(.parallel))
+
+    #expect(library.newItem?.card.priority == nil)
+    #expect(library.newItem?.card.estimate == nil)
+  }
+
+  @Test("a task again brings the defaults back")
+  func aTaskAgainBringsTheDefaultsBack() {
+    let (library, _) = makeInbox(gardenLog)
+    library.beginNewItem(under: TaskID("p1"), kind: .task)
+    library.setNewItemKind(.project(.sequential))
+
+    library.setNewItemKind(.task)
+
+    #expect(library.newItem?.card.priority == .optional)
+    #expect(library.newItem?.card.estimate == 5)
+  }
+
+  @Test("a priority and an estimate the user set stay")
+  func fieldsTheUserSetStay() {
+    let (library, _) = makeInbox(gardenLog)
+    library.beginNewItem(under: TaskID("p1"), kind: .task)
+    library.setNewItemPriority(.critical)
+    library.setNewItemEstimate(30)
+
+    library.setNewItemKind(.project(.parallel))
+    #expect(library.newItem?.card.priority == .critical)
+    #expect(library.newItem?.card.estimate == 30)
+
+    library.setNewItemKind(.task)
+    #expect(library.newItem?.card.priority == .critical)
+    #expect(library.newItem?.card.estimate == 30)
+  }
+
+  @Test("a priority the user cleared stays cleared, and the estimate still follows the kind")
+  func aClearedFieldStaysCleared() {
+    let (library, _) = makeInbox(gardenLog)
+    library.beginNewItem(under: TaskID("p1"), kind: .task)
+    library.setNewItemPriority(nil)
+
+    library.setNewItemKind(.project(.parallel))
+    library.setNewItemKind(.task)
+
+    #expect(library.newItem?.card.priority == nil)
+    #expect(library.newItem?.card.estimate == 5)
+  }
+
+  @Test("setting a field to what it already holds is not an edit")
+  func settingTheSameValueIsNotAnEdit() {
+    let (library, _) = makeInbox(gardenLog)
+    library.beginNewItem(under: TaskID("p1"), kind: .task)
+    library.setNewItemPriority(.optional)
+    library.setNewItemEstimate(5)
+
+    library.setNewItemKind(.project(.parallel))
+
+    #expect(library.newItem?.card.priority == nil)
+    #expect(library.newItem?.card.estimate == nil)
+  }
+}
+
+@MainActor
 @Suite("When a new item is kept with OK")
 struct NewItemSaveViewModelTests {
   @Test("a task is filed in the project with the card's fields, and selected")
@@ -155,7 +234,7 @@ struct NewItemSaveViewModelTests {
     #expect(prune.estimate == nil)
   }
 
-  @Test("a sequential project is made inside the project, with the same defaults, and opened")
+  @Test("a sequential project is made inside the project, with no priority and no estimate, and opened")
   func aProjectIsMadeAndOpened() throws {
     let (library, _) = makeInbox(gardenLog)
     library.beginNewItem(under: TaskID("p1"), kind: .project(.sequential))
@@ -167,8 +246,8 @@ struct NewItemSaveViewModelTests {
     let herbs = try #require(library.projects.first { $0.title == "Herbs" })
     #expect(herbs.parentID == TaskID("p1"))
     #expect(herbs.kind == .sequential)
-    #expect(herbs.priority == .optional)
-    #expect(herbs.estimate == 5)
+    #expect(herbs.priority == nil)
+    #expect(herbs.estimate == nil)
     #expect(library.shownProject?.id == herbs.id)
     #expect(library.newItem == nil)
   }

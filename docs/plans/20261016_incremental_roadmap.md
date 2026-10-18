@@ -1009,9 +1009,11 @@ write when OK is pressed.
    puts the new item's card in edit mode in the next column. The box follows
    the title as it is typed. The draft lives in the view model (`newItem`) and
    writes nothing until OK; Cancel, Escape or going anywhere else drops it
-2. **New items start with priority optional (C) and an estimate of 5
-   minutes**, for tasks and projects added this way. Quick capture and the
-   inbox are unchanged: a task there has what the capture syntax gives it
+2. **New tasks start with priority optional (C) and an estimate of 5
+   minutes**; new projects start with neither. Switching the kind on the card
+   swaps the defaults, unless that field was set by hand (setting it to what it
+   holds is not an edit; clearing it is). Quick capture and the inbox are
+   unchanged: a task there has what the capture syntax gives it
 3. **Add Tasks starts the first task at once.** Promoting a task to a project
    now also starts a new task in it, so one press does both
 4. **Pressing the plus of the column whose item is being edited keeps what

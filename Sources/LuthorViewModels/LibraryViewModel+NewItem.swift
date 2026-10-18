@@ -25,9 +25,27 @@ extension LibraryViewModel {
     newItem?.card.title = title
   }
 
-  /// Changes the new item into a task or a project of another kind.
+  /// Changes the new item into a task or a project of another kind. The priority and estimate follow the kind,
+  /// a task's defaults or none, unless the user set them.
   public func setNewItemKind(_ kind: NewItemKind) {
     newItem?.kind = kind
+    newItem?.applyKindDefaults()
+  }
+
+  /// Sets the priority on the card of the new item, which then stays as set when the kind changes. Setting
+  /// what the card holds already is not an edit.
+  public func setNewItemPriority(_ priority: Priority?) {
+    guard let item = newItem, item.card.priority != priority else { return }
+    newItem?.card.priority = priority
+    newItem?.priorityEdited = true
+  }
+
+  /// Sets the estimate on the card of the new item, which then stays as set when the kind changes. Setting
+  /// what the card holds already is not an edit.
+  public func setNewItemEstimate(_ estimate: Int?) {
+    guard let item = newItem, item.card.estimate != estimate else { return }
+    newItem?.card.estimate = estimate
+    newItem?.estimateEdited = true
   }
 
   /// Drops the new item without writing anything.

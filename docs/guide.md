@@ -359,9 +359,10 @@ appears to its right, and so on down the tree.
   The box shows the title as you type it. The card has a choice of a task, a
   parallel project or a sequential project (the first column offers only the
   two projects, which are top-level there), and the fields of any card. A new
-  item starts with priority optional and an estimate of 5 minutes; change or
-  clear them on the card. Nothing is written until OK (or Return in the title);
-  Cancel, Escape, or clicking anywhere else drops the item
+  task starts with priority optional and an estimate of 5 minutes, a project
+  with neither; switching the kind on the card swaps these defaults, unless
+  you have changed that field yourself. Nothing is written until OK (or
+  Return in the title); Cancel, Escape, or clicking anywhere else drops the item
 - Clicking the empty part of a column closes every column to its right: in the
   first column no project is open any more, in a later one its project is
   shown with no task picked

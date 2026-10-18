@@ -56,6 +56,25 @@ struct NewItemCardFlowTests {
     #expect(flights.estimate == 5)
   }
 
+  @Test("a project made from the card has no priority and no estimate")
+  func aProjectHasNoDefaults() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let library = launchApp(on: dir.file("events.jsonl"))
+    let europe = try library.createProject("Europe", kind: .parallel)
+    library.open(.project(europe))
+
+    library.beginNewItem(under: europe, kind: .task)
+    library.setNewItemKind(.project(.sequential))
+    library.setNewItemTitle("France")
+    library.saveNewItem(try #require(library.newItem?.card))
+
+    let relaunched = launchApp(on: dir.file("events.jsonl"))
+    let france = try #require(relaunched.projects.first { $0.title == "France" })
+    #expect(france.priority == nil)
+    #expect(france.estimate == nil)
+  }
+
   @Test("Add Tasks on a task makes it a project and starts the first task in it, so one OK adds it")
   func addTasksNeedsNoSecondPress() throws {
     let dir = try TemporaryDirectory()

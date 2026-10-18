@@ -115,20 +115,32 @@ public enum NewItemKind: Hashable, Sendable {
 /// An item the plus button of a column started, until OK makes it. The card in the column after the column
 /// edits it; nothing is written before OK.
 public struct NewItemDraft: Equatable, Sendable {
-  /// The priority and estimate a new item starts with: optional, and five minutes.
+  /// The priority and estimate a new task starts with: optional, and five minutes. A project starts with none.
   public static let defaultPriority = Priority.optional
   public static let defaultEstimate = 5
 
   /// The project the item is added to; `nil` for a top-level project.
   public let parentID: TaskID?
-  public var kind: NewItemKind
+  public internal(set) var kind: NewItemKind
   /// What the card holds so far, the title as typed.
-  public var card: TaskCardDraft
+  public internal(set) var card: TaskCardDraft
+  /// Whether the user, and not the kind, last set the priority and the estimate: changing the kind leaves
+  /// those alone.
+  var priorityEdited = false
+  var estimateEdited = false
 
   public init(parentID: TaskID?, kind: NewItemKind) {
     self.parentID = parentID
     self.kind = kind
-    card = TaskCardDraft(
-      title: "", priority: Self.defaultPriority, estimate: Self.defaultEstimate, due: nil, notes: "")
+    card = TaskCardDraft(title: "", priority: nil, estimate: nil, due: nil, notes: "")
+    applyKindDefaults()
+  }
+
+  /// Gives the priority and estimate the defaults of the kind, a task's or a project's (none), unless the
+  /// user set them.
+  mutating func applyKindDefaults() {
+    let isTask = kind == .task
+    if !priorityEdited { card.priority = isTask ? Self.defaultPriority : nil }
+    if !estimateEdited { card.estimate = isTask ? Self.defaultEstimate : nil }
   }
 }
