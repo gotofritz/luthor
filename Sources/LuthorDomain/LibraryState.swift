@@ -50,55 +50,6 @@ public struct TaskItem: Equatable, Sendable {
   }
 }
 
-/// What a project holds: an open task, or an active sub-project.
-public enum ProjectChild: Equatable, Sendable {
-  case task(TaskItem)
-  case project(ProjectID)
-}
-
-public struct Project: Equatable, Sendable {
-  public let id: ProjectID
-  public internal(set) var title: String
-  public internal(set) var kind: ProjectKind
-  public internal(set) var viewID: ViewID
-  /// The project it is nested in; `nil` for a top-level project.
-  public internal(set) var parentID: ProjectID?
-  /// Open tasks and active sub-projects, in the order they were added to the project.
-  public internal(set) var children: [ProjectChild]
-  /// Plain-text notes; `nil` until it is given some.
-  public internal(set) var notes: String?
-  /// The day the project was created; `nil` for one created before cards showed it.
-  public let createdOn: CalendarDate?
-
-  public init(
-    id: ProjectID,
-    title: String,
-    kind: ProjectKind,
-    viewID: ViewID,
-    parentID: ProjectID? = nil,
-    children: [ProjectChild] = [],
-    notes: String? = nil,
-    createdOn: CalendarDate? = nil
-  ) {
-    self.id = id
-    self.title = title
-    self.kind = kind
-    self.viewID = viewID
-    self.parentID = parentID
-    self.children = children
-    self.notes = notes
-    self.createdOn = createdOn
-  }
-
-  /// Open tasks filed straight into the project, in the order they were filed.
-  public var tasks: [TaskItem] {
-    children.compactMap { child in
-      guard case .task(let task) = child else { return nil }
-      return task
-    }
-  }
-}
-
 /// The state of every view. Tasks and projects are reachable only through `view(_:)`, which names the
 /// view: isolation between views is a rule of the domain, not a filter in the UI.
 public struct LibraryState: Equatable, Sendable {
@@ -129,6 +80,8 @@ public struct LibraryState: Equatable, Sendable {
   var tagItems: [TagItem] = []
   /// The tags each open or completed task carries. A task with none is not here.
   var taskTags: [TaskID: Set<TagID>] = [:]
+  /// The intervals, and the days, of the weekly project review.
+  var projectReviews = ProjectReviewRecords()
   /// The manual order of each view's plan for a day, as last set.
   var dayOrders: [DayKey: [TaskID]] = [:]
   /// The capacity set for single days, in place of the weekday's.
@@ -209,6 +162,9 @@ public struct LibraryState: Equatable, Sendable {
       applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
+    case .reviewDefaultSet, .projectReviewIntervalSet, .projectReviewed, .projectPutOnHold, .projectResumed,
+      .projectDropped:
+      applyProjectReview(payload)
     }
   }
 

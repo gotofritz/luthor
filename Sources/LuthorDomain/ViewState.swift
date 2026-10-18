@@ -52,9 +52,10 @@ public struct ViewState: Equatable, Sendable {
   }
 
   /// The tasks of a project's subtree that the project hands out, as if it had no parent. Parallel: every
-  /// child is active, a sub-project with its own next actions. Sequential: only the first child is.
+  /// child is active, a sub-project with its own next actions. Sequential: only the first child is. A project
+  /// on hold, or dropped, hands out none, nor do the sub-projects in it.
   public func nextActions(of projectID: ProjectID) -> [TaskItem] {
-    guard let project = self.project(projectID) else { return [] }
+    guard let project = self.project(projectID), project.status == .active else { return [] }
     let active =
       switch project.kind {
       case .parallel: project.children

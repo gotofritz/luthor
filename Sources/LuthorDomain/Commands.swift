@@ -28,6 +28,8 @@ public enum CommandError: Error, Equatable {
   case duplicateTagName(String)
   /// The task and the tag are in different views; a tag belongs to one view.
   case tagInOtherView(TaskID, TagID)
+  /// The project was dropped, so it is not reviewed; resume it first.
+  case projectDropped(ProjectID)
 }
 
 /// Turns user intentions into new events, given the current log.
