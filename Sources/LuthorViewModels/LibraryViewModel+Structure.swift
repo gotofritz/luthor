@@ -41,4 +41,15 @@ extension LibraryViewModel {
       beginNewItem(under: changed.taskID, kind: .task)
     }
   }
+
+  /// Turns a project with nothing in it back into a task. If the columns showed it, they show its parent, or
+  /// with no parent the inbox, and the task is selected where the list has it.
+  public func turnIntoTask(_ projectID: TaskID) {
+    let parentID = knownProjects.first { $0.id == projectID }?.parentID
+    let wasShown = shownProjectID == projectID
+    let events = perform { (log) throws(CommandError) in try commands.demote(projectID: projectID, log: log) }
+    guard wasShown, !events.isEmpty else { return }
+    open(parentID.map { .project($0) } ?? .inbox)
+    if index(of: projectID) != nil { selection = projectID }
+  }
 }

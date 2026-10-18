@@ -403,6 +403,11 @@ calendar marks the project itself. Its estimate is shown, not planned.
   task is ready to type in: no second press of the plus button. It
   keeps its title, notes, view, creation day and everything set on it, and if
   it was in a project, it is a sub-project there, in the same place
+- **Turn into Task** (context menu of a project with nothing in it) makes
+  the project a task again, in the same place, with everything set on it.
+  If the columns were showing it, they show its parent and the task is
+  selected. A project with an open task or sub-project in it has no such
+  entry: complete, move or delete what is in it first
 - **Delete Permanently…** (context menu of a task or a project, after a
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in

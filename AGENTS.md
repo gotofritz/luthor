@@ -129,7 +129,7 @@ Sources/
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
     StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
-    Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project
+    Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project and an empty project a task
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
     LibraryState.swift       reducer: LibraryState.replay(events) → views; one item store (a task and a project

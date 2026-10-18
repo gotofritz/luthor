@@ -95,7 +95,7 @@ next one, due by the rule; Skip This One passes over one occurrence, Stop
 Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 
 A task and a project are the same kind of item: a project is an item that holds others. A project has
-the card of a task, with a priority, estimate, due date, repeat and tags. Add Tasks (on a card or in its context menu) makes an item a project and starts a task in it, keeping
+the card of a task, with a priority, estimate, due date, repeat and tags. Add Tasks (on a card or in its context menu) makes an item a project and starts a task in it (Turn into Task, in the context menu of an empty project, goes back), keeping
 everything set on it. An item can be duplicated (Duplicate in its context menu, or ⇧⌘D): the copy has the
 same title, notes, priority, estimate, due date, tags and repeat, in the same project, planned for no
 day, and a project's copy holds copies of its tasks. Delete Permanently… (context menu, after a confirmation) removes an item,

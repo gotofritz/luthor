@@ -1020,3 +1020,8 @@ write when OK is pressed.
    was typed**; the plus of another column starts a fresh item
 5. **After OK a task is selected and a project is opened**, so its card or
    column is shown, rather than the field staying open for another item
+6. **An empty project can be turned back into a task.** `TaskKindChanged` now
+   takes an optional kind; none means a task. Only an item with no open task
+   or sub-project in it qualifies (`projectHasChildren` otherwise), and what
+   was set on it stays. Old logs still replay, as every kind written so far is
+   there. The context menu offers it on a project with nothing in it

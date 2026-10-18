@@ -184,6 +184,10 @@ struct ProjectRow: View {
           }
           .disabled(project.kind == .sequential)
         }
+        if project.children.isEmpty {
+          Button("Turn into Task") { library.turnIntoTask(project.id) }
+            .help("Turn this empty project back into a task")
+        }
         ProjectReviewMenuItems(library: library, project: project)
         if project.parentID != nil {
           Button("Move to Top Level") { library.nest(project.id, under: nil) }

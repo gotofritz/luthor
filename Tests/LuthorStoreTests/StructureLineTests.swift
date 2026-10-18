@@ -42,9 +42,17 @@ struct StructureLineTests {
     )
   }
 
+  @Test("turning a project into a task is a TaskKindChanged with no kind")
+  func demoteIsATaskKindChangedWithNoKind() throws {
+    let line = try EventLine.encode(demoted("p1", id: "e6", lamport: 6))
+
+    #expect(line == #"{"data":{"taskID":"p1"},"device":"mac","id":"e6","lamport":6,"type":"TaskKindChanged"}"#)
+  }
+
   @Test(
     "each decodes back to the same event",
     arguments: [
+      demoted("p1"),
       duplicated("t1", as: "t2", on: "2026-10-19"),
       duplicated("t1", as: "t2"),
       taskDeleted("t1"),
