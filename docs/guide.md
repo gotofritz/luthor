@@ -33,6 +33,9 @@ does updates this guide in the same PR (see the docs check in
   the task ahead of the other tasks of its priority in Today's candidates
   once it is due; a *target date* is only shown. A due date never plans a
   task for a day by itself
+- **Repeat**: a task that comes back. Completing it makes the next one, due
+  by its rule (every N days, weeks, months or years). It counts from a due
+  date, so a task that repeats always has one
 - **Tag**: a label such as `@calls` or `@deep-work`, put on any number of
   tasks and shown with an `@`. A tag belongs to one view, so `@calls` at work
   and `@calls` at home are different tags
@@ -129,8 +132,8 @@ sub-projects and tasks listed below it.
 A card is read-only. It shows the day the task or project was created
 ("Created 2026-10-19", left out for what was created before the app kept the
 day), for a task its due date ("Deadline 2026-10-23" or "Target date
-2026-10-23", in red once the day has passed) and its tags ("@calls @home"),
-and the notes ("No notes" if
+2026-10-23", in red once the day has passed), how it repeats ("Repeats every
+week on Mon, Thu") and its tags ("@calls @home"), and the notes ("No notes" if
 there are none). It does not repeat the
 title, which is in the column before it. Web addresses in notes
 (`https://…` or `www.…`) are clickable links.
@@ -140,7 +143,8 @@ is written until OK:
 
 - A task's card then has the title field, the priority and estimate pickers,
   the Due date switch (a day to pick, and whether it is a hard deadline or a
-  target date), the Tags field (names separated by commas; the tag button
+  target date), the Repeat field (see [Repeating tasks](#repeating-tasks)),
+  the Tags field (names separated by commas; the tag button
   beside it adds one the view already has), its project, the estimate history
   if there is one, and the notes in a text field. A project's card has the title field, the kind (parallel or
   sequential), the estimate history and the notes
@@ -200,6 +204,8 @@ survives a relaunch.
 - Delegate… (⌘L) asks whom, and optionally a follow-up day. It leaves the
   plan and the totals, and shows in Waiting for with who has it and since when
 - Send to Someday (⌘Y) takes it off its day and gives it the One day priority
+- Skip This One, for a task that repeats, passes over this occurrence (see
+  [Repeating tasks](#repeating-tasks))
 - Drop Task (⇧⌘⌫) gives it up: it leaves every list, without being completed
 
 **Leftovers.** A task planned for a day that has passed, and not completed or
@@ -339,6 +345,41 @@ appears to its right, and so on down the tree.
   [Completing a task](#completing-a-task))
 - Rename a project, switch it between parallel and sequential, or add notes
   in its card (see [Cards](#cards))
+
+## Repeating tasks
+
+Routines (pay the rent, water the plants, the weekly report) are captured
+once. In a task's card, with the pencil, switch Repeat on and pick how often:
+every N days, weeks, months or years. A weekly repeat can also pick the days
+of the week (Mon and Thu), and a repeat can count from the due date (the
+default) or from the day the task is done. The task's context menu has a
+Repeat submenu for the common cases, and Stop Repeating.
+
+A repeat needs a due date to count from. Switching Repeat on for a task with
+none gives it one: the day Today shows, as a target date. The kind of the due
+date, a hard deadline or a target date, is kept by the next tasks.
+
+Completing a task that repeats makes the next one at once, in the same
+project, with the same title, notes, priority, estimate, tags and repeat, and
+the next due date. The day it was planned for, a delegation and the time
+logged are not copied. The completed one stays in Completed. Nothing is
+planned by itself: the next task shows in the lists straight away (there is
+no start date), and as a candidate under the usual due-date rules. Editing
+the task that is open changes what the next ones copy.
+
+- *Counted from the due date*: the next due date is the first one of the
+  rule after the previous due date and after today, so a week of missed days
+  does not pile up. Monthly keeps the day number, and the 31st falls on the
+  last day of a shorter month
+- *Counted from the day it is done*: the next due date is that day plus the
+  interval. The weekdays do not apply
+- Skip This One (Task menu, context menu, or in Today's decisions) is for
+  "not this week": it drops this task and makes the next one
+- Stop Repeating clears the repeat; the task stays, with its due date
+- Drop Task and Send to Someday end the series: giving a task up is
+  explicit, and Skip is the way to pass over one occurrence
+- Reopening a completed task leaves the next one as it is. Completing a
+  project completes its open tasks without making new ones
 
 ## Priorities and estimates
 

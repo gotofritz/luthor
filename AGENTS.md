@@ -106,6 +106,10 @@ Sources/
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
     TagEvents.swift          TagCreated, TaskTagged, TaskUntagged
+    RepeatRule.swift         RepeatRule (every n days/weeks/months/years, weekdays, from due date or from completion) and
+                             its pure nextDue(after:completedOn:today:)
+    RepeatEvents.swift       TaskRepeatSet, TaskRecurred (next task copied from the previous one; its ID is
+                             TaskID.recurring(after:), so two devices make the same one)
     ProjectReviewEvents.swift  ReviewInterval (off or every n days; n on the wire, 0 for off), ReviewDefaultSet,
                              ProjectReviewIntervalSet, ProjectReviewed, ProjectDropped
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, TagID, ViewID (+ ViewID.default)
@@ -113,6 +117,7 @@ Sources/
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed task or project
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
+    Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
@@ -134,6 +139,7 @@ Sources/
                              days), estimateHistory(ofTask:/ofProject:)
     LibraryState+ProjectReview.swift  weekly project review: applying its events, effective interval,
                              nextReviewDate(of:), projectsDueForReview(in:today:) → ProjectReviewItem
+    LibraryState+Repeat.swift  applying TaskRepeatSet and TaskRecurred, repeatRule(of:)
     LibraryState+Tags.swift  TagItem, applying the tag events, tags(in:/of:), tasks(tagged:), taskCounts; TaskFilter
                              (tags, priority, project, deadline) and tasks(in:matching:)
     LibraryState+Cards.swift  applying rename, notes and kind events
@@ -172,7 +178,9 @@ Sources/
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
                              reviewing a day in LibraryViewModel+Review.swift, the weekly project review (due list, mark
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
-                             candidate filter in LibraryViewModel+Tags.swift, reading the log and
+                             candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
+                             skip) in LibraryViewModel+Repeat.swift and the card's repeat summary in RepeatSummary.swift,
+                             reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac
@@ -189,6 +197,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              CalendarView: the list of days and the tasks of the one picked;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              TagsView: the Tags place's tag column and Today's candidate filter menu;
+                             RepeatViews: the card's Repeat field and line and the Repeat context menu;
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings)

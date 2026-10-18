@@ -58,7 +58,7 @@ back. Click a task and a card opens in the next column; click a project and
 its column starts with a card, with its children below. A card is read-only:
 it shows the day it was created, the due date and the notes (web addresses are
 clickable), not the title, which is in the column before. The pencil opens it
-for editing (title, priority, estimate, due date, tags and notes for a task; title,
+for editing (title, priority, estimate, due date, repeat, tags and notes for a task; title,
 kind and notes for a project), and OK keeps the changes or Cancel drops them.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
@@ -85,6 +85,12 @@ A task can have a due date, set on its card: a hard deadline or a target date.
 A hard deadline that is due on the day Today shows (or overdue) puts the task
 ahead of the other tasks of its priority among the candidates, saying so under
 it; a target date only shows. A due date never plans a task by itself.
+
+A task can repeat, set in the Repeat field of its card or from its context
+menu: every N days, weeks, months or years, a weekly one on chosen weekdays,
+counted from the due date or from the day it is done. Completing it makes the
+next one, due by the rule; Skip This One passes over one occurrence, Stop
+Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 
 Calendar (⇧⌘C) lists the days as rows, from two months back to a year ahead,
 Sundays tinted, with a mark on a day that has tasks planned for it and another
