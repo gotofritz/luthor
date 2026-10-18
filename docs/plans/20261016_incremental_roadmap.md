@@ -352,9 +352,6 @@ Usable: the weekly review.
 
 - Search: make the search box in the top bar work, over titles in the
   current view only
-- Full keyboard navigation: reach the rail, every column, the top bar and
-  the view switcher without the mouse (the view switcher still gets no
-  shortcut)
 - Repeating tasks
 - Timer for actual minutes, and an in-progress state with it
 - Estimate suggestions from history, offered and never applied silently
