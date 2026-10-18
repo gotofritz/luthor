@@ -25,10 +25,13 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.delete(taskID: taskID, log: log) }
   }
 
-  /// Deletes a project for good, with its sub-projects and every task in them. If the columns showed it, they
-  /// show the inbox again.
+  /// Deletes a project for good, with its sub-projects and every task in them. If the columns showed it, or
+  /// went through it, they show its parent, or with no parent the inbox.
   public func deleteProject(_ projectID: TaskID) {
-    perform { (log) throws(CommandError) in try commands.delete(projectID: projectID, log: log) }
+    let parentID = knownProjects.first { $0.id == projectID }?.parentID
+    let wasOnPath = path.contains(projectID)
+    let events = perform { (log) throws(CommandError) in try commands.delete(projectID: projectID, log: log) }
+    if wasOnPath, !events.isEmpty, let parentID { open(.project(parentID)) }
   }
 
   /// Turns a task into a project, which the columns then show, with a new task already being edited in it.
