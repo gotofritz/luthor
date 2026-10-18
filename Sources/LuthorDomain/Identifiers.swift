@@ -40,6 +40,15 @@ public struct ProjectID: Hashable, Codable, Sendable {
   }
 }
 
+/// Identifies a tag, a label such as `@calls` that belongs to one view.
+public struct TagID: Hashable, Codable, Sendable {
+  public let rawValue: String
+
+  public init(_ rawValue: String) {
+    self.rawValue = rawValue
+  }
+}
+
 /// Identifies a view, a separate space such as Work or Private that every task and project belongs to.
 public struct ViewID: Hashable, Codable, Sendable {
   /// The view replay always creates; it holds everything written before views existed.
@@ -97,6 +106,17 @@ extension ProjectID {
 }
 
 extension ViewID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
+extension TagID {
   public init(from decoder: any Decoder) throws {
     self.init(try decoder.singleValueContainer().decode(String.self))
   }

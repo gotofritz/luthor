@@ -78,6 +78,9 @@ private struct EventLineDTO: Codable {
     case taskReclaimed = "TaskReclaimed"
     case taskDropped = "TaskDropped"
     case taskDueSet = "TaskDueSet"
+    case tagCreated = "TagCreated"
+    case taskTagged = "TaskTagged"
+    case taskUntagged = "TaskUntagged"
     case taskTimeLogged = "TaskTimeLogged"
     case unplannedTimeLogged = "UnplannedTimeLogged"
     case dayReviewed = "DayReviewed"
@@ -117,6 +120,9 @@ private struct EventLineDTO: Codable {
       case .taskReclaimed: .taskReclaimed(try container.decode(TaskReclaimed.self, forKey: .data))
       case .taskDropped: .taskDropped(try container.decode(TaskDropped.self, forKey: .data))
       case .taskDueSet: .taskDueSet(try container.decode(TaskDueSet.self, forKey: .data))
+      case .tagCreated: .tagCreated(try container.decode(TagCreated.self, forKey: .data))
+      case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
+      case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged: .taskTimeLogged(try container.decode(TaskTimeLogged.self, forKey: .data))
       case .unplannedTimeLogged:
         .unplannedTimeLogged(try container.decode(UnplannedTimeLogged.self, forKey: .data))
@@ -164,6 +170,9 @@ private struct EventLineDTO: Codable {
     case .taskReclaimed(let data): try write(.taskReclaimed, data, to: &container)
     case .taskDropped(let data): try write(.taskDropped, data, to: &container)
     case .taskDueSet(let data): try write(.taskDueSet, data, to: &container)
+    case .tagCreated(let data): try write(.tagCreated, data, to: &container)
+    case .taskTagged(let data): try write(.taskTagged, data, to: &container)
+    case .taskUntagged(let data): try write(.taskUntagged, data, to: &container)
     case .taskTimeLogged(let data): try write(.taskTimeLogged, data, to: &container)
     case .unplannedTimeLogged(let data): try write(.unplannedTimeLogged, data, to: &container)
     case .dayReviewed(let data): try write(.dayReviewed, data, to: &container)

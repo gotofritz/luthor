@@ -14,9 +14,10 @@ struct NavigationStartTests {
     #expect(library.section == .inbox)
   }
 
-  @Test("the sections are the inbox, today, the calendar, the review, the projects, the priorities and settings")
-  func sectionsAreInboxTodayCalendarReviewProjectsPrioritiesSettings() {
-    #expect(NavigationSection.allCases == [.inbox, .today, .calendar, .review, .projects, .priorities, .settings])
+  @Test("the sections are the inbox, today, the calendar, the review, projects, priorities, tags and settings")
+  func sectionsAreInboxTodayCalendarReviewProjectsPrioritiesTagsSettings() {
+    #expect(
+      NavigationSection.allCases == [.inbox, .today, .calendar, .review, .projects, .priorities, .tags, .settings])
   }
 }
 

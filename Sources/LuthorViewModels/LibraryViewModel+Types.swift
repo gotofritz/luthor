@@ -20,6 +20,7 @@ public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case review
   case projects
   case priorities
+  case tags
   case settings
 }
 
@@ -59,12 +60,27 @@ public struct TaskCardDraft: Equatable, Sendable {
   public var estimate: Int?
   public var due: DueDate?
   public var notes: String
+  /// The names of the tags the task is to have, no more and no fewer.
+  public var tags: [String]
 
-  public init(title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String) {
+  public init(
+    title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String, tags: [String] = []
+  ) {
     self.title = title
     self.priority = priority
     self.estimate = estimate
     self.due = due
     self.notes = notes
+    self.tags = tags
+  }
+
+  /// The tag names in text typed as a comma-separated list: no blanks, no leading `@`, and a name given
+  /// twice (in any case) counts once, at its first place.
+  public static func tagNames(in text: String) -> [String] {
+    var names: [String] = []
+    for name in text.split(separator: ",").map({ Commands.cleanTagName(String($0)) }) where !name.isEmpty {
+      if !names.contains(where: { $0.lowercased() == name.lowercased() }) { names.append(name) }
+    }
+    return names
   }
 }

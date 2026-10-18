@@ -25,7 +25,7 @@ and renames views; the app reopens on the view last used on that Mac. Task → M
 project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
-to look at: Inbox (a list of its tasks), Today, Calendar, Review, Projects or Prios, with
+to look at: Inbox (a list of its tasks), Today, Calendar, Review, Projects, Prios or Tags, with
 Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
 (not working yet) and the view switcher.
 
@@ -58,7 +58,7 @@ back. Click a task and a card opens in the next column; click a project and
 its column starts with a card, with its children below. A card is read-only:
 it shows the day it was created, the due date and the notes (web addresses are
 clickable), not the title, which is in the column before. The pencil opens it
-for editing (title, priority, estimate, due date and notes for a task; title,
+for editing (title, priority, estimate, due date, tags and notes for a task; title,
 kind and notes for a project), and OK keeps the changes or Cancel drops them.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
@@ -74,6 +74,12 @@ for until reclaimed or its follow-up day. ⌘[ and ⌘] move to the previous and
 next day, ⇧⌘T returns to today (Plan menu). Tasks planned for a day that has
 passed and not decided on wait at the top of Today as leftovers; nothing moves
 them on by itself.
+
+Tags are `@calls`-style contexts that belong to one view. Type them in the Tags
+field of a task's card (names separated by commas; a new name creates the
+tag), or toggle them in a task's context menu. The Tags place lists the view's
+tags, then the tasks that carry the one picked. The Filter button above Today's
+candidates narrows them by tag, priority, project or deadline.
 
 A task can have a due date, set on its card: a hard deadline or a target date.
 A hard deadline that is due on the day Today shows (or overdue) puts the task

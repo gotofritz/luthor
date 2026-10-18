@@ -130,6 +130,7 @@ struct LibraryView: View {
     case .review: "Review"
     case .projects: shownProject?.title ?? "Projects"
     case .priorities: "Prios"
+    case .tags: "Tags"
     case .settings: "Settings"
     }
   }

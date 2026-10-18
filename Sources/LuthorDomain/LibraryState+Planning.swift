@@ -116,8 +116,8 @@ public struct WaitingItem: Equatable, Sendable {
 // Planning: how scheduling, delegating and dropping change the state, and the pure functions that turn it
 // into a day's plan. In its own file (SwiftLint file_length) rather than suppressed.
 extension LibraryState {
-  /// Applies the events that set a day's order or capacity and a task's due date; any other event changes
-  /// nothing.
+  /// Applies the events that set a day's order or capacity, a task's due date, and take a task off its day or
+  /// back from the person it was delegated to; any other event changes nothing.
   mutating func applyPlanning(_ payload: EventPayload) {
     switch payload {
     case .dayPlanOrdered(let ordered):
@@ -126,6 +126,10 @@ extension LibraryState {
       setCapacity(capacity)
     case .taskDueSet(let due):
       setDue(due)
+    case .taskUnscheduled(let unscheduled):
+      scheduledDates.removeValue(forKey: unscheduled.taskID)
+    case .taskReclaimed(let reclaimed):
+      delegations.removeValue(forKey: reclaimed.taskID)
     default:
       break
     }
@@ -193,8 +197,11 @@ extension LibraryState {
   /// on the day (the earliest first), then the order of the tasks in their projects, then the order they were
   /// captured. Candidates are the clarified open tasks that could be pulled in, and the unclarified ones whose
   /// hard deadline is due, in the same suggested order: no someday task, no task a sequential project is
-  /// holding back, no delegated task until its follow-up date.
-  public func plan(for viewID: ViewID, on date: CalendarDate, today: CalendarDate) -> DayPlan {
+  /// holding back, no delegated task until its follow-up date. A filter narrows the candidates only; the tasks
+  /// planned for the day stay.
+  public func plan(
+    for viewID: ViewID, on date: CalendarDate, today: CalendarDate, matching filter: TaskFilter = TaskFilter()
+  ) -> DayPlan {
     let viewState = view(viewID)
     let planning = settings(for: viewID)
     let deadlines = dueDates.filter { $0.value.isHard && $0.value.date <= date }.mapValues(\.date)
@@ -215,12 +222,14 @@ extension LibraryState {
 
     let entries = viewState.openTasks.filter { scheduledDates[$0.id] == date }.sorted(by: suggested).map(entry)
     let actionable = Set(viewState.nextActions.map(\.id))
+    let inProject = filter.projectID.map(subtree(of:))
     let candidates = viewState.openTasks.filter { task in
       let isWaiting = delegations[task.id].map { !$0.isFollowUpDue(on: today) } ?? false
       let isLeftOver = scheduledDates[task.id].map { $0 < today } ?? false
       let isClarified = task.isClarified || deadlines[task.id] != nil
       return isClarified && task.priority != .someday && scheduledDates[task.id] != date
         && (task.projectID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
+        && matches(task, filter, inProject: inProject)
     }.sorted(by: suggested).map(entry)
 
     let weekday = date.weekday
