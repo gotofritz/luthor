@@ -66,7 +66,7 @@ struct ViewCaptureCommandTests {
   func captureIntoAProjectTakesItsView() throws {
     let events = try commands().capture(title: "draft", into: TaskID("wp"), log: Self.log)
 
-    #expect(events.first == captured("id-2", "draft", id: "id-1", view: "work", lamport: 3))
+    #expect(events.first == captured("id-2", "draft", id: "id-1", view: "work", under: "wp", lamport: 3))
   }
 
   @Test("the project is created in that view")

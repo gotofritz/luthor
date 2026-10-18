@@ -79,7 +79,7 @@ struct CompleteRepeatingFlowTests {
 @MainActor
 @Suite("Given a repeating task, when I skip it, stop it or give it up")
 struct EndRepeatingFlowTests {
-  @Test("Skip drops this one and leaves the next, with nothing in Completed")
+  @Test("Skip drops this one and leaves the next, listing the skipped one as dropped")
   func skipDropsThisOneAndLeavesTheNext() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
@@ -87,12 +87,13 @@ struct EndRepeatingFlowTests {
     let task = try captureWeeklyRoutine(in: library)
 
     library.skip(task)
-    library.showCompleted = true
 
     let next = try library.task("water plants")
     #expect(next != task)
     #expect(library.tasks.count == 1)
-    #expect(library.completedTaskIDs.isEmpty)
+    library.showCompleted = true
+    #expect(library.completedTaskIDs == [task])
+    #expect(library.droppedTaskIDs == [task])
     #expect(library.dueDate(of: next)?.date == date("2026-10-26"))
   }
 

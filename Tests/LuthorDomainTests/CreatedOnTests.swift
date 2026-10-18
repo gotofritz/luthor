@@ -71,7 +71,7 @@ struct CreatedOnCommandTests {
 
     let events = try makeCommands().capture(title: "pack", into: TaskID("p1"), today: Self.today, log: log)
 
-    #expect(events.first == captured("id-2", "pack", id: "id-1", on: "2026-10-19", lamport: 2))
+    #expect(events.first == captured("id-2", "pack", id: "id-1", on: "2026-10-19", under: "p1", lamport: 2))
   }
 
   @Test("creating a project writes a TaskCaptured with that day")

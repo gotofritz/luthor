@@ -96,10 +96,7 @@ struct ProjectListViewModelTests {
     library.submit()
 
     #expect(
-      log.events.suffix(2) == [
-        captured("id-2", "book a van", id: "id-1", on: "2026-10-19", lamport: 7),
-        moved("id-2", to: "p1", id: "id-3", lamport: 8),
-      ])
+      log.events.last == captured("id-2", "book a van", id: "id-1", on: "2026-10-19", under: "p1", lamport: 7))
     #expect(library.tasks.map(\.title) == ["find a flat", "sign the lease", "book a van"])
   }
 

@@ -99,7 +99,7 @@ struct WeeklyReviewPlaceTests {
 
     #expect(library.tasks.map(\.title) == ["pack boxes", "book a van", "call the landlord"])
     #expect(library.draft == "")
-    #expect(log.events.count == reviewable.count + 2)
+    #expect(log.events.count == reviewable.count + 1)
   }
 
   @Test("with no project due nothing is picked and a new task goes to the inbox")
