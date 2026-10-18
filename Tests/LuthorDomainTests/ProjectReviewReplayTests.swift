@@ -71,10 +71,11 @@ struct NextReviewReplayTests {
   func aChosenNextReviewKeepsAProjectOutOfTheList() {
     let state = LibraryState.replay(projects + [reviewDateSet("p1", to: "2026-10-26")])
 
-    #expect(state.projectsDueForReview(in: .default, today: monday).map(\.project.id) == [TaskID("p2")])
+    #expect(
+      state.projectsDueForReview(in: .default, today: date("2026-10-21")).map(\.project.id) == [TaskID("p2")])
     #expect(
       state.projectsDueForReview(in: .default, today: date("2026-10-26")).map(\.project.id)
-        == [TaskID("p1"), TaskID("p2")])
+        == [TaskID("p2"), TaskID("p1")])
   }
 
   @Test("reviewing counts from the day reviewed again, and drops the chosen day")
