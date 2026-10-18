@@ -368,8 +368,7 @@ calendar marks the project itself. Its estimate is shown, not planned.
 - **Add Tasks** (the button on a card, or in its context menu) makes the
   item a project and shows it, ready for tasks to be captured into it. It
   keeps its title, notes, view, creation day and everything set on it, and if
-  it was in a project, it is a sub-project there, in the same place. A task
-  can also be dragged onto another task to file it there
+  it was in a project, it is a sub-project there, in the same place
 - **Delete Permanently…** (context menu of a task or a project, after a
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in
