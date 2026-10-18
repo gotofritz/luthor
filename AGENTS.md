@@ -206,7 +206,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
                              the place picked; CardViews: the task card column, the project card above
                              its column (read-only, a pencil opens the editor with OK and Cancel; both edit priority, estimate, due date,
-                             repeat and tags through one shared form); NotesViews: notes
+                             repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
                              with clickable links; SettingsColumnsView: Global/Local/This Mac setting families,
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
