@@ -23,7 +23,7 @@ struct ColumnView: View {
   var body: some View {
     List(selection: selection) {
       if let project = headProject {
-        Label(project.title, systemImage: project.kind.symbol)
+        Label(project.title, systemImage: "arrowtriangle.down.fill")
           .font(.headline)
           .tag(ColumnSelection.header)
           .contentShape(Rectangle())

@@ -351,7 +351,8 @@ projects. Click a project to open it: a column of its sub-projects and tasks
 appears to its right, and so on down the tree.
 
 - The first row of every column after the first is the project it lists the
-  children of, by name. Click it to see that project's card
+  children of, by name, with a down triangle beside it. Click it to see that
+  project's card
 - The plus button at the end of a column adds to it. One press shows a box
   above the button, which cannot be typed in, and replaces the card in the next
   column with the card of the new item, in edit mode with the title focused.
