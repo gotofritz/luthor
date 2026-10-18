@@ -54,8 +54,8 @@ struct TaskFilterTests {
 
   @Test("a project keeps its tasks and those of its sub-projects")
   func aProjectKeepsItsTasksAndThoseOfItsSubprojects() {
-    #expect(titles(TaskFilter(projectID: ProjectID("p1"))) == ["pay tax", "write report"])
-    #expect(titles(TaskFilter(projectID: ProjectID("p2"))) == ["write report"])
+    #expect(titles(TaskFilter(projectID: TaskID("p1"))) == ["pay tax", "write report"])
+    #expect(titles(TaskFilter(projectID: TaskID("p2"))) == ["write report"])
   }
 
   @Test("a deadline keeps the tasks due on that day or before, of either kind")
@@ -66,7 +66,7 @@ struct TaskFilterTests {
 
   @Test("filters combine: a task has to pass every one")
   func filtersCombine() {
-    let filter = TaskFilter(tags: [TagID("calls")], priority: .critical, projectID: ProjectID("p1"))
+    let filter = TaskFilter(tags: [TagID("calls")], priority: .critical, projectID: TaskID("p1"))
 
     #expect(titles(filter) == ["pay tax"])
     #expect(!filter.isEmpty)
@@ -100,7 +100,7 @@ struct CandidateFilterTests {
   @Test("a priority, a project and a deadline filter the candidates too")
   func aPriorityAProjectAndADeadlineFilterToo() {
     #expect(candidates(TaskFilter(priority: .important)) == ["write report"])
-    #expect(candidates(TaskFilter(projectID: ProjectID("p1"))) == ["pay tax", "write report"])
+    #expect(candidates(TaskFilter(projectID: TaskID("p1"))) == ["pay tax", "write report"])
     #expect(candidates(TaskFilter(dueBy: date("2026-10-20"))) == ["pay tax"])
   }
 

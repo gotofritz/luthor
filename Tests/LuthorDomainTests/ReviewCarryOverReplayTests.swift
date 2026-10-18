@@ -156,7 +156,7 @@ struct EstimateHistoryReplayTests {
       timeLogged("t3", on: "2026-10-19", minutes: 15, lamport: 13), completed("t1", lamport: 14),
     ])
 
-    let history = state.estimateHistory(ofProject: ProjectID("p1"))
+    let history = state.estimateHistory(ofProject: TaskID("p1"))
 
     #expect(history == EstimateHistory(estimatedMinutes: 90, loggedMinutes: 135, taskCount: 2))
   }
@@ -168,6 +168,6 @@ struct EstimateHistoryReplayTests {
       moved("t1", to: "p1", lamport: 3), estimated("t1", as: 30, lamport: 4),
     ])
 
-    #expect(state.estimateHistory(ofProject: ProjectID("p1")) == nil)
+    #expect(state.estimateHistory(ofProject: TaskID("p1")) == nil)
   }
 }

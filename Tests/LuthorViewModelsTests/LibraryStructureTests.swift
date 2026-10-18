@@ -17,7 +17,7 @@ struct DuplicateViewModelTests {
   @Test("the copy is written, listed beside the original and selected")
   func theCopyIsListedAndSelected() {
     let (library, log) = makeInbox(holidayLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     library.duplicate(TaskID("t1"))
 
@@ -70,9 +70,9 @@ struct DeleteProjectViewModelTests {
   @Test("it leaves the first column and, if it was shown, the inbox is shown again")
   func theShownProjectLeavesTheColumns() {
     let (library, log) = makeInbox(holidayLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.deleteProject(ProjectID("p1"))
+    library.deleteProject(TaskID("p1"))
 
     #expect(log.events.last == projectDeleted("p1", id: "id-1", lamport: 5))
     #expect(library.columns.first?.entries.isEmpty == true)
@@ -85,9 +85,9 @@ struct DeleteProjectViewModelTests {
   func aCompletedProjectIsDeleted() {
     let (library, _) = makeInbox(holidayLog + [projectCompleted("p1", lamport: 5)])
     library.showCompleted = true
-    #expect(library.completedProjectIDs == [ProjectID("p1")])
+    #expect(library.completedProjectIDs == [TaskID("p1")])
 
-    library.deleteProject(ProjectID("p1"))
+    library.deleteProject(TaskID("p1"))
 
     #expect(library.completedProjectIDs.isEmpty)
     #expect(library.completedTaskIDs.isEmpty)
@@ -104,9 +104,9 @@ struct AddTasksViewModelTests {
 
     library.addTasks(to: TaskID("t2"))
 
-    #expect(log.events.last == promoted("t2", to: "id-2", id: "id-1", lamport: 5))
+    #expect(log.events.last == promoted("t2", id: "id-1", lamport: 5))
     #expect(library.section == .projects)
-    #expect(library.shownProject?.id == ProjectID("id-2"))
+    #expect(library.shownProject?.id == TaskID("t2"))
     #expect(library.shownProject?.title == "buy milk")
     #expect(library.tasks.isEmpty)
     #expect(library.selection == nil)
@@ -130,8 +130,8 @@ struct AddTasksViewModelTests {
 
     library.addTasks(to: TaskID("t1"))
 
-    #expect(library.path == [ProjectID("p1"), ProjectID("id-2")])
-    #expect(library.shownProject?.parentID == ProjectID("p1"))
+    #expect(library.path == [TaskID("p1"), TaskID("t1")])
+    #expect(library.shownProject?.parentID == TaskID("p1"))
   }
 
   @Test("a task that is no longer open writes nothing")

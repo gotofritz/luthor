@@ -37,7 +37,7 @@ extension LibraryViewModel {
   }
 
   /// What the tasks of a project were estimated and how long they took; `nil` until one has both.
-  public func estimateHistory(ofProject projectID: ProjectID) -> EstimateHistory? {
+  public func estimateHistory(ofProject projectID: TaskID) -> EstimateHistory? {
     state.estimateHistory(ofProject: projectID)
   }
 }

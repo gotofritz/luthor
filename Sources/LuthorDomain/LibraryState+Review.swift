@@ -189,9 +189,9 @@ extension LibraryState {
     reviewRecords.reviews[DayKey(viewID: viewID, date: date)]?.text
   }
 
-  /// Whether the task exists: open or completed, but not dropped.
+  /// Whether the task exists: open or completed, but not dropped. A project is not a task.
   func hasTask(_ taskID: TaskID) -> Bool {
-    openTasks.contains(where: { $0.id == taskID }) || completedTasks.contains(where: { $0.item.id == taskID })
+    existingTask(taskID) != nil
   }
 
   /// The view's day looked back on, as of `today`.
@@ -238,9 +238,7 @@ extension LibraryState {
   /// What the task was estimated against the minutes logged for it over all days; `nil` unless it has an
   /// estimate and some logged time.
   public func estimateHistory(ofTask taskID: TaskID) -> EstimateHistory? {
-    let open = openTasks.first(where: { $0.id == taskID })
-    let task = open ?? completedTasks.first(where: { $0.item.id == taskID })?.item
-    guard let estimate = task?.estimate else { return nil }
+    guard let estimate = existingTask(taskID)?.estimate else { return nil }
     let logged = reviewRecords.taskMinutes.reduce(0) { $1.key.taskID == taskID ? $0 + $1.value : $0 }
     guard logged > 0 else { return nil }
     return EstimateHistory(estimatedMinutes: estimate, loggedMinutes: logged, taskCount: 1)
@@ -248,14 +246,14 @@ extension LibraryState {
 
   /// The histories of the tasks in the project and its sub-projects, open or completed, added up; `nil` while
   /// none of them has both an estimate and logged time.
-  public func estimateHistory(ofProject projectID: ProjectID) -> EstimateHistory? {
+  public func estimateHistory(ofProject projectID: TaskID) -> EstimateHistory? {
     var projectIDs = subtree(of: projectID)
     if projectIDs.isEmpty {
       let taken = completedProjects.filter { $0.item.id == projectID || $0.completedWith == projectID }
       projectIDs = Set(taken.map(\.item.id))
     }
     let tasks = openTasks + completedTasks.map(\.item)
-    let histories = tasks.filter { $0.projectID.map(projectIDs.contains) ?? false }
+    let histories = tasks.filter { $0.parentID.map(projectIDs.contains) ?? false }
       .compactMap { estimateHistory(ofTask: $0.id) }
     guard !histories.isEmpty else { return nil }
     return EstimateHistory(

@@ -97,10 +97,10 @@ extension LibraryViewModel {
 
     /// The completed sub-projects, then the completed tasks, filed in a project; the top level has no
     /// tasks of its own.
-    func entries(under parentID: ProjectID?) -> [ColumnEntry] {
+    func entries(under parentID: TaskID?) -> [ColumnEntry] {
       let subprojects = projects.filter { $0.item.parentID == parentID }.map { ColumnEntry.project($0.item) }
       guard let parentID else { return subprojects }
-      return subprojects + tasks.filter { $0.item.projectID == parentID }.map { .task($0.item) }
+      return subprojects + tasks.filter { $0.item.parentID == parentID }.map { .task($0.item) }
     }
   }
 
@@ -123,7 +123,7 @@ extension LibraryViewModel {
         return task.id
       })
     let listedProjects = Set(
-      columns.flatMap(\.entries).compactMap { entry -> ProjectID? in
+      columns.flatMap(\.entries).compactMap { entry -> TaskID? in
         guard case .project(let project) = entry else { return nil }
         return project.id
       })
@@ -131,6 +131,8 @@ extension LibraryViewModel {
     let projectsShown = completed.projects.filter { listedProjects.contains($0.item.id) }
     completedTaskIDs = Set(tasksShown.map(\.item.id))
     completedProjectIDs = Set(projectsShown.map(\.item.id))
+    droppedTaskIDs = Set(tasksShown.filter(\.isDropped).map(\.item.id))
+    droppedProjectIDs = Set(projectsShown.filter(\.isDropped).map(\.item.id))
     reopenableTaskIDs = Set(tasksShown.filter(\.isReopenable).map(\.item.id))
     reopenableProjectIDs = Set(projectsShown.filter(\.isReopenable).map(\.item.id))
   }
@@ -159,31 +161,31 @@ extension LibraryViewModel {
         view.tasks(prioritised: selectedPriorities)
         + completedItems.filter { selectedPriorities.contains($0.priority) }
       let actionable = Set(view.nextActions.map(\.id))
-      nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
+      nextActions = Set(tasks.filter { $0.parentID == nil || actionable.contains($0.id) }.map(\.id))
     case .tags:
       tasks = selectedTagID.map { state.tasks(tagged: $0) } ?? []
       let actionable = Set(view.nextActions.map(\.id))
-      nextActions = Set(tasks.filter { $0.projectID == nil || actionable.contains($0.id) }.map(\.id))
+      nextActions = Set(tasks.filter { $0.parentID == nil || actionable.contains($0.id) }.map(\.id))
     case .inbox, .projects, .settings:
       if let projectID = shownProjectID {
         tasks =
-          (projects.first { $0.id == projectID }?.tasks ?? []) + completedItems.filter { $0.projectID == projectID }
+          (projects.first { $0.id == projectID }?.tasks ?? []) + completedItems.filter { $0.parentID == projectID }
         let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
           guard case .task(let task) = entry else { return nil }
           return task.id
         }
         nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
       } else {
-        tasks = view.inbox + completedItems.filter { $0.projectID == nil }
+        tasks = view.inbox + completedItems.filter { $0.parentID == nil }
         nextActions = Set(view.inbox.map(\.id))
       }
     }
   }
 
   /// The project and its ancestors, top-level first.
-  private func ancestry(of projectID: ProjectID, among known: [Project]) -> [ProjectID] {
-    var path: [ProjectID] = []
-    var current: ProjectID? = projectID
+  private func ancestry(of projectID: TaskID, among known: [Project]) -> [TaskID] {
+    var path: [TaskID] = []
+    var current: TaskID? = projectID
     while let id = current, !path.contains(id), let project = known.first(where: { $0.id == id }) {
       path.insert(id, at: 0)
       current = project.parentID
@@ -202,7 +204,7 @@ extension LibraryViewModel {
     }
   }
 
-  var shownProjectID: ProjectID? {
+  var shownProjectID: TaskID? {
     guard case .project(let projectID) = sidebarSelection else { return nil }
     return projectID
   }

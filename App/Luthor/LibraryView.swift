@@ -57,7 +57,7 @@ struct LibraryView: View {
     .task(id: configuration.location) { await watchLog() }
   }
 
-  /// The search box, which waits for its slice, the toggle for completed items and the view switcher.
+  /// The search box, which waits for its slice, the toggle for completed and dropped items and the view switcher.
   private var topBar: some View {
     HStack(spacing: 12) {
       TextField("Search", text: .constant(""))
@@ -65,10 +65,10 @@ struct LibraryView: View {
         .disabled(true)
         .help("Search comes in a later slice")
       Toggle(isOn: $library.showCompleted) {
-        Label("Completed", systemImage: "checkmark.circle")
+        Label("Completed and dropped", systemImage: "checkmark.circle")
       }
       .toggleStyle(.button)
-      .help("Show completed tasks and projects")
+      .help("Show completed and dropped tasks and projects")
       ViewSwitcher(library: library)
     }
     .padding(.horizontal, 12)
@@ -113,7 +113,7 @@ struct LibraryView: View {
     Binding(get: { library.delegatingTaskID != nil }, set: { if !$0 { library.delegatingTaskID = nil } })
   }
 
-  private var shownProjectID: ProjectID? {
+  private var shownProjectID: TaskID? {
     guard case .project(let projectID) = library.sidebarSelection else { return nil }
     return projectID
   }

@@ -24,6 +24,7 @@ public struct DeviceID: Hashable, Comparable, Codable, Sendable {
   }
 }
 
+/// Identifies an item: a task, or a project, which is a task that holds others.
 public struct TaskID: Hashable, Codable, Sendable {
   public let rawValue: String
 
@@ -46,14 +47,6 @@ public struct TaskID: Hashable, Codable, Sendable {
   private static func hex(_ value: UInt64) -> String {
     let digits = String(value, radix: 16)
     return String(repeating: "0", count: 16 - digits.count) + digits
-  }
-}
-
-public struct ProjectID: Hashable, Codable, Sendable {
-  public let rawValue: String
-
-  public init(_ rawValue: String) {
-    self.rawValue = rawValue
   }
 }
 
@@ -101,17 +94,6 @@ extension DeviceID {
 }
 
 extension TaskID {
-  public init(from decoder: any Decoder) throws {
-    self.init(try decoder.singleValueContainer().decode(String.self))
-  }
-
-  public func encode(to encoder: any Encoder) throws {
-    var container = encoder.singleValueContainer()
-    try container.encode(rawValue)
-  }
-}
-
-extension ProjectID {
   public init(from decoder: any Decoder) throws {
     self.init(try decoder.singleValueContainer().decode(String.self))
   }

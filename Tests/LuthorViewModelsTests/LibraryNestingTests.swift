@@ -57,10 +57,10 @@ struct NestedColumnsViewModelTests {
     let kitchen = try #require(library.projects.first { $0.title == "Kitchen" })
     let tap = try #require(library.projects.first { $0.title == "Tap" })
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
-    #expect(library.path == [ProjectID("p1"), ProjectID("p2")])
-    try #require(library.columns.map(\.parentID) == [nil, ProjectID("p1"), ProjectID("p2")])
+    #expect(library.path == [TaskID("p1"), TaskID("p2")])
+    try #require(library.columns.map(\.parentID) == [nil, TaskID("p1"), TaskID("p2")])
     #expect(library.columns[1].entries == [.project(kitchen), .task(item("t2", "clear the attic", in: "p1"))])
     #expect(library.columns[2].entries == [.task(item("t1", "replace the tap", in: "p2")), .project(tap)])
   }
@@ -69,7 +69,7 @@ struct NestedColumnsViewModelTests {
   func listShowsDirectTasks() {
     let (library, _) = makeInbox(homeLog)
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
     #expect(library.tasks == [item("t1", "replace the tap", in: "p2")])
   }
@@ -78,7 +78,7 @@ struct NestedColumnsViewModelTests {
   func nextActionsFollowTheTree() {
     let (library, _) = makeInbox(homeLog)
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
     // "clear the attic" waits behind Kitchen in sequential Home.
     #expect(library.nextActions == [TaskID("t1")])
@@ -90,7 +90,7 @@ struct NestedColumnsViewModelTests {
     log.events += [projectCreated("p5", "Bathroom", under: "p1", lamport: 12)]
     library.reload()
 
-    library.open(.project(ProjectID("p5")))
+    library.open(.project(TaskID("p5")))
     library.draft = "fix the shower"
     library.submit()
 
@@ -102,7 +102,7 @@ struct NestedColumnsViewModelTests {
   func entryIDsAreDistinct() {
     let (library, _) = makeInbox(homeLog)
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
     #expect(library.columns.map(\.id) == ["top", "project-p1", "project-p2"])
     #expect(library.columns[2].entries.map(\.id) == ["task-t1", "project-p3"])
@@ -115,7 +115,7 @@ struct SubprojectCreationViewModelTests {
   @Test("it is created inside the shown project")
   func projectFieldCreatesASubproject() {
     let (library, log) = makeInbox(homeLog)
-    library.open(.project(ProjectID("p4")))
+    library.open(.project(TaskID("p4")))
     library.projectDraft = "Roses"
 
     library.createProject(kind: .parallel)
@@ -133,7 +133,7 @@ struct SidebarDropViewModelTests {
   func droppedProjectIsNested() {
     let (library, log) = makeInbox(homeLog)
 
-    let accepted = library.drop([LibraryViewModel.dragPayload(for: ProjectID("p4"))], on: ProjectID("p1"))
+    let accepted = library.drop([LibraryViewModel.dragPayload(for: TaskID("p4"))], on: TaskID("p1"))
 
     #expect(accepted)
     #expect(log.events.last == nested("p4", under: "p1", id: "id-1", lamport: 12))
@@ -144,7 +144,7 @@ struct SidebarDropViewModelTests {
   func droppedOnTheTopIsUnnested() {
     let (library, log) = makeInbox(homeLog)
 
-    library.drop([LibraryViewModel.dragPayload(for: ProjectID("p2"))], on: nil)
+    library.drop([LibraryViewModel.dragPayload(for: TaskID("p2"))], on: nil)
 
     #expect(log.events.last == nested("p2", under: nil, id: "id-1", lamport: 12))
     #expect(library.columns.first?.entries.map(\.id) == ["project-p1", "project-p2", "project-p4"])
@@ -154,7 +154,7 @@ struct SidebarDropViewModelTests {
   func droppedTaskIsFiled() {
     let (library, log) = makeInbox(homeLog)
 
-    library.drop(["t3"], on: ProjectID("p4"))
+    library.drop(["t3"], on: TaskID("p4"))
 
     #expect(log.events.last == moved("t3", to: "p4", id: "id-1", lamport: 12))
     #expect(library.tasks == [])
@@ -173,7 +173,7 @@ struct SidebarDropViewModelTests {
   func projectDroppedOnItsSubprojectIsIgnored() {
     let (library, log) = makeInbox(homeLog)
 
-    library.drop([LibraryViewModel.dragPayload(for: ProjectID("p1"))], on: ProjectID("p3"))
+    library.drop([LibraryViewModel.dragPayload(for: TaskID("p1"))], on: TaskID("p3"))
 
     #expect(log.events == homeLog)
     #expect(library.errorMessage == nil)
@@ -187,7 +187,7 @@ struct UnnestViewModelTests {
   func unnestedProjectIsTopLevel() {
     let (library, _) = makeInbox(homeLog)
 
-    library.nest(ProjectID("p3"), under: nil)
+    library.nest(TaskID("p3"), under: nil)
 
     #expect(library.columns.first?.entries.map(\.id) == ["project-p1", "project-p4", "project-p3"])
   }

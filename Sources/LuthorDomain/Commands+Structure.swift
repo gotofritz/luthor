@@ -21,19 +21,18 @@ extension Commands {
 
   /// Deletes the project `projectID` for good, active, dropped or completed, with its sub-projects and every
   /// task in them.
-  public func delete(projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  public func delete(projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     guard LibraryState.replay(log).hasProject(projectID) else { throw .unknownProject(projectID) }
-    return [envelope(EventID(ids.next()), .projectDeleted(ProjectDeleted(projectID: projectID)), log: log)]
+    return [envelope(EventID(ids.next()), .taskDeleted(TaskDeleted(taskID: projectID)), log: log)]
   }
 
-  /// Turns the open task `taskID` into a project, to which tasks can then be added. It keeps the task's title,
-  /// notes and place; see `TaskPromotedToProject` for what is let go.
+  /// Turns the open task `taskID` into a parallel project, to which tasks can then be added. It stays the same
+  /// item, with its title, notes and place.
   public func promote(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     guard LibraryState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
       throw .noOpenTask(taskID.rawValue)
     }
-    let eventID = EventID(ids.next())
-    let promoted = TaskPromotedToProject(taskID: taskID, projectID: ProjectID(ids.next()))
-    return [envelope(eventID, .taskPromoted(promoted), log: log)]
+    let changed = TaskKindChanged(taskID: taskID, kind: .parallel)
+    return [envelope(EventID(ids.next()), .taskKindChanged(changed), log: log)]
   }
 }

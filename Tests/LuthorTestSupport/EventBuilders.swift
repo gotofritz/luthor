@@ -1,12 +1,13 @@
 import LuthorDomain
 
-/// Builds a `TaskCaptured` envelope with short, readable defaults.
+/// Builds a `TaskCaptured` envelope with short, readable defaults; `parent` files the task in an item.
 public func captured(
   _ task: String,
   _ title: String,
   id: String? = nil,
   view: String = "default",
   on day: String? = nil,
+  under parent: String? = nil,
   device: String = "mac",
   lamport: UInt64 = 1
 ) -> EventEnvelope {
@@ -15,7 +16,9 @@ public func captured(
     deviceID: DeviceID(device),
     lamport: lamport,
     payload: .taskCaptured(
-      TaskCaptured(taskID: TaskID(task), title: title, viewID: ViewID(view), createdOn: day.map(date)))
+      TaskCaptured(
+        taskID: TaskID(task), title: title, viewID: ViewID(view), createdOn: day.map(date),
+        parentID: parent.map(TaskID.init)))
   )
 }
 
@@ -34,7 +37,7 @@ public func completed(
   )
 }
 
-/// Builds a `ProjectCreated` envelope with short, readable defaults.
+/// Builds the `TaskCaptured` envelope that creates a project, with short, readable defaults.
 public func projectCreated(
   _ project: String,
   _ title: String,
@@ -50,14 +53,14 @@ public func projectCreated(
     id: EventID(id ?? "create-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectCreated(
-      ProjectCreated(
-        projectID: ProjectID(project), title: title, kind: kind, viewID: ViewID(view),
-        parentID: parent.map(ProjectID.init), createdOn: day.map(date)))
+    payload: .taskCaptured(
+      TaskCaptured(
+        taskID: TaskID(project), title: title, viewID: ViewID(view), createdOn: day.map(date),
+        parentID: parent.map(TaskID.init), kind: kind))
   )
 }
 
-/// Builds a `ProjectMovedToProject` envelope with short, readable defaults; a `nil` parent un-nests.
+/// Builds a `TaskMoved` envelope that nests a project, with short, readable defaults; a `nil` parent un-nests.
 public func nested(
   _ project: String,
   under parent: String?,
@@ -69,12 +72,11 @@ public func nested(
     id: EventID(id ?? "nest-\(project)-\(parent ?? "top")"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectMovedToProject(
-      ProjectMovedToProject(projectID: ProjectID(project), parentID: parent.map(ProjectID.init)))
+    payload: .taskMoved(TaskMoved(taskID: TaskID(project), parentID: parent.map(TaskID.init)))
   )
 }
 
-/// Builds a `TaskMovedToProject` envelope with short, readable defaults.
+/// Builds a `TaskMoved` envelope that files a task into a project, with short, readable defaults.
 public func moved(
   _ task: String,
   to project: String,
@@ -86,11 +88,11 @@ public func moved(
     id: EventID(id ?? "move-\(task)-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .taskMovedToProject(TaskMovedToProject(taskID: TaskID(task), projectID: ProjectID(project)))
+    payload: .taskMoved(TaskMoved(taskID: TaskID(task), parentID: TaskID(project)))
   )
 }
 
-/// Builds a `ProjectCompleted` envelope with short, readable defaults.
+/// Builds the `TaskCompleted` envelope that completes a project, with short, readable defaults.
 public func projectCompleted(
   _ project: String,
   id: String? = nil,
@@ -101,7 +103,7 @@ public func projectCompleted(
     id: EventID(id ?? "complete-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectCompleted(ProjectCompleted(projectID: ProjectID(project)))
+    payload: .taskCompleted(TaskCompleted(taskID: TaskID(project)))
   )
 }
 
@@ -153,7 +155,7 @@ public func movedToView(
   )
 }
 
-/// Builds a `ProjectMovedToView` envelope with short, readable defaults.
+/// Builds the `TaskMovedToView` envelope that takes a project across, with short, readable defaults.
 public func projectMovedToView(
   _ project: String,
   toView view: String,
@@ -165,7 +167,7 @@ public func projectMovedToView(
     id: EventID(id ?? "move-\(project)-view-\(view)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectMovedToView(ProjectMovedToView(projectID: ProjectID(project), viewID: ViewID(view)))
+    payload: .taskMovedToView(TaskMovedToView(taskID: TaskID(project), viewID: ViewID(view)))
   )
 }
 
@@ -212,7 +214,7 @@ public func item(
   createdOn day: String? = nil
 ) -> TaskItem {
   TaskItem(
-    id: TaskID(task), title: title, viewID: ViewID(view), projectID: project.map(ProjectID.init),
+    id: TaskID(task), title: title, viewID: ViewID(view), parentID: project.map(TaskID.init),
     priority: priority, estimate: estimate, notes: notes, createdOn: day.map(date))
 }
 
@@ -227,17 +229,16 @@ public func project(
   tasks: [TaskItem] = [],
   children: [ProjectChild]? = nil,
   notes: String? = nil,
-  createdOn day: String? = nil,
-  status: ProjectStatus = .active
+  createdOn day: String? = nil
 ) -> Project {
   Project(
-    id: ProjectID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(ProjectID.init),
-    children: children ?? tasks.map(ProjectChild.task), notes: notes, createdOn: day.map(date), status: status)
+    id: TaskID(project), title: title, kind: kind, viewID: ViewID(view), parentID: parent.map(TaskID.init),
+    children: children ?? tasks.map(ProjectChild.task), notes: notes, createdOn: day.map(date))
 }
 
 /// A sub-project as a child of its parent.
 public func sub(_ project: String) -> ProjectChild {
-  .project(ProjectID(project))
+  .project(TaskID(project))
 }
 
 /// Builds a `SettingChanged` envelope with short, readable defaults; a `nil` value clears it, and a

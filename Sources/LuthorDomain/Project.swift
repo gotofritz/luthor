@@ -1,41 +1,33 @@
-/// Whether a project is handing out next actions. A dropped project hands out none and is not reviewed.
-public enum ProjectStatus: String, Codable, Sendable {
-  case active
-  case dropped
-}
-
-/// What a project holds: an open task, or an active sub-project.
+/// What a project holds: an open task, or an open sub-project.
 public enum ProjectChild: Equatable, Sendable {
   case task(TaskItem)
-  case project(ProjectID)
+  case project(TaskID)
 }
 
+/// An item that holds others, as a view of one lists it.
 public struct Project: Equatable, Sendable {
-  public let id: ProjectID
+  public let id: TaskID
   public internal(set) var title: String
   public internal(set) var kind: ProjectKind
   public internal(set) var viewID: ViewID
   /// The project it is nested in; `nil` for a top-level project.
-  public internal(set) var parentID: ProjectID?
-  /// Open tasks and active sub-projects, in the order they were added to the project.
+  public internal(set) var parentID: TaskID?
+  /// Open tasks and open sub-projects, in the order they were added to the project.
   public internal(set) var children: [ProjectChild]
   /// Plain-text notes; `nil` until it is given some.
   public internal(set) var notes: String?
   /// The day the project was created; `nil` for one created before cards showed it.
   public let createdOn: CalendarDate?
-  /// Whether the project is handing out next actions or was dropped.
-  public internal(set) var status: ProjectStatus
 
   public init(
-    id: ProjectID,
+    id: TaskID,
     title: String,
     kind: ProjectKind,
     viewID: ViewID,
-    parentID: ProjectID? = nil,
+    parentID: TaskID? = nil,
     children: [ProjectChild] = [],
     notes: String? = nil,
-    createdOn: CalendarDate? = nil,
-    status: ProjectStatus = .active
+    createdOn: CalendarDate? = nil
   ) {
     self.id = id
     self.title = title
@@ -45,7 +37,6 @@ public struct Project: Equatable, Sendable {
     self.children = children
     self.notes = notes
     self.createdOn = createdOn
-    self.status = status
   }
 
   /// Open tasks filed straight into the project, in the order they were filed.

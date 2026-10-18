@@ -56,7 +56,8 @@ struct TaskCardColumn: View {
 
   private var completedLine: some View {
     HStack {
-      Label("Completed", systemImage: "checkmark.circle.fill")
+      let isDropped = library.droppedTaskIDs.contains(task.id)
+      Label(isDropped ? "Dropped" : "Completed", systemImage: isDropped ? "xmark.circle.fill" : "checkmark.circle.fill")
         .foregroundStyle(.secondary)
       Spacer()
       if library.reopenableTaskIDs.contains(task.id) {
@@ -181,12 +182,12 @@ private struct TaskCardEditor: View {
   }
 
   private var projectTitle: String {
-    task.projectID.flatMap { id in library.knownProjects.first { $0.id == id }?.title } ?? "Inbox"
+    task.parentID.flatMap { id in library.knownProjects.first { $0.id == id }?.title } ?? "Inbox"
   }
 }
 
 /// The card of the project whose column it heads, above its tasks and sub-projects. Like a task card it
-/// shows the day the project was created, its status, the day it is to be reviewed next and its notes, not the
+/// shows the day the project was created, whether it is completed or dropped, the day it is to be reviewed next and its notes, not the
 /// title the column before it shows, until the pencil opens the editor of the title, kind and notes. A
 /// completed project shows its card too, with no pencil until it is reopened.
 struct ProjectCard: View {
@@ -214,17 +215,16 @@ struct ProjectCard: View {
       CardToolbar(day: project.createdOn, canEdit: !isCompleted) { library.editCard(.project(project.id)) }
       if isCompleted {
         HStack {
-          Label("Completed", systemImage: "checkmark.circle.fill")
-            .foregroundStyle(.secondary)
+          let isDropped = library.droppedProjectIDs.contains(project.id)
+          Label(
+            isDropped ? "Dropped" : "Completed", systemImage: isDropped ? "xmark.circle.fill" : "checkmark.circle.fill"
+          )
+          .foregroundStyle(.secondary)
           Spacer()
           if library.reopenableProjectIDs.contains(project.id) {
             Button("Reopen") { library.reopenProject(project.id) }
           }
         }
-      }
-      if project.status != .active {
-        Label(project.status.title, systemImage: project.status.symbol)
-          .font(.callout)
       }
       if let next = library.nextReviewDate(of: project.id) {
         Label("Next review \(next.isoString)", systemImage: "eyeglasses")

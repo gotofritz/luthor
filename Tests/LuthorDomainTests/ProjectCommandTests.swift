@@ -8,8 +8,8 @@ private func makeCommands() -> Commands {
 
 @Suite("When a project is created by command")
 struct CreateProjectCommandTests {
-  @Test("it writes one ProjectCreated after the highest Lamport in the log")
-  func createProjectWritesProjectCreated() throws {
+  @Test("it writes one TaskCaptured with the kind after the highest Lamport in the log")
+  func createProjectWritesTaskCaptured() throws {
     let events = try makeCommands().createProject(
       title: "  Move house ", kind: .sequential, in: .default, log: [captured("t1", "a", lamport: 4)])
 
@@ -34,9 +34,9 @@ struct MoveCommandTests {
     projectCreated("p1", "Holiday", lamport: 2),
   ]
 
-  @Test("it writes one TaskMovedToProject")
-  func moveWritesTaskMovedToProject() throws {
-    let events = try makeCommands().move(taskID: TaskID("t1"), to: ProjectID("p1"), log: Self.log)
+  @Test("it writes one TaskMoved")
+  func moveWritesTaskMoved() throws {
+    let events = try makeCommands().move(taskID: TaskID("t1"), to: TaskID("p1"), log: Self.log)
 
     #expect(events == [moved("t1", to: "p1", id: "id-1", lamport: 3)])
   }
@@ -45,7 +45,7 @@ struct MoveCommandTests {
   func movingIntoTheSameProjectWritesNothing() throws {
     let log = Self.log + [moved("t1", to: "p1", lamport: 3)]
 
-    #expect(try makeCommands().move(taskID: TaskID("t1"), to: ProjectID("p1"), log: log) == [])
+    #expect(try makeCommands().move(taskID: TaskID("t1"), to: TaskID("p1"), log: log) == [])
   }
 
   @Test("a task that is not open is refused")
@@ -53,7 +53,7 @@ struct MoveCommandTests {
     let log = Self.log + [completed("t1", lamport: 3)]
 
     #expect(throws: CommandError.noOpenTask("t1")) {
-      try makeCommands().move(taskID: TaskID("t1"), to: ProjectID("p1"), log: log)
+      try makeCommands().move(taskID: TaskID("t1"), to: TaskID("p1"), log: log)
     }
   }
 
@@ -61,48 +61,44 @@ struct MoveCommandTests {
   func movingIntoACompletedProjectIsRefused() {
     let log = Self.log + [projectCompleted("p1", lamport: 3)]
 
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().move(taskID: TaskID("t1"), to: ProjectID("p1"), log: log)
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().move(taskID: TaskID("t1"), to: TaskID("p1"), log: log)
     }
   }
 }
 
 @Suite("When a task is captured into a project")
 struct CaptureIntoProjectCommandTests {
-  @Test("it writes TaskCaptured, then TaskMovedToProject")
-  func captureIntoProjectWritesCaptureThenMove() throws {
+  @Test("it writes one TaskCaptured filed in the project")
+  func captureIntoProjectWritesOneCapture() throws {
     let log = [projectCreated("p1", "Holiday", lamport: 1)]
 
-    let events = try makeCommands().capture(title: "book flights", into: ProjectID("p1"), log: log)
+    let events = try makeCommands().capture(title: "book flights", into: TaskID("p1"), log: log)
 
-    #expect(
-      events == [
-        captured("id-2", "book flights", id: "id-1", lamport: 2),
-        moved("id-2", to: "p1", id: "id-3", lamport: 3),
-      ])
+    #expect(events == [captured("id-2", "book flights", id: "id-1", under: "p1", lamport: 2)])
   }
 
   @Test("a project that is not active is refused")
   func captureIntoAnUnknownProjectIsRefused() {
-    #expect(throws: CommandError.noActiveProject(ProjectID("p9"))) {
-      try makeCommands().capture(title: "book flights", into: ProjectID("p9"), log: [])
+    #expect(throws: CommandError.noActiveProject(TaskID("p9"))) {
+      try makeCommands().capture(title: "book flights", into: TaskID("p9"), log: [])
     }
   }
 }
 
 @Suite("When a project is completed by command")
 struct CompleteProjectCommandTests {
-  @Test("it writes one ProjectCompleted")
-  func completeProjectWritesProjectCompleted() throws {
-    let events = try makeCommands().completeProject(ProjectID("p1"), log: [projectCreated("p1", "Holiday")])
+  @Test("it writes one TaskCompleted")
+  func completeProjectWritesTaskCompleted() throws {
+    let events = try makeCommands().completeProject(TaskID("p1"), log: [projectCreated("p1", "Holiday")])
 
     #expect(events == [projectCompleted("p1", id: "id-1", lamport: 2)])
   }
 
   @Test("a project that is not active is refused")
   func completingAnUnknownProjectIsRefused() {
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().completeProject(ProjectID("p1"), log: [])
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().completeProject(TaskID("p1"), log: [])
     }
   }
 }

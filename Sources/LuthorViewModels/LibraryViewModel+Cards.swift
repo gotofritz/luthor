@@ -39,7 +39,7 @@ extension LibraryViewModel {
 
   /// Keeps what was typed on a project's card and leaves edit mode. A blank title keeps the card in edit
   /// mode and writes nothing.
-  public func saveCard(ofProject projectID: ProjectID, title: String, kind: ProjectKind, notes: String) {
+  public func saveCard(ofProject projectID: TaskID, title: String, kind: ProjectKind, notes: String) {
     guard !title.allSatisfy(\.isWhitespace) else { return }
     perform { (log) throws(CommandError) in
       var events = try commands.renameProject(projectID, to: title, log: log)

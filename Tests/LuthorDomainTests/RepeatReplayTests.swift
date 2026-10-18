@@ -210,7 +210,7 @@ struct RecurrenceReplayTests {
 
     let open = state.view(.default).openTasks
     #expect(open.map(\.id) == [TaskID("t2")])
-    #expect(open.first?.projectID == nil)
+    #expect(open.first?.parentID == nil)
   }
 }
 

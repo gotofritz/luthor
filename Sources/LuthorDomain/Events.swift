@@ -1,15 +1,26 @@
+/// Captures an item: a task, or with `kind` a project. A task gets a project the same way, by getting its
+/// first child.
 public struct TaskCaptured: Equatable, Codable, Sendable {
   public let taskID: TaskID
   public let title: String
   public let viewID: ViewID
-  /// The day it was captured; `nil` for a task captured before cards showed it.
+  /// The day it was captured; `nil` for an item captured before cards showed it.
   public let createdOn: CalendarDate?
+  /// The item it is filed in; `nil` for a top-level item, as is a parent that is not open or is in another view.
+  public let parentID: TaskID?
+  /// How it hands out its next actions when it is created as a project; `nil` for a task.
+  public let kind: ProjectKind?
 
-  public init(taskID: TaskID, title: String, viewID: ViewID, createdOn: CalendarDate? = nil) {
+  public init(
+    taskID: TaskID, title: String, viewID: ViewID, createdOn: CalendarDate? = nil, parentID: TaskID? = nil,
+    kind: ProjectKind? = nil
+  ) {
     self.taskID = taskID
     self.title = title
     self.viewID = viewID
     self.createdOn = createdOn
+    self.parentID = parentID
+    self.kind = kind
   }
 
   /// Events written before views have no `viewID`; they belong to the default view. Events written before
@@ -20,6 +31,8 @@ public struct TaskCaptured: Equatable, Codable, Sendable {
     title = try container.decode(String.self, forKey: .title)
     viewID = try container.decodeIfPresent(ViewID.self, forKey: .viewID) ?? .default
     createdOn = try container.decodeIfPresent(CalendarDate.self, forKey: .createdOn)
+    parentID = try container.decodeIfPresent(TaskID.self, forKey: .parentID)
+    kind = try container.decodeIfPresent(ProjectKind.self, forKey: .kind)
   }
 }
 
@@ -29,18 +42,11 @@ public enum EventPayload: Equatable, Sendable {
   case taskReopened(TaskReopened)
   case taskRenamed(TaskRenamed)
   case taskNoted(TaskNoted)
-  case projectCreated(ProjectCreated)
-  case taskMovedToProject(TaskMovedToProject)
-  case projectCompleted(ProjectCompleted)
-  case projectReopened(ProjectReopened)
-  case projectRenamed(ProjectRenamed)
-  case projectNoted(ProjectNoted)
-  case projectKindChanged(ProjectKindChanged)
+  case taskKindChanged(TaskKindChanged)
+  case taskMoved(TaskMoved)
   case viewCreated(ViewCreated)
   case viewRenamed(ViewRenamed)
   case taskMovedToView(TaskMovedToView)
-  case projectMovedToView(ProjectMovedToView)
-  case projectMovedToProject(ProjectMovedToProject)
   case taskPrioritized(TaskPrioritized)
   case taskEstimated(TaskEstimated)
   case settingChanged(SettingChanged)
@@ -59,15 +65,12 @@ public enum EventPayload: Equatable, Sendable {
   case unplannedTimeLogged(UnplannedTimeLogged)
   case dayReviewed(DayReviewed)
   case reviewDefaultSet(ReviewDefaultSet)
-  case projectReviewIntervalSet(ProjectReviewIntervalSet)
-  case projectReviewed(ProjectReviewed)
-  case projectDropped(ProjectDropped)
+  case reviewIntervalSet(ReviewIntervalSet)
+  case taskReviewed(TaskReviewed)
   case taskRepeatSet(TaskRepeatSet)
   case taskRecurred(TaskRecurred)
   case taskDuplicated(TaskDuplicated)
   case taskDeleted(TaskDeleted)
-  case projectDeleted(ProjectDeleted)
-  case taskPromoted(TaskPromotedToProject)
 }
 
 /// One entry in the event log: a payload plus the metadata replay orders by.
@@ -86,6 +89,7 @@ public struct EventEnvelope: Equatable, Sendable {
   }
 }
 
+/// Completes an item. A project takes the items still open in it along, all the way down.
 public struct TaskCompleted: Equatable, Codable, Sendable {
   public let taskID: TaskID
 
@@ -94,7 +98,8 @@ public struct TaskCompleted: Equatable, Codable, Sendable {
   }
 }
 
-/// Brings a completed task back, into its project if that is still active, else loose.
+/// Brings a completed or dropped item back with everything its completion or drop took along. It goes back
+/// into its parent if that is still open and in its view, else it is top-level.
 public struct TaskReopened: Equatable, Codable, Sendable {
   public let taskID: TaskID
 
@@ -111,63 +116,7 @@ public enum ProjectKind: String, Codable, Sendable {
   case sequential
 }
 
-public struct ProjectCreated: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-  public let title: String
-  public let kind: ProjectKind
-  public let viewID: ViewID
-  /// The project it is created in; `nil` for a top-level project.
-  public let parentID: ProjectID?
-  /// The day it was created; `nil` for a project created before cards showed it.
-  public let createdOn: CalendarDate?
-
-  public init(
-    projectID: ProjectID, title: String, kind: ProjectKind, viewID: ViewID, parentID: ProjectID? = nil,
-    createdOn: CalendarDate? = nil
-  ) {
-    self.projectID = projectID
-    self.title = title
-    self.kind = kind
-    self.viewID = viewID
-    self.parentID = parentID
-    self.createdOn = createdOn
-  }
-
-  /// Events written before views have no `viewID`; they belong to the default view. Events written before
-  /// nesting have no `parentID`; they are top-level. Events written before cards showed the day have no
-  /// `createdOn`.
-  public init(from decoder: any Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    projectID = try container.decode(ProjectID.self, forKey: .projectID)
-    title = try container.decode(String.self, forKey: .title)
-    kind = try container.decode(ProjectKind.self, forKey: .kind)
-    viewID = try container.decodeIfPresent(ViewID.self, forKey: .viewID) ?? .default
-    parentID = try container.decodeIfPresent(ProjectID.self, forKey: .parentID)
-    createdOn = try container.decodeIfPresent(CalendarDate.self, forKey: .createdOn)
-  }
-}
-
-/// Files a task into a project, from the inbox or from another project.
-public struct TaskMovedToProject: Equatable, Codable, Sendable {
-  public let taskID: TaskID
-  public let projectID: ProjectID
-
-  public init(taskID: TaskID, projectID: ProjectID) {
-    self.taskID = taskID
-    self.projectID = projectID
-  }
-}
-
-/// Completes a project together with the tasks still open in it.
-public struct ProjectCompleted: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-
-  public init(projectID: ProjectID) {
-    self.projectID = projectID
-  }
-}
-
-/// Gives an open task another title.
+/// Gives an open item another title.
 public struct TaskRenamed: Equatable, Codable, Sendable {
   public let taskID: TaskID
   public let title: String
@@ -178,7 +127,7 @@ public struct TaskRenamed: Equatable, Codable, Sendable {
   }
 }
 
-/// Sets the notes of an open task, or with none clears them. Notes are plain text.
+/// Sets the notes of an open item, or with none clears them. Notes are plain text.
 public struct TaskNoted: Equatable, Codable, Sendable {
   public let taskID: TaskID
   /// The notes from now on; `nil` clears them.
@@ -190,46 +139,28 @@ public struct TaskNoted: Equatable, Codable, Sendable {
   }
 }
 
-/// Gives an active project another title.
-public struct ProjectRenamed: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-  public let title: String
-
-  public init(projectID: ProjectID, title: String) {
-    self.projectID = projectID
-    self.title = title
-  }
-}
-
-/// Sets the notes of an active project, or with none clears them. Notes are plain text.
-public struct ProjectNoted: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-  /// The notes from now on; `nil` clears them.
-  public let notes: String?
-
-  public init(projectID: ProjectID, notes: String?) {
-    self.projectID = projectID
-    self.notes = notes
-  }
-}
-
-/// Makes an active project sequential or parallel.
-public struct ProjectKindChanged: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
+/// Makes an open item a sequential or a parallel project. A task it is applied to becomes a project.
+public struct TaskKindChanged: Equatable, Codable, Sendable {
+  public let taskID: TaskID
   public let kind: ProjectKind
 
-  public init(projectID: ProjectID, kind: ProjectKind) {
-    self.projectID = projectID
+  public init(taskID: TaskID, kind: ProjectKind) {
+    self.taskID = taskID
     self.kind = kind
   }
 }
 
-/// Brings a completed project back with everything that was completed along with it.
-public struct ProjectReopened: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
+/// Files an open item in another open item of its view, at the end of that item's children, which makes it a
+/// project; or with no parent makes the item top-level. Ignored for an item or a parent that is not open, a
+/// parent in another view, a parent in the item's own subtree, and an item already there.
+public struct TaskMoved: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  /// The item it is filed in from now on; `nil` makes it top-level.
+  public let parentID: TaskID?
 
-  public init(projectID: ProjectID) {
-    self.projectID = projectID
+  public init(taskID: TaskID, parentID: TaskID?) {
+    self.taskID = taskID
+    self.parentID = parentID
   }
 }
 
@@ -253,7 +184,8 @@ public struct ViewRenamed: Equatable, Codable, Sendable {
   }
 }
 
-/// Takes a task across to another view, out of its project and into that view's inbox.
+/// Takes an item across to another view, out of its parent and into that view's inbox, together with the items
+/// open in it.
 public struct TaskMovedToView: Equatable, Codable, Sendable {
   public let taskID: TaskID
   public let viewID: ViewID
@@ -261,29 +193,6 @@ public struct TaskMovedToView: Equatable, Codable, Sendable {
   public init(taskID: TaskID, viewID: ViewID) {
     self.taskID = taskID
     self.viewID = viewID
-  }
-}
-
-/// Takes a project across to another view, together with its open tasks.
-public struct ProjectMovedToView: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-  public let viewID: ViewID
-
-  public init(projectID: ProjectID, viewID: ViewID) {
-    self.projectID = projectID
-    self.viewID = viewID
-  }
-}
-
-/// Nests a project in another of its view, or with no parent makes it top-level again.
-public struct ProjectMovedToProject: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-  /// The project it is nested in from now on; `nil` makes it top-level.
-  public let parentID: ProjectID?
-
-  public init(projectID: ProjectID, parentID: ProjectID?) {
-    self.projectID = projectID
-    self.parentID = parentID
   }
 }
 

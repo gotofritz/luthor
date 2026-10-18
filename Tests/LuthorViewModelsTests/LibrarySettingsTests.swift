@@ -23,7 +23,7 @@ struct SettingsNavigationTests {
     let (library, _) = makeLibrary([
       projectCreated("p1", "Move house", lamport: 1), captured("t1", "pay rent", lamport: 2),
     ])
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     library.selection = TaskID("t1")
 
     library.show(.settings)

@@ -1,0 +1,32 @@
+# TEMPORARY: removed before the slice 14c PR is ready. Runs the build, the tests and the format check as
+# separate steps, so a lint failure does not hide compile errors, because the session writing slice 14c has no
+# Swift toolchain.
+name: scratch-14c
+
+on:
+  push:
+    branches: [feature/slice-14c-qr8ha3]
+
+permissions:
+  contents: read
+
+jobs:
+  scratch:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select the newest stable Xcode
+        run: |
+          xcode="$(ls -d /Applications/Xcode_[0-9]*.app | grep -iv beta | sort -V | tail -1)"
+          sudo xcode-select -s "$xcode"
+      - name: Build
+        if: always()
+        run: swift build --build-tests 2>&1 | tail -n 300
+      - name: Test
+        if: always()
+        run: swift test 2>&1 | grep -E "error|✘|failed|Test run|Executed|Suite .* failed" | head -n 300
+      - name: Format diff
+        if: always()
+        run: |
+          swift format --in-place --recursive Package.swift Sources Tests App
+          git diff | head -n 600

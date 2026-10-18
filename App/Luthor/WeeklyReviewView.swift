@@ -34,7 +34,6 @@ private struct ReviewProjectColumn: View {
       ForEach(library.projectReview, id: \.project.id) { item in
         HStack {
           Label(item.project.title, systemImage: item.project.kind.symbol)
-            .foregroundStyle(item.project.status == .active ? .primary : .secondary)
           Spacer()
           Text(item.nextReview.isoString)
             .font(.caption)
@@ -97,9 +96,7 @@ private struct ProjectStatusButtons: View {
   let project: Project
 
   var body: some View {
-    if project.status != .dropped {
-      Button("Drop Project", systemImage: ProjectStatus.dropped.symbol) { library.dropProject(project.id) }
-    }
+    Button("Drop Project", systemImage: "xmark.circle") { library.dropProject(project.id) }
   }
 }
 
@@ -117,9 +114,7 @@ struct ProjectReviewMenuItems: View {
           .disabled(library.reviewOverride(of: project.id) == interval)
       }
     }
-    if project.status != .dropped {
-      Button("Drop Project") { library.dropProject(project.id) }
-    }
+    Button("Drop Project") { library.dropProject(project.id) }
   }
 }
 
@@ -141,24 +136,6 @@ extension ReviewInterval {
     case 1?: "Daily"
     case 7?: "Weekly"
     case let days?: "Every \(days) days"
-    }
-  }
-}
-
-extension ProjectStatus {
-  /// "Active" or "Dropped".
-  var title: String {
-    switch self {
-    case .active: "Active"
-    case .dropped: "Dropped"
-    }
-  }
-
-  /// The SF Symbol of the status.
-  var symbol: String {
-    switch self {
-    case .active: "play.circle"
-    case .dropped: "xmark.circle"
     }
   }
 }

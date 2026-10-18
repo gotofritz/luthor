@@ -15,7 +15,7 @@ public func reviewDefaultSet(
   )
 }
 
-/// Builds a `ProjectReviewIntervalSet` envelope with short, readable defaults; a `nil` interval clears the
+/// Builds a `ReviewIntervalSet` envelope with short, readable defaults; a `nil` interval clears the
 /// project's own interval.
 public func reviewIntervalSet(
   _ project: String,
@@ -28,11 +28,11 @@ public func reviewIntervalSet(
     id: EventID(id ?? "review-interval-\(project)-\(interval.map { $0.days.map(String.init) ?? "off" } ?? "clear")"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectReviewIntervalSet(ProjectReviewIntervalSet(projectID: ProjectID(project), interval: interval))
+    payload: .reviewIntervalSet(ReviewIntervalSet(taskID: TaskID(project), interval: interval))
   )
 }
 
-/// Builds a `ProjectReviewed` envelope with short, readable defaults.
+/// Builds a `TaskReviewed` envelope with short, readable defaults.
 public func projectReviewed(
   _ project: String,
   on day: String,
@@ -44,11 +44,11 @@ public func projectReviewed(
     id: EventID(id ?? "reviewed-\(project)-\(day)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectReviewed(ProjectReviewed(projectID: ProjectID(project), date: date(day)))
+    payload: .taskReviewed(TaskReviewed(taskID: TaskID(project), date: date(day)))
   )
 }
 
-/// Builds a `ProjectDropped` envelope with short, readable defaults.
+/// Builds the `TaskDropped` envelope that drops a project, with short, readable defaults.
 public func projectDropped(
   _ project: String,
   id: String? = nil,
@@ -59,6 +59,6 @@ public func projectDropped(
     id: EventID(id ?? "drop-project-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectDropped(ProjectDropped(projectID: ProjectID(project)))
+    payload: .taskDropped(TaskDropped(taskID: TaskID(project)))
   )
 }

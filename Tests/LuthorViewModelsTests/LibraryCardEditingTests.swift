@@ -55,7 +55,7 @@ struct TaskCardEditModeTests {
   @Test("OK keeps the title, priority, estimate and notes, and leaves edit mode")
   func okKeepsEverything() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     library.selection = TaskID("t1")
     library.editCard(.task(TaskID("t1")))
 
@@ -114,7 +114,7 @@ struct TaskCardEditModeTests {
     library.selection = TaskID("t2")
     library.editCard(.task(TaskID("t2")))
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.editingCard == nil)
   }
@@ -147,10 +147,10 @@ struct ProjectCardEditModeTests {
   @Test("Edit puts it into edit mode and Cancel leaves it, writing nothing")
   func editThenCancel() {
     let (library, log) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.editCard(.project(ProjectID("p1")))
-    #expect(library.editingCard == .project(ProjectID("p1")))
+    library.editCard(.project(TaskID("p1")))
+    #expect(library.editingCard == .project(TaskID("p1")))
 
     library.cancelCardEdit()
     #expect(library.editingCard == nil)
@@ -160,10 +160,10 @@ struct ProjectCardEditModeTests {
   @Test("OK keeps the title, kind and notes, and leaves edit mode")
   func okKeepsEverything() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: ProjectID("p1"), title: "Summer", kind: .sequential, notes: "deadline in June")
+    library.saveCard(ofProject: TaskID("p1"), title: "Summer", kind: .sequential, notes: "deadline in June")
 
     #expect(library.editingCard == nil)
     #expect(library.shownProject?.title == "Summer")
@@ -174,22 +174,22 @@ struct ProjectCardEditModeTests {
   @Test("OK with a blank title writes nothing and stays in edit mode")
   func blankTitleStaysInEditMode() {
     let (library, log) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: ProjectID("p1"), title: "", kind: .sequential, notes: "x")
+    library.saveCard(ofProject: TaskID("p1"), title: "", kind: .sequential, notes: "x")
 
-    #expect(library.editingCard == .project(ProjectID("p1")))
+    #expect(library.editingCard == .project(TaskID("p1")))
     #expect(log.events == editLog)
   }
 
   @Test("opening another project leaves edit mode")
   func openingAnotherProjectLeavesEditMode() {
     let (library, _) = makeLibrary(editLog + [projectCreated("p2", "Taxes", lamport: 5)])
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
     #expect(library.editingCard == nil)
   }
@@ -198,9 +198,9 @@ struct ProjectCardEditModeTests {
   func completedProjectStaysReadOnly() {
     let (library, _) = makeLibrary(editLog + [projectCompleted("p1", lamport: 5)])
     library.showCompleted = true
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.editCard(.project(ProjectID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
     #expect(library.editingCard == nil)
   }

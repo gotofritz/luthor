@@ -12,9 +12,9 @@ public struct DueDate: Equatable, Sendable {
 }
 
 extension LibraryState {
-  /// Ignores a task that is not open.
+  /// Ignores an item that is not open.
   mutating func setDue(_ due: TaskDueSet) {
-    guard openTasks.contains(where: { $0.id == due.taskID }) else { return }
+    guard isOpen(due.taskID) else { return }
     dueDates[due.taskID] = due.date.map { DueDate(date: $0, isHard: due.isHard) }
   }
 

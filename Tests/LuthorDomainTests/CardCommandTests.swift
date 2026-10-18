@@ -70,9 +70,9 @@ struct TaskCardCommandTests {
 struct ProjectCardCommandTests {
   static let log = [projectCreated("p1", "Holiday", lamport: 1)]
 
-  @Test("renaming writes one ProjectRenamed, with the title trimmed")
+  @Test("renaming writes one TaskRenamed, with the title trimmed")
   func renameWritesProjectRenamed() throws {
-    let events = try makeCommands().renameProject(ProjectID("p1"), to: " Summer ", log: Self.log)
+    let events = try makeCommands().renameProject(TaskID("p1"), to: " Summer ", log: Self.log)
 
     #expect(events == [projectRenamed("p1", to: "Summer", id: "id-1", lamport: 2)])
   }
@@ -80,32 +80,32 @@ struct ProjectCardCommandTests {
   @Test("renaming to a blank title is refused")
   func blankRenameIsRefused() {
     #expect(throws: CommandError.blankTitle) {
-      try makeCommands().renameProject(ProjectID("p1"), to: " ", log: Self.log)
+      try makeCommands().renameProject(TaskID("p1"), to: " ", log: Self.log)
     }
   }
 
   @Test("renaming to the title it has writes nothing")
   func sameTitleWritesNothing() throws {
-    #expect(try makeCommands().renameProject(ProjectID("p1"), to: "Holiday", log: Self.log) == [])
+    #expect(try makeCommands().renameProject(TaskID("p1"), to: "Holiday", log: Self.log) == [])
   }
 
-  @Test("changing the kind writes one ProjectKindChanged")
+  @Test("changing the kind writes one TaskKindChanged")
   func kindWritesProjectKindChanged() throws {
-    let events = try makeCommands().setKind(of: ProjectID("p1"), to: .sequential, log: Self.log)
+    let events = try makeCommands().setKind(of: TaskID("p1"), to: .sequential, log: Self.log)
 
     #expect(events == [kindChanged("p1", to: .sequential, id: "id-1", lamport: 2)])
   }
 
   @Test("changing the kind to the one it has writes nothing")
   func sameKindWritesNothing() throws {
-    #expect(try makeCommands().setKind(of: ProjectID("p1"), to: .parallel, log: Self.log) == [])
+    #expect(try makeCommands().setKind(of: TaskID("p1"), to: .parallel, log: Self.log) == [])
   }
 
-  @Test("setting notes writes one ProjectNoted, trimmed; blank notes clear them")
+  @Test("setting notes writes one TaskNoted, trimmed; blank notes clear them")
   func notesWriteProjectNoted() throws {
-    let set = try makeCommands().setNotes(ofProject: ProjectID("p1"), to: " see https://example.com ", log: Self.log)
+    let set = try makeCommands().setNotes(ofProject: TaskID("p1"), to: " see https://example.com ", log: Self.log)
     let cleared = try makeCommands().setNotes(
-      ofProject: ProjectID("p1"), to: " ", log: Self.log + [projectNoted("p1", "x", lamport: 2)])
+      ofProject: TaskID("p1"), to: " ", log: Self.log + [projectNoted("p1", "x", lamport: 2)])
 
     #expect(set == [projectNoted("p1", "see https://example.com", id: "id-1", lamport: 2)])
     #expect(cleared == [projectNoted("p1", nil, id: "id-1", lamport: 3)])
@@ -115,14 +115,14 @@ struct ProjectCardCommandTests {
   func completedProjectIsRefused() {
     let log = Self.log + [projectCompleted("p1", lamport: 2)]
 
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().renameProject(ProjectID("p1"), to: "x", log: log)
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().renameProject(TaskID("p1"), to: "x", log: log)
     }
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().setKind(of: ProjectID("p1"), to: .sequential, log: log)
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().setKind(of: TaskID("p1"), to: .sequential, log: log)
     }
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().setNotes(ofProject: ProjectID("p1"), to: "x", log: log)
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().setNotes(ofProject: TaskID("p1"), to: "x", log: log)
     }
   }
 }

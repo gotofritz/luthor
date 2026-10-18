@@ -65,7 +65,7 @@ struct SomedayNextActionTests {
       prioritized("t1", as: .someday, lamport: 4),
     ])
 
-    #expect(state.view(.default).nextActions(of: ProjectID("p1")) == [])
+    #expect(state.view(.default).nextActions(of: TaskID("p1")) == [])
     #expect(state.view(.default).nextActions == [])
   }
 

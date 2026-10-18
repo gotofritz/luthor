@@ -21,11 +21,11 @@ struct ProjectReviewLineTests {
 
     #expect(
       own
-        == #"{"data":{"interval":3,"projectID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"ProjectReviewIntervalSet"}"#
+        == #"{"data":{"interval":3,"taskID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"ReviewIntervalSet"}"#
     )
     #expect(
       cleared
-        == #"{"data":{"projectID":"p1"},"device":"mac","id":"e2","lamport":2,"type":"ProjectReviewIntervalSet"}"#)
+        == #"{"data":{"taskID":"p1"},"device":"mac","id":"e2","lamport":2,"type":"ReviewIntervalSet"}"#)
   }
 
   @Test("a review names the project and the day")
@@ -34,15 +34,15 @@ struct ProjectReviewLineTests {
 
     #expect(
       line
-        == #"{"data":{"date":"2026-10-19","projectID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"ProjectReviewed"}"#
+        == #"{"data":{"date":"2026-10-19","taskID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"TaskReviewed"}"#
     )
   }
 
-  @Test("a drop names the project")
+  @Test("a drop of a project is a TaskDropped naming it")
   func aDropNamesTheProject() throws {
     let drop = try EventLine.encode(projectDropped("p1", id: "e3", lamport: 3))
 
-    #expect(drop == #"{"data":{"projectID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"ProjectDropped"}"#)
+    #expect(drop == #"{"data":{"taskID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"TaskDropped"}"#)
   }
 
   @Test(

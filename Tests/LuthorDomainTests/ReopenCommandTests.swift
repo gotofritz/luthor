@@ -41,17 +41,17 @@ struct ReopenTaskCommandTests {
 struct ReopenProjectCommandTests {
   static let log = [projectCreated("p1", "Holiday", lamport: 1), projectCompleted("p1", lamport: 2)]
 
-  @Test("it writes one ProjectReopened")
+  @Test("it writes one TaskReopened")
   func reopenWritesProjectReopened() throws {
-    let events = try makeCommands().reopenProject(ProjectID("p1"), log: Self.log)
+    let events = try makeCommands().reopenProject(TaskID("p1"), log: Self.log)
 
     #expect(events == [projectReopened("p1", id: "id-1", lamport: 3)])
   }
 
   @Test("a project that is active is refused")
   func reopeningAnActiveProjectIsRefused() {
-    #expect(throws: CommandError.noCompletedProject(ProjectID("p1"))) {
-      try makeCommands().reopenProject(ProjectID("p1"), log: [projectCreated("p1", "Holiday")])
+    #expect(throws: CommandError.noCompletedProject(TaskID("p1"))) {
+      try makeCommands().reopenProject(TaskID("p1"), log: [projectCreated("p1", "Holiday")])
     }
   }
 
@@ -62,8 +62,8 @@ struct ReopenProjectCommandTests {
       projectCompleted("p1", lamport: 3),
     ]
 
-    #expect(throws: CommandError.noCompletedProject(ProjectID("p2"))) {
-      try makeCommands().reopenProject(ProjectID("p2"), log: log)
+    #expect(throws: CommandError.noCompletedProject(TaskID("p2"))) {
+      try makeCommands().reopenProject(TaskID("p2"), log: log)
     }
   }
 }

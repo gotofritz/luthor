@@ -6,34 +6,32 @@ public protocol IDGenerator {
 public enum CommandError: Error, Equatable {
   case blankTitle
   case noOpenTask(String)
-  case noActiveProject(ProjectID)
+  case noActiveProject(TaskID)
   /// The task is open, or was completed along with its project, so it cannot be reopened on its own.
   case noCompletedTask(TaskID)
   /// The project is active, or was completed along with another, so it cannot be reopened on its own.
-  case noCompletedProject(ProjectID)
+  case noCompletedProject(TaskID)
   case noView(ViewID)
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.
-  case otherView(TaskID, ProjectID)
+  case otherView(TaskID, TaskID)
   /// The project and the one it would be nested in are in different views.
-  case projectInOtherView(ProjectID, parent: ProjectID)
+  case projectInOtherView(TaskID, parent: TaskID)
   /// A project cannot be nested under itself or one of its own sub-projects.
-  case nestedUnderItself(ProjectID)
+  case nestedUnderItself(TaskID)
   /// A someday task is not committed to; give it another priority before planning it for a day.
   case someday(TaskID)
-  /// The task is neither open nor completed: it never existed, or it was dropped.
+  /// The task is neither open nor completed: it never existed, or it was dropped or deleted.
   case unknownTask(TaskID)
   case noTag(TagID)
   /// A view has a tag with this name already, in any case.
   case duplicateTagName(String)
   /// The task and the tag are in different views; a tag belongs to one view.
   case tagInOtherView(TaskID, TagID)
-  /// The project was dropped, so it is not reviewed.
-  case projectDropped(ProjectID)
   /// The task does not repeat, so there is no occurrence to skip.
   case notRepeating(TaskID)
-  /// The project is neither active nor completed: it never existed, or it was deleted.
-  case unknownProject(ProjectID)
+  /// The project does not exist: it never did, or it was deleted.
+  case unknownProject(TaskID)
 }
 
 /// Turns user intentions into new events, given the current log.
@@ -63,13 +61,12 @@ public struct Commands {
   /// carry the quick-capture syntax, as `capture(title:in:log:)` does.
   public func capture(
     title: String,
-    into projectID: ProjectID,
+    into projectID: TaskID,
     today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let project = try activeProject(projectID, in: LibraryState.replay(log))
-    let (events, taskID) = try captureEvents(title: title, viewID: project.viewID, today: today, log: log)
-    return try events + move(taskID: taskID, to: projectID, log: log + events)
+    return try captureEvents(title: title, viewID: project.viewID, parentID: projectID, today: today, log: log).events
   }
 
   /// Completes the open task with exactly this ID. If it repeats, the next task follows in the same command,
@@ -94,33 +91,32 @@ public struct Commands {
     let title = try Self.named(title)
     try requireView(viewID, in: LibraryState.replay(log))
     let eventID = EventID(ids.next())
-    let created = ProjectCreated(
-      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: viewID, createdOn: today)
-    return [envelope(eventID, .projectCreated(created), log: log)]
+    let created = TaskCaptured(taskID: TaskID(ids.next()), title: title, viewID: viewID, createdOn: today, kind: kind)
+    return [envelope(eventID, .taskCaptured(created), log: log)]
   }
 
   /// Creates a project inside the active project `parentID`, in the parent's view.
   public func createProject(
     title: String,
     kind: ProjectKind,
-    under parentID: ProjectID,
+    under parentID: TaskID,
     today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
     let parent = try activeProject(parentID, in: LibraryState.replay(log))
     let eventID = EventID(ids.next())
-    let created = ProjectCreated(
-      projectID: ProjectID(ids.next()), title: title, kind: kind, viewID: parent.viewID, parentID: parentID,
-      createdOn: today)
-    return [envelope(eventID, .projectCreated(created), log: log)]
+    let created = TaskCaptured(
+      taskID: TaskID(ids.next()), title: title, viewID: parent.viewID, createdOn: today, parentID: parentID,
+      kind: kind)
+    return [envelope(eventID, .taskCaptured(created), log: log)]
   }
 
-  /// Nests the active project `projectID` in the active project `parentID` of its view; with no parent,
+  /// Nests the open project `projectID` in the open project `parentID` of its view; with no parent,
   /// makes it top-level. Nesting a project where it already is writes nothing.
   public func move(
-    projectID: ProjectID,
-    under parentID: ProjectID?,
+    projectID: TaskID,
+    under parentID: TaskID?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
@@ -131,8 +127,8 @@ public struct Commands {
       guard !state.subtree(of: projectID).contains(parentID) else { throw .nestedUnderItself(projectID) }
     }
     guard project.parentID != parentID else { return [] }
-    let moved = ProjectMovedToProject(projectID: projectID, parentID: parentID)
-    return [envelope(EventID(ids.next()), .projectMovedToProject(moved), log: log)]
+    let moved = TaskMoved(taskID: projectID, parentID: parentID)
+    return [envelope(EventID(ids.next()), .taskMoved(moved), log: log)]
   }
 
   public func createView(name: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
@@ -166,7 +162,7 @@ public struct Commands {
   /// Takes the active project `projectID` and its open tasks across to the view `viewID`. Moving a
   /// project into the view it is in writes nothing.
   public func move(
-    projectID: ProjectID,
+    projectID: TaskID,
     toView viewID: ViewID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
@@ -174,24 +170,24 @@ public struct Commands {
     let project = try activeProject(projectID, in: state)
     try requireView(viewID, in: state)
     guard project.viewID != viewID else { return [] }
-    let moved = ProjectMovedToView(projectID: projectID, viewID: viewID)
-    return [envelope(EventID(ids.next()), .projectMovedToView(moved), log: log)]
+    let moved = TaskMovedToView(taskID: projectID, viewID: viewID)
+    return [envelope(EventID(ids.next()), .taskMovedToView(moved), log: log)]
   }
 
   /// Files the open task `taskID` into the active project `projectID`, which must be in the task's view.
   /// Filing a task where it already is writes nothing.
   public func move(
     taskID: TaskID,
-    to projectID: ProjectID,
+    to projectID: TaskID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
     guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
     let project = try activeProject(projectID, in: state)
     guard task.viewID == project.viewID else { throw .otherView(taskID, projectID) }
-    guard task.projectID != projectID else { return [] }
-    let moved = TaskMovedToProject(taskID: taskID, projectID: projectID)
-    return [envelope(EventID(ids.next()), .taskMovedToProject(moved), log: log)]
+    guard task.parentID != projectID else { return [] }
+    let moved = TaskMoved(taskID: taskID, parentID: projectID)
+    return [envelope(EventID(ids.next()), .taskMoved(moved), log: log)]
   }
 
   /// Gives the open task `taskID` a priority, or with `nil` clears it. Giving a task the priority it has
@@ -251,16 +247,16 @@ public struct Commands {
     return try changeSetting(.defaultViewID, to: viewID.rawValue, log: log)
   }
 
-  public func completeProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  public func completeProject(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     try requireActive(projectID, log: log)
-    return [envelope(EventID(ids.next()), .projectCompleted(ProjectCompleted(projectID: projectID)), log: log)]
+    return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: projectID)), log: log)]
   }
 
-  private func requireActive(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) {
+  private func requireActive(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) {
     _ = try activeProject(projectID, in: LibraryState.replay(log))
   }
 
-  func activeProject(_ projectID: ProjectID, in state: LibraryState) throws(CommandError) -> Project {
+  func activeProject(_ projectID: TaskID, in state: LibraryState) throws(CommandError) -> Project {
     guard let project = state.projects.first(where: { $0.id == projectID }) else { throw .noActiveProject(projectID) }
     return project
   }
@@ -275,11 +271,12 @@ public struct Commands {
     if let existing = state.view(named: name), existing.id != viewID { throw .duplicateViewName(name) }
   }
 
-  /// Captures `raw` (parsed for its quick-capture tags) into `viewID`, with a `TaskPrioritized` and/or a
-  /// `TaskEstimated` event appended when the tags carry one.
+  /// Captures `raw` (parsed for its quick-capture tags) into `viewID`, filed in `parentID` if there is one, with
+  /// a `TaskPrioritized` and/or a `TaskEstimated` event appended when the tags carry one.
   private func captureEvents(
     title raw: String,
     viewID: ViewID,
+    parentID: TaskID? = nil,
     today: CalendarDate?,
     log: [EventEnvelope]
   ) throws(CommandError) -> (events: [EventEnvelope], taskID: TaskID) {
@@ -287,7 +284,7 @@ public struct Commands {
     let title = try Self.named(parsed.title)
     let eventID = EventID(ids.next())
     let taskID = TaskID(ids.next())
-    let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID, createdOn: today)
+    let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID, createdOn: today, parentID: parentID)
     var events = [envelope(eventID, .taskCaptured(captured), log: log)]
     if let priority = parsed.priority {
       events += try prioritize(taskID: taskID, as: priority, log: log + events)

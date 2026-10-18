@@ -64,7 +64,7 @@ struct ViewCaptureCommandTests {
 
   @Test("a task captured into a project takes the project's view")
   func captureIntoAProjectTakesItsView() throws {
-    let events = try commands().capture(title: "draft", into: ProjectID("wp"), log: Self.log)
+    let events = try commands().capture(title: "draft", into: TaskID("wp"), log: Self.log)
 
     #expect(events.first == captured("id-2", "draft", id: "id-1", view: "work", lamport: 3))
   }
@@ -98,8 +98,8 @@ struct CrossViewCommandTests {
 
   @Test("filing the task into the project is refused")
   func filingAcrossViewsIsRefused() {
-    #expect(throws: CommandError.otherView(TaskID("t1"), ProjectID("wp"))) {
-      try commands().move(taskID: TaskID("t1"), to: ProjectID("wp"), log: Self.log)
+    #expect(throws: CommandError.otherView(TaskID("t1"), TaskID("wp"))) {
+      try commands().move(taskID: TaskID("t1"), to: TaskID("wp"), log: Self.log)
     }
   }
 
@@ -110,9 +110,9 @@ struct CrossViewCommandTests {
     #expect(events == [movedToView("t1", toView: "work", id: "id-1", lamport: 5)])
   }
 
-  @Test("moving the project to the default view writes ProjectMovedToView")
+  @Test("moving the project to the default view writes TaskMovedToView")
   func moveProjectToViewWritesProjectMovedToView() throws {
-    let events = try commands().move(projectID: ProjectID("wp"), toView: .default, log: Self.log)
+    let events = try commands().move(projectID: TaskID("wp"), toView: .default, log: Self.log)
 
     #expect(events == [projectMovedToView("wp", toView: "default", id: "id-1", lamport: 5)])
   }
@@ -120,7 +120,7 @@ struct CrossViewCommandTests {
   @Test("moving either into the view it is in writes nothing")
   func movingWithinAViewWritesNothing() throws {
     #expect(try commands().move(taskID: TaskID("t1"), toView: .default, log: Self.log).isEmpty)
-    #expect(try commands().move(projectID: ProjectID("wp"), toView: ViewID("work"), log: Self.log).isEmpty)
+    #expect(try commands().move(projectID: TaskID("wp"), toView: ViewID("work"), log: Self.log).isEmpty)
   }
 
   @Test("moving to an unknown view, or something not open, is refused")
@@ -131,13 +131,13 @@ struct CrossViewCommandTests {
       try commands.move(taskID: TaskID("t1"), toView: ViewID("v9"), log: Self.log)
     }
     #expect(throws: CommandError.noView(ViewID("v9"))) {
-      try commands.move(projectID: ProjectID("wp"), toView: ViewID("v9"), log: Self.log)
+      try commands.move(projectID: TaskID("wp"), toView: ViewID("v9"), log: Self.log)
     }
     #expect(throws: CommandError.noOpenTask("t9")) {
       try commands.move(taskID: TaskID("t9"), toView: .default, log: Self.log)
     }
-    #expect(throws: CommandError.noActiveProject(ProjectID("p9"))) {
-      try commands.move(projectID: ProjectID("p9"), toView: .default, log: Self.log)
+    #expect(throws: CommandError.noActiveProject(TaskID("p9"))) {
+      try commands.move(projectID: TaskID("p9"), toView: .default, log: Self.log)
     }
   }
 }

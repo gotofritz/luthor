@@ -55,7 +55,7 @@ struct WeeklyReviewPlaceTests {
 
     library.show(.weeklyReview)
 
-    #expect(library.reviewProjectID == ProjectID("p1"))
+    #expect(library.reviewProjectID == TaskID("p1"))
     #expect(library.tasks.map(\.title) == ["pack boxes", "book a van"])
     #expect(library.nextActions == Set(library.tasks.map(\.id)))
   }
@@ -66,9 +66,9 @@ struct WeeklyReviewPlaceTests {
     library.show(.weeklyReview)
     library.selection = TaskID("t1")
 
-    library.showReviewProject(ProjectID("p2"))
+    library.showReviewProject(TaskID("p2"))
 
-    #expect(library.reviewProjectID == ProjectID("p2"))
+    #expect(library.reviewProjectID == TaskID("p2"))
     #expect(library.tasks.isEmpty)
     #expect(library.selection == nil)
   }
@@ -79,7 +79,7 @@ struct WeeklyReviewPlaceTests {
       reviewable + [
         EventEnvelope(
           id: EventID("seq-p1"), deviceID: DeviceID("mac"), lamport: 4,
-          payload: .projectKindChanged(ProjectKindChanged(projectID: ProjectID("p1"), kind: .sequential)))
+          payload: .taskKindChanged(TaskKindChanged(taskID: TaskID("p1"), kind: .sequential)))
       ]
     let (library, _) = makeLibrary(events)
 
@@ -122,17 +122,17 @@ struct WeeklyReviewPlaceTests {
   func leavingKeepsTheProjectPicked() {
     let (library, _) = makeLibrary(reviewable)
     library.show(.weeklyReview)
-    library.showReviewProject(ProjectID("p2"))
+    library.showReviewProject(TaskID("p2"))
 
     library.show(.today)
-    #expect(library.reviewProjectID == ProjectID("p2"))
+    #expect(library.reviewProjectID == TaskID("p2"))
     library.show(.weeklyReview)
-    #expect(library.reviewProjectID == ProjectID("p2"))
+    #expect(library.reviewProjectID == TaskID("p2"))
 
     library.showView(ViewID("work"))
     library.show(.weeklyReview)
     #expect(library.projectReview.map(\.project.title) == ["Launch"])
-    #expect(library.reviewProjectID == ProjectID("w1"))
+    #expect(library.reviewProjectID == TaskID("w1"))
   }
 }
 
@@ -147,7 +147,7 @@ struct MarkProjectReviewedViewModelTests {
     library.markProjectReviewed()
 
     #expect(library.projectReview.map(\.project.title) == ["Learn Swift"])
-    #expect(library.reviewProjectID == ProjectID("p2"))
+    #expect(library.reviewProjectID == TaskID("p2"))
     #expect(log.events.last == projectReviewed("p1", on: "2026-10-21", id: "id-1", lamport: 4))
   }
 
@@ -155,10 +155,10 @@ struct MarkProjectReviewedViewModelTests {
   func markingTheLastProject() {
     let (library, _) = makeLibrary(reviewable)
     library.show(.weeklyReview)
-    library.showReviewProject(ProjectID("p2"))
+    library.showReviewProject(TaskID("p2"))
 
     library.markProjectReviewed()
-    #expect(library.reviewProjectID == ProjectID("p1"))
+    #expect(library.reviewProjectID == TaskID("p1"))
 
     library.markProjectReviewed()
     #expect(library.projectReview.isEmpty)
@@ -171,11 +171,11 @@ struct MarkProjectReviewedViewModelTests {
     let (library, _) = makeLibrary(events, today: date("2026-10-22"))
     library.show(.weeklyReview)
     #expect(library.projectReview.map(\.project.title) == ["Move house", "Learn Swift", "Taxes"])
-    library.showReviewProject(ProjectID("p2"))
+    library.showReviewProject(TaskID("p2"))
 
     library.markProjectReviewed()
 
-    #expect(library.reviewProjectID == ProjectID("p4"))
+    #expect(library.reviewProjectID == TaskID("p4"))
   }
 
   @Test("with no project picked it writes nothing")
@@ -198,7 +198,7 @@ struct MarkProjectReviewedViewModelTests {
 
     #expect(log.events.count == reviewable.count + 1)
     #expect(library.projectReview.map(\.project.title) == ["Learn Swift"])
-    #expect(library.reviewProjectID == ProjectID("p2"))
+    #expect(library.reviewProjectID == TaskID("p2"))
   }
 }
 
@@ -210,9 +210,9 @@ struct ProjectReviewSettingsViewModelTests {
     let (library, _) = makeLibrary(reviewable)
 
     #expect(library.reviewDefault == .every(days: 7))
-    #expect(library.reviewInterval(of: ProjectID("p1")) == .every(days: 7))
-    #expect(library.reviewOverride(of: ProjectID("p1")) == nil)
-    #expect(library.nextReviewDate(of: ProjectID("p1")) == date("2026-10-19"))
+    #expect(library.reviewInterval(of: TaskID("p1")) == .every(days: 7))
+    #expect(library.reviewOverride(of: TaskID("p1")) == nil)
+    #expect(library.nextReviewDate(of: TaskID("p1")) == date("2026-10-19"))
   }
 
   @Test("setting the default changes the list")
@@ -225,7 +225,7 @@ struct ProjectReviewSettingsViewModelTests {
 
     library.setReviewDefault(.off)
     #expect(library.reviewDefault == .off)
-    #expect(library.nextReviewDate(of: ProjectID("p1")) == nil)
+    #expect(library.nextReviewDate(of: TaskID("p1")) == nil)
   }
 
   @Test("a project's own interval beats the default, and clearing it falls back")
@@ -233,33 +233,35 @@ struct ProjectReviewSettingsViewModelTests {
     let (library, _) = makeLibrary(reviewable)
     library.setReviewDefault(.off)
 
-    library.setReviewInterval(of: ProjectID("p2"), to: .every(days: 2))
-    #expect(library.reviewOverride(of: ProjectID("p2")) == .every(days: 2))
+    library.setReviewInterval(of: TaskID("p2"), to: .every(days: 2))
+    #expect(library.reviewOverride(of: TaskID("p2")) == .every(days: 2))
     #expect(library.projectReview.map(\.project.title) == ["Learn Swift"])
 
-    library.setReviewInterval(of: ProjectID("p2"), to: nil)
-    #expect(library.reviewOverride(of: ProjectID("p2")) == nil)
+    library.setReviewInterval(of: TaskID("p2"), to: nil)
+    #expect(library.reviewOverride(of: TaskID("p2")) == nil)
     #expect(library.projectReview.isEmpty)
   }
 
-  @Test("dropping a project changes its status and takes it out of the review")
-  func droppingAProjectChangesItsStatus() {
+  @Test("dropping a project takes it out of the projects and the review, and lists it as dropped")
+  func droppingAProjectTakesItOut() {
     let (library, _) = makeLibrary(reviewable)
-    func status() -> ProjectStatus? { library.projects.first { $0.id == ProjectID("p1") }?.status }
 
-    library.dropProject(ProjectID("p1"))
+    library.dropProject(TaskID("p1"))
 
-    #expect(status() == .dropped)
+    #expect(!library.projects.contains { $0.id == TaskID("p1") })
     #expect(library.projectReview.map(\.project.title) == ["Learn Swift"])
+    library.showCompleted = true
+    library.show(.projects)
+    #expect(library.droppedProjectIDs == [TaskID("p1")])
   }
 
   @Test("a dropped project hands out no next actions")
   func aDroppedProjectHandsOutNoNextActions() {
     let (library, _) = makeLibrary(reviewable)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     #expect(library.nextActions == [TaskID("t1"), TaskID("t2")])
 
-    library.dropProject(ProjectID("p1"))
+    library.dropProject(TaskID("p1"))
 
     #expect(library.nextActions.isEmpty)
   }

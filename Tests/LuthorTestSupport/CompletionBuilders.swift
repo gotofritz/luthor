@@ -15,7 +15,7 @@ public func reopened(
   )
 }
 
-/// Builds a `ProjectReopened` envelope with short, readable defaults.
+/// Builds the `TaskReopened` envelope that reopens a project, with short, readable defaults.
 public func projectReopened(
   _ project: String,
   id: String? = nil,
@@ -26,6 +26,6 @@ public func projectReopened(
     id: EventID(id ?? "reopen-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectReopened(ProjectReopened(projectID: ProjectID(project)))
+    payload: .taskReopened(TaskReopened(taskID: TaskID(project)))
   )
 }

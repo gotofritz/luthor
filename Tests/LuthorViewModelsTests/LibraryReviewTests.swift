@@ -247,7 +247,7 @@ struct EstimateHistoryViewModelTests {
     ])
 
     #expect(
-      library.estimateHistory(ofProject: ProjectID("p1"))
+      library.estimateHistory(ofProject: TaskID("p1"))
         == EstimateHistory(estimatedMinutes: 30, loggedMinutes: 45, taskCount: 1))
   }
 }

@@ -64,7 +64,7 @@ struct ColumnBrowserView: View {
 
 /// What a click in a column picks.
 private enum ColumnSelection: Hashable {
-  case project(ProjectID)
+  case project(TaskID)
   case task(TaskID)
 }
 
@@ -177,11 +177,11 @@ private struct ProjectRow: View {
     HStack {
       Label(project.title, systemImage: project.kind.symbol)
         .strikethrough(isCompleted)
-        .foregroundStyle(isCompleted || project.status != .active ? .secondary : .primary)
-      if project.status != .active {
-        Image(systemName: project.status.symbol)
+        .foregroundStyle(isCompleted ? .secondary : .primary)
+      if library.droppedProjectIDs.contains(project.id) {
+        Image(systemName: "xmark.circle")
           .foregroundStyle(.secondary)
-          .help(project.status.title)
+          .help("Dropped")
       }
       Spacer()
       Image(systemName: "chevron.right")
@@ -286,7 +286,7 @@ private struct TaskRow: View {
       Button {
         library.reopen(task.id)
       } label: {
-        Image(systemName: "checkmark.circle.fill")
+        Image(systemName: library.droppedTaskIDs.contains(task.id) ? "xmark.circle.fill" : "checkmark.circle.fill")
       }
       .buttonStyle(.plain)
       .disabled(!library.reopenableTaskIDs.contains(task.id))
