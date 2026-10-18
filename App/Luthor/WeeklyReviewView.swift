@@ -67,7 +67,7 @@ private struct ReviewProjectDetail: View {
       Divider()
       VStack(alignment: .leading, spacing: 10) {
         Button("Mark Reviewed", systemImage: "checkmark.circle") { library.markProjectReviewed() }
-          .help("Review the next project (⇧⌘R)")
+          .help("Mark this project reviewed and pick the next one (⇧⌘R)")
         Picker("Review", selection: ownInterval) {
           Text("Default (\(library.reviewDefault.title))").tag(ReviewInterval?.none)
           ForEach(ReviewInterval.options(including: library.reviewOverride(of: project.id)), id: \.self) { interval in
