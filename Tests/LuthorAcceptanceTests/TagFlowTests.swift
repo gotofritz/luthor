@@ -122,9 +122,13 @@ struct CandidateFilterFlowTests {
     defer { dir.remove() }
     let url = dir.file("events.jsonl")
     let library = launchApp(on: url)
-    library.capture("call bank !a")
-    library.capture("write report !b")
-    library.tagTask(try library.task("call bank"), named: "calls")
+    library.capture("call bank")
+    library.capture("write report")
+    let bank = try library.task("call bank")
+    let report = try library.task("write report")
+    library.prioritize(bank, as: .critical)
+    library.prioritize(report, as: .important)
+    library.tagTask(bank, named: "calls")
     library.show(.today)
     #expect(library.plan.candidates.map(\.task.title) == ["call bank", "write report"])
     let calls = try #require(library.tags.first).id
@@ -143,9 +147,13 @@ struct CandidateFilterFlowTests {
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
     let taxes = try library.createProject("taxes", kind: .parallel)
-    library.capture("call bank !a")
-    library.capture("write report !b")
-    library.file(try library.task("write report"), into: taxes)
+    library.capture("call bank")
+    library.capture("write report")
+    let bank = try library.task("call bank")
+    let report = try library.task("write report")
+    library.prioritize(bank, as: .critical)
+    library.prioritize(report, as: .important)
+    library.file(report, into: taxes)
     library.show(.today)
 
     library.candidateFilter = TaskFilter(priority: .critical)
