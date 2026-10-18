@@ -66,7 +66,11 @@ struct ColumnView: View {
         return library.selection.map(ColumnSelection.task) ?? .header
       },
       set: { picked in
-        if let picked { choose(picked) }
+        if let picked {
+          choose(picked)
+        } else {
+          library.deselectColumn(of: column.parentID)
+        }
       }
     )
   }

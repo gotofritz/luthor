@@ -41,6 +41,20 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.deleteNote(taskID: itemID, at: position, log: log) }
   }
 
+  /// What a click on the empty part of a column does: the column lists the children of the project
+  /// `parentID`, or the top-level projects for `nil`. Everything beyond it closes, and the first column leaves
+  /// no project shown; otherwise the project is shown with no task picked.
+  public func deselectColumn(of parentID: TaskID?) {
+    guard let parentID else {
+      sidebarSelection = .inbox
+      selection = nil
+      editingCard = nil
+      present()
+      return
+    }
+    open(.project(parentID))
+  }
+
   /// The card the last column shows: the task picked, else the project the columns lead to; `nil` when there
   /// is neither.
   public var cardTarget: CardTarget? {

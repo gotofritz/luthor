@@ -348,6 +348,9 @@ appears to its right, and so on down the tree.
   choice beside it: a task, a parallel project or a sequential project (the
   first column offers only the two projects, which are top-level there).
   Return adds and keeps the field open for the next one; Escape closes it
+- Clicking the empty part of a column closes every column to its right: in the
+  first column no project is open any more, in a later one its project is
+  shown with no task picked
 - Clicking an item in a column that is partly out of view scrolls the
   columns so that the column shows in full
 - Nest a project by dragging it onto another, or onto a column to move it

@@ -193,4 +193,40 @@ struct CardColumnViewModelTests {
 
     #expect(library.cardTarget == .task(TaskID("t9")))
   }
+
+  @Test("deselecting in the first column closes every project")
+  func deselectingTheFirstColumnClosesEveryProject() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p2")))
+
+    library.deselectColumn(of: nil)
+
+    #expect(library.columns.map(\.id) == ["top"])
+    #expect(library.path == [])
+    #expect(library.section == .projects)
+    #expect(library.cardTarget == nil)
+  }
+
+  @Test("deselecting in a later column closes what lies beyond its project")
+  func deselectingALaterColumnClosesTheColumnsBeyond() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p2")))
+
+    library.deselectColumn(of: TaskID("p1"))
+
+    #expect(library.columns.map(\.id) == ["top", "project-p1"])
+    #expect(library.cardTarget == .project(TaskID("p1")))
+  }
+
+  @Test("deselecting in the last column drops the task picked")
+  func deselectingTheLastColumnDropsTheTask() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+    library.selection = TaskID("t1")
+
+    library.deselectColumn(of: TaskID("p1"))
+
+    #expect(library.selection == nil)
+    #expect(library.cardTarget == .project(TaskID("p1")))
+  }
 }

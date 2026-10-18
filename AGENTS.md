@@ -197,7 +197,7 @@ Sources/
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
                              Add Tasks in LibraryViewModel+Structure.swift, adding a task or project from a column's plus button, notes
-                             on a card and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
+                             on a card, deselecting a column and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)

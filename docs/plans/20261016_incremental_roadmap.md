@@ -992,3 +992,6 @@ Miller column rework. No new event: the notes stay one plain text.
    also goes through the view model (`open`), which clears the task picked
 5. **Clicking a column scrolls it fully into view**, by the least scroll
    that does it
+6. **Clicking the empty part of a column closes what lies beyond it**, the
+   same as picking nothing there. In the first column that leaves no project
+   shown; in a later one the column's project is shown with no task picked
