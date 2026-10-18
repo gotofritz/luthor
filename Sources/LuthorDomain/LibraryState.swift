@@ -122,14 +122,10 @@ public struct LibraryState: Equatable, Sendable {
     switch payload {
     case .taskCaptured(let captured):
       capture(captured)
-    case .taskCompleted(let completed):
-      complete(completed.taskID)
-    case .taskReopened(let reopened):
-      reopen(reopened.taskID)
+    case .taskCompleted, .taskReopened, .projectReopened:
+      applyCompletion(payload)
     case .taskRenamed, .taskNoted, .projectRenamed, .projectNoted, .projectKindChanged:
       applyCardEdit(payload)
-    case .projectReopened(let reopened):
-      reopen(reopened.projectID)
     case .projectCreated(let created):
       create(created)
     case .taskMovedToProject(let moved):
@@ -168,6 +164,8 @@ public struct LibraryState: Equatable, Sendable {
       applyProjectReview(payload)
     case .taskRepeatSet, .taskRecurred:
       applyRepeat(payload)
+    case .taskDuplicated, .taskDeleted, .projectDeleted, .taskPromoted:
+      applyStructure(payload)
     }
   }
 

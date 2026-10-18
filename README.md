@@ -92,6 +92,12 @@ counted from the due date or from the day it is done. Completing it makes the
 next one, due by the rule; Skip This One passes over one occurrence, Stop
 Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 
+A task can be duplicated (Duplicate in its context menu, or ⇧⌘D): the copy has the
+same title, notes, priority, estimate, due date, tags and repeat, in the same project, and is planned for no
+day. Add Tasks (on its card or in its context menu) turns a task into a project that you then add tasks to,
+keeping its title and notes. Delete Permanently… (context menu, after a confirmation) removes a task, or a
+project with its sub-projects and tasks, completed ones too, for good, where dropping only gives it up.
+
 Calendar (⇧⌘C) lists the days as rows, from two months back to a year ahead,
 Sundays tinted, with a mark on a day that has tasks planned for it and another
 on a day that has tasks due on it. Click a day to list its tasks in the next

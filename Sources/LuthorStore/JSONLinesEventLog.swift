@@ -90,6 +90,10 @@ private struct EventLineDTO: Codable {
     case projectDropped = "ProjectDropped"
     case taskRepeatSet = "TaskRepeatSet"
     case taskRecurred = "TaskRecurred"
+    case taskDuplicated = "TaskDuplicated"
+    case taskDeleted = "TaskDeleted"
+    case projectDeleted = "ProjectDeleted"
+    case taskPromoted = "TaskPromotedToProject"
   }
 
   init(from decoder: any Decoder) throws {
@@ -131,7 +135,8 @@ private struct EventLineDTO: Codable {
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .projectReviewIntervalSet,
-        .projectReviewed, .projectDropped, .taskRepeatSet, .taskRecurred:
+        .projectReviewed, .projectDropped, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted,
+        .projectDeleted, .taskPromoted:
         try Self.laterPayload(type, in: container)
       }
     event = EventEnvelope(
@@ -142,7 +147,7 @@ private struct EventLineDTO: Codable {
     )
   }
 
-  /// The payload of a review event, the daily or the weekly one, or of a repeat event. Split from
+  /// The payload of a review event, the daily or the weekly one, or of a repeat or structure event. Split from
   /// `init(from:)` (SwiftLint function_body_length) rather than suppressed.
   private static func laterPayload(
     _ type: EventType,
@@ -159,9 +164,13 @@ private struct EventLineDTO: Codable {
     case .projectDropped: .projectDropped(try container.decode(ProjectDropped.self, forKey: .data))
     case .taskRepeatSet: .taskRepeatSet(try container.decode(TaskRepeatSet.self, forKey: .data))
     case .taskRecurred: .taskRecurred(try container.decode(TaskRecurred.self, forKey: .data))
+    case .taskDuplicated: .taskDuplicated(try container.decode(TaskDuplicated.self, forKey: .data))
+    case .taskDeleted: .taskDeleted(try container.decode(TaskDeleted.self, forKey: .data))
+    case .projectDeleted: .projectDeleted(try container.decode(ProjectDeleted.self, forKey: .data))
+    case .taskPromoted: .taskPromoted(try container.decode(TaskPromotedToProject.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
-        forKey: .type, in: container, debugDescription: "not a review or repeat event: \(type.rawValue)")
+        forKey: .type, in: container, debugDescription: "not a later event: \(type.rawValue)")
     }
   }
 
@@ -211,6 +220,23 @@ private struct EventLineDTO: Codable {
     case .projectDropped(let data): try write(.projectDropped, data, to: &container)
     case .taskRepeatSet(let data): try write(.taskRepeatSet, data, to: &container)
     case .taskRecurred(let data): try write(.taskRecurred, data, to: &container)
+    case .taskDuplicated, .taskDeleted, .projectDeleted, .taskPromoted:
+      try writeStructure(event.payload, to: &container)
+    }
+  }
+
+  /// Writes a duplicate, delete or promote event. Split from `encode(to:)` (SwiftLint function_body_length)
+  /// rather than suppressed.
+  private func writeStructure(
+    _ payload: EventPayload,
+    to container: inout KeyedEncodingContainer<CodingKeys>
+  ) throws {
+    switch payload {
+    case .taskDuplicated(let data): try write(.taskDuplicated, data, to: &container)
+    case .taskDeleted(let data): try write(.taskDeleted, data, to: &container)
+    case .projectDeleted(let data): try write(.projectDeleted, data, to: &container)
+    case .taskPromoted(let data): try write(.taskPromoted, data, to: &container)
+    default: break
     }
   }
 

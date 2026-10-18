@@ -23,22 +23,8 @@ extension LibraryState {
   /// that exists already, so two devices completing the same task make one next one, and a `previous` that
   /// does not exist.
   private mutating func recur(_ recurred: TaskRecurred) {
-    guard captureOrder[recurred.next] == nil,
-      let source = openTasks.first(where: { $0.id == recurred.previous })
-        ?? completedTasks.first(where: { $0.item.id == recurred.previous })?.item
-    else { return }
-    captureOrder[recurred.next] = captureOrder.count
-    let project = source.projectID.flatMap { projectID in
-      projects.firstIndex { $0.id == projectID && $0.viewID == source.viewID }
-    }
-    let next = TaskItem(
-      id: recurred.next, title: source.title, viewID: source.viewID, projectID: project.map { projects[$0].id },
-      priority: source.priority, estimate: source.estimate, notes: source.notes)
-    insertOpen(next)
-    if let project { projects[project].children.append(.task(next)) }
+    guard copyTask(recurred.previous, as: recurred.next, createdOn: nil) else { return }
     dueDates[recurred.next] = DueDate(date: recurred.due, isHard: dueDates[recurred.previous]?.isHard ?? false)
-    taskTags[recurred.next] = taskTags[recurred.previous]
-    repeatRules[recurred.next] = repeatRules[recurred.previous]
   }
 
   /// How the task repeats; `nil` if it does not.
