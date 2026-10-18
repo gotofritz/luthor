@@ -128,8 +128,8 @@ struct ProjectCardColumn: View {
 
 /// The card of a project. Like a task card it shows the day the project was created, whether it is completed or
 /// dropped, the day it is to be reviewed next and how often, and its notes, not the title the column before it
-/// shows, until the pencil opens the editor of the title, kind, review and notes. A completed project shows its card too, with no pencil
-/// until it is reopened.
+/// shows, until the pencil opens the editor of the title, kind, review and notes. A completed project shows its
+/// card too, with no pencil until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
   let project: Project

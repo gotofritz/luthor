@@ -79,14 +79,16 @@ struct NextReviewReplayTests {
 
   @Test("reviewing counts from the day reviewed again, and drops the chosen day")
   func reviewingDropsTheChosenDay() {
-    let events = projects + [reviewDateSet("p1", to: "2026-11-30"), projectReviewed("p1", on: "2026-10-20", lamport: 4)]
+    let events =
+      projects + [reviewDateSet("p1", to: "2026-11-30"), projectReviewed("p1", on: "2026-10-20", lamport: 4)]
 
     #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == date("2026-10-27"))
   }
 
   @Test("a day chosen after a review stands")
   func aDayChosenAfterAReviewStands() {
-    let events = projects + [projectReviewed("p1", on: "2026-10-20"), reviewDateSet("p1", to: "2026-11-30", lamport: 4)]
+    let events =
+      projects + [projectReviewed("p1", on: "2026-10-20"), reviewDateSet("p1", to: "2026-11-30", lamport: 4)]
 
     #expect(LibraryState.replay(events).nextReviewDate(of: TaskID("p1")) == date("2026-11-30"))
   }
