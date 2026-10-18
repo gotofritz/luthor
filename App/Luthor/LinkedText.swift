@@ -2,7 +2,7 @@ import AppKit
 import LuthorViewModels
 import SwiftUI
 
-/// A note as selectable text with its web addresses made links. It is a text view of AppKit, which shows the
+/// A note as a bullet and selectable text with its web addresses made links. It is a text view of AppKit, which shows the
 /// pointing hand over a link and the I-beam over the rest, as SwiftUI's `Text` does not when it is selectable.
 struct LinkedText: NSViewRepresentable {
   let text: String
@@ -34,12 +34,27 @@ struct LinkedText: NSViewRepresentable {
     return CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
   }
 
+  /// A bullet, then the text hanging from it: the lines after the first start where the first starts after the bullet.
+  private static let bullet = "•\t"
+  private static let indent: CGFloat = 14
+
   private var attributedText: NSAttributedString {
+    let style = NSMutableParagraphStyle()
+    style.tabStops = [NSTextTab(textAlignment: .left, location: Self.indent)]
+    style.defaultTabInterval = Self.indent
+    style.headIndent = Self.indent
     let attributed = NSMutableAttributedString(
-      string: text,
-      attributes: [.font: NSFont.systemFont(ofSize: NSFont.systemFontSize), .foregroundColor: NSColor.labelColor])
+      string: Self.bullet + text,
+      attributes: [
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+        .foregroundColor: NSColor.labelColor,
+        .paragraphStyle: style,
+      ])
+    let offset = (Self.bullet as NSString).length
     for link in NoteLinks.links(in: text) {
-      attributed.addAttribute(.link, value: link.url, range: NSRange(link.range, in: text))
+      let range = NSRange(link.range, in: text)
+      let shifted = NSRange(location: range.location + offset, length: range.length)
+      attributed.addAttribute(.link, value: link.url, range: shifted)
     }
     return attributed
   }
