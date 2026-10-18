@@ -24,6 +24,9 @@ private struct DoneColumn: View {
 
   var body: some View {
     VStack(spacing: 0) {
+      PlanReviewToggle(library: library)
+        .padding([.horizontal, .top], 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
       ReviewHeader(library: library)
       Text(summary)
         .font(.callout)

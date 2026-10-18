@@ -26,6 +26,9 @@ private struct PlanColumn: View {
 
   var body: some View {
     VStack(spacing: 0) {
+      PlanReviewToggle(library: library)
+        .padding([.horizontal, .top], 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
       DayHeader(library: library)
       CapacityMeter(capacity: library.plan.capacity)
         .padding([.horizontal, .bottom], 12)
@@ -331,5 +334,26 @@ struct DelegateSheet: View {
     let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
     guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
     return CalendarDate(year: year, month: month, day: day)
+  }
+}
+
+/// The toggle between the plan of the day and its review, which are two faces of the same day. It sits in the
+/// header of both, and the day shown stays when it is flipped.
+struct PlanReviewToggle: View {
+  @Bindable var library: LibraryViewModel
+
+  var body: some View {
+    Picker("Show", selection: Binding(get: { shown }, set: { library.show($0) })) {
+      Text("Plan").tag(NavigationSection.today)
+      Text("Review").tag(NavigationSection.review)
+    }
+    .pickerStyle(.segmented)
+    .labelsHidden()
+    .fixedSize()
+    .help("Plan the day, or look back on it")
+  }
+
+  private var shown: NavigationSection {
+    library.section == .review ? .review : .today
   }
 }

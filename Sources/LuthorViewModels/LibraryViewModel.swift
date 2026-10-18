@@ -67,6 +67,11 @@ public final class LibraryViewModel {
   public internal(set) var calendarDays: [CalendarDay] = []
   public internal(set) var calendarDate: CalendarDate?
   public internal(set) var calendarEntries: [CalendarEntry] = []
+  /// The weekly review: the projects of the view whose review is due, the longest overdue first, the one
+  /// picked (`nil` while none is due), and how often projects are reviewed unless they say otherwise.
+  public internal(set) var projectReview: [ProjectReviewItem] = []
+  public internal(set) var reviewProjectID: ProjectID?
+  public internal(set) var reviewDefault = ReviewInterval.weekly
   /// Whether completed tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }
@@ -189,7 +194,7 @@ public final class LibraryViewModel {
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
   public func submit() {
     let title = draft
-    let projectID = shownProjectID
+    let projectID = captureProjectID
     let viewID = currentView
     let day = clock()
     perform { (log) throws(CommandError) in

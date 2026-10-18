@@ -84,12 +84,17 @@ private struct EventLineDTO: Codable {
     case taskTimeLogged = "TaskTimeLogged"
     case unplannedTimeLogged = "UnplannedTimeLogged"
     case dayReviewed = "DayReviewed"
+    case reviewDefaultSet = "ReviewDefaultSet"
+    case projectReviewIntervalSet = "ProjectReviewIntervalSet"
+    case projectReviewed = "ProjectReviewed"
+    case projectDropped = "ProjectDropped"
   }
 
   init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
+    let type = try container.decode(EventType.self, forKey: .type)
     let payload: EventPayload =
-      switch try container.decode(EventType.self, forKey: .type) {
+      switch type {
       case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
       case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
       case .taskReopened: .taskReopened(try container.decode(TaskReopened.self, forKey: .data))
@@ -123,10 +128,9 @@ private struct EventLineDTO: Codable {
       case .tagCreated: .tagCreated(try container.decode(TagCreated.self, forKey: .data))
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
-      case .taskTimeLogged: .taskTimeLogged(try container.decode(TaskTimeLogged.self, forKey: .data))
-      case .unplannedTimeLogged:
-        .unplannedTimeLogged(try container.decode(UnplannedTimeLogged.self, forKey: .data))
-      case .dayReviewed: .dayReviewed(try container.decode(DayReviewed.self, forKey: .data))
+      case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .projectReviewIntervalSet,
+        .projectReviewed, .projectDropped:
+        try Self.reviewPayload(type, in: container)
       }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
@@ -134,6 +138,27 @@ private struct EventLineDTO: Codable {
       lamport: try container.decode(UInt64.self, forKey: .lamport),
       payload: payload
     )
+  }
+
+  /// The payload of a review event, the daily or the weekly one. Split from `init(from:)` (SwiftLint
+  /// function_body_length) rather than suppressed.
+  private static func reviewPayload(
+    _ type: EventType,
+    in container: KeyedDecodingContainer<CodingKeys>
+  ) throws -> EventPayload {
+    switch type {
+    case .taskTimeLogged: .taskTimeLogged(try container.decode(TaskTimeLogged.self, forKey: .data))
+    case .unplannedTimeLogged: .unplannedTimeLogged(try container.decode(UnplannedTimeLogged.self, forKey: .data))
+    case .dayReviewed: .dayReviewed(try container.decode(DayReviewed.self, forKey: .data))
+    case .reviewDefaultSet: .reviewDefaultSet(try container.decode(ReviewDefaultSet.self, forKey: .data))
+    case .projectReviewIntervalSet:
+      .projectReviewIntervalSet(try container.decode(ProjectReviewIntervalSet.self, forKey: .data))
+    case .projectReviewed: .projectReviewed(try container.decode(ProjectReviewed.self, forKey: .data))
+    case .projectDropped: .projectDropped(try container.decode(ProjectDropped.self, forKey: .data))
+    default:
+      throw DecodingError.dataCorruptedError(
+        forKey: .type, in: container, debugDescription: "not a review event: \(type.rawValue)")
+    }
   }
 
   func encode(to encoder: any Encoder) throws {
@@ -176,6 +201,10 @@ private struct EventLineDTO: Codable {
     case .taskTimeLogged(let data): try write(.taskTimeLogged, data, to: &container)
     case .unplannedTimeLogged(let data): try write(.unplannedTimeLogged, data, to: &container)
     case .dayReviewed(let data): try write(.dayReviewed, data, to: &container)
+    case .reviewDefaultSet(let data): try write(.reviewDefaultSet, data, to: &container)
+    case .projectReviewIntervalSet(let data): try write(.projectReviewIntervalSet, data, to: &container)
+    case .projectReviewed(let data): try write(.projectReviewed, data, to: &container)
+    case .projectDropped(let data): try write(.projectDropped, data, to: &container)
     }
   }
 

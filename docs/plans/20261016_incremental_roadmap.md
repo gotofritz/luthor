@@ -117,7 +117,7 @@ lets it be. Completing or moving a project to a view takes its subtree. The
 app shows projects in Miller columns instead of a sidebar tree; drag a
 project onto another or onto a column to nest it, and the new project field
 creates inside the project shown. Later slices read the tree: Today's
-project path, on hold and dropped subtrees, review intervals.
+project path, dropped subtrees, review intervals.
 
 ### 5a. Navigation rail ✅
 
@@ -213,7 +213,7 @@ Usable: the ALPEN morning plan, with capacity and buffer always in sight.
 
 ### 9. Daily review and carry-over (ALPEN: N) ✅
 
-Review is a place on the rail (⇧⌘N), looking back on the day Today shows.
+Review is a place (⇧⌘N), looking back on the day Today shows; slice 14 folded it into Today as a Plan / Review toggle.
 `TaskTimeLogged(task, date, minutes?)` sets the minutes a task took on a day,
 by hand; `UnplannedTimeLogged(view, date, minutes?)` the minutes of work
 outside the plan; `DayReviewed(view, date, note?)` closes the review with a
@@ -299,26 +299,22 @@ Dropped 2026-10-17: the Shortcut inbox file and the Alfred workflow are not
 needed. The number stays so later slices keep theirs. The CLI is removed
 with it (see Decisions 2026-10-17, slice 13 dropped).
 
-### 14. Weekly project review
+### 14. Weekly project review ✅
 
-The daily review (slice 9) looks at the day; this one keeps projects from
-going stale.
-
-- On by default, weekly, and the user can change both. `ReviewDefaultSet`
-  sets the default interval (a number of days, or off) for all projects;
-  `ProjectReviewIntervalSet` overrides it for one project, with its own
-  value or off, and clearing the override falls back to the default.
-  Turning review off everywhere is `ReviewDefaultSet(off)`
-- `ProjectReviewed` sets the next review date to the review date plus the
-  effective interval. Next review date is a pure function of events and the
-  injected clock; a project with review off has none and never appears in
-  the review list
-- Project status: `ProjectPutOnHold`, `ProjectResumed`, `ProjectDropped`.
-  On-hold and dropped projects yield no next actions or plan candidates, and
-  dropped ones skip review
-- Review list in the current view: projects whose next review date has
-  passed, oldest first. Mark reviewed (⌘⇧R) moves to the next one; the
-  project's tasks are shown and editable in place
+`ReviewDefaultSet` sets how often projects are reviewed (a number of days, or
+off; weekly until set), `ProjectReviewIntervalSet` overrides it for one
+project (its own value, off, or none to fall back), and `ProjectReviewed(project,
+date)` marks a review. A project's next review is its last review day, or the day
+it was created, plus the effective interval: a pure function of the events, and
+`projectsDueForReview(in:today:)` lists the projects of a view whose review is
+today or overdue, the longest overdue first. `ProjectDropped`
+gives a project a status; a dropped project hands out no next actions, so
+none of its tasks is a Today candidate, and it is not reviewed. The weekly review is a new place on the rail, after
+Calendar, with a glasses icon (`eyeglasses`, "Reviews"): the projects due, the one
+picked with its card and the buttons to mark it reviewed or drop it, and its tasks, listed and edited like any list (new tasks are captured into
+the picked project). Mark Project Reviewed (⇧⌘R) moves to the next project. The
+default interval is in Settings → Global, a project's own in the review and in its
+context menu.
 
 Usable: the weekly review.
 
@@ -774,3 +770,38 @@ Usable: the weekly review.
    asks. The title is left out because the column before the card already
    shows it. Priority, estimate, project, kind and the estimate history are
    in the editor, with the title field
+
+## Decisions (2026-10-18, slice 14)
+
+1. **The next review is worked out, not stored.** `ProjectReviewed` records
+   the day; the next review is that day plus the interval in force now, so
+   shortening an interval brings the review forward at once. A project never
+   reviewed counts from the day it was created; one created before the day
+   was kept counts from 1970-01-01, so it is due at once
+2. **An interval is a number of days on the wire, 0 for off.** `ReviewInterval`
+   is `off` or `every(days:)`; no days or fewer is off. A project's own
+   interval can be off while the default is on, or on while the default is
+   off, and `nil` clears it. The default is global; per-view defaults are not
+   needed yet
+3. **A review is due on its day.** The list holds the projects whose next
+   review is today or earlier, so a project reviewed on Monday is due again
+   the Monday after. Sub-projects are reviewed as projects in their own right
+4. **Status is a property of the project.** `Project.status` is active or
+   dropped, and `ViewState.nextActions` hands out nothing for a dropped
+   project, nor for the sub-projects in it. Its tasks stay open and show
+   dimmed; ones already planned for a day stay in that day's plan. A dropped
+   project is not reviewed: `ProjectReviewed` for it is refused by the
+   command and ignored by the reducer. The app has no way back from a drop
+   (the events are never deleted). A pause (on hold) status, with Resume, was
+   built and then taken out to keep the app simple
+5. **The weekly review is "Reviews" on the rail**, with the glasses icon. The
+   day's review lost its rail icon: it is Today's other face, flipped with a
+   Plan / Review toggle in the header of both (`NavigationSection.review`
+   stays, with ⇧⌘N, and Today stays picked on the rail while it is shown).
+   The status button reads Drop Project. Its first
+   column lists the projects due, the next the picked project's card with
+   Mark Reviewed, the interval picker and Drop Project, the third its
+   tasks. The first project is picked on arrival, and marking one reviewed
+   picks the one that takes its place, or none when the list is empty
+6. **`Project` moved to its own file** (`Project.swift`) with its new status,
+   to keep `LibraryState.swift` under SwiftLint's file length

@@ -168,9 +168,9 @@ private struct TaskCardEditor: View {
 }
 
 /// The card of the project whose column it heads, above its tasks and sub-projects. Like a task card it
-/// shows the day the project was created and its notes, not the title the column before it shows, until the
-/// pencil opens the editor of the title, kind and notes. A completed project shows its card too, with no
-/// pencil until it is reopened.
+/// shows the day the project was created, its status, the day it is to be reviewed next and its notes, not the
+/// title the column before it shows, until the pencil opens the editor of the title, kind and notes. A
+/// completed project shows its card too, with no pencil until it is reopened.
 struct ProjectCard: View {
   @Bindable var library: LibraryViewModel
   let project: Project
@@ -203,6 +203,15 @@ struct ProjectCard: View {
             Button("Reopen") { library.reopenProject(project.id) }
           }
         }
+      }
+      if project.status != .active {
+        Label(project.status.title, systemImage: project.status.symbol)
+          .font(.callout)
+      }
+      if let next = library.nextReviewDate(of: project.id) {
+        Label("Next review \(next.isoString)", systemImage: "eyeglasses")
+          .font(.callout)
+          .foregroundStyle(next < library.today ? Color.red : Color.primary)
       }
       NotesView(notes: project.notes)
     }
