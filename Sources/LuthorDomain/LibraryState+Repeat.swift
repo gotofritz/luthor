@@ -23,7 +23,7 @@ extension LibraryState {
   /// that exists already, so two devices completing the same task make one next one, and a `previous` that
   /// does not exist.
   private mutating func recur(_ recurred: TaskRecurred) {
-    guard copyTask(recurred.previous, as: recurred.next, createdOn: nil) else { return }
+    guard copyTask(recurred.previous, as: recurred.next, createdOn: nil, keepingDueDates: false) else { return }
     dueDates[recurred.next] = DueDate(date: recurred.due, isHard: dueDates[recurred.previous]?.isHard ?? false)
   }
 

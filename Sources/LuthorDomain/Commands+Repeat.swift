@@ -29,7 +29,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard state.repeatRule(of: taskID) != nil else { throw .notRepeating(taskID) }
     var events = recurrence(of: taskID, on: today, state: state, log: log)
     events.append(envelope(EventID(ids.next()), .taskDropped(TaskDropped(taskID: taskID)), log: log + events))

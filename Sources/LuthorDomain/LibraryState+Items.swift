@@ -79,6 +79,15 @@ extension LibraryState {
     }
   }
 
+  /// The item if it is open or completed, a task or a project; `nil` for one that was given up or does not exist.
+  func existingItem(_ id: TaskID) -> TaskItem? {
+    guard let stored = items[id] else { return nil }
+    switch stored.status {
+    case .open, .completed: return stored.item
+    case .dropped: return nil
+    }
+  }
+
   /// The item and every item open in it, at any depth; empty for an item that is not open.
   func subtree(of id: TaskID) -> Set<TaskID> {
     guard isOpen(id) else { return [] }

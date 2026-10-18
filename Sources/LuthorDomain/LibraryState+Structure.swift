@@ -13,12 +13,25 @@ extension LibraryState {
     }
   }
 
-  /// Makes the open task `copyID` out of the task `sourceID`, which is open or completed: in its parent if that
-  /// is open and in its view, else loose, with its title, notes, priority, estimate, tags and rule. Returns
-  /// whether it did; it does not for a `copyID` that exists already, so two devices making the same copy make
-  /// one, nor for a `sourceID` that does not exist.
-  mutating func copyTask(_ sourceID: TaskID, as copyID: TaskID, createdOn: CalendarDate?) -> Bool {
-    guard captureOrder[copyID] == nil, let source = existingTask(sourceID) else { return false }
+  /// Makes the open item `copyID` out of the item `sourceID`, which is open or completed: in its parent if that
+  /// is open and in its view, else loose, with its title, notes, priority, estimate, tags and rule, and a copy
+  /// of everything filed in it that was not given up (see `copySubtree`). Returns whether it did; it does not
+  /// for a `copyID` that exists already, so two devices making the same copy make one, nor for a `sourceID`
+  /// that does not exist or was given up.
+  mutating func copyTask(
+    _ sourceID: TaskID,
+    as copyID: TaskID,
+    createdOn: CalendarDate?,
+    keepingDueDates: Bool
+  ) -> Bool {
+    guard captureOrder[copyID] == nil, let source = existingItem(sourceID) else { return false }
+    makeCopy(of: source, as: copyID, createdOn: createdOn)
+    if let parentID = source.parentID, isOpen(parentID, in: source.viewID) { file(copyID, under: parentID) }
+    copySubtree(of: sourceID, to: copyID, createdOn: createdOn, keepingDueDates: keepingDueDates)
+    return true
+  }
+
+  private mutating func makeCopy(of source: TaskItem, as copyID: TaskID, createdOn: CalendarDate?) {
     captureOrder[copyID] = captureOrder.count
     order.append(copyID)
     items[copyID] = StoredItem(
@@ -26,10 +39,30 @@ extension LibraryState {
         id: copyID, title: source.title, viewID: source.viewID, priority: source.priority,
         estimate: source.estimate, notes: source.notes, createdOn: createdOn, kind: source.kind),
       status: .open)
-    if let parentID = source.parentID, isOpen(parentID, in: source.viewID) { file(copyID, under: parentID) }
-    taskTags[copyID] = taskTags[sourceID]
-    repeatRules[copyID] = repeatRules[sourceID]
-    return true
+    taskTags[copyID] = taskTags[source.id]
+    repeatRules[copyID] = repeatRules[source.id]
+  }
+
+  /// Makes an open copy of every item that has `sourceID` as its parent and was not given up, completed or not,
+  /// filed in `copyID`, and of what is filed in them, with IDs worked out from `copyID`. A copy of a repeat
+  /// starts afresh, so its tasks keep their due dates only when `keepingDueDates`.
+  private mutating func copySubtree(
+    of sourceID: TaskID, to copyID: TaskID, createdOn: CalendarDate?, keepingDueDates: Bool
+  ) {
+    let children = order.filter { id in
+      guard let stored = items[id], stored.item.parentID == sourceID else { return false }
+      if case .dropped = stored.status { return false }
+      return true
+    }
+    for childID in children {
+      guard let child = items[childID]?.item else { continue }
+      let childCopy = TaskID.copied(childID, under: copyID)
+      guard captureOrder[childCopy] == nil else { continue }
+      makeCopy(of: child, as: childCopy, createdOn: createdOn)
+      file(childCopy, under: copyID)
+      if keepingDueDates { dueDates[childCopy] = dueDates[childID] }
+      copySubtree(of: childID, to: childCopy, createdOn: createdOn, keepingDueDates: keepingDueDates)
+    }
   }
 
   /// Whether the project exists: open, completed or dropped, but not deleted.
@@ -39,7 +72,8 @@ extension LibraryState {
 
   /// Copies the task, and its due date with it.
   private mutating func duplicate(_ duplicated: TaskDuplicated) {
-    guard copyTask(duplicated.source, as: duplicated.copy, createdOn: duplicated.createdOn) else { return }
+    guard copyTask(duplicated.source, as: duplicated.copy, createdOn: duplicated.createdOn, keepingDueDates: true)
+    else { return }
     dueDates[duplicated.copy] = dueDates[duplicated.source]
   }
 
