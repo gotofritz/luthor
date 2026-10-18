@@ -125,6 +125,10 @@ public struct LibraryState: Equatable, Sendable {
   var delegations: [TaskID: Delegation] = [:]
   /// The due date of each task that has one. Completing a task keeps it, so reopening brings it back.
   var dueDates: [TaskID: DueDate] = [:]
+  /// Every tag of every view, in creation order.
+  var tagItems: [TagItem] = []
+  /// The tags each open or completed task carries. A task with none is not here.
+  var taskTags: [TaskID: Set<TagID>] = [:]
   /// The manual order of each view's plan for a day, as last set.
   var dayOrders: [DayKey: [TaskID]] = [:]
   /// The capacity set for single days, in place of the weekday's.
@@ -195,16 +199,14 @@ public struct LibraryState: Equatable, Sendable {
       change(changed)
     case .taskScheduled(let scheduled):
       schedule(scheduled)
-    case .taskUnscheduled(let unscheduled):
-      scheduledDates.removeValue(forKey: unscheduled.taskID)
     case .taskDelegated(let delegated):
       delegate(delegated)
-    case .taskReclaimed(let reclaimed):
-      delegations.removeValue(forKey: reclaimed.taskID)
     case .taskDropped(let dropped):
       finish(dropped.taskID)
-    case .dayPlanOrdered, .dayCapacitySet, .taskDueSet:
+    case .dayPlanOrdered, .dayCapacitySet, .taskDueSet, .taskUnscheduled, .taskReclaimed:
       applyPlanning(payload)
+    case .tagCreated, .taskTagged, .taskUntagged:
+      applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
     }
@@ -320,6 +322,7 @@ public struct LibraryState: Equatable, Sendable {
     openTasks[index].projectID = nil
     removeFromProjects(taskID)
     forgetPlanning(of: taskID)
+    taskTags.removeValue(forKey: taskID)
   }
 
   /// Takes a project across with its sub-projects and their open tasks; a nested project leaves its
@@ -333,6 +336,9 @@ public struct LibraryState: Equatable, Sendable {
       return task
     }
     detach(projectID)
+    for task in openTasks where task.projectID.map(moved.contains) ?? false {
+      taskTags.removeValue(forKey: task.id)
+    }
     openTasks = openTasks.map { task in
       let isMoved = task.projectID.map { moved.contains($0) } ?? false
       return isMoved ? reassign(task) : task

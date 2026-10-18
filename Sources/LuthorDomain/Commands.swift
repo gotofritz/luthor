@@ -23,6 +23,11 @@ public enum CommandError: Error, Equatable {
   case someday(TaskID)
   /// The task is neither open nor completed: it never existed, or it was dropped.
   case unknownTask(TaskID)
+  case noTag(TagID)
+  /// A view has a tag with this name already, in any case.
+  case duplicateTagName(String)
+  /// The task and the tag are in different views; a tag belongs to one view.
+  case tagInOtherView(TaskID, TagID)
 }
 
 /// Turns user intentions into new events, given the current log.
