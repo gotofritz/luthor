@@ -63,9 +63,12 @@ public struct TaskCardDraft: Equatable, Sendable {
   public var notes: String
   /// The names of the tags the task is to have, no more and no fewer.
   public var tags: [String]
+  /// How the task is to repeat; `nil` for a task that does not.
+  public var repeatRule: RepeatRule?
 
   public init(
-    title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String, tags: [String] = []
+    title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String, tags: [String] = [],
+    repeatRule: RepeatRule? = nil
   ) {
     self.title = title
     self.priority = priority
@@ -73,6 +76,7 @@ public struct TaskCardDraft: Equatable, Sendable {
     self.due = due
     self.notes = notes
     self.tags = tags
+    self.repeatRule = repeatRule
   }
 
   /// The tag names in text typed as a comma-separated list: no blanks, no leading `@`, and a name given

@@ -30,6 +30,8 @@ public enum CommandError: Error, Equatable {
   case tagInOtherView(TaskID, TagID)
   /// The project was dropped, so it is not reviewed.
   case projectDropped(ProjectID)
+  /// The task does not repeat, so there is no occurrence to skip.
+  case notRepeating(TaskID)
 }
 
 /// Turns user intentions into new events, given the current log.
@@ -68,12 +70,15 @@ public struct Commands {
     return try events + move(taskID: taskID, to: projectID, log: log + events)
   }
 
-  /// Completes the open task with exactly this ID.
-  public func complete(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
-      throw .noOpenTask(taskID.rawValue)
-    }
-    return [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
+  /// Completes the open task with exactly this ID. If it repeats, the next task follows in the same command,
+  /// due by the rule as of `today`, the day it is done.
+  public func complete(taskID: TaskID, today: CalendarDate? = nil, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    let state = LibraryState.replay(log)
+    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    let completion = [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
+    return completion + recurrence(of: taskID, on: today, state: state, log: log + completion)
   }
 
   /// Creates a project in the view `viewID`; `today` is recorded as the day it was created.

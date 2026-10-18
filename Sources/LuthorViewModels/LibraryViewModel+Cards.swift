@@ -21,12 +21,15 @@ extension LibraryViewModel {
   /// and writes nothing.
   public func saveCard(ofTask taskID: TaskID, _ draft: TaskCardDraft) {
     guard !draft.title.allSatisfy(\.isWhitespace) else { return }
+    let day = planDate
     perform { (log) throws(CommandError) in
       var events = try commands.rename(taskID: taskID, to: draft.title, log: log)
       events += try commands.prioritize(taskID: taskID, as: draft.priority, log: log + events)
       events += try commands.estimate(taskID: taskID, as: draft.estimate, log: log + events)
       events += try commands.setDue(
         taskID: taskID, to: draft.due?.date, isHard: draft.due?.isHard ?? false, log: log + events)
+      events += try commands.setRepeat(
+        taskID: taskID, to: draft.repeatRule, dueIfNone: day, log: log + events)
       events += try commands.setNotes(taskID: taskID, to: draft.notes, log: log + events)
       events += try commands.setTags(taskID: taskID, to: draft.tags, log: log + events)
       return events

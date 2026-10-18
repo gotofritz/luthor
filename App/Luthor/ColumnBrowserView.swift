@@ -309,6 +309,7 @@ private struct TaskRow: View {
         Divider()
         Button("None") { library.estimate(task.id, as: nil) }
       }
+      RepeatMenuItems(library: library, taskID: task.id)
       Menu("Tags") {
         ForEach(library.tags) { item in
           Button {

@@ -76,6 +76,8 @@ public struct LibraryState: Equatable, Sendable {
   var delegations: [TaskID: Delegation] = [:]
   /// The due date of each task that has one. Completing a task keeps it, so reopening brings it back.
   var dueDates: [TaskID: DueDate] = [:]
+  /// How each task that repeats does so. Completing a task keeps its rule, as it does its due date.
+  var repeatRules: [TaskID: RepeatRule] = [:]
   /// Every tag of every view, in creation order.
   var tagItems: [TagItem] = []
   /// The tags each open or completed task carries. A task with none is not here.
@@ -164,6 +166,8 @@ public struct LibraryState: Equatable, Sendable {
       applyReview(payload)
     case .reviewDefaultSet, .projectReviewIntervalSet, .projectReviewed, .projectDropped:
       applyProjectReview(payload)
+    case .taskRepeatSet, .taskRecurred:
+      applyRepeat(payload)
     }
   }
 

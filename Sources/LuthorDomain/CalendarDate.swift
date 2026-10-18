@@ -57,6 +57,25 @@ public struct CalendarDate: Hashable, Comparable, Sendable {
     CalendarDate(daysSinceEpoch: daysSinceEpoch + days)
   }
 
+  /// The day this many months later (earlier for a negative number): the same day number, or in a month that
+  /// is shorter the last day of it. A result outside years 1 to 9999 is this day.
+  public func adding(months: Int) -> CalendarDate {
+    let total = year * 12 + (month - 1) + months
+    guard total >= 12 else { return self }
+    let targetYear = total / 12
+    let targetMonth = total % 12 + 1
+    guard (1...9999).contains(targetYear) else { return self }
+    return CalendarDate(
+      year: targetYear, month: targetMonth, day: min(day, Self.daysIn(month: targetMonth, of: targetYear)))
+      ?? self
+  }
+
+  /// The day this many years later (earlier for a negative number); a 29 February falls on the 28th in a year
+  /// that is not a leap year.
+  public func adding(years: Int) -> CalendarDate {
+    adding(months: years * 12)
+  }
+
   public static func < (lhs: CalendarDate, rhs: CalendarDate) -> Bool {
     (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
   }
