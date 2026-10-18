@@ -16,7 +16,7 @@ sync of event files) stays; the order and the amount of machinery change.
   "proper" version in three months. Mark hacks as `// THROWAWAY:` so they are
   easy to find
 - **Defer machinery until it hurts.** No SQLite until in-memory replay is
-  measurably slow; no Dropbox API until a Dropbox folder stops being enough
+  measurably slow; no Dropbox API until iOS needs it (see `20261018_ios_app.md`)
 - **TDD throughout** (see `AGENTS.md`). The domain is where the tests go;
   hacks at the edges get thin tests
 - **Documented as built.** `docs/guide.md` is the user guide. It describes
@@ -62,11 +62,10 @@ universal `luthor` CLI shipped alongside until it was removed (see Decisions
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 18)
+### CD-2. ~~iOS~~ (moved)
 
-- `xcodebuild` the iOS target in CI
-- Distribution decided with slice 18: free 7-day provisioning from Xcode, or
-  TestFlight with the Developer Program
+Moved 2026-10-18 to `20261018_ios_app.md`. The number stays so the CI/CD
+numbering holds.
 
 ## Slices
 
@@ -349,18 +348,16 @@ enter v1.
 - Only if needed: GRDB projections, snapshotting, global capture hotkey,
   command palette
 
-### 17. Dropbox API sync
+### 17. ~~Dropbox API sync~~ (moved)
 
-- OAuth, token in Keychain, sync of the same per-device files over the API
-- Sync behind a `Transport` protocol; in-memory fake for tests; two-device
-  convergence tests
-- Required for iOS, which has no Dropbox folder to watch
+Moved 2026-10-18 to `20261018_ios_app.md`: only iOS needs it, as a Mac reads
+the Dropbox folder directly (slice 10). The number stays so later slices
+keep theirs.
 
-### 18. iOS app
+### 18. ~~iOS app~~ (moved)
 
-- Same package; capture, Inbox and Today first, then the daily review
-- Without the Apple Developer Program, a free provisioning profile expires
-  every 7 days; decide then whether to pay
+Moved 2026-10-18 to `20261018_ios_app.md`, together with the iOS CI/CD item.
+This roadmap now ends at the desktop app.
 
 ### Later
 
