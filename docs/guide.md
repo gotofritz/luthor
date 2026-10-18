@@ -33,6 +33,9 @@ does updates this guide in the same PR (see the docs check in
   the task ahead of the other tasks of its priority in Today's candidates
   once it is due; a *target date* is only shown. A due date never plans a
   task for a day by itself
+- **Tag**: a label such as `@calls` or `@deep-work`, put on any number of
+  tasks and shown with an `@`. A tag belongs to one view, so `@calls` at work
+  and `@calls` at home are different tags
 - **Leftover**: an open task planned for a day before today. Nothing moves it
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
@@ -60,6 +63,8 @@ It does not expand. Click a place to look at it:
 - **Projects**: the top-level projects, as Miller columns (see Projects)
 - **Prios**: the priorities, then the tasks that have one of them (see
   Priorities)
+- **Tags**: the view's tags, then the tasks that carry the one you pick (see
+  Tags)
 - **Settings**, pinned to the bottom of the rail (or ⌘,): the planning
   numbers (see Settings)
 
@@ -116,7 +121,8 @@ sub-projects and tasks listed below it.
 A card is read-only. It shows the day the task or project was created
 ("Created 2026-10-19", left out for what was created before the app kept the
 day), for a task its due date ("Deadline 2026-10-23" or "Target date
-2026-10-23", in red once the day has passed) and the notes ("No notes" if
+2026-10-23", in red once the day has passed) and its tags ("@calls @home"),
+and the notes ("No notes" if
 there are none). It does not repeat the
 title, which is in the column before it. Web addresses in notes
 (`https://…` or `www.…`) are clickable links.
@@ -126,8 +132,9 @@ is written until OK:
 
 - A task's card then has the title field, the priority and estimate pickers,
   the Due date switch (a day to pick, and whether it is a hard deadline or a
-  target date), its project, the estimate history if there is one, and the
-  notes in a text field. A project's card has the title field, the kind (parallel or
+  target date), the Tags field (names separated by commas; the tag button
+  beside it adds one the view already has), its project, the estimate history
+  if there is one, and the notes in a text field. A project's card has the title field, the kind (parallel or
   sequential), the estimate history and the notes
 - A sequential project dims every child but its first open one, so the next
   actions change at once. The kind can also be switched from Kind in the
@@ -162,6 +169,13 @@ held back by a sequential project, and not delegated until their follow-up
 day. A task planned for a later day is a candidate too, so you can pull it
 forward. Select one and press ⌘T, or use Add to Plan in its context menu.
 Remove from Plan (⌥⌘T) returns it to the candidates.
+
+**Filtering the candidates.** The Filter button above the candidates narrows
+them by tag (pick several and a task needs all of them), priority, project (its
+sub-projects count) and deadline (due by the day shown, or within a week of it,
+whether hard or target). Clear Filter brings them all back. The filter only
+narrows the candidates: the plan is never filtered. It is not kept: it clears
+when you switch view or relaunch the app.
 
 **Order.** The plan is in a suggested order unless you set your own: A before
 B before C, then hard deadlines that are due on the day shown (the earliest
@@ -295,6 +309,28 @@ complete a task from the list like anywhere else.
 
 A task given One day (someday) is kept out of next actions, wherever it is
 filed, until you give it another priority.
+
+## Tags
+
+A tag is a label for a context: `@home`, `@calls`, `@deep-work`. Tags belong
+to a view, so the tags of Work and of Private are separate, even when they
+have the same name, and taking a task to another view leaves its tags behind.
+
+Put tags on a task in the Tags field of its card (pencil): type names
+separated by commas, with or without the `@`, in any case. A name the view
+does not have yet creates the tag; a name you take out of the field takes
+the tag off the task. The tag button beside the field adds a tag the view
+already has. Tags show next to the task in lists and on its card. Tags in
+the task's context menu (Tags) puts one on or takes it off in one click.
+
+Tags is a place on the rail. Its first column lists the view's tags, each
+with how many open tasks carry it; click one and the next column lists
+those tasks, and a task opens its card. A completed task leaves the list and
+the count, and brings its tags back when reopened. There is no way yet to
+rename or delete a tag.
+
+To narrow Today's candidates by tag, priority, project or deadline, see
+Today.
 
 ## Settings
 

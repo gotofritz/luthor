@@ -105,11 +105,13 @@ Sources/
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
-    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, ViewID (+ ViewID.default)
+    TagEvents.swift          TagCreated, TaskTagged, TaskUntagged
+    Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, TagID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed task or project
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
+    Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
@@ -125,11 +127,13 @@ Sources/
     LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
+    LibraryState+Tags.swift  TagItem, applying the tag events, tags(in:/of:), tasks(tagged:), taskCounts; TaskFilter
+                             (tags, priority, project, deadline) and tasks(in:matching:)
     LibraryState+Cards.swift  applying rename, notes and kind events
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
                              someday; tasks by priority
-    LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:) →
+    LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; due hard
                              deadlines rank after priority), waitingFor(in:today:)
     Settings.swift           SettingKey, Weekday, Settings (typed planning numbers); SettingChanged
@@ -159,7 +163,8 @@ Sources/
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
-                             reviewing a day in LibraryViewModel+Review.swift, reading the log and
+                             reviewing a day in LibraryViewModel+Review.swift, the Tags place, tagging and the
+                             candidate filter in LibraryViewModel+Tags.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac
@@ -175,6 +180,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              capacity meter, leftovers, candidates, Waiting for, delegate dialog;
                              CalendarView: the list of days and the tasks of the one picked;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
+                             TagsView: the Tags place's tag column and Today's candidate filter menu;
                              StorageSetupView: the first-start modal and the This Mac settings)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,

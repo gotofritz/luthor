@@ -276,12 +276,20 @@ availability rule, Upcoming, Forecast.
 Usable: deadlines feed the plan without taking it over, and any day's
 tasks are one click away.
 
-### 12. Tags
+### 12. Tags ✅
 
-- `TagCreated`, `TaskTagged`, `TaskUntagged`
-- Filter any list, Today's candidates included, by tag; also by priority,
-  project and deadline
-- Tags belong to a view, so `@calls` at work and at home are different tags
+`TagCreated(tag, name, view)`, `TaskTagged(task, tag)` and `TaskUntagged(task,
+tag)` give a task any number of tags, labels such as `@calls`. A tag belongs
+to one view, so `@calls` at work and at home are different tags, and taking a
+task to another view leaves its tags behind. Tags are put on in the Tags field
+of a task's card (comma-separated names; a new name creates the tag) or
+toggled from a task's context menu. Tags is a new place on the rail (tag icon,
+after Prios): its first Miller column lists the view's tags with how many open
+tasks carry each, picking one lists those tasks in the next column, and a task
+opens its card in the one after. Filtering is a pure `TaskFilter` (tags, all
+of which a task needs; priority; project, sub-projects included; due by a
+day), applied by `tasks(in:matching:)` and by `plan(for:on:today:matching:)`
+to Today's candidates, which get a Filter button.
 
 Usable: contexts (`@home`, `@calls`, `@deep-work`).
 
@@ -700,6 +708,36 @@ Usable: the weekly review.
     the notes only (issue #24); a deadline is something to see without
     opening the editor, so it joins them, in red once the day has passed.
     The editor has a Due date switch, a day and hard or target
+
+## Decisions (2026-10-17, slice 12)
+
+1. **A tag is made by naming it on a task.** There is no tag editor: the
+   Tags field of the card, or the `tag(taskID:named:)` command, finds the
+   view's tag of that name (ignoring case and a leading `@`) or creates it.
+   `@` is how tags are shown, never part of the name. Renaming and deleting a
+   tag are not in this slice (no `TagRenamed` or `TagDeleted` event); an
+   unused tag stays in the list with a count of zero
+2. **Names are unique per view in the command, not in the reducer.** Two
+   Macs can create `@calls` at the same time, and the replay keeps both
+   rather than dropping a tag a task was already put on. The commands never
+   create a second one
+3. **Tags belong to the task's view.** Tagging a task with a tag of another
+   view is ignored by the reducer and refused by the command. Taking a task
+   (or a project, with its tasks) to another view takes its tags off
+4. **Completing keeps the tags**, as it keeps the due date, so reopening
+   brings them back. The Tags place lists open tasks only
+5. **Filtering is a domain value, the UI offers it in Today.** `TaskFilter`
+   covers tag, priority, project and deadline for any list that wants it. The
+   Today candidates take it through `plan(for:on:today:matching:)`; the plan
+   itself is never filtered, so a planned task cannot be hidden. The Tags
+   place is the tag filter of every other list. The filter lives in the
+   window and is dropped when the view changes or the app relaunches; saved
+   filters are the perspectives in Later
+6. **Several tags narrow, they do not widen.** A task has to carry every
+   picked tag. A deadline filter means due on or before the day, hard or
+   target
+7. **The Tags place sits after Prios**, above Settings, with the `tag` icon,
+   as the navigation decisions ask of every new place
 
 ## Decisions (2026-10-17, device IDs)
 
