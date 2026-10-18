@@ -372,7 +372,6 @@ This roadmap now ends at the desktop app.
 ### Later
 
 - Repeating tasks
-- Timer for actual minutes, and an in-progress state with it
 - Estimate suggestions from history, offered and never applied silently
 - Calendar integration: fixed commitments reduce a day's capacity
 - Perspectives as saved queries, scoped to a view
