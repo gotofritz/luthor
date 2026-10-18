@@ -107,8 +107,7 @@ Sources/
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
     TagEvents.swift          TagCreated, TaskTagged, TaskUntagged
     ProjectReviewEvents.swift  ReviewInterval (off or every n days; n on the wire, 0 for off), ReviewDefaultSet,
-                             ProjectReviewIntervalSet, ProjectReviewed, ProjectPutOnHold, ProjectResumed,
-                             ProjectDropped
+                             ProjectReviewIntervalSet, ProjectReviewed, ProjectDropped
     Identifiers.swift        EventID, DeviceID, TaskID, ProjectID, TagID, ViewID (+ ViewID.default)
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
@@ -117,7 +116,7 @@ Sources/
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, review a project,
-                             put a project on hold, resume it, drop it
+                             drop it
     Commands+Cards.swift     rename, notes and project kind, as edited on a card
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
@@ -125,7 +124,7 @@ Sources/
                              only via view(id); holds the raw global/per-view setting values, the
                              day each task is scheduled for, due dates, delegations, plan orders and
                              day capacities
-    Project.swift            Project (with its ProjectStatus: active, on hold, dropped) and ProjectChild
+    Project.swift            Project (with its ProjectStatus: active, dropped) and ProjectChild
     LibraryState+Completion.swift  Completed<Item>; keeping completed tasks and projects, and reopening them
     LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:)
     LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
@@ -140,7 +139,7 @@ Sources/
     LibraryState+Cards.swift  applying rename, notes and kind events
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
-                             someday and projects that are on hold or dropped; tasks by priority
+                             someday and dropped projects; tasks by priority
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; due hard
                              deadlines rank after priority), waitingFor(in:today:)
@@ -172,7 +171,7 @@ Sources/
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
                              reviewing a day in LibraryViewModel+Review.swift, the weekly project review (due list, mark
-                             reviewed, intervals, hold/resume/drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
+                             reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, reading the log and
                              filling the published state (columns, lists, completed items) in
                              LibraryViewModel+Presenting.swift (split for file_length)

@@ -1,8 +1,6 @@
-/// Whether a project is handing out next actions. On-hold and dropped projects hand out none, and a dropped one
-/// is not reviewed.
+/// Whether a project is handing out next actions. A dropped project hands out none and is not reviewed.
 public enum ProjectStatus: String, Codable, Sendable {
   case active
-  case onHold
   case dropped
 }
 
@@ -25,7 +23,7 @@ public struct Project: Equatable, Sendable {
   public internal(set) var notes: String?
   /// The day the project was created; `nil` for one created before cards showed it.
   public let createdOn: CalendarDate?
-  /// Whether the project is handing out next actions, is on hold, or was dropped.
+  /// Whether the project is handing out next actions or was dropped.
   public internal(set) var status: ProjectStatus
 
   public init(

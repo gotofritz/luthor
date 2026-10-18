@@ -24,8 +24,8 @@ struct ProjectReviewRecords: Equatable, Sendable {
 // next review of a project and the list of reviews that are due. In its own file (SwiftLint file_length)
 // rather than suppressed.
 extension LibraryState {
-  /// Applies the events that set review intervals, mark a project reviewed, and put a project on hold, resume
-  /// it or drop it; any other event changes nothing. An event for a project that is not active is ignored.
+  /// Applies the events that set review intervals, mark a project reviewed, and drop a project; any other
+  /// event changes nothing. An event for a project that is not active is ignored.
   mutating func applyProjectReview(_ payload: EventPayload) {
     switch payload {
     case .reviewDefaultSet(let set):
@@ -38,10 +38,6 @@ extension LibraryState {
         return
       }
       projectReviews.reviewedOn[reviewed.projectID] = reviewed.date
-    case .projectPutOnHold(let held):
-      updateProject(held.projectID) { $0.status = .onHold }
-    case .projectResumed(let resumed):
-      updateProject(resumed.projectID) { $0.status = .active }
     case .projectDropped(let dropped):
       updateProject(dropped.projectID) { $0.status = .dropped }
     default:

@@ -162,8 +162,7 @@ public struct LibraryState: Equatable, Sendable {
       applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
-    case .reviewDefaultSet, .projectReviewIntervalSet, .projectReviewed, .projectPutOnHold, .projectResumed,
-      .projectDropped:
+    case .reviewDefaultSet, .projectReviewIntervalSet, .projectReviewed, .projectDropped:
       applyProjectReview(payload)
     }
   }

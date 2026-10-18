@@ -3,7 +3,7 @@ import LuthorViewModels
 import SwiftUI
 
 /// The weekly review place: the projects whose review is due, the one picked with its card and the buttons to
-/// mark it reviewed, put it on hold or drop it, and its tasks, which are listed and edited like any list. The
+/// mark it reviewed or drop it, and its tasks, which are listed and edited like any list. The
 /// task picked opens its card in the column after.
 struct WeeklyReviewColumnsView: View {
   @Bindable var library: LibraryViewModel
@@ -91,26 +91,19 @@ private struct ReviewProjectDetail: View {
   }
 }
 
-/// Put on hold, resume, drop: the buttons that fit the status the project has.
+/// Drop: the button that gives the project up.
 private struct ProjectStatusButtons: View {
   @Bindable var library: LibraryViewModel
   let project: Project
 
   var body: some View {
-    HStack {
-      if project.status == .active {
-        Button("Pause Reviews", systemImage: ProjectStatus.onHold.symbol) { library.putOnHold(project.id) }
-      } else {
-        Button("Resume", systemImage: "play.circle") { library.resume(project.id) }
-      }
-      if project.status != .dropped {
-        Button("Drop Project", systemImage: ProjectStatus.dropped.symbol) { library.dropProject(project.id) }
-      }
+    if project.status != .dropped {
+      Button("Drop Project", systemImage: ProjectStatus.dropped.symbol) { library.dropProject(project.id) }
     }
   }
 }
 
-/// The review items of a project's context menu: how often it is reviewed, and its status.
+/// The review items of a project's context menu: how often it is reviewed, and dropping it.
 struct ProjectReviewMenuItems: View {
   @Bindable var library: LibraryViewModel
   let project: Project
@@ -123,11 +116,6 @@ struct ProjectReviewMenuItems: View {
         Button(interval.title) { library.setReviewInterval(of: project.id, to: interval) }
           .disabled(library.reviewOverride(of: project.id) == interval)
       }
-    }
-    if project.status == .active {
-      Button("Pause Reviews") { library.putOnHold(project.id) }
-    } else {
-      Button("Resume") { library.resume(project.id) }
     }
     if project.status != .dropped {
       Button("Drop Project") { library.dropProject(project.id) }
@@ -158,11 +146,10 @@ extension ReviewInterval {
 }
 
 extension ProjectStatus {
-  /// "Active", "On hold" or "Dropped".
+  /// "Active" or "Dropped".
   var title: String {
     switch self {
     case .active: "Active"
-    case .onHold: "On hold"
     case .dropped: "Dropped"
     }
   }
@@ -171,7 +158,6 @@ extension ProjectStatus {
   var symbol: String {
     switch self {
     case .active: "play.circle"
-    case .onHold: "pause.circle"
     case .dropped: "xmark.circle"
     }
   }

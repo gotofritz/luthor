@@ -61,8 +61,6 @@ public enum EventPayload: Equatable, Sendable {
   case reviewDefaultSet(ReviewDefaultSet)
   case projectReviewIntervalSet(ProjectReviewIntervalSet)
   case projectReviewed(ProjectReviewed)
-  case projectPutOnHold(ProjectPutOnHold)
-  case projectResumed(ProjectResumed)
   case projectDropped(ProjectDropped)
 }
 

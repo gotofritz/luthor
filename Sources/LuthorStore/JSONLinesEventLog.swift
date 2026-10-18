@@ -87,8 +87,6 @@ private struct EventLineDTO: Codable {
     case reviewDefaultSet = "ReviewDefaultSet"
     case projectReviewIntervalSet = "ProjectReviewIntervalSet"
     case projectReviewed = "ProjectReviewed"
-    case projectPutOnHold = "ProjectPutOnHold"
-    case projectResumed = "ProjectResumed"
     case projectDropped = "ProjectDropped"
   }
 
@@ -131,7 +129,7 @@ private struct EventLineDTO: Codable {
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .projectReviewIntervalSet,
-        .projectReviewed, .projectPutOnHold, .projectResumed, .projectDropped:
+        .projectReviewed, .projectDropped:
         try Self.reviewPayload(type, in: container)
       }
     event = EventEnvelope(
@@ -156,8 +154,6 @@ private struct EventLineDTO: Codable {
     case .projectReviewIntervalSet:
       .projectReviewIntervalSet(try container.decode(ProjectReviewIntervalSet.self, forKey: .data))
     case .projectReviewed: .projectReviewed(try container.decode(ProjectReviewed.self, forKey: .data))
-    case .projectPutOnHold: .projectPutOnHold(try container.decode(ProjectPutOnHold.self, forKey: .data))
-    case .projectResumed: .projectResumed(try container.decode(ProjectResumed.self, forKey: .data))
     case .projectDropped: .projectDropped(try container.decode(ProjectDropped.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
@@ -208,8 +204,6 @@ private struct EventLineDTO: Codable {
     case .reviewDefaultSet(let data): try write(.reviewDefaultSet, data, to: &container)
     case .projectReviewIntervalSet(let data): try write(.projectReviewIntervalSet, data, to: &container)
     case .projectReviewed(let data): try write(.projectReviewed, data, to: &container)
-    case .projectPutOnHold(let data): try write(.projectPutOnHold, data, to: &container)
-    case .projectResumed(let data): try write(.projectResumed, data, to: &container)
     case .projectDropped(let data): try write(.projectDropped, data, to: &container)
     }
   }

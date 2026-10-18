@@ -123,45 +123,28 @@ struct ReviewProjectCommandTests {
   }
 }
 
-@Suite("When a project is put on hold, resumed or dropped by command")
+@Suite("When a project is dropped by command")
 struct ProjectStatusCommandTests {
-  @Test("each writes its own event")
-  func eachWritesItsOwnEvent() throws {
-    let commands = makeCommands()
-
-    #expect(try commands.putOnHold(ProjectID("p1"), log: base) == [projectPutOnHold("p1", id: "id-1", lamport: 2)])
-    #expect(try commands.dropProject(ProjectID("p1"), log: base) == [projectDropped("p1", id: "id-2", lamport: 2)])
+  @Test("it writes a ProjectDropped event")
+  func itWritesAProjectDroppedEvent() throws {
     #expect(
-      try commands.resume(ProjectID("p1"), log: base + [projectPutOnHold("p1")])
-        == [projectResumed("p1", id: "id-3", lamport: 4)])
+      try makeCommands().dropProject(ProjectID("p1"), log: base) == [projectDropped("p1", id: "id-1", lamport: 2)])
   }
 
-  @Test("a dropped project can be resumed")
-  func aDroppedProjectCanBeResumed() throws {
-    let events = try makeCommands().resume(ProjectID("p1"), log: base + [projectDropped("p1")])
-
-    #expect(events == [projectResumed("p1", id: "id-1", lamport: 4)])
-  }
-
-  @Test("the status a project has writes nothing")
-  func theStatusAProjectHasWritesNothing() throws {
-    let commands = makeCommands()
-
-    #expect(try commands.resume(ProjectID("p1"), log: base).isEmpty)
-    #expect(try commands.putOnHold(ProjectID("p1"), log: base + [projectPutOnHold("p1")]).isEmpty)
-    #expect(try commands.dropProject(ProjectID("p1"), log: base + [projectDropped("p1")]).isEmpty)
+  @Test("dropping a dropped project writes nothing")
+  func droppingADroppedProjectWritesNothing() throws {
+    #expect(try makeCommands().dropProject(ProjectID("p1"), log: base + [projectDropped("p1")]).isEmpty)
   }
 
   @Test("a project that is not active is refused")
   func aProjectThatIsNotActiveIsRefused() {
-    let ghost = ProjectID("ghost")
     let completed = base + [projectCompleted("p1")]
 
-    #expect(throws: CommandError.noActiveProject(ghost)) { try makeCommands().putOnHold(ghost, log: base) }
-    #expect(throws: CommandError.noActiveProject(ghost)) { try makeCommands().resume(ghost, log: base) }
-    #expect(throws: CommandError.noActiveProject(ghost)) { try makeCommands().dropProject(ghost, log: base) }
+    #expect(throws: CommandError.noActiveProject(ProjectID("ghost"))) {
+      try makeCommands().dropProject(ProjectID("ghost"), log: base)
+    }
     #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().putOnHold(ProjectID("p1"), log: completed)
+      try makeCommands().dropProject(ProjectID("p1"), log: completed)
     }
   }
 }

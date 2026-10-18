@@ -117,7 +117,7 @@ lets it be. Completing or moving a project to a view takes its subtree. The
 app shows projects in Miller columns instead of a sidebar tree; drag a
 project onto another or onto a column to nest it, and the new project field
 creates inside the project shown. Later slices read the tree: Today's
-project path, on hold and dropped subtrees, review intervals.
+project path, dropped subtrees, review intervals.
 
 ### 5a. Navigation rail ✅
 
@@ -307,13 +307,11 @@ project (its own value, off, or none to fall back), and `ProjectReviewed(project
 date)` marks a review. A project's next review is its last review day, or the day
 it was created, plus the effective interval: a pure function of the events, and
 `projectsDueForReview(in:today:)` lists the projects of a view whose review is
-today or overdue, the longest overdue first. `ProjectPutOnHold`, `ProjectResumed`
-and `ProjectDropped` give a project a status; an on-hold or dropped project
-hands out no next actions, so none of its tasks is a Today candidate, and a
-dropped one is not reviewed. The weekly review is a new place on the rail, after
+today or overdue, the longest overdue first. `ProjectDropped`
+gives a project a status; a dropped project hands out no next actions, so
+none of its tasks is a Today candidate, and it is not reviewed. The weekly review is a new place on the rail, after
 Calendar, with a glasses icon (`eyeglasses`, "Reviews"): the projects due, the one
-picked with its card and the buttons to mark it reviewed, pause its reviews (on
-hold) or drop it, and its tasks, listed and edited like any list (new tasks are captured into
+picked with its card and the buttons to mark it reviewed or drop it, and its tasks, listed and edited like any list (new tasks are captured into
 the picked project). Mark Project Reviewed (⇧⌘R) moves to the next project. The
 default interval is in Settings → Global, a project's own in the review and in its
 context menu.
@@ -788,23 +786,22 @@ Usable: the weekly review.
 3. **A review is due on its day.** The list holds the projects whose next
    review is today or earlier, so a project reviewed on Monday is due again
    the Monday after. Sub-projects are reviewed as projects in their own right
-4. **Status is a property of the project.** `Project.status` is active, on
-   hold or dropped, and `ViewState.nextActions` hands out nothing for a
-   project that is not active, nor for the sub-projects in it. Tasks of an
-   on-hold project stay open and show dimmed; ones already planned for a day
-   stay in that day's plan. Resume brings back an on-hold or a dropped
-   project: dropping a project is not final, and its tasks were never touched
-5. **On hold is reviewed, dropped is not.** Review is how an on-hold project
-   gets resumed; `ProjectReviewed` for a dropped project is refused by the
-   command and ignored by the reducer
-6. **The weekly review is "Reviews" on the rail**, with the glasses icon. The
+4. **Status is a property of the project.** `Project.status` is active or
+   dropped, and `ViewState.nextActions` hands out nothing for a dropped
+   project, nor for the sub-projects in it. Its tasks stay open and show
+   dimmed; ones already planned for a day stay in that day's plan. A dropped
+   project is not reviewed: `ProjectReviewed` for it is refused by the
+   command and ignored by the reducer. The app has no way back from a drop
+   (the events are never deleted). A pause (on hold) status, with Resume, was
+   built and then taken out to keep the app simple
+5. **The weekly review is "Reviews" on the rail**, with the glasses icon. The
    day's review lost its rail icon: it is Today's other face, flipped with a
    Plan / Review toggle in the header of both (`NavigationSection.review`
    stays, with ⇧⌘N, and Today stays picked on the rail while it is shown).
-   The buttons read Pause Reviews (the on-hold status) and Drop Project. Its first
+   The status button reads Drop Project. Its first
    column lists the projects due, the next the picked project's card with
-   Mark Reviewed, the interval picker and the status buttons, the third its
+   Mark Reviewed, the interval picker and Drop Project, the third its
    tasks. The first project is picked on arrival, and marking one reviewed
    picks the one that takes its place, or none when the list is empty
-7. **`Project` moved to its own file** (`Project.swift`) with its new status,
+6. **`Project` moved to its own file** (`Project.swift`) with its new status,
    to keep `LibraryState.swift` under SwiftLint's file length

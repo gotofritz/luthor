@@ -1,8 +1,7 @@
 import LuthorDomain
 
 // The weekly project review: the list of projects due, marking one reviewed, how often projects are reviewed,
-// and putting a project on hold, resuming it or dropping it. In its own file (SwiftLint file_length) rather
-// than suppressed.
+// and dropping a project. In its own file (SwiftLint file_length) rather than suppressed.
 extension LibraryViewModel {
   /// Picks a project of the weekly review, whose tasks the next column lists, with no task selected.
   public func showReviewProject(_ projectID: ProjectID?) {
@@ -46,16 +45,6 @@ extension LibraryViewModel {
   /// The day the project is reviewed next; `nil` when its review is off or it was dropped.
   public func nextReviewDate(of projectID: ProjectID) -> CalendarDate? {
     state.nextReviewDate(of: projectID)
-  }
-
-  /// Puts a project on hold: it hands out no next actions, but is still reviewed.
-  public func putOnHold(_ projectID: ProjectID) {
-    perform { (log) throws(CommandError) in try commands.putOnHold(projectID, log: log) }
-  }
-
-  /// Brings a project that is on hold, or was dropped, back to work.
-  public func resume(_ projectID: ProjectID) {
-    perform { (log) throws(CommandError) in try commands.resume(projectID, log: log) }
   }
 
   /// Gives up a project; it is not reviewed, and its tasks stay open.

@@ -125,7 +125,7 @@ struct NextReviewReplayTests {
     let events =
       projects + [
         projectReviewed("p1", on: "2026-10-20"), reviewDefaultSet(.every(days: 3)),
-        reviewIntervalSet("p2", to: .off), projectPutOnHold("p1"),
+        reviewIntervalSet("p2", to: .off), projectDropped("p1"),
       ]
 
     #expect(LibraryState.replay(events) == LibraryState.replay(events.reversed()))
@@ -193,32 +193,24 @@ struct ProjectReviewListReplayTests {
   }
 }
 
-@Suite("When a project is put on hold, resumed or dropped")
+@Suite("When a project is dropped")
 struct ProjectStatusReplayTests {
-  @Test("a project is active until it is put on hold or dropped")
-  func aProjectIsActiveUntilToldOtherwise() {
-    let state = LibraryState.replay(projects + [projectPutOnHold("p1"), projectDropped("p2")])
+  @Test("a project is active until it is dropped")
+  func aProjectIsActiveUntilDropped() {
+    let state = LibraryState.replay(projects + [projectDropped("p2")])
 
-    #expect(state.view(.default).projects.map(\.status) == [.onHold, .dropped])
+    #expect(state.view(.default).projects.map(\.status) == [.active, .dropped])
   }
 
-  @Test("resuming brings an on-hold or a dropped project back")
-  func resumingBringsAProjectBack() {
-    let state = LibraryState.replay(
-      projects + [projectPutOnHold("p1"), projectDropped("p2"), projectResumed("p1"), projectResumed("p2")])
+  @Test("a drop event for a project that is not active changes nothing")
+  func aDropEventForAProjectThatIsNotActiveChangesNothing() {
+    let state = LibraryState.replay(projects + [projectDropped("ghost")])
 
     #expect(state.view(.default).projects.map(\.status) == [.active, .active])
   }
 
-  @Test("a status event for a project that is not active changes nothing")
-  func aStatusEventForAProjectThatIsNotActiveChangesNothing() {
-    let state = LibraryState.replay(projects + [projectPutOnHold("ghost")])
-
-    #expect(state.view(.default).projects.map(\.status) == [.active, .active])
-  }
-
-  @Test("an on-hold project hands out no next actions, nor do its sub-projects")
-  func anOnHoldProjectHandsOutNoNextActions() {
+  @Test("a dropped project hands out no next actions, nor do its sub-projects")
+  func aDroppedProjectHandsOutNoNextActions() {
     let events = [
       projectCreated("p1", "Move house", lamport: 1), projectCreated("p2", "Pack", under: "p1", lamport: 1),
       projectCreated("p3", "Learn Swift", lamport: 1),
@@ -228,19 +220,19 @@ struct ProjectStatusReplayTests {
     ]
 
     let active = LibraryState.replay(events).view(.default)
-    let held = LibraryState.replay(events + [projectPutOnHold("p1")]).view(.default)
+    let dropped = LibraryState.replay(events + [projectDropped("p1")]).view(.default)
 
     #expect(Set(active.nextActions.map(\.id)) == [TaskID("t1"), TaskID("t2"), TaskID("t3")])
-    #expect(held.nextActions.map(\.id) == [TaskID("t3")])
+    #expect(dropped.nextActions.map(\.id) == [TaskID("t3")])
   }
 
-  @Test("an on-hold sub-project hands out nothing while its parent still does")
-  func anOnHoldSubProjectHandsOutNothing() {
+  @Test("a dropped sub-project hands out nothing while its parent still does")
+  func aDroppedSubProjectHandsOutNothing() {
     let events = [
       projectCreated("p1", "Move house", lamport: 1), projectCreated("p2", "Pack", under: "p1", lamport: 1),
       captured("t1", "pack boxes", lamport: 1), moved("t1", to: "p2", lamport: 2),
       captured("t2", "book a van", lamport: 1), moved("t2", to: "p1", lamport: 2),
-      projectPutOnHold("p2"),
+      projectDropped("p2"),
     ]
 
     let view = LibraryState.replay(events).view(.default)
@@ -248,19 +240,8 @@ struct ProjectStatusReplayTests {
     #expect(view.nextActions.map(\.id) == [TaskID("t2")])
   }
 
-  @Test("a dropped project hands out no next actions")
-  func aDroppedProjectHandsOutNoNextActions() {
-    let events = [
-      projectCreated("p1", "Move house", lamport: 1),
-      captured("t1", "pack boxes", lamport: 1), moved("t1", to: "p1", lamport: 2),
-      projectDropped("p1"),
-    ]
-
-    #expect(LibraryState.replay(events).view(.default).nextActions.isEmpty)
-  }
-
-  @Test("an on-hold or dropped project's tasks are not candidates for Today, and are again once it is resumed")
-  func anOnHoldProjectsTasksAreNotCandidates() {
+  @Test("a dropped project's tasks are not candidates for Today")
+  func aDroppedProjectsTasksAreNotCandidates() {
     let events = [
       projectCreated("p1", "Move house", lamport: 1),
       captured("t1", "pack boxes", lamport: 1), moved("t1", to: "p1", lamport: 2),
@@ -270,35 +251,23 @@ struct ProjectStatusReplayTests {
     }
 
     #expect(candidates([]) == [TaskID("t1")])
-    #expect(candidates([projectPutOnHold("p1")]).isEmpty)
     #expect(candidates([projectDropped("p1")]).isEmpty)
-    #expect(candidates([projectPutOnHold("p1"), projectResumed("p1")]) == [TaskID("t1")])
   }
 
-  @Test("a dropped project is not reviewed and its review days are ignored, until it is resumed")
+  @Test("a dropped project is not reviewed and its review days are ignored")
   func aDroppedProjectIsNotReviewed() {
     let dropped = projects + [projectDropped("p1")]
 
     let state = LibraryState.replay(dropped + [projectReviewed("p1", on: "2026-10-20", lamport: 4)])
-    let resumed = LibraryState.replay(dropped + [projectResumed("p1", lamport: 4)])
 
     #expect(state.nextReviewDate(of: ProjectID("p1")) == nil)
     #expect(state.lastReviewDate(of: ProjectID("p1")) == nil)
     #expect(state.projectsDueForReview(in: .default, today: monday).isEmpty)
-    #expect(resumed.nextReviewDate(of: ProjectID("p1")) == date("2026-10-19"))
-  }
-
-  @Test("an on-hold project is still reviewed")
-  func anOnHoldProjectIsStillReviewed() {
-    let state = LibraryState.replay(projects + [projectPutOnHold("p1")])
-
-    #expect(state.nextReviewDate(of: ProjectID("p1")) == date("2026-10-19"))
-    #expect(state.projectsDueForReview(in: .default, today: monday).map(\.project.id) == [ProjectID("p1")])
   }
 
   @Test("a status survives completing and reopening the project")
   func aStatusSurvivesCompletingAndReopening() {
-    let events = projects + [projectPutOnHold("p1"), projectCompleted("p1", lamport: 4)]
+    let events = projects + [projectDropped("p1"), projectCompleted("p1", lamport: 4)]
     let reopened =
       events + [
         EventEnvelope(
@@ -306,8 +275,8 @@ struct ProjectStatusReplayTests {
           payload: .projectReopened(ProjectReopened(projectID: ProjectID("p1"))))
       ]
 
-    #expect(LibraryState.replay(events).view(.default).completedProjects.map(\.item.status) == [.onHold])
+    #expect(LibraryState.replay(events).view(.default).completedProjects.map(\.item.status) == [.dropped])
     // A reopened project goes to the end of the active ones.
-    #expect(LibraryState.replay(reopened).view(.default).projects.map(\.status) == [.active, .onHold])
+    #expect(LibraryState.replay(reopened).view(.default).projects.map(\.status) == [.active, .dropped])
   }
 }

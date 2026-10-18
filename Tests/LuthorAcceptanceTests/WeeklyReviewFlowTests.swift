@@ -179,56 +179,24 @@ struct WeeklyReviewIntervalFlowTests {
 }
 
 @MainActor
-@Suite("Given a project with an open task, when I put it on hold, resume it or drop it")
+@Suite("Given a project with an open task, when I drop it")
 struct ProjectStatusFlowTests {
-  @Test("an on-hold project hands out no next actions and no plan candidates until it is resumed")
-  func anOnHoldProjectHandsOutNothing() throws {
-    let dir = try TemporaryDirectory()
-    defer { dir.remove() }
-    let url = dir.file("events.jsonl")
-    let (house, _) = try twoProjects(at: url)
-    let library = launchApp(on: url, today: date("2026-10-19"))
-    library.show(.today)
-    #expect(library.plan.candidates.map(\.task.title) == ["pack boxes"])
-
-    library.putOnHold(house)
-
-    #expect(library.plan.candidates.isEmpty)
-    #expect(library.projects.first { $0.id == house }?.status == .onHold)
-    let relaunched = launchApp(on: url, today: date("2026-10-19"))
-    #expect(relaunched.plan.candidates.isEmpty)
-
-    relaunched.resume(house)
-    #expect(relaunched.plan.candidates.map(\.task.title) == ["pack boxes"])
-    #expect(relaunched.projects.first { $0.id == house }?.status == .active)
-  }
-
-  @Test("an on-hold project is still reviewed, so it can be resumed")
-  func anOnHoldProjectIsStillReviewed() throws {
-    let dir = try TemporaryDirectory()
-    defer { dir.remove() }
-    let url = dir.file("events.jsonl")
-    let (house, _) = try twoProjects(at: url)
-    let library = launchApp(on: url, today: date("2026-10-21"))
-
-    library.putOnHold(house)
-
-    #expect(library.projectReview.map(\.project.id).contains(house))
-  }
-
-  @Test("a dropped project is not reviewed and hands out nothing, and a relaunch keeps it dropped")
+  @Test("it is not reviewed and hands out nothing, and a relaunch keeps it dropped")
   func aDroppedProjectSkipsTheReview() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let url = dir.file("events.jsonl")
     let (house, swift) = try twoProjects(at: url)
     let library = launchApp(on: url, today: date("2026-10-21"))
+    library.show(.today)
+    #expect(library.plan.candidates.map(\.task.title) == ["pack boxes"])
     library.show(.weeklyReview)
 
     library.dropProject(house)
 
     #expect(library.projectReview.map(\.project.id) == [swift])
     #expect(library.nextReviewDate(of: house) == nil)
+    #expect(library.projects.first { $0.id == house }?.status == .dropped)
     library.show(.today)
     #expect(library.plan.candidates.isEmpty)
     let relaunched = launchApp(on: url, today: date("2026-10-21"))

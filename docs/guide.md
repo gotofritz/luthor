@@ -39,9 +39,9 @@ does updates this guide in the same PR (see the docs check in
 - **Weekly review**: looking over your projects so none goes stale. Each
   project has a next review day, one interval (a week unless you change it)
   after the day it was last reviewed, or created
-- **Project status**: a project is *active*, *on hold* or *dropped*. An
-  on-hold or dropped project hands out no next actions, so none of its tasks
-  is offered as a candidate in Today. On hold is still reviewed; dropped is not
+- **Project status**: a project is *active* or *dropped*. A dropped
+  project hands out no next actions, so none of its tasks is offered as a
+  candidate in Today, and it is not reviewed
 - **Leftover**: an open task planned for a day before today. Nothing moves it
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
@@ -308,13 +308,11 @@ default. Off leaves one project out of the review; with the default off, only
 projects with an interval of their own are reviewed. Changing an interval
 changes the next review day at once.
 
-**Status.** Pause Reviews (the button, or the project's context menu) puts a
-project on hold, so it stops handing out next actions: its tasks show dimmed
-and none is offered as a candidate in Today (tasks already in a day's plan
-stay there). It is still listed when its review is due, so you can resume
-it. Drop Project gives up a project: no next actions and no review. Its tasks stay open and nothing is deleted. Resume
-brings either back. On-hold and dropped projects show a pause or cross
-symbol in the Projects columns.
+**Status.** Drop Project (the button, or the project's context menu) gives
+up a project: it stops handing out next actions, so its tasks show dimmed and
+none is offered as a candidate in Today (tasks already in a day's plan stay
+there), and it is no longer reviewed. Its tasks stay open and nothing is
+deleted. A dropped project shows a cross symbol in the Projects columns.
 
 A project that was never reviewed counts from the day it was created, so a
 project older than a week is due the first time you look. A project created

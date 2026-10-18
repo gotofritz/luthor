@@ -48,36 +48,6 @@ public func projectReviewed(
   )
 }
 
-/// Builds a `ProjectPutOnHold` envelope with short, readable defaults.
-public func projectPutOnHold(
-  _ project: String,
-  id: String? = nil,
-  device: String = "mac",
-  lamport: UInt64 = 3
-) -> EventEnvelope {
-  EventEnvelope(
-    id: EventID(id ?? "hold-\(project)"),
-    deviceID: DeviceID(device),
-    lamport: lamport,
-    payload: .projectPutOnHold(ProjectPutOnHold(projectID: ProjectID(project)))
-  )
-}
-
-/// Builds a `ProjectResumed` envelope with short, readable defaults.
-public func projectResumed(
-  _ project: String,
-  id: String? = nil,
-  device: String = "mac",
-  lamport: UInt64 = 4
-) -> EventEnvelope {
-  EventEnvelope(
-    id: EventID(id ?? "resume-\(project)"),
-    deviceID: DeviceID(device),
-    lamport: lamport,
-    payload: .projectResumed(ProjectResumed(projectID: ProjectID(project)))
-  )
-}
-
 /// Builds a `ProjectDropped` envelope with short, readable defaults.
 public func projectDropped(
   _ project: String,

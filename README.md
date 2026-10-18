@@ -104,10 +104,9 @@ review once a week by default; the place lists those whose review is due, the
 longest overdue first. Pick one to see its card and its tasks, which you can
 edit and add to in place, then Mark Reviewed (⇧⌘R) to move to the next. A
 project can be reviewed more or less often (or never) from its context menu or
-here, and Settings → Global sets the default for all of them. A project can be
-paused (Pause Reviews: no next actions, so none of its tasks is offered in
-Today, but it still shows in the reviews) or dropped (Drop Project: no next
-actions, not reviewed); Resume brings either back.
+here, and Settings → Global sets the default for all of them. A project that
+is no longer wanted can be dropped (Drop Project: no next actions, not
+reviewed; its tasks stay open).
 
 Settings has two families of settings, Global and Local (overrides for the
 view currently shown): Global sets the numbers every view falls back to

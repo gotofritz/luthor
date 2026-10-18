@@ -242,29 +242,24 @@ struct ProjectReviewSettingsViewModelTests {
     #expect(library.projectReview.isEmpty)
   }
 
-  @Test("putting a project on hold, resuming it and dropping it changes its status")
-  func statusChanges() {
+  @Test("dropping a project changes its status and takes it out of the review")
+  func droppingAProjectChangesItsStatus() {
     let (library, _) = makeLibrary(reviewable)
     func status() -> ProjectStatus? { library.projects.first { $0.id == ProjectID("p1") }?.status }
 
-    library.putOnHold(ProjectID("p1"))
-    #expect(status() == .onHold)
-    library.resume(ProjectID("p1"))
-    #expect(status() == .active)
     library.dropProject(ProjectID("p1"))
+
     #expect(status() == .dropped)
     #expect(library.projectReview.map(\.project.title) == ["Learn Swift"])
-    library.resume(ProjectID("p1"))
-    #expect(status() == .active)
   }
 
-  @Test("an on-hold project's tasks are dimmed in its project column")
-  func anOnHoldProjectsTasksAreDimmed() {
+  @Test("a dropped project hands out no next actions")
+  func aDroppedProjectHandsOutNoNextActions() {
     let (library, _) = makeLibrary(reviewable)
     library.open(.project(ProjectID("p1")))
     #expect(library.nextActions == [TaskID("t1"), TaskID("t2")])
 
-    library.putOnHold(ProjectID("p1"))
+    library.dropProject(ProjectID("p1"))
 
     #expect(library.nextActions.isEmpty)
   }

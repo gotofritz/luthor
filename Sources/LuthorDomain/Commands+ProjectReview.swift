@@ -1,5 +1,5 @@
-// The weekly project review: how often projects are reviewed, marking one reviewed, and putting a project on
-// hold, resuming it or dropping it. In their own file (SwiftLint file_length) rather than suppressed.
+// The weekly project review: how often projects are reviewed, marking one reviewed, and dropping a project. In
+// their own file (SwiftLint file_length) rather than suppressed.
 extension Commands {
   /// Sets how often projects without an interval of their own are reviewed; off turns review off for all of
   /// them. No days, or fewer, is off. Setting the interval it has writes nothing.
@@ -40,36 +40,11 @@ extension Commands {
     return [envelope(EventID(ids.next()), .projectReviewed(reviewed), log: log)]
   }
 
-  /// Puts the active project `projectID` on hold. Putting a project on hold that is on hold writes nothing.
-  public func putOnHold(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    try changeStatus(of: projectID, to: .onHold, log: log)
-  }
-
-  /// Brings the active project `projectID` back to work from on hold, or from dropped. Resuming a project that
-  /// is not on hold or dropped writes nothing.
-  public func resume(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    try changeStatus(of: projectID, to: .active, log: log)
-  }
-
   /// Gives up the active project `projectID`; its tasks stay open. Dropping a project that was dropped writes
   /// nothing.
   public func dropProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    try changeStatus(of: projectID, to: .dropped, log: log)
-  }
-
-  private func changeStatus(
-    of projectID: ProjectID,
-    to status: ProjectStatus,
-    log: [EventEnvelope]
-  ) throws(CommandError) -> [EventEnvelope] {
     let project = try activeProject(projectID, in: LibraryState.replay(log))
-    guard project.status != status else { return [] }
-    let payload: EventPayload =
-      switch status {
-      case .active: .projectResumed(ProjectResumed(projectID: projectID))
-      case .onHold: .projectPutOnHold(ProjectPutOnHold(projectID: projectID))
-      case .dropped: .projectDropped(ProjectDropped(projectID: projectID))
-      }
-    return [envelope(EventID(ids.next()), payload, log: log)]
+    guard project.status != .dropped else { return [] }
+    return [envelope(EventID(ids.next()), .projectDropped(ProjectDropped(projectID: projectID)), log: log)]
   }
 }

@@ -38,14 +38,10 @@ struct ProjectReviewLineTests {
     )
   }
 
-  @Test("a status change names the project")
-  func aStatusChangeNamesTheProject() throws {
-    let hold = try EventLine.encode(projectPutOnHold("p1", id: "e1", lamport: 1))
-    let resume = try EventLine.encode(projectResumed("p1", id: "e2", lamport: 2))
+  @Test("a drop names the project")
+  func aDropNamesTheProject() throws {
     let drop = try EventLine.encode(projectDropped("p1", id: "e3", lamport: 3))
 
-    #expect(hold == #"{"data":{"projectID":"p1"},"device":"mac","id":"e1","lamport":1,"type":"ProjectPutOnHold"}"#)
-    #expect(resume == #"{"data":{"projectID":"p1"},"device":"mac","id":"e2","lamport":2,"type":"ProjectResumed"}"#)
     #expect(drop == #"{"data":{"projectID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"ProjectDropped"}"#)
   }
 
@@ -54,7 +50,7 @@ struct ProjectReviewLineTests {
     arguments: [
       reviewDefaultSet(.every(days: 7)), reviewDefaultSet(.off), reviewIntervalSet("p1", to: .every(days: 3)),
       reviewIntervalSet("p1", to: .off), reviewIntervalSet("p1", to: nil), projectReviewed("p1", on: "2026-10-19"),
-      projectPutOnHold("p1"), projectResumed("p1"), projectDropped("p1"),
+      projectDropped("p1"),
     ])
   func projectReviewLineDecodesBackToTheSameEvent(event: EventEnvelope) throws {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)

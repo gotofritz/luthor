@@ -70,25 +70,6 @@ public struct ProjectReviewed: Equatable, Codable, Sendable {
   }
 }
 
-/// Puts an active project on hold: it hands out no next actions and offers no plan candidates, but is still
-/// reviewed.
-public struct ProjectPutOnHold: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-
-  public init(projectID: ProjectID) {
-    self.projectID = projectID
-  }
-}
-
-/// Brings a project that is on hold, or was dropped, back to work.
-public struct ProjectResumed: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-
-  public init(projectID: ProjectID) {
-    self.projectID = projectID
-  }
-}
-
 /// Gives up an active project: it hands out no next actions and is not reviewed. Its tasks stay open.
 public struct ProjectDropped: Equatable, Codable, Sendable {
   public let projectID: ProjectID
