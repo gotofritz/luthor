@@ -61,8 +61,9 @@ struct ProjectFieldCommandTests {
 
   @Test("it is renamed and given notes by the task commands")
   func renameAndNotes() throws {
-    let renamed = try makeCommands().rename(taskID: Self.trip, to: "Spring trip", log: log)
-    let noted = try makeCommands().setNotes(taskID: Self.trip, to: "Lisbon", log: log + renamed)
+    let commands = makeCommands()
+    let renamed = try commands.rename(taskID: Self.trip, to: "Spring trip", log: log)
+    let noted = try commands.setNotes(taskID: Self.trip, to: "Lisbon", log: log + renamed)
 
     let project = try #require(LibraryState.replay(log + renamed + noted).view(.default).projects.first)
     #expect(project.title == "Spring trip")
@@ -74,9 +75,10 @@ struct ProjectFieldCommandTests {
 struct ContainerCommandTests {
   @Test("a task gets a kind, and so becomes a project that keeps its fields")
   func kindOnATask() throws {
-    let prioritized = try makeCommands().prioritize(taskID: TaskID("t2"), as: .critical, log: log)
+    let commands = makeCommands()
+    let prioritized = try commands.prioritize(taskID: TaskID("t2"), as: .critical, log: log)
 
-    let events = try makeCommands().setKind(of: TaskID("t2"), to: .sequential, log: log + prioritized)
+    let events = try commands.setKind(of: TaskID("t2"), to: .sequential, log: log + prioritized)
 
     let state = LibraryState.replay(log + prioritized + events)
     let project = try #require(state.view(.default).projects.first { $0.id == TaskID("t2") })
@@ -104,10 +106,11 @@ struct ContainerCommandTests {
 
   @Test("a repeating project is completed with its next one, holding a copy of its tasks")
   func completeARepeatingProject() throws {
-    let repeating = try makeCommands().setRepeat(
+    let commands = makeCommands()
+    let repeating = try commands.setRepeat(
       taskID: TaskID("p1"), to: RepeatRule(every: 1, unit: .week), dueIfNone: date("2026-10-19"), log: log)
 
-    let events = try makeCommands().completeProject(
+    let events = try commands.completeProject(
       TaskID("p1"), today: date("2026-10-19"), log: log + repeating)
 
     let state = LibraryState.replay(log + repeating + events)
@@ -128,9 +131,10 @@ struct ContainerCommandTests {
 
   @Test("a completed project is reopened by the task command too")
   func reopenAProject() throws {
-    let done = try makeCommands().complete(taskID: TaskID("p1"), log: log)
+    let commands = makeCommands()
+    let done = try commands.complete(taskID: TaskID("p1"), log: log)
 
-    let events = try makeCommands().reopen(taskID: TaskID("p1"), log: log + done)
+    let events = try commands.reopen(taskID: TaskID("p1"), log: log + done)
 
     let state = LibraryState.replay(log + done + events)
     #expect(state.view(.default).projects.map(\.id) == [TaskID("p1")])

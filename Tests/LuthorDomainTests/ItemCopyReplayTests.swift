@@ -35,7 +35,7 @@ struct DuplicateContainerReplayTests {
 
     let original = try #require(state.view(.default).projects.first { $0.id == TaskID("p1") })
     #expect(original.tasks.map(\.id) == [TaskID("t1")])
-    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t2")])
+    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t3"), TaskID("t2")])
   }
 
   @Test("the copies of the tasks get IDs worked out from the copy, so devices agree")
