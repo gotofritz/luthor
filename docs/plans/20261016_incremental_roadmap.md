@@ -16,7 +16,7 @@ sync of event files) stays; the order and the amount of machinery change.
   "proper" version in three months. Mark hacks as `// THROWAWAY:` so they are
   easy to find
 - **Defer machinery until it hurts.** No SQLite until in-memory replay is
-  measurably slow; no Dropbox API until a Dropbox folder stops being enough
+  measurably slow; no Dropbox API until iOS needs it (see `20261018_ios_app.md`)
 - **TDD throughout** (see `AGENTS.md`). The domain is where the tests go;
   hacks at the edges get thin tests
 - **Documented as built.** `docs/guide.md` is the user guide. It describes
@@ -62,11 +62,10 @@ universal `luthor` CLI shipped alongside until it was removed (see Decisions
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
   an old log fails CI
 
-### CD-2. iOS (slice 18)
+### CD-2. ~~iOS~~ (moved)
 
-- `xcodebuild` the iOS target in CI
-- Distribution decided with slice 18: free 7-day provisioning from Xcode, or
-  TestFlight with the Developer Program
+Moved 2026-10-18 to `20261018_ios_app.md`. The number stays so the CI/CD
+numbering holds.
 
 ## Slices
 
@@ -318,49 +317,116 @@ context menu.
 
 Usable: the weekly review.
 
+### 14a. Repeating tasks
+
+Routines (pay the rent, water the plants, the weekly report) are retyped
+today. A task can repeat; completing it creates the next one. Nothing is
+planned by itself: the next one shows up as a candidate when its time comes,
+under the due-date rules of slice 11. Done before the stress test and before
+the format freeze, because it adds events.
+
+- **The rule.** Every N days, weeks, months or years. Weekly can pick the
+  weekdays (Monday and Thursday); monthly keeps the day number, and a 31st
+  falls on the last day of a shorter month. It never ends; "until a date" and
+  "N times" are out of scope. Two modes, fixed by default:
+  - *Fixed*: the next due date is the first date of the rule after the
+    previous due date, and after today, so a week of missed days does not
+    pile up
+  - *After completion*: the completion day plus the interval
+- **It needs a due date.** The due date is the anchor and its kind (hard
+  deadline or target date) is kept. Setting a repeat on a task with none
+  gives it one: the day Today shows. Set from the Repeat field of the card
+  editor and from the context menu; the card says "Repeats every week on
+  Mon, Thu"
+- **Completing creates the next task** in the same command: a copy with the
+  same title, notes, project, priority, estimate, tags and rule, and the new
+  due date. Not copied: the day it was planned for, a delegation, the logged
+  time. The completed one stays in Completed as history. Editing the open
+  task changes what the next ones copy
+- **Skip this one** drops the task and creates the next, for "not this
+  week". **Stop repeating** clears the rule. **Drop Task** and **Send to
+  Someday** on a repeating task end the series (no next task): giving a task
+  up is explicit, and Skip is the way to pass over one. Reopening a completed
+  task leaves the next one as it is
+- **Events** (new types only, the format is still soft): `TaskRepeatSet(task,
+  rule?)`, where no rule clears it, and `TaskRecurred(previous, next, due)`,
+  which makes `next` a copy of `previous` as it is at that point in the
+  replay. The ID of `next` is worked out from the ID of `previous`, so two
+  Macs completing the same task write the same next task, and the reducer
+  keeps the first one in replay order and ignores the second. The due date is
+  worked out by the command from the injected clock, so the reducers still
+  never read the clock
+- **Pure rule.** `RepeatRule` is a domain value with a function from the
+  previous due date, the completion day and today to the next due date
+
+Known cost: there is no start (availability) date, so the next task is in the
+lists at once, a week early for a weekly task, though it only counts as a
+candidate under the due-date rules. A start date would be its own feature.
+
+Acceptance test: capture a task, give it a due date and a weekly repeat,
+complete it, and the next one is in the Inbox with the date a week on. Unit
+tests, table style: next date for each rule (month ends, leap years,
+weekdays, both modes, completed late), replay with the same event twice and
+in shuffled order, skip and stop. Guide and card editor updated with it.
+
+Usable: the routines stop being retyped.
+
+### Stress test the desktop app (before 15)
+
+Not a build slice: time spent using the Mac app hard before the format is
+frozen and before iOS starts. Real tasks every day, two Macs at once, and a
+big synthetic log, where launch replay time and capture latency are measured
+(the first item of slice 16). It ends with a list of issues. Whatever it
+finds in the event format is fixed in the audit step of slice 15, while the
+format is still soft.
+
 ### 15. Freeze the event format
 
-- Write down every event type and field as v1
-- Golden-file tests: a checked-in fixture log must always replay to the same
-  state
-- From here, `AGENTS.md` event rules are strict
+Safety work, no new feature: it keeps the log, the only copy of the tasks,
+from being broken by a later change. One PR, after slice 14 so its events
+enter v1.
+
+- **Audit first.** The format is still soft, so this is the last cheap
+  moment to fix warts (event and field names, field shapes, raw values such
+  as `Priority` "A", setting key strings). Fixes ship with a one-off
+  migration script over the log. Whatever is left becomes permanent
+- **Unknown events are skipped, not fatal.** Replay ignores an event type it
+  does not know and leaves it untouched in the log, so an older build can
+  open a log written by a newer one (unknown setting keys already behave
+  this way). Today the decoder throws `unreadableLine` and the app refuses
+  to open the log
+- **Golden fixture.** One synthetic, checked-in log with every event type
+  and every optional field (`createdOn`, due dates…) must always replay to
+  the same state; the same events in shuffled order, and with duplicates,
+  give the same state. Never the real log. A PR that adds an event adds
+  lines to the fixture
+- **Strict rules from here.** The `AGENTS.md` event rules (never rename or
+  change the meaning of a field; add a new event type or an optional field)
+  now apply in full. The fixture and the `EventType` enum are the spec; no
+  separate format document
 
 ### 16. Speed pass
 
 - Measure launch replay time and capture latency on the real log
-- Only if needed: GRDB projections, snapshotting, global capture hotkey,
-  command palette
+- Only if needed: GRDB projections, snapshotting
+- The global capture hotkey (#34) and the command palette (#35) were cut on
+  2026-10-18: not core, so they wait in issues, to be done if at all later
 
-### 17. Dropbox API sync
+### 17. ~~Dropbox API sync~~ (moved)
 
-- OAuth, token in Keychain, sync of the same per-device files over the API
-- Sync behind a `Transport` protocol; in-memory fake for tests; two-device
-  convergence tests
-- Required for iOS, which has no Dropbox folder to watch
+Moved 2026-10-18 to `20261018_ios_app.md`: only iOS needs it, as a Mac reads
+the Dropbox folder directly (slice 10). The number stays so later slices
+keep theirs.
 
-### 18. iOS app
+### 18. ~~iOS app~~ (moved)
 
-- Same package; capture, Inbox and Today first, then the daily review
-- Without the Apple Developer Program, a free provisioning profile expires
-  every 7 days; decide then whether to pay
+Moved 2026-10-18 to `20261018_ios_app.md`, together with the iOS CI/CD item.
+This roadmap now ends at the desktop app.
 
 ### Later
 
-- Search: make the search box in the top bar work, over titles in the
-  current view only
-- Full keyboard navigation: reach the rail, every column, the top bar and
-  the view switcher without the mouse (the view switcher still gets no
-  shortcut)
-- Repeating tasks
-- Timer for actual minutes, and an in-progress state with it
-- Estimate suggestions from history, offered and never applied silently
-- Calendar integration: fixed commitments reduce a day's capacity
-- Perspectives as saved queries, scoped to a view
-- Per-device view lists: a work Mac that never shows (or never syncs)
-  private views, if logical isolation turns out not to be enough
-- Richer notes (markdown, attachments): notes are plain text with clickable
-  links, and longer writing lives in Joplin
-- CloudKit transport, if ever
+Nothing is listed here any more. What is not scheduled lives in GitHub
+issues, each worked out when it was taken off this list on 2026-10-18.
 
 ## Decisions (2026-10-16)
 
@@ -805,3 +871,13 @@ Usable: the weekly review.
    picks the one that takes its place, or none when the list is empty
 6. **`Project` moved to its own file** (`Project.swift`) with its new status,
    to keep `LibraryState.swift` under SwiftLint's file length
+
+## Decisions (2026-10-18, slice 15)
+
+1. **Slice 15 is cut down.** No separate "every event type and field as v1"
+   document: the golden fixture and the `EventType` enum are the spec, as
+   the only reader is the owner. Added instead: an audit and fix pass while
+   the format is still soft, and skipping unknown events on replay, so an
+   older build survives a newer log
+2. **Not deferred to slice 17.** The guard is cheap, protects the log now
+   that two Macs share it, and slice 14 lands first so its events are in v1
