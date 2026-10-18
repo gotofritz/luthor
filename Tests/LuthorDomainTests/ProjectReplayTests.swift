@@ -180,16 +180,16 @@ struct NextActionTests {
 
   @Test("in a parallel project, every open task is one")
   func parallelProjectOffersEveryTask() {
-    #expect(Self.moveHouse(.parallel).nextActions(of: ProjectID("p1")).map(\.id.rawValue) == ["t1", "t2"])
+    #expect(Self.moveHouse(.parallel).nextActions(of: TaskID("p1")).map(\.id.rawValue) == ["t1", "t2"])
   }
 
   @Test("in a sequential project, only the first open task is one")
   func sequentialProjectOffersTheFirstTask() {
-    #expect(Self.moveHouse(.sequential).nextActions(of: ProjectID("p1")).map(\.id.rawValue) == ["t1"])
+    #expect(Self.moveHouse(.sequential).nextActions(of: TaskID("p1")).map(\.id.rawValue) == ["t1"])
   }
 
   @Test("an empty project has none", arguments: [ProjectKind.parallel, .sequential])
   func emptyProjectOffersNothing(kind: ProjectKind) {
-    #expect(Self.moveHouse(kind, tasks: 0).nextActions(of: ProjectID("p1")) == [])
+    #expect(Self.moveHouse(kind, tasks: 0).nextActions(of: TaskID("p1")) == [])
   }
 }

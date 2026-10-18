@@ -41,7 +41,7 @@ public final class LibraryViewModel {
   /// The project browser: the top-level projects, then one column for each project on the path.
   public internal(set) var columns: [ProjectColumn] = []
   /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
-  public internal(set) var path: [ProjectID] = []
+  public internal(set) var path: [TaskID] = []
   /// Open tasks of the inbox, of the project shown, or with a priority picked.
   public internal(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.
@@ -70,17 +70,20 @@ public final class LibraryViewModel {
   /// The weekly review: the projects of the view whose review is due, the longest overdue first, the one
   /// picked (`nil` while none is due), and how often projects are reviewed unless they say otherwise.
   public internal(set) var projectReview: [ProjectReviewItem] = []
-  public internal(set) var reviewProjectID: ProjectID?
+  public internal(set) var reviewProjectID: TaskID?
   public internal(set) var reviewDefault = ReviewInterval.weekly
-  /// Whether completed tasks and projects are listed too, dimmed, after the open ones.
+  /// Whether completed and dropped tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }
   }
-  /// Of the completed items listed, those that can be reopened and those that came with their project.
+  /// Of the completed and dropped items listed, those that can be reopened and those that came with their
+  /// project, and those that were dropped, not completed.
   public internal(set) var completedTaskIDs: Set<TaskID> = []
-  public internal(set) var completedProjectIDs: Set<ProjectID> = []
+  public internal(set) var completedProjectIDs: Set<TaskID> = []
+  public internal(set) var droppedTaskIDs: Set<TaskID> = []
+  public internal(set) var droppedProjectIDs: Set<TaskID> = []
   public internal(set) var reopenableTaskIDs: Set<TaskID> = []
-  public internal(set) var reopenableProjectIDs: Set<ProjectID> = []
+  public internal(set) var reopenableProjectIDs: Set<TaskID> = []
   public var draft = ""
   /// Title of the next project to create.
   public var projectDraft = ""
@@ -152,12 +155,12 @@ public final class LibraryViewModel {
 
   /// Takes a project and its open tasks across to another view. If the sidebar showed it, it shows the
   /// inbox again.
-  public func moveProject(_ projectID: ProjectID, toView viewID: ViewID) {
+  public func moveProject(_ projectID: TaskID, toView viewID: ViewID) {
     perform { (log) throws(CommandError) in try commands.move(projectID: projectID, toView: viewID, log: log) }
   }
 
   /// What a project carries when dragged, so a drop can tell it from a task.
-  public static func dragPayload(for projectID: ProjectID) -> String {
+  public static func dragPayload(for projectID: TaskID) -> String {
     projectPayloadPrefix + projectID.rawValue
   }
 
@@ -166,10 +169,10 @@ public final class LibraryViewModel {
   /// Handles payloads dropped on a project, or on the first column (`nil`): a project is nested there or
   /// made top-level, a task is filed into the project. Returns whether anything was dropped.
   @discardableResult
-  public func drop(_ payloads: [String], on target: ProjectID?) -> Bool {
+  public func drop(_ payloads: [String], on target: TaskID?) -> Bool {
     for payload in payloads {
       if payload.hasPrefix(Self.projectPayloadPrefix) {
-        nest(ProjectID(String(payload.dropFirst(Self.projectPayloadPrefix.count))), under: target)
+        nest(TaskID(String(payload.dropFirst(Self.projectPayloadPrefix.count))), under: target)
       } else if let target {
         file(TaskID(payload), into: target)
       }
@@ -179,7 +182,7 @@ public final class LibraryViewModel {
 
   /// Nests a project in another, or with no parent makes it top-level. Nesting it under itself or one of
   /// its own sub-projects changes nothing.
-  public func nest(_ projectID: ProjectID, under parentID: ProjectID?) {
+  public func nest(_ projectID: TaskID, under parentID: TaskID?) {
     perform { (log) throws(CommandError) in try commands.move(projectID: projectID, under: parentID, log: log) }
   }
 
@@ -285,18 +288,20 @@ public final class LibraryViewModel {
   }
 
   /// Files a task into a project.
-  public func file(_ taskID: TaskID, into projectID: ProjectID) {
+  public func file(_ taskID: TaskID, into projectID: TaskID) {
     perform { (log) throws(CommandError) in try commands.move(taskID: taskID, to: projectID, log: log) }
   }
 
   /// Files the selected task and selects the one that takes its place in the list.
-  public func fileSelected(into projectID: ProjectID) {
+  public func fileSelected(into projectID: TaskID) {
     replaceSelected { file($0, into: projectID) }
   }
 
-  /// Completes a project and its open tasks. If the sidebar showed it, it shows the inbox again.
-  public func completeProject(_ projectID: ProjectID) {
-    perform { (log) throws(CommandError) in try commands.completeProject(projectID, log: log) }
+  /// Completes a project and its open tasks. If it repeats, the next one is made, due by its rule as of today.
+  /// If the sidebar showed it, it shows the inbox again.
+  public func completeProject(_ projectID: TaskID) {
+    let day = clock()
+    perform { (log) throws(CommandError) in try commands.completeProject(projectID, today: day, log: log) }
   }
 
   /// Opens a completed task again; a task that its project's completion took along stays completed.
@@ -305,7 +310,7 @@ public final class LibraryViewModel {
   }
 
   /// Opens a completed project again, with what its completion took along.
-  public func reopenProject(_ projectID: ProjectID) {
+  public func reopenProject(_ projectID: TaskID) {
     perform { (log) throws(CommandError) in try commands.reopenProject(projectID, log: log) }
   }
 
@@ -320,17 +325,17 @@ public final class LibraryViewModel {
   }
 
   /// Gives a project another title. A blank title changes nothing.
-  public func renameProject(_ projectID: ProjectID, to title: String) {
+  public func renameProject(_ projectID: TaskID, to title: String) {
     perform { (log) throws(CommandError) in try commands.renameProject(projectID, to: title, log: log) }
   }
 
   /// Makes a project sequential or parallel.
-  public func setKind(of projectID: ProjectID, to kind: ProjectKind) {
+  public func setKind(of projectID: TaskID, to kind: ProjectKind) {
     perform { (log) throws(CommandError) in try commands.setKind(of: projectID, to: kind, log: log) }
   }
 
   /// Sets the notes of a project, or with blank text clears them.
-  public func setNotes(ofProject projectID: ProjectID, to notes: String) {
+  public func setNotes(ofProject projectID: TaskID, to notes: String) {
     perform { (log) throws(CommandError) in try commands.setNotes(ofProject: projectID, to: notes, log: log) }
   }
 

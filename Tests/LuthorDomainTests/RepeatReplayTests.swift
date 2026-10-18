@@ -156,14 +156,15 @@ struct RecurrenceReplayTests {
     #expect(state.view(.default).openTasks.isEmpty)
   }
 
-  @Test("skipping drops the task and leaves the next one")
+  @Test("skipping drops the task, keeps it with the dropped items and leaves the next one")
   func skippingDropsTheTaskAndLeavesTheNextOne() {
     let events = routine + [recurred("t1", as: "t2", due: nextMonday, lamport: 5), dropped("t1", lamport: 6)]
 
     let state = LibraryState.replay(events)
 
     #expect(state.view(.default).openTasks.map(\.id) == [TaskID("t2")])
-    #expect(state.view(.default).completedTasks.isEmpty)
+    #expect(state.view(.default).completedTasks.map(\.item.id) == [TaskID("t1")])
+    #expect(state.view(.default).completedTasks.first?.isDropped == true)
   }
 
   @Test("reopening the completed task leaves the next one as it is")
@@ -210,7 +211,7 @@ struct RecurrenceReplayTests {
 
     let open = state.view(.default).openTasks
     #expect(open.map(\.id) == [TaskID("t2")])
-    #expect(open.first?.projectID == nil)
+    #expect(open.first?.parentID == nil)
   }
 }
 

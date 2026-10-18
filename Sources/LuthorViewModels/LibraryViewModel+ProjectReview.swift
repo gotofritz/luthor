@@ -4,7 +4,7 @@ import LuthorDomain
 // and dropping a project. In its own file (SwiftLint file_length) rather than suppressed.
 extension LibraryViewModel {
   /// Picks a project of the weekly review, whose tasks the next column lists, with no task selected.
-  public func showReviewProject(_ projectID: ProjectID?) {
+  public func showReviewProject(_ projectID: TaskID?) {
     reviewProjectID = projectID
     selection = nil
     editingCard = nil
@@ -28,33 +28,33 @@ extension LibraryViewModel {
 
   /// Sets how often one project is reviewed, in place of the default; off leaves it out of the review, and
   /// `nil` clears its own interval.
-  public func setReviewInterval(of projectID: ProjectID, to interval: ReviewInterval?) {
+  public func setReviewInterval(of projectID: TaskID, to interval: ReviewInterval?) {
     perform { (log) throws(CommandError) in try commands.setReviewInterval(of: projectID, to: interval, log: log) }
   }
 
   /// How often the project is reviewed: its own interval, else the default.
-  public func reviewInterval(of projectID: ProjectID) -> ReviewInterval {
+  public func reviewInterval(of projectID: TaskID) -> ReviewInterval {
     state.reviewInterval(of: projectID)
   }
 
   /// The interval the project has of its own; `nil` while it follows the default.
-  public func reviewOverride(of projectID: ProjectID) -> ReviewInterval? {
+  public func reviewOverride(of projectID: TaskID) -> ReviewInterval? {
     state.reviewOverride(of: projectID)
   }
 
   /// The day the project is reviewed next; `nil` when its review is off or it was dropped.
-  public func nextReviewDate(of projectID: ProjectID) -> CalendarDate? {
+  public func nextReviewDate(of projectID: TaskID) -> CalendarDate? {
     state.nextReviewDate(of: projectID)
   }
 
   /// Gives up a project; it is not reviewed, and its tasks stay open.
-  public func dropProject(_ projectID: ProjectID) {
+  public func dropProject(_ projectID: TaskID) {
     perform { (log) throws(CommandError) in try commands.dropProject(projectID, log: log) }
   }
 
   /// The project new tasks are captured into: the one the weekly review has picked, else the project shown,
   /// else none, which is the inbox.
-  var captureProjectID: ProjectID? {
+  var captureProjectID: TaskID? {
     section == .weeklyReview ? reviewProjectID : shownProjectID
   }
 

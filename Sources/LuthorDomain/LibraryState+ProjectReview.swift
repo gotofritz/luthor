@@ -15,38 +15,30 @@ struct ProjectReviewRecords: Equatable, Sendable {
   /// How often a project without an interval of its own is reviewed.
   var defaultInterval = ReviewInterval.weekly
   /// The interval of the projects that have one of their own, which may be off.
-  var intervals: [ProjectID: ReviewInterval] = [:]
+  var intervals: [TaskID: ReviewInterval] = [:]
   /// The day each project was last reviewed.
-  var reviewedOn: [ProjectID: CalendarDate] = [:]
+  var reviewedOn: [TaskID: CalendarDate] = [:]
 }
 
 // The weekly project review: how the events change the state, and the pure functions that turn it into the
 // next review of a project and the list of reviews that are due. In its own file (SwiftLint file_length)
 // rather than suppressed.
 extension LibraryState {
-  /// Applies the events that set review intervals, mark a project reviewed, and drop a project; any other
-  /// event changes nothing. An event for a project that is not active is ignored.
+  /// Applies the events that set review intervals and mark a project reviewed; any other event changes
+  /// nothing. An event for an item that is not open is ignored.
   mutating func applyProjectReview(_ payload: EventPayload) {
     switch payload {
     case .reviewDefaultSet(let set):
       projectReviews.defaultInterval = ReviewInterval(days: set.interval.days)
-    case .projectReviewIntervalSet(let set):
-      guard isActive(set.projectID) else { return }
-      projectReviews.intervals[set.projectID] = set.interval.map { ReviewInterval(days: $0.days) }
-    case .projectReviewed(let reviewed):
-      guard let project = projects.first(where: { $0.id == reviewed.projectID }), project.status != .dropped else {
-        return
-      }
-      projectReviews.reviewedOn[reviewed.projectID] = reviewed.date
-    case .projectDropped(let dropped):
-      updateProject(dropped.projectID) { $0.status = .dropped }
+    case .reviewIntervalSet(let set):
+      guard isOpen(set.taskID) else { return }
+      projectReviews.intervals[set.taskID] = set.interval.map { ReviewInterval(days: $0.days) }
+    case .taskReviewed(let reviewed):
+      guard isOpen(reviewed.taskID) else { return }
+      projectReviews.reviewedOn[reviewed.taskID] = reviewed.date
     default:
       break
     }
-  }
-
-  private func isActive(_ projectID: ProjectID) -> Bool {
-    projects.contains { $0.id == projectID }
   }
 
   /// How often projects without an interval of their own are reviewed.
@@ -55,26 +47,25 @@ extension LibraryState {
   }
 
   /// The interval the project is reviewed at: its own, else the default.
-  public func reviewInterval(of projectID: ProjectID) -> ReviewInterval {
+  public func reviewInterval(of projectID: TaskID) -> ReviewInterval {
     projectReviews.intervals[projectID] ?? projectReviews.defaultInterval
   }
 
   /// The interval the project has of its own; `nil` while it follows the default.
-  public func reviewOverride(of projectID: ProjectID) -> ReviewInterval? {
+  public func reviewOverride(of projectID: TaskID) -> ReviewInterval? {
     projectReviews.intervals[projectID]
   }
 
   /// The day the project was last reviewed; `nil` while it never was.
-  public func lastReviewDate(of projectID: ProjectID) -> CalendarDate? {
+  public func lastReviewDate(of projectID: TaskID) -> CalendarDate? {
     projectReviews.reviewedOn[projectID]
   }
 
   /// The day the project is to be reviewed next: one interval after the day it was last reviewed, or created.
   /// A project created before the day was kept counts from 1970-01-01, so it is due at once. `nil` for a
-  /// project that is not active, that was dropped, or whose review is off.
-  public func nextReviewDate(of projectID: ProjectID) -> CalendarDate? {
-    guard let project = projects.first(where: { $0.id == projectID }), project.status != .dropped,
-      let days = reviewInterval(of: projectID).days
+  /// project that is not open, that was completed or dropped, or whose review is off.
+  public func nextReviewDate(of projectID: TaskID) -> CalendarDate? {
+    guard let project = openItem(projectID), project.kind != nil, let days = reviewInterval(of: projectID).days
     else { return nil }
     let since = projectReviews.reviewedOn[projectID] ?? project.createdOn ?? CalendarDate(daysSinceEpoch: 0)
     return since.adding(days: days)

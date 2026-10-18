@@ -115,7 +115,7 @@ struct ViewSwitchingViewModelTests {
   @Test("it shows that view's inbox, with nothing selected")
   func switchingShowsTheInboxOfTheView() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("hp")))
+    library.open(.project(TaskID("hp")))
     library.selection = TaskID("h2")
 
     library.showView(ViewID("work"))
@@ -204,9 +204,9 @@ struct ViewMoveViewModelTests {
   @Test("a project moved away leaves the sidebar, and if shown, the inbox is shown")
   func movedProjectLeavesTheSidebar() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("hp")))
+    library.open(.project(TaskID("hp")))
 
-    library.moveProject(ProjectID("hp"), toView: ViewID("work"))
+    library.moveProject(TaskID("hp"), toView: ViewID("work"))
 
     #expect(library.projects.isEmpty)
     #expect(library.sidebarSelection == .inbox)

@@ -55,18 +55,11 @@ private struct EventLineDTO: Codable {
     case taskReopened = "TaskReopened"
     case taskRenamed = "TaskRenamed"
     case taskNoted = "TaskNoted"
-    case projectCreated = "ProjectCreated"
-    case taskMovedToProject = "TaskMovedToProject"
-    case projectCompleted = "ProjectCompleted"
-    case projectReopened = "ProjectReopened"
-    case projectRenamed = "ProjectRenamed"
-    case projectNoted = "ProjectNoted"
-    case projectKindChanged = "ProjectKindChanged"
+    case taskKindChanged = "TaskKindChanged"
+    case taskMoved = "TaskMoved"
     case viewCreated = "ViewCreated"
     case viewRenamed = "ViewRenamed"
     case taskMovedToView = "TaskMovedToView"
-    case projectMovedToView = "ProjectMovedToView"
-    case projectMovedToProject = "ProjectMovedToProject"
     case taskPrioritized = "TaskPrioritized"
     case taskEstimated = "TaskEstimated"
     case settingChanged = "SettingChanged"
@@ -85,15 +78,12 @@ private struct EventLineDTO: Codable {
     case unplannedTimeLogged = "UnplannedTimeLogged"
     case dayReviewed = "DayReviewed"
     case reviewDefaultSet = "ReviewDefaultSet"
-    case projectReviewIntervalSet = "ProjectReviewIntervalSet"
-    case projectReviewed = "ProjectReviewed"
-    case projectDropped = "ProjectDropped"
+    case reviewIntervalSet = "ReviewIntervalSet"
+    case taskReviewed = "TaskReviewed"
     case taskRepeatSet = "TaskRepeatSet"
     case taskRecurred = "TaskRecurred"
     case taskDuplicated = "TaskDuplicated"
     case taskDeleted = "TaskDeleted"
-    case projectDeleted = "ProjectDeleted"
-    case taskPromoted = "TaskPromotedToProject"
   }
 
   init(from decoder: any Decoder) throws {
@@ -106,20 +96,11 @@ private struct EventLineDTO: Codable {
       case .taskReopened: .taskReopened(try container.decode(TaskReopened.self, forKey: .data))
       case .taskRenamed: .taskRenamed(try container.decode(TaskRenamed.self, forKey: .data))
       case .taskNoted: .taskNoted(try container.decode(TaskNoted.self, forKey: .data))
-      case .projectCreated: .projectCreated(try container.decode(ProjectCreated.self, forKey: .data))
-      case .taskMovedToProject: .taskMovedToProject(try container.decode(TaskMovedToProject.self, forKey: .data))
-      case .projectCompleted: .projectCompleted(try container.decode(ProjectCompleted.self, forKey: .data))
-      case .projectReopened: .projectReopened(try container.decode(ProjectReopened.self, forKey: .data))
-      case .projectRenamed: .projectRenamed(try container.decode(ProjectRenamed.self, forKey: .data))
-      case .projectNoted: .projectNoted(try container.decode(ProjectNoted.self, forKey: .data))
-      case .projectKindChanged:
-        .projectKindChanged(try container.decode(ProjectKindChanged.self, forKey: .data))
+      case .taskKindChanged: .taskKindChanged(try container.decode(TaskKindChanged.self, forKey: .data))
+      case .taskMoved: .taskMoved(try container.decode(TaskMoved.self, forKey: .data))
       case .viewCreated: .viewCreated(try container.decode(ViewCreated.self, forKey: .data))
       case .viewRenamed: .viewRenamed(try container.decode(ViewRenamed.self, forKey: .data))
       case .taskMovedToView: .taskMovedToView(try container.decode(TaskMovedToView.self, forKey: .data))
-      case .projectMovedToView: .projectMovedToView(try container.decode(ProjectMovedToView.self, forKey: .data))
-      case .projectMovedToProject:
-        .projectMovedToProject(try container.decode(ProjectMovedToProject.self, forKey: .data))
       case .taskPrioritized: .taskPrioritized(try container.decode(TaskPrioritized.self, forKey: .data))
       case .taskEstimated: .taskEstimated(try container.decode(TaskEstimated.self, forKey: .data))
       case .settingChanged: .settingChanged(try container.decode(SettingChanged.self, forKey: .data))
@@ -134,9 +115,8 @@ private struct EventLineDTO: Codable {
       case .tagCreated: .tagCreated(try container.decode(TagCreated.self, forKey: .data))
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
-      case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .projectReviewIntervalSet,
-        .projectReviewed, .projectDropped, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted,
-        .projectDeleted, .taskPromoted:
+      case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .reviewIntervalSet,
+        .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted:
         try Self.laterPayload(type, in: container)
       }
     event = EventEnvelope(
@@ -158,16 +138,12 @@ private struct EventLineDTO: Codable {
     case .unplannedTimeLogged: .unplannedTimeLogged(try container.decode(UnplannedTimeLogged.self, forKey: .data))
     case .dayReviewed: .dayReviewed(try container.decode(DayReviewed.self, forKey: .data))
     case .reviewDefaultSet: .reviewDefaultSet(try container.decode(ReviewDefaultSet.self, forKey: .data))
-    case .projectReviewIntervalSet:
-      .projectReviewIntervalSet(try container.decode(ProjectReviewIntervalSet.self, forKey: .data))
-    case .projectReviewed: .projectReviewed(try container.decode(ProjectReviewed.self, forKey: .data))
-    case .projectDropped: .projectDropped(try container.decode(ProjectDropped.self, forKey: .data))
+    case .reviewIntervalSet: .reviewIntervalSet(try container.decode(ReviewIntervalSet.self, forKey: .data))
+    case .taskReviewed: .taskReviewed(try container.decode(TaskReviewed.self, forKey: .data))
     case .taskRepeatSet: .taskRepeatSet(try container.decode(TaskRepeatSet.self, forKey: .data))
     case .taskRecurred: .taskRecurred(try container.decode(TaskRecurred.self, forKey: .data))
     case .taskDuplicated: .taskDuplicated(try container.decode(TaskDuplicated.self, forKey: .data))
     case .taskDeleted: .taskDeleted(try container.decode(TaskDeleted.self, forKey: .data))
-    case .projectDeleted: .projectDeleted(try container.decode(ProjectDeleted.self, forKey: .data))
-    case .taskPromoted: .taskPromoted(try container.decode(TaskPromotedToProject.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
         forKey: .type, in: container, debugDescription: "not a later event: \(type.rawValue)")
@@ -185,18 +161,11 @@ private struct EventLineDTO: Codable {
     case .taskReopened(let data): try write(.taskReopened, data, to: &container)
     case .taskRenamed(let data): try write(.taskRenamed, data, to: &container)
     case .taskNoted(let data): try write(.taskNoted, data, to: &container)
-    case .projectCreated(let data): try write(.projectCreated, data, to: &container)
-    case .taskMovedToProject(let data): try write(.taskMovedToProject, data, to: &container)
-    case .projectCompleted(let data): try write(.projectCompleted, data, to: &container)
-    case .projectReopened(let data): try write(.projectReopened, data, to: &container)
-    case .projectRenamed(let data): try write(.projectRenamed, data, to: &container)
-    case .projectNoted(let data): try write(.projectNoted, data, to: &container)
-    case .projectKindChanged(let data): try write(.projectKindChanged, data, to: &container)
+    case .taskKindChanged(let data): try write(.taskKindChanged, data, to: &container)
+    case .taskMoved(let data): try write(.taskMoved, data, to: &container)
     case .viewCreated(let data): try write(.viewCreated, data, to: &container)
     case .viewRenamed(let data): try write(.viewRenamed, data, to: &container)
     case .taskMovedToView(let data): try write(.taskMovedToView, data, to: &container)
-    case .projectMovedToView(let data): try write(.projectMovedToView, data, to: &container)
-    case .projectMovedToProject(let data): try write(.projectMovedToProject, data, to: &container)
     case .taskPrioritized(let data): try write(.taskPrioritized, data, to: &container)
     case .taskEstimated(let data): try write(.taskEstimated, data, to: &container)
     case .settingChanged(let data): try write(.settingChanged, data, to: &container)
@@ -215,28 +184,12 @@ private struct EventLineDTO: Codable {
     case .unplannedTimeLogged(let data): try write(.unplannedTimeLogged, data, to: &container)
     case .dayReviewed(let data): try write(.dayReviewed, data, to: &container)
     case .reviewDefaultSet(let data): try write(.reviewDefaultSet, data, to: &container)
-    case .projectReviewIntervalSet(let data): try write(.projectReviewIntervalSet, data, to: &container)
-    case .projectReviewed(let data): try write(.projectReviewed, data, to: &container)
-    case .projectDropped(let data): try write(.projectDropped, data, to: &container)
+    case .reviewIntervalSet(let data): try write(.reviewIntervalSet, data, to: &container)
+    case .taskReviewed(let data): try write(.taskReviewed, data, to: &container)
     case .taskRepeatSet(let data): try write(.taskRepeatSet, data, to: &container)
     case .taskRecurred(let data): try write(.taskRecurred, data, to: &container)
-    case .taskDuplicated, .taskDeleted, .projectDeleted, .taskPromoted:
-      try writeStructure(event.payload, to: &container)
-    }
-  }
-
-  /// Writes a duplicate, delete or promote event. Split from `encode(to:)` (SwiftLint function_body_length)
-  /// rather than suppressed.
-  private func writeStructure(
-    _ payload: EventPayload,
-    to container: inout KeyedEncodingContainer<CodingKeys>
-  ) throws {
-    switch payload {
     case .taskDuplicated(let data): try write(.taskDuplicated, data, to: &container)
     case .taskDeleted(let data): try write(.taskDeleted, data, to: &container)
-    case .projectDeleted(let data): try write(.projectDeleted, data, to: &container)
-    case .taskPromoted(let data): try write(.taskPromoted, data, to: &container)
-    default: break
     }
   }
 

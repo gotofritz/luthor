@@ -10,7 +10,7 @@ import Testing
 
 /// A log with the two projects, "pack boxes" filed in "Move house".
 @MainActor
-private func twoProjects(at url: URL) throws -> (house: ProjectID, swift: ProjectID) {
+private func twoProjects(at url: URL) throws -> (house: TaskID, swift: TaskID) {
   let monday = launchApp(on: url, today: date("2026-10-12"))
   let house = try monday.createProject("Move house", kind: .parallel)
   monday.open(.project(house))
@@ -181,7 +181,7 @@ struct WeeklyReviewIntervalFlowTests {
 @MainActor
 @Suite("Given a project with an open task, when I drop it")
 struct ProjectStatusFlowTests {
-  @Test("it is not reviewed and hands out nothing, and a relaunch keeps it dropped")
+  @Test("it is not reviewed and hands out nothing, it is listed as dropped, and a relaunch keeps it dropped")
   func aDroppedProjectSkipsTheReview() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
@@ -196,7 +196,9 @@ struct ProjectStatusFlowTests {
 
     #expect(library.projectReview.map(\.project.id) == [swift])
     #expect(library.nextReviewDate(of: house) == nil)
-    #expect(library.projects.first { $0.id == house }?.status == .dropped)
+    #expect(!library.projects.contains { $0.id == house })
+    library.showCompleted = true
+    #expect(library.knownProjects.contains { $0.id == house })
     library.show(.today)
     #expect(library.plan.candidates.isEmpty)
     let relaunched = launchApp(on: url, today: date("2026-10-21"))

@@ -51,7 +51,7 @@ struct NavigationSectionTests {
   func openingAProjectShowsProjects() {
     let (library, _) = makeInbox(Self.log)
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.section == .projects)
   }
@@ -59,7 +59,7 @@ struct NavigationSectionTests {
   @Test("opening the inbox shows the inbox section")
   func openingTheInboxShowsTheInbox() {
     let (library, _) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     library.open(.inbox)
 
@@ -69,7 +69,7 @@ struct NavigationSectionTests {
   @Test("leaving the projects closes the open project")
   func leavingProjectsClosesTheProject() {
     let (library, _) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     library.show(.inbox)
 

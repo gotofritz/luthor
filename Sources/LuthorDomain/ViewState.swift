@@ -1,13 +1,13 @@
 /// What one view holds. Everything a list shows comes from here, so nothing of another view can reach it.
 public struct ViewState: Equatable, Sendable {
   public let id: ViewID
-  /// Every open task of the view, in the inbox or in a project, in capture order.
+  /// Every open task of the view, in the inbox or in a project, in capture order. Projects are not among them.
   public let openTasks: [TaskItem]
-  /// Active projects of the view in creation order.
+  /// Open projects of the view in creation order.
   public let projects: [Project]
-  /// Completed tasks of the view, in the order they were completed.
+  /// Completed and dropped tasks of the view, in the order they were.
   public let completedTasks: [Completed<TaskItem>]
-  /// Completed projects of the view, in the order they were completed.
+  /// Completed and dropped projects of the view, in the order they were.
   public let completedProjects: [Completed<Project>]
 
   init(
@@ -24,7 +24,7 @@ public struct ViewState: Equatable, Sendable {
     self.completedProjects = completedProjects
   }
 
-  /// Open tasks of the view not yet clarified: no priority, no estimate and no project, in capture order.
+  /// Open tasks of the view not yet clarified: no priority, no estimate and no parent, in capture order.
   public var inbox: [TaskItem] {
     openTasks.filter { !$0.isClarified }
   }
@@ -42,8 +42,8 @@ public struct ViewState: Equatable, Sendable {
     }
   }
 
-  /// The active sub-projects of a project, in the order they were added to it.
-  public func subprojects(of projectID: ProjectID) -> [Project] {
+  /// The open sub-projects of a project, in the order they were added to it.
+  public func subprojects(of projectID: TaskID) -> [Project] {
     guard let parent = project(projectID) else { return [] }
     return parent.children.compactMap { child in
       guard case .project(let id) = child else { return nil }
@@ -53,9 +53,9 @@ public struct ViewState: Equatable, Sendable {
 
   /// The tasks of a project's subtree that the project hands out, as if it had no parent. Parallel: every
   /// child is active, a sub-project with its own next actions. Sequential: only the first child is. A project
-  /// that was dropped hands out none, nor do the sub-projects in it.
-  public func nextActions(of projectID: ProjectID) -> [TaskItem] {
-    guard let project = self.project(projectID), project.status == .active else { return [] }
+  /// that was dropped is not listed, so it hands out none, nor do the sub-projects in it.
+  public func nextActions(of projectID: TaskID) -> [TaskItem] {
+    guard let project = self.project(projectID) else { return [] }
     let active =
       switch project.kind {
       case .parallel: project.children
@@ -75,7 +75,7 @@ public struct ViewState: Equatable, Sendable {
     topLevelProjects.flatMap { nextActions(of: $0.id) }
   }
 
-  private func project(_ projectID: ProjectID) -> Project? {
+  private func project(_ projectID: TaskID) -> Project? {
     projects.first { $0.id == projectID }
   }
 }

@@ -45,16 +45,16 @@ struct ReviewDefaultCommandTests {
 
 @Suite("When a project's review interval is set by command")
 struct ReviewIntervalCommandTests {
-  @Test("it writes one ProjectReviewIntervalSet")
+  @Test("it writes one ReviewIntervalSet")
   func itWritesOneProjectReviewIntervalSet() throws {
-    let events = try makeCommands().setReviewInterval(of: ProjectID("p1"), to: .every(days: 3), log: base)
+    let events = try makeCommands().setReviewInterval(of: TaskID("p1"), to: .every(days: 3), log: base)
 
     #expect(events == [reviewIntervalSet("p1", to: .every(days: 3), id: "id-1", lamport: 2)])
   }
 
   @Test("off leaves the project out of the review")
   func offLeavesTheProjectOut() throws {
-    let events = try makeCommands().setReviewInterval(of: ProjectID("p1"), to: .off, log: base)
+    let events = try makeCommands().setReviewInterval(of: TaskID("p1"), to: .off, log: base)
 
     #expect(events == [reviewIntervalSet("p1", to: .off, id: "id-1", lamport: 2)])
   }
@@ -63,7 +63,7 @@ struct ReviewIntervalCommandTests {
   func nilClearsTheInterval() throws {
     let log = base + [reviewIntervalSet("p1", to: .every(days: 3))]
 
-    let events = try makeCommands().setReviewInterval(of: ProjectID("p1"), to: nil, log: log)
+    let events = try makeCommands().setReviewInterval(of: TaskID("p1"), to: nil, log: log)
 
     #expect(events == [reviewIntervalSet("p1", to: nil, id: "id-1", lamport: 3)])
   }
@@ -72,23 +72,23 @@ struct ReviewIntervalCommandTests {
   func theIntervalItHasWritesNothing() throws {
     let log = base + [reviewIntervalSet("p1", to: .every(days: 3))]
 
-    #expect(try makeCommands().setReviewInterval(of: ProjectID("p1"), to: .every(days: 3), log: log).isEmpty)
-    #expect(try makeCommands().setReviewInterval(of: ProjectID("p2"), to: nil, log: log).isEmpty)
+    #expect(try makeCommands().setReviewInterval(of: TaskID("p1"), to: .every(days: 3), log: log).isEmpty)
+    #expect(try makeCommands().setReviewInterval(of: TaskID("p2"), to: nil, log: log).isEmpty)
   }
 
   @Test("a project that is not active is refused")
   func aProjectThatIsNotActiveIsRefused() {
-    #expect(throws: CommandError.noActiveProject(ProjectID("ghost"))) {
-      try makeCommands().setReviewInterval(of: ProjectID("ghost"), to: .off, log: base)
+    #expect(throws: CommandError.noActiveProject(TaskID("ghost"))) {
+      try makeCommands().setReviewInterval(of: TaskID("ghost"), to: .off, log: base)
     }
   }
 }
 
 @Suite("When a project is marked reviewed by command")
 struct ReviewProjectCommandTests {
-  @Test("it writes one ProjectReviewed for the day")
+  @Test("it writes one TaskReviewed for the day")
   func itWritesOneProjectReviewed() throws {
-    let events = try makeCommands().reviewProject(ProjectID("p1"), on: monday, log: base)
+    let events = try makeCommands().reviewProject(TaskID("p1"), on: monday, log: base)
 
     #expect(events == [projectReviewed("p1", on: "2026-10-19", id: "id-1", lamport: 2)])
   }
@@ -97,54 +97,56 @@ struct ReviewProjectCommandTests {
   func reviewingAgainOnTheSameDayWritesNothing() throws {
     let log = base + [projectReviewed("p1", on: "2026-10-19")]
 
-    #expect(try makeCommands().reviewProject(ProjectID("p1"), on: monday, log: log).isEmpty)
-    #expect(try makeCommands().reviewProject(ProjectID("p1"), on: date("2026-10-26"), log: log).count == 1)
+    #expect(try makeCommands().reviewProject(TaskID("p1"), on: monday, log: log).isEmpty)
+    #expect(try makeCommands().reviewProject(TaskID("p1"), on: date("2026-10-26"), log: log).count == 1)
   }
 
   @Test("a project whose review is off can still be marked reviewed")
   func aProjectWhoseReviewIsOffCanBeMarked() throws {
     let log = base + [reviewDefaultSet(.off)]
 
-    #expect(try makeCommands().reviewProject(ProjectID("p1"), on: monday, log: log).count == 1)
+    #expect(try makeCommands().reviewProject(TaskID("p1"), on: monday, log: log).count == 1)
   }
 
   @Test("a project that is not active is refused")
   func aProjectThatIsNotActiveIsRefused() {
-    #expect(throws: CommandError.noActiveProject(ProjectID("ghost"))) {
-      try makeCommands().reviewProject(ProjectID("ghost"), on: monday, log: base)
+    #expect(throws: CommandError.noActiveProject(TaskID("ghost"))) {
+      try makeCommands().reviewProject(TaskID("ghost"), on: monday, log: base)
     }
   }
 
   @Test("a project that was dropped is refused")
   func aProjectThatWasDroppedIsRefused() {
-    #expect(throws: CommandError.projectDropped(ProjectID("p1"))) {
-      try makeCommands().reviewProject(ProjectID("p1"), on: monday, log: base + [projectDropped("p1")])
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().reviewProject(TaskID("p1"), on: monday, log: base + [projectDropped("p1")])
     }
   }
 }
 
 @Suite("When a project is dropped by command")
 struct ProjectStatusCommandTests {
-  @Test("it writes a ProjectDropped event")
+  @Test("it writes a TaskDropped event")
   func itWritesAProjectDroppedEvent() throws {
     #expect(
-      try makeCommands().dropProject(ProjectID("p1"), log: base) == [projectDropped("p1", id: "id-1", lamport: 2)])
+      try makeCommands().dropProject(TaskID("p1"), log: base) == [projectDropped("p1", id: "id-1", lamport: 2)])
   }
 
-  @Test("dropping a dropped project writes nothing")
-  func droppingADroppedProjectWritesNothing() throws {
-    #expect(try makeCommands().dropProject(ProjectID("p1"), log: base + [projectDropped("p1")]).isEmpty)
+  @Test("a dropped project is refused, as it is not open")
+  func droppingADroppedProjectIsRefused() {
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().dropProject(TaskID("p1"), log: base + [projectDropped("p1")])
+    }
   }
 
   @Test("a project that is not active is refused")
   func aProjectThatIsNotActiveIsRefused() {
     let completed = base + [projectCompleted("p1")]
 
-    #expect(throws: CommandError.noActiveProject(ProjectID("ghost"))) {
-      try makeCommands().dropProject(ProjectID("ghost"), log: base)
+    #expect(throws: CommandError.noActiveProject(TaskID("ghost"))) {
+      try makeCommands().dropProject(TaskID("ghost"), log: base)
     }
-    #expect(throws: CommandError.noActiveProject(ProjectID("p1"))) {
-      try makeCommands().dropProject(ProjectID("p1"), log: completed)
+    #expect(throws: CommandError.noActiveProject(TaskID("p1"))) {
+      try makeCommands().dropProject(TaskID("p1"), log: completed)
     }
   }
 }

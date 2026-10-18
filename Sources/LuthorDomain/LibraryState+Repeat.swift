@@ -11,19 +11,19 @@ extension LibraryState {
     }
   }
 
-  /// Ignores a task that is not open. Completing a task keeps its rule, as it does its due date, so the next
+  /// Ignores an item that is not open. Completing a task keeps its rule, as it does its due date, so the next
   /// occurrence can copy it.
   private mutating func setRepeat(_ set: TaskRepeatSet) {
-    guard openTasks.contains(where: { $0.id == set.taskID }) else { return }
+    guard isOpen(set.taskID) else { return }
     repeatRules[set.taskID] = set.rule
   }
 
-  /// Makes the open task `recurred.next` out of `recurred.previous`, which is open or completed: in its project
-  /// if that is active and in its view, else loose, with its due date, tags and rule. Ignores a task `next`
+  /// Makes the open task `recurred.next` out of `recurred.previous`, which is open or completed: in its parent
+  /// if that is open and in its view, else loose, with its due date, tags and rule. Ignores a task `next`
   /// that exists already, so two devices completing the same task make one next one, and a `previous` that
   /// does not exist.
   private mutating func recur(_ recurred: TaskRecurred) {
-    guard copyTask(recurred.previous, as: recurred.next, createdOn: nil) else { return }
+    guard copyTask(recurred.previous, as: recurred.next, createdOn: nil, keepingDueDates: false) else { return }
     dueDates[recurred.next] = DueDate(date: recurred.due, isHard: dueDates[recurred.previous]?.isHard ?? false)
   }
 
@@ -32,7 +32,7 @@ extension LibraryState {
     repeatRules[taskID]
   }
 
-  /// Whether a task with this ID was ever captured or made by a repeat, open, completed or dropped.
+  /// Whether an item with this ID was ever captured or made by a repeat, open, completed or dropped.
   func wasEverTask(_ taskID: TaskID) -> Bool {
     captureOrder[taskID] != nil
   }

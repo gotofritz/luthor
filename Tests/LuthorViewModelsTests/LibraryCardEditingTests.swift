@@ -55,7 +55,7 @@ struct TaskCardEditModeTests {
   @Test("OK keeps the title, priority, estimate and notes, and leaves edit mode")
   func okKeepsEverything() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     library.selection = TaskID("t1")
     library.editCard(.task(TaskID("t1")))
 
@@ -82,6 +82,16 @@ struct TaskCardEditModeTests {
 
     #expect(library.editingCard == nil)
     #expect(log.events == editLog)
+  }
+
+  @Test("its estimate is its own if it has one, else the sum of its open tasks'")
+  func theEstimateRollsUp() {
+    let (library, _) = makeLibrary(editLog + [estimated("t1", as: 30, lamport: 5)])
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 30)
+
+    library.estimate(TaskID("p1"), as: 90)
+
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 90)
   }
 
   @Test("OK with a blank title writes nothing and stays in edit mode")
@@ -114,7 +124,7 @@ struct TaskCardEditModeTests {
     library.selection = TaskID("t2")
     library.editCard(.task(TaskID("t2")))
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.editingCard == nil)
   }
@@ -147,10 +157,10 @@ struct ProjectCardEditModeTests {
   @Test("Edit puts it into edit mode and Cancel leaves it, writing nothing")
   func editThenCancel() {
     let (library, log) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.editCard(.project(ProjectID("p1")))
-    #expect(library.editingCard == .project(ProjectID("p1")))
+    library.editCard(.project(TaskID("p1")))
+    #expect(library.editingCard == .project(TaskID("p1")))
 
     library.cancelCardEdit()
     #expect(library.editingCard == nil)
@@ -160,10 +170,13 @@ struct ProjectCardEditModeTests {
   @Test("OK keeps the title, kind and notes, and leaves edit mode")
   func okKeepsEverything() {
     let (library, _) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: ProjectID("p1"), title: "Summer", kind: .sequential, notes: "deadline in June")
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(title: "Summer", priority: nil, estimate: nil, due: nil, notes: "deadline in June"),
+      kind: .sequential)
 
     #expect(library.editingCard == nil)
     #expect(library.shownProject?.title == "Summer")
@@ -171,25 +184,59 @@ struct ProjectCardEditModeTests {
     #expect(library.shownProject?.notes == "deadline in June")
   }
 
+  @Test("OK also keeps its priority, estimate, due date, repeat and tags, as for a task")
+  func okKeepsTheTaskFields() throws {
+    let (library, _) = makeLibrary()
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
+    let due = DueDate(date: date("2027-04-01"), isHard: true)
+
+    library.saveCard(
+      ofProject: TaskID("p1"),
+      TaskCardDraft(
+        title: "Holiday", priority: .important, estimate: 120, due: due, notes: "", tags: ["travel"],
+        repeatRule: RepeatRule(every: 1, unit: .year)),
+      kind: .parallel)
+
+    #expect(library.editingCard == nil)
+    #expect(library.shownProject?.priority == .important)
+    #expect(library.shownProject?.estimate == 120)
+    #expect(library.dueDate(of: TaskID("p1")) == due)
+    #expect(library.repeatRule(of: TaskID("p1")) == RepeatRule(every: 1, unit: .year))
+    #expect(library.tagItems(of: TaskID("p1")).map(\.name) == ["travel"])
+  }
+
+  @Test("its estimate is its own if it has one, else the sum of its open tasks'")
+  func theEstimateRollsUp() {
+    let (library, _) = makeLibrary(editLog + [estimated("t1", as: 30, lamport: 5)])
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 30)
+
+    library.estimate(TaskID("p1"), as: 90)
+
+    #expect(library.rolledUpEstimate(of: TaskID("p1")) == 90)
+  }
+
   @Test("OK with a blank title writes nothing and stays in edit mode")
   func blankTitleStaysInEditMode() {
     let (library, log) = makeLibrary()
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.saveCard(ofProject: ProjectID("p1"), title: "", kind: .sequential, notes: "x")
+    library.saveCard(
+      ofProject: TaskID("p1"), TaskCardDraft(title: "", priority: nil, estimate: nil, due: nil, notes: "x"),
+      kind: .sequential)
 
-    #expect(library.editingCard == .project(ProjectID("p1")))
+    #expect(library.editingCard == .project(TaskID("p1")))
     #expect(log.events == editLog)
   }
 
   @Test("opening another project leaves edit mode")
   func openingAnotherProjectLeavesEditMode() {
     let (library, _) = makeLibrary(editLog + [projectCreated("p2", "Taxes", lamport: 5)])
-    library.open(.project(ProjectID("p1")))
-    library.editCard(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
-    library.open(.project(ProjectID("p2")))
+    library.open(.project(TaskID("p2")))
 
     #expect(library.editingCard == nil)
   }
@@ -198,9 +245,9 @@ struct ProjectCardEditModeTests {
   func completedProjectStaysReadOnly() {
     let (library, _) = makeLibrary(editLog + [projectCompleted("p1", lamport: 5)])
     library.showCompleted = true
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.editCard(.project(ProjectID("p1")))
+    library.editCard(.project(TaskID("p1")))
 
     #expect(library.editingCard == nil)
   }

@@ -67,7 +67,7 @@ struct TaskCardViewModelTests {
   @Test("a task of a project keeps its notes in the project's list")
   func notesShowInTheProject() {
     let (library, _) = makeInbox(cardLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     library.setNotes(TaskID("t1"), to: "window seat")
 
@@ -89,7 +89,7 @@ struct ProjectCardViewModelTests {
   func shownProjectIsTheCard() {
     let (library, _) = makeInbox(cardLog)
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.shownProject?.title == "Holiday")
   }
@@ -99,7 +99,7 @@ struct ProjectCardViewModelTests {
     let (library, _) = makeInbox(cardLog + [projectCompleted("p1", lamport: 7)])
     library.showCompleted = true
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.shownProject?.title == "Holiday")
   }
@@ -107,9 +107,9 @@ struct ProjectCardViewModelTests {
   @Test("renaming it shows in the column and on the card")
   func renamingShowsTheNewTitle() {
     let (library, log) = makeInbox(cardLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.renameProject(ProjectID("p1"), to: "Summer")
+    library.renameProject(TaskID("p1"), to: "Summer")
 
     #expect(log.events.last == projectRenamed("p1", to: "Summer", id: "id-1", lamport: 7))
     #expect(library.shownProject?.title == "Summer")
@@ -119,10 +119,10 @@ struct ProjectCardViewModelTests {
   @Test("making it sequential holds back its later tasks")
   func sequentialHoldsBackLaterTasks() {
     let (library, _) = makeInbox(cardLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     #expect(library.nextActions == [TaskID("t1"), TaskID("t2")])
 
-    library.setKind(of: ProjectID("p1"), to: .sequential)
+    library.setKind(of: TaskID("p1"), to: .sequential)
 
     #expect(library.shownProject?.kind == .sequential)
     #expect(library.nextActions == [TaskID("t1")])
@@ -131,9 +131,9 @@ struct ProjectCardViewModelTests {
   @Test("notes are set on the card")
   func projectNotes() {
     let (library, _) = makeInbox(cardLog)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.setNotes(ofProject: ProjectID("p1"), to: "see https://example.com")
+    library.setNotes(ofProject: TaskID("p1"), to: "see https://example.com")
 
     #expect(library.shownProject?.notes == "see https://example.com")
   }

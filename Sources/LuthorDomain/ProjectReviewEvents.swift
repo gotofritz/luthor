@@ -48,33 +48,24 @@ public struct ReviewDefaultSet: Equatable, Codable, Sendable {
 
 /// Sets how often one project is reviewed, in place of the default; with none clears it, so the default
 /// applies again.
-public struct ProjectReviewIntervalSet: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
+public struct ReviewIntervalSet: Equatable, Codable, Sendable {
+  public let taskID: TaskID
   /// The project's own interval from now on, which may be off; `nil` clears it.
   public let interval: ReviewInterval?
 
-  public init(projectID: ProjectID, interval: ReviewInterval?) {
-    self.projectID = projectID
+  public init(taskID: TaskID, interval: ReviewInterval?) {
+    self.taskID = taskID
     self.interval = interval
   }
 }
 
-/// Marks an active project reviewed on a day. Its next review falls one interval after that day.
-public struct ProjectReviewed: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
+/// Marks an open project reviewed on a day. Its next review falls one interval after that day.
+public struct TaskReviewed: Equatable, Codable, Sendable {
+  public let taskID: TaskID
   public let date: CalendarDate
 
-  public init(projectID: ProjectID, date: CalendarDate) {
-    self.projectID = projectID
+  public init(taskID: TaskID, date: CalendarDate) {
+    self.taskID = taskID
     self.date = date
-  }
-}
-
-/// Gives up an active project: it hands out no next actions and is not reviewed. Its tasks stay open.
-public struct ProjectDropped: Equatable, Codable, Sendable {
-  public let projectID: ProjectID
-
-  public init(projectID: ProjectID) {
-    self.projectID = projectID
   }
 }

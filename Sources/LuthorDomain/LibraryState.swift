@@ -13,8 +13,8 @@ public struct TaskItem: Equatable, Sendable {
   public let id: TaskID
   public internal(set) var title: String
   public internal(set) var viewID: ViewID
-  /// The project the task is filed in; `nil` while it is in the inbox.
-  public internal(set) var projectID: ProjectID?
+  /// The item the task is filed in; `nil` while it is top-level.
+  public internal(set) var parentID: TaskID?
   /// How much the task matters; `nil` until it is given one.
   public internal(set) var priority: Priority?
   /// Minutes the task is expected to take; `nil` until it is given one.
@@ -23,48 +23,83 @@ public struct TaskItem: Equatable, Sendable {
   public internal(set) var notes: String?
   /// The day the task was captured; `nil` for one captured before cards showed it.
   public let createdOn: CalendarDate?
+  /// How the item hands out its next actions once it is a project; `nil` for a task.
+  public internal(set) var kind: ProjectKind?
 
   public init(
     id: TaskID,
     title: String,
     viewID: ViewID,
-    projectID: ProjectID? = nil,
+    parentID: TaskID? = nil,
     priority: Priority? = nil,
     estimate: Int? = nil,
     notes: String? = nil,
-    createdOn: CalendarDate? = nil
+    createdOn: CalendarDate? = nil,
+    kind: ProjectKind? = nil
   ) {
     self.id = id
     self.title = title
     self.viewID = viewID
-    self.projectID = projectID
+    self.parentID = parentID
     self.priority = priority
     self.estimate = estimate
     self.notes = notes
     self.createdOn = createdOn
+    self.kind = kind
   }
 
-  /// Not yet clarified: no priority, no estimate and no project.
+  /// Not yet clarified: no priority, no estimate and no parent.
   var isClarified: Bool {
-    priority != nil || estimate != nil || projectID != nil
+    priority != nil || estimate != nil || parentID != nil
   }
 }
 
-/// The state of every view. Tasks and projects are reachable only through `view(_:)`, which names the
-/// view: isolation between views is a rule of the domain, not a filter in the UI.
+/// Where an item stands. Completing or dropping a project takes the items open in it along; they come back
+/// with it.
+enum ItemStatus: Equatable, Sendable {
+  case open
+  /// Done; `with` is the project whose completion took it along, `nil` if it was completed itself.
+  case completed(with: TaskID?)
+  /// Given up; `with` is the project whose drop took it along, `nil` if it was dropped itself.
+  case dropped(with: TaskID?)
+
+  var isOpen: Bool {
+    self == .open
+  }
+
+  /// Whether the item was completed or dropped itself, so it can be reopened on its own.
+  var isReopenable: Bool {
+    self == .completed(with: nil) || self == .dropped(with: nil)
+  }
+
+  /// Whether the completion or drop of the item `root` took this one along.
+  func wasTaken(by root: TaskID) -> Bool {
+    self == .completed(with: root) || self == .dropped(with: root)
+  }
+}
+
+/// An item and where it stands.
+struct StoredItem: Equatable, Sendable {
+  var item: TaskItem
+  var status: ItemStatus
+}
+
+/// The state of every view. Items are reachable only through `view(_:)`, which names the view: isolation
+/// between views is a rule of the domain, not a filter in the UI.
 public struct LibraryState: Equatable, Sendable {
   /// The default view, then the others in creation order.
   public private(set) var views = [ViewItem(id: .default, name: "Default")]
-  /// Every open task of every view, in capture order.
-  var openTasks: [TaskItem] = []
-  /// Every active project of every view, in creation order.
-  var projects: [Project] = []
-  /// Every completed task of every view, in the order they were completed.
-  var completedTasks: [Completed<TaskItem>] = []
-  /// Every completed project of every view, a completed project before the sub-projects it took along.
-  /// A completed project keeps the parent it had, though it is no longer in that parent's children.
-  var completedProjects: [Completed<Project>] = []
-  /// The position each task was captured at, so a reopened task goes back to its place among the open ones.
+  /// Every item that exists, open, completed or dropped. Tasks and projects are the same thing: an item with
+  /// `kind` set is a project.
+  var items: [TaskID: StoredItem] = [:]
+  /// The IDs of the items that exist, in capture order.
+  var order: [TaskID] = []
+  /// The items filed in each project, in the order they were filed: the open ones, and while the project is
+  /// completed or dropped also those it took along.
+  var filed: [TaskID: [TaskID]] = [:]
+  /// The completed and dropped items, in the order they were; an item comes before those it took along.
+  var finishedOrder: [TaskID] = []
+  /// The position each item was captured at, so a reopened item goes back to its place among the others.
   var captureOrder: [TaskID: Int] = [:]
   /// Global setting values, by key; a key not here falls back to its built-in default.
   var globalSettingValues: [SettingKey: String] = [:]
@@ -92,7 +127,8 @@ public struct LibraryState: Equatable, Sendable {
   /// planned for.
   var reviewRecords = ReviewRecords()
 
-  /// The open tasks and active projects of one view; empty for a view that does not exist.
+  /// The open tasks and projects, the completed and dropped ones, of one view; empty for a view that does not
+  /// exist.
   public func view(_ viewID: ViewID) -> ViewState {
     ViewState(
       id: viewID,
@@ -122,26 +158,20 @@ public struct LibraryState: Equatable, Sendable {
     switch payload {
     case .taskCaptured(let captured):
       capture(captured)
-    case .taskCompleted, .taskReopened, .projectReopened:
-      applyCompletion(payload)
-    case .taskRenamed, .taskNoted, .projectRenamed, .projectNoted, .projectKindChanged:
+    case .taskCompleted(let completed):
+      complete(completed.taskID)
+    case .taskReopened(let reopened):
+      reopen(reopened.taskID)
+    case .taskRenamed, .taskNoted, .taskKindChanged:
       applyCardEdit(payload)
-    case .projectCreated(let created):
-      create(created)
-    case .taskMovedToProject(let moved):
-      move(moved.taskID, to: moved.projectID)
-    case .projectCompleted(let completed):
-      complete(completed.projectID)
+    case .taskMoved(let moved):
+      move(moved)
     case .viewCreated(let created):
       create(created)
     case .viewRenamed(let renamed):
       rename(renamed)
     case .taskMovedToView(let moved):
       move(moved.taskID, toView: moved.viewID)
-    case .projectMovedToView(let moved):
-      move(moved.projectID, toView: moved.viewID)
-    case .projectMovedToProject(let moved):
-      nest(moved.projectID, under: moved.parentID)
     case .taskPrioritized(let prioritized):
       prioritize(prioritized.taskID, as: prioritized.priority)
     case .taskEstimated(let estimated):
@@ -153,96 +183,24 @@ public struct LibraryState: Equatable, Sendable {
     case .taskDelegated(let delegated):
       delegate(delegated)
     case .taskDropped(let dropped):
-      finish(dropped.taskID)
+      drop(dropped.taskID)
     case .dayPlanOrdered, .dayCapacitySet, .taskDueSet, .taskUnscheduled, .taskReclaimed:
       applyPlanning(payload)
     case .tagCreated, .taskTagged, .taskUntagged:
       applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)
-    case .reviewDefaultSet, .projectReviewIntervalSet, .projectReviewed, .projectDropped:
+    case .reviewDefaultSet, .reviewIntervalSet, .taskReviewed:
       applyProjectReview(payload)
     case .taskRepeatSet, .taskRecurred:
       applyRepeat(payload)
-    case .taskDuplicated, .taskDeleted, .projectDeleted, .taskPromoted:
+    case .taskDuplicated, .taskDeleted:
       applyStructure(payload)
     }
   }
 
-  /// Takes a task out of every list for good, completed or dropped. Ignores a task that is not open.
-  mutating func finish(_ taskID: TaskID) {
-    openTasks.removeAll { $0.id == taskID }
-    removeFromProjects(taskID)
-    forgetPlanning(of: taskID)
-  }
-
   func hasView(_ viewID: ViewID) -> Bool {
     views.contains { $0.id == viewID }
-  }
-
-  /// Ignores a project that already exists. Under a parent that is not active or is in another view, the
-  /// project is top-level.
-  private mutating func create(_ created: ProjectCreated) {
-    guard !projects.contains(where: { $0.id == created.projectID }) else { return }
-    let parent = created.parentID.flatMap { parentID in
-      projects.firstIndex { $0.id == parentID && $0.viewID == created.viewID }
-    }
-    projects.append(
-      Project(
-        id: created.projectID, title: created.title, kind: created.kind, viewID: created.viewID,
-        parentID: parent.map { projects[$0].id }, createdOn: created.createdOn))
-    if let parent { projects[parent].children.append(.project(created.projectID)) }
-  }
-
-  /// Completes a project with its open tasks and sub-projects, all the way down. Ignores a project that is
-  /// not active.
-  private mutating func complete(_ projectID: ProjectID) {
-    let completed = subtree(of: projectID)
-    keepCompleted(projectID, subtree: completed)
-    detach(projectID)
-    openTasks.removeAll { task in task.projectID.map { completed.contains($0) } ?? false }
-    projects.removeAll { completed.contains($0.id) }
-  }
-
-  /// Nests a project under another of its view, or with no parent makes it top-level, at the end of its new
-  /// parent's children. Ignores a project or parent that is not active, a parent in another view, a parent
-  /// in the project's own subtree, and a project already there.
-  private mutating func nest(_ projectID: ProjectID, under parentID: ProjectID?) {
-    guard let index = projects.firstIndex(where: { $0.id == projectID }),
-      projects[index].parentID != parentID
-    else { return }
-    if let parentID {
-      guard let parent = projects.firstIndex(where: { $0.id == parentID }),
-        projects[parent].viewID == projects[index].viewID,
-        !subtree(of: projectID).contains(parentID)
-      else { return }
-      detach(projectID)
-      projects[index].parentID = parentID
-      projects[parent].children.append(.project(projectID))
-    } else {
-      detach(projectID)
-    }
-  }
-
-  /// The project and every active project nested in it, at any depth; empty for a project that is not
-  /// active.
-  func subtree(of projectID: ProjectID) -> Set<ProjectID> {
-    guard let project = projects.first(where: { $0.id == projectID }) else { return [] }
-    var found: Set<ProjectID> = [projectID]
-    for case .project(let child) in project.children {
-      found.formUnion(subtree(of: child))
-    }
-    return found
-  }
-
-  /// Takes a project out of its parent's children, making it top-level.
-  private mutating func detach(_ projectID: ProjectID) {
-    guard let index = projects.firstIndex(where: { $0.id == projectID }),
-      let parentID = projects[index].parentID
-    else { return }
-    projects[index].parentID = nil
-    guard let parent = projects.firstIndex(where: { $0.id == parentID }) else { return }
-    projects[parent].children.removeAll { $0 == .project(projectID) }
   }
 
   /// Ignores a view that already exists.
@@ -257,93 +215,13 @@ public struct LibraryState: Equatable, Sendable {
     views[index] = ViewItem(id: renamed.viewID, name: renamed.name)
   }
 
-  /// Ignores a task that is not open, a project that is not active or in another view, and a task
-  /// already in the project.
-  private mutating func move(_ taskID: TaskID, to projectID: ProjectID) {
-    guard let index = openTasks.firstIndex(where: { $0.id == taskID }),
-      let target = projects.firstIndex(where: { $0.id == projectID }),
-      openTasks[index].projectID != projectID,
-      openTasks[index].viewID == projects[target].viewID
-    else { return }
-    var filed = openTasks[index]
-    filed.projectID = projectID
-    openTasks[index] = filed
-    removeFromProjects(taskID)
-    projects[target].children.append(.task(filed))
-  }
-
-  /// Ignores a task that is not open and a view that does not exist.
-  private mutating func move(_ taskID: TaskID, toView viewID: ViewID) {
-    guard let index = openTasks.firstIndex(where: { $0.id == taskID }), hasView(viewID) else { return }
-    openTasks[index].viewID = viewID
-    openTasks[index].projectID = nil
-    removeFromProjects(taskID)
-    forgetPlanning(of: taskID)
-    taskTags.removeValue(forKey: taskID)
-  }
-
-  /// Takes a project across with its sub-projects and their open tasks; a nested project leaves its
-  /// parent and is top-level there. Ignores a project that is not active and a view that does not exist.
-  private mutating func move(_ projectID: ProjectID, toView viewID: ViewID) {
-    guard projects.contains(where: { $0.id == projectID }), hasView(viewID) else { return }
-    let moved = subtree(of: projectID)
-    let reassign = { (task: TaskItem) in
-      var task = task
-      task.viewID = viewID
-      return task
-    }
-    detach(projectID)
-    for task in openTasks where task.projectID.map(moved.contains) ?? false {
-      taskTags.removeValue(forKey: task.id)
-    }
-    openTasks = openTasks.map { task in
-      let isMoved = task.projectID.map { moved.contains($0) } ?? false
-      return isMoved ? reassign(task) : task
-    }
-    for index in projects.indices where moved.contains(projects[index].id) {
-      projects[index].viewID = viewID
-      projects[index].children = projects[index].children.map { child in
-        guard case .task(let task) = child else { return child }
-        return .task(reassign(task))
-      }
-    }
-  }
-
-  /// Ignores a task that is not open.
+  /// Ignores an item that is not open.
   private mutating func prioritize(_ taskID: TaskID, as priority: Priority?) {
-    updateTask(taskID) { $0.priority = priority }
+    updateItem(taskID) { $0.priority = priority }
   }
 
-  /// Ignores a task that is not open.
+  /// Ignores an item that is not open.
   private mutating func estimate(_ taskID: TaskID, as minutes: Int?) {
-    updateTask(taskID) { $0.estimate = minutes }
-  }
-
-  /// Changes the open task `taskID`, wherever it is filed, with `change`. Ignores a task that is not open.
-  mutating func updateTask(_ taskID: TaskID, _ change: (inout TaskItem) -> Void) {
-    guard let index = openTasks.firstIndex(where: { $0.id == taskID }) else { return }
-    change(&openTasks[index])
-    for project in projects.indices {
-      projects[project].children = projects[project].children.map { child in
-        guard case .task(var task) = child, task.id == taskID else { return child }
-        change(&task)
-        return .task(task)
-      }
-    }
-  }
-
-  /// Changes the active project `projectID` with `change`. Ignores a project that is not active.
-  mutating func updateProject(_ projectID: ProjectID, _ change: (inout Project) -> Void) {
-    guard let index = projects.firstIndex(where: { $0.id == projectID }) else { return }
-    change(&projects[index])
-  }
-
-  private mutating func removeFromProjects(_ taskID: TaskID) {
-    for index in projects.indices {
-      projects[index].children.removeAll { child in
-        guard case .task(let task) = child else { return false }
-        return task.id == taskID
-      }
-    }
+    updateItem(taskID) { $0.estimate = minutes }
   }
 }

@@ -39,7 +39,7 @@ struct PreViewLogFlowTests {
     defer { dir.remove() }
     let lines = [
       #"{"data":{"taskID":"t1","title":"buy milk"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#,
-      #"{"data":{"kind":"parallel","projectID":"p1","title":"Holiday"},"device":"mac","id":"e2","lamport":2,"type":"ProjectCreated"}"#,
+      #"{"data":{"kind":"parallel","taskID":"p1","title":"Holiday"},"device":"mac","id":"e2","lamport":2,"type":"TaskCaptured"}"#,
     ]
     try (lines.joined(separator: "\n") + "\n").write(to: dir.file("events.jsonl"), atomically: true, encoding: .utf8)
 

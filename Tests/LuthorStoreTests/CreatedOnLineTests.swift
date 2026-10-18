@@ -15,7 +15,7 @@ struct CreatedOnLineTests {
     )
   }
 
-  @Test("a ProjectCreated carries the day as text")
+  @Test("a project's TaskCaptured carries the day as text")
   func projectCreatedCarriesTheDay() throws {
     let line = try EventLine.encode(projectCreated("p1", "Holiday", id: "e2", on: "2026-10-18", lamport: 2))
 

@@ -68,9 +68,9 @@ struct CandidateFilterMenu: View {
         }
       }
       Picker("Project", selection: $library.candidateFilter.projectID) {
-        Text("Any").tag(ProjectID?.none)
+        Text("Any").tag(TaskID?.none)
         ForEach(library.projects, id: \.id) { project in
-          Text(project.title).tag(ProjectID?.some(project.id))
+          Text(project.title).tag(TaskID?.some(project.id))
         }
       }
       Picker("Deadline", selection: $library.candidateFilter.dueBy) {

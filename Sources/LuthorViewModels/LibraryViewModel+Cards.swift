@@ -12,6 +12,12 @@ extension LibraryViewModel {
     if !isCompleted { editingCard = card }
   }
 
+  /// A project's estimate as its card shows it: its own, else the sum of its open tasks' estimates; `nil` if
+  /// there is none. It is shown and never planned.
+  public func rolledUpEstimate(of projectID: TaskID) -> Int? {
+    state.rolledUpEstimate(of: projectID)
+  }
+
   /// Leaves edit mode and drops what was typed.
   public func cancelCardEdit() {
     editingCard = nil
@@ -21,30 +27,34 @@ extension LibraryViewModel {
   /// and writes nothing.
   public func saveCard(ofTask taskID: TaskID, _ draft: TaskCardDraft) {
     guard !draft.title.allSatisfy(\.isWhitespace) else { return }
-    let day = planDate
-    perform { (log) throws(CommandError) in
-      var events = try commands.rename(taskID: taskID, to: draft.title, log: log)
-      events += try commands.prioritize(taskID: taskID, as: draft.priority, log: log + events)
-      events += try commands.estimate(taskID: taskID, as: draft.estimate, log: log + events)
-      events += try commands.setDue(
-        taskID: taskID, to: draft.due?.date, isHard: draft.due?.isHard ?? false, log: log + events)
-      events += try commands.setRepeat(
-        taskID: taskID, to: draft.repeatRule, dueIfNone: day, log: log + events)
-      events += try commands.setNotes(taskID: taskID, to: draft.notes, log: log + events)
-      events += try commands.setTags(taskID: taskID, to: draft.tags, log: log + events)
-      return events
-    }
+    perform { (log) throws(CommandError) in try cardEvents(of: taskID, draft, log: log) }
     if errorMessage == nil { editingCard = nil }
   }
 
-  /// Keeps what was typed on a project's card and leaves edit mode. A blank title keeps the card in edit
-  /// mode and writes nothing.
-  public func saveCard(ofProject projectID: ProjectID, title: String, kind: ProjectKind, notes: String) {
-    guard !title.allSatisfy(\.isWhitespace) else { return }
+  /// The events that make an item's card what the draft says: title, priority, estimate, due date, repeat,
+  /// notes and tags, the same for a task and a project.
+  private func cardEvents(of taskID: TaskID, _ draft: TaskCardDraft, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    let day = planDate
+    var events = try commands.rename(taskID: taskID, to: draft.title, log: log)
+    events += try commands.prioritize(taskID: taskID, as: draft.priority, log: log + events)
+    events += try commands.estimate(taskID: taskID, as: draft.estimate, log: log + events)
+    events += try commands.setDue(
+      taskID: taskID, to: draft.due?.date, isHard: draft.due?.isHard ?? false, log: log + events)
+    events += try commands.setRepeat(taskID: taskID, to: draft.repeatRule, dueIfNone: day, log: log + events)
+    events += try commands.setNotes(taskID: taskID, to: draft.notes, log: log + events)
+    events += try commands.setTags(taskID: taskID, to: draft.tags, log: log + events)
+    return events
+  }
+
+  /// Keeps what was typed on a project's card, which has the fields of a task's and a kind, and leaves edit
+  /// mode. A blank title keeps the card in edit mode and writes nothing.
+  public func saveCard(ofProject projectID: TaskID, _ draft: TaskCardDraft, kind: ProjectKind) {
+    guard !draft.title.allSatisfy(\.isWhitespace) else { return }
     perform { (log) throws(CommandError) in
-      var events = try commands.renameProject(projectID, to: title, log: log)
+      var events = try cardEvents(of: projectID, draft, log: log)
       events += try commands.setKind(of: projectID, to: kind, log: log + events)
-      events += try commands.setNotes(ofProject: projectID, to: notes, log: log + events)
       return events
     }
     if errorMessage == nil { editingCard = nil }

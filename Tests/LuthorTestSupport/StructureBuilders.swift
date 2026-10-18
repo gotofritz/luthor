@@ -33,7 +33,7 @@ public func taskDeleted(
   )
 }
 
-/// Builds a `ProjectDeleted` envelope with short, readable defaults.
+/// Builds the `TaskDeleted` envelope that deletes a project, with short, readable defaults.
 public func projectDeleted(
   _ project: String,
   id: String? = nil,
@@ -44,22 +44,22 @@ public func projectDeleted(
     id: EventID(id ?? "delete-\(project)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectDeleted(ProjectDeleted(projectID: ProjectID(project)))
+    payload: .taskDeleted(TaskDeleted(taskID: TaskID(project)))
   )
 }
 
-/// Builds a `TaskPromotedToProject` envelope with short, readable defaults.
+/// Builds the `TaskKindChanged` envelope that turns a task into a parallel project, with short, readable
+/// defaults.
 public func promoted(
   _ task: String,
-  to project: String,
   id: String? = nil,
   device: String = "mac",
   lamport: UInt64 = 5
 ) -> EventEnvelope {
   EventEnvelope(
-    id: EventID(id ?? "promote-\(task)-\(project)"),
+    id: EventID(id ?? "promote-\(task)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .taskPromoted(TaskPromotedToProject(taskID: TaskID(task), projectID: ProjectID(project)))
+    payload: .taskKindChanged(TaskKindChanged(taskID: TaskID(task), kind: .parallel))
   )
 }

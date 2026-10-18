@@ -33,9 +33,9 @@ extension LibraryState {
     tagItems.append(TagItem(id: created.tagID, name: created.name, viewID: created.viewID))
   }
 
-  /// Ignores a task that is not open, a tag that does not exist, and a tag of another view than the task's.
+  /// Ignores an item that is not open, a tag that does not exist, and a tag of another view than the item's.
   private mutating func tag(_ tagged: TaskTagged) {
-    guard let task = openTasks.first(where: { $0.id == tagged.taskID }),
+    guard let task = openItem(tagged.taskID),
       let tag = tagItems.first(where: { $0.id == tagged.tagID }),
       tag.viewID == task.viewID
     else { return }
@@ -87,12 +87,12 @@ public struct TaskFilter: Equatable, Sendable {
   /// The priority the task has to have.
   public var priority: Priority?
   /// The project the task has to be filed in, or in one of its sub-projects.
-  public var projectID: ProjectID?
+  public var projectID: TaskID?
   /// The day the task has to be due on or before, of either kind of due date.
   public var dueBy: CalendarDate?
 
   public init(
-    tags: Set<TagID> = [], priority: Priority? = nil, projectID: ProjectID? = nil, dueBy: CalendarDate? = nil
+    tags: Set<TagID> = [], priority: Priority? = nil, projectID: TaskID? = nil, dueBy: CalendarDate? = nil
   ) {
     self.tags = tags
     self.priority = priority
@@ -114,10 +114,10 @@ extension LibraryState {
   }
 
   /// Whether the task passes the filter. `inProject` is the projects the filter's project stands for.
-  func matches(_ task: TaskItem, _ filter: TaskFilter, inProject: Set<ProjectID>?) -> Bool {
+  func matches(_ task: TaskItem, _ filter: TaskFilter, inProject: Set<TaskID>?) -> Bool {
     guard filter.tags.isSubset(of: taskTags[task.id] ?? []) else { return false }
     if let priority = filter.priority, task.priority != priority { return false }
-    if let inProject, !(task.projectID.map(inProject.contains) ?? false) { return false }
+    if let inProject, !(task.parentID.map(inProject.contains) ?? false) { return false }
     if let dueBy = filter.dueBy, !(dueDates[task.id].map { $0.date <= dueBy } ?? false) { return false }
     return true
   }

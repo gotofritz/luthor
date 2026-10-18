@@ -1,102 +1,69 @@
-/// A task or project that is done, kept so it can be shown and reopened.
+/// A task or project that is done or given up, kept so it can be shown and reopened.
 public struct Completed<Item: Equatable & Sendable>: Equatable, Sendable {
   public let item: Item
-  /// The project whose completion took it along; `nil` if it was completed itself.
-  public let completedWith: ProjectID?
+  /// The project whose completion or drop took it along; `nil` if it was completed or dropped itself.
+  public let completedWith: TaskID?
+  /// Whether it was given up, not completed.
+  public let isDropped: Bool
 
-  /// Only what was completed itself can be reopened; what a project took along comes back with it.
+  init(item: Item, completedWith: TaskID?, isDropped: Bool = false) {
+    self.item = item
+    self.completedWith = completedWith
+    self.isDropped = isDropped
+  }
+
+  /// Only what was completed or dropped itself can be reopened; what a project took along comes back with it.
   public var isReopenable: Bool {
     completedWith == nil
   }
 }
 
 extension LibraryState {
-  /// Applies the events that complete a task or bring a completed task or project back; any other event
-  /// changes nothing.
-  mutating func applyCompletion(_ payload: EventPayload) {
-    switch payload {
-    case .taskCompleted(let completed):
-      complete(completed.taskID)
-    case .taskReopened(let reopened):
-      reopen(reopened.taskID)
-    case .projectReopened(let reopened):
-      reopen(reopened.projectID)
-    default:
-      break
-    }
-  }
-
-  /// Ignores a task that already exists, open or completed.
-  mutating func capture(_ captured: TaskCaptured) {
-    guard captureOrder[captured.taskID] == nil else { return }
-    captureOrder[captured.taskID] = captureOrder.count
-    openTasks.append(
-      TaskItem(
-        id: captured.taskID, title: captured.title, viewID: captured.viewID, createdOn: captured.createdOn))
-  }
-
-  /// Keeps the task as completed and takes it out of every list. Ignores a task that is not open.
+  /// Completes the item with the items open in it, all the way down; they come back when it is reopened.
+  /// Ignores an item that is not open.
   mutating func complete(_ taskID: TaskID) {
-    guard let task = openTasks.first(where: { $0.id == taskID }) else { return }
-    completedTasks.append(Completed(item: task, completedWith: nil))
-    reviewRecords.plannedDays[taskID] = scheduledDates[taskID]
-    finish(taskID)
+    finishTree(of: taskID) { .completed(with: $0) }
   }
 
-  /// Opens a task completed on its own again, in its project if that is active and in the task's view,
-  /// else loose. Ignores a task that is not completed, or that a project's completion took along.
+  /// Gives the item up with the items open in it, all the way down; they come back when it is reopened.
+  /// Ignores an item that is not open.
+  mutating func drop(_ taskID: TaskID) {
+    finishTree(of: taskID) { .dropped(with: $0) }
+  }
+
+  private mutating func finishTree(of taskID: TaskID, as status: (TaskID?) -> ItemStatus) {
+    guard isOpen(taskID) else { return }
+    let taken = descendants(of: taskID)
+    unfile(taskID)
+    finish(taskID, as: status(nil))
+    for id in taken { finish(id, as: status(taskID)) }
+  }
+
+  /// Takes the item out of every list, keeping it as completed or dropped. A completed task remembers the day
+  /// it was planned for, so that day's review can list it as done.
+  private mutating func finish(_ id: TaskID, as status: ItemStatus) {
+    items[id]?.status = status
+    finishedOrder.removeAll { $0 == id }
+    finishedOrder.append(id)
+    if case .completed = status { reviewRecords.plannedDays[id] = scheduledDates[id] }
+    forgetPlanning(of: id)
+  }
+
+  /// Opens an item completed or dropped on its own again, with everything that took along. It goes back into
+  /// its parent if that is open and in the item's view, else it is top-level. Ignores an item that is not
+  /// completed or dropped, or that another item's completion or drop took along.
   mutating func reopen(_ taskID: TaskID) {
-    guard let index = completedTasks.firstIndex(where: { $0.item.id == taskID && $0.isReopenable }) else { return }
-    var reopened = completedTasks.remove(at: index).item
-    reviewRecords.plannedDays.removeValue(forKey: taskID)
-    let project = reopened.projectID.flatMap { projectID in
-      projects.firstIndex { $0.id == projectID && $0.viewID == reopened.viewID }
+    guard let stored = items[taskID], stored.status.isReopenable else { return }
+    let reopened = [taskID] + finishedOrder.filter { items[$0]?.status.wasTaken(by: taskID) ?? false }
+    for id in reopened {
+      items[id]?.status = .open
+      reviewRecords.plannedDays.removeValue(forKey: id)
     }
-    reopened.projectID = project.map { projects[$0].id }
-    insertOpen(reopened)
-    if let project { projects[project].children.append(.task(reopened)) }
-  }
-
-  /// Adds an open task where its capture order puts it.
-  mutating func insertOpen(_ task: TaskItem) {
-    let rank = captureOrder[task.id] ?? Int.max
-    let position = openTasks.firstIndex { (captureOrder[$0.id] ?? Int.max) > rank } ?? openTasks.endIndex
-    openTasks.insert(task, at: position)
-  }
-
-  /// Keeps a project, its sub-projects and their open tasks as completed, the project first. Only the
-  /// project is completed itself; the rest were taken along.
-  mutating func keepCompleted(_ projectID: ProjectID, subtree: Set<ProjectID>) {
-    guard let root = projects.first(where: { $0.id == projectID }) else { return }
-    completedProjects.append(Completed(item: root, completedWith: nil))
-    for project in projects where subtree.contains(project.id) && project.id != projectID {
-      completedProjects.append(Completed(item: project, completedWith: projectID))
-    }
-    for task in openTasks where task.projectID.map(subtree.contains) ?? false {
-      completedTasks.append(Completed(item: task, completedWith: projectID))
-      reviewRecords.plannedDays[task.id] = scheduledDates[task.id]
-    }
-  }
-
-  /// Opens a project completed on its own again, with everything its completion took along. It goes back
-  /// into the project it was nested in if that is active and in its view, else it is top-level. Ignores a
-  /// project that is not completed, or that another project's completion took along.
-  mutating func reopen(_ projectID: ProjectID) {
-    guard let root = completedProjects.first(where: { $0.item.id == projectID && $0.isReopenable }) else { return }
-    let taken = completedProjects.filter { $0.item.id == projectID || $0.completedWith == projectID }
-    completedProjects.removeAll { entry in taken.contains(entry) }
-    let tasks = completedTasks.filter { $0.completedWith == projectID }
-    completedTasks.removeAll { entry in tasks.contains(entry) }
-    for task in tasks { reviewRecords.plannedDays.removeValue(forKey: task.item.id) }
-    projects += taken.map(\.item)
-    for task in tasks.map(\.item) { insertOpen(task) }
-    let parent = root.item.parentID.flatMap { parentID in
-      projects.firstIndex { $0.id == parentID && $0.viewID == root.item.viewID }
-    }
-    if let parent {
-      projects[parent].children.append(.project(projectID))
-    } else if let index = projects.firstIndex(where: { $0.id == projectID }) {
-      projects[index].parentID = nil
+    finishedOrder.removeAll { reopened.contains($0) }
+    if let parentID = stored.item.parentID, isOpen(parentID, in: stored.item.viewID) {
+      filed[parentID, default: []].append(taskID)
+    } else {
+      items[taskID]?.item.parentID = nil
     }
   }
 }

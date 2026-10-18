@@ -66,11 +66,11 @@ struct DeleteTaskCommandTests {
 
 @Suite("When a project is deleted by command")
 struct DeleteProjectCommandTests {
-  @Test("an active project and a completed one each write one ProjectDeleted")
+  @Test("an active project and a completed one each write one TaskDeleted")
   func itWritesOneProjectDeleted() throws {
-    let active = try makeCommands().delete(projectID: ProjectID("p1"), log: log)
+    let active = try makeCommands().delete(projectID: TaskID("p1"), log: log)
     let done = try makeCommands().delete(
-      projectID: ProjectID("p1"), log: log + [projectCompleted("p1", lamport: 5)])
+      projectID: TaskID("p1"), log: log + [projectCompleted("p1", lamport: 5)])
 
     #expect(active == [projectDeleted("p1", id: "id-1", lamport: 5)])
     #expect(done == [projectDeleted("p1", id: "id-1", lamport: 6)])
@@ -78,19 +78,19 @@ struct DeleteProjectCommandTests {
 
   @Test("a project that does not exist is refused")
   func aProjectThatDoesNotExistIsRefused() {
-    #expect(throws: CommandError.unknownProject(ProjectID("ghost"))) {
-      try makeCommands().delete(projectID: ProjectID("ghost"), log: log)
+    #expect(throws: CommandError.unknownProject(TaskID("ghost"))) {
+      try makeCommands().delete(projectID: TaskID("ghost"), log: log)
     }
   }
 }
 
 @Suite("When a task is made into a project by command")
 struct PromoteCommandTests {
-  @Test("it writes one TaskPromotedToProject naming the new project")
-  func itWritesOneTaskPromotedToProject() throws {
+  @Test("it writes one TaskKindChanged making the task a parallel project")
+  func itWritesOneTaskKindChanged() throws {
     let events = try makeCommands().promote(taskID: TaskID("t1"), log: log)
 
-    #expect(events == [promoted("t1", to: "id-2", id: "id-1", lamport: 5)])
+    #expect(events == [promoted("t1", id: "id-1", lamport: 5)])
   }
 
   @Test("a task that is not open is refused", arguments: ["t3", "ghost"])

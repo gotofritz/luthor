@@ -135,9 +135,9 @@ extension LibraryState {
     }
   }
 
-  /// Ignores a task that is not open and a task that is delegated, which has to be reclaimed first.
+  /// Ignores an item that is not open and a task that is delegated, which has to be reclaimed first.
   mutating func schedule(_ scheduled: TaskScheduled) {
-    guard openTasks.contains(where: { $0.id == scheduled.taskID }), delegations[scheduled.taskID] == nil else { return }
+    guard isOpen(scheduled.taskID), delegations[scheduled.taskID] == nil else { return }
     scheduledDates[scheduled.taskID] = scheduled.date
   }
 
@@ -156,9 +156,9 @@ extension LibraryState {
     }
   }
 
-  /// Takes the task off its day. Ignores a task that is not open.
+  /// Takes the item off its day. Ignores an item that is not open.
   mutating func delegate(_ delegated: TaskDelegated) {
-    guard openTasks.contains(where: { $0.id == delegated.taskID }) else { return }
+    guard isOpen(delegated.taskID) else { return }
     delegations[delegated.taskID] = Delegation(
       to: delegated.person, since: delegated.since, followUpDate: delegated.followUpDate)
     scheduledDates.removeValue(forKey: delegated.taskID)
@@ -204,7 +204,11 @@ extension LibraryState {
   ) -> DayPlan {
     let viewState = view(viewID)
     let planning = settings(for: viewID)
-    let deadlines = dueDates.filter { $0.value.isHard && $0.value.date <= date }.mapValues(\.date)
+    let deadlines = Dictionary(
+      uniqueKeysWithValues: viewState.openTasks.compactMap { task -> (TaskID, CalendarDate)? in
+        guard let due = effectiveDueDate(of: task.id), due.isHard, due.date <= date else { return nil }
+        return (task.id, due.date)
+      })
     let ranking = PlanRanking(viewState, deadlines: deadlines)
     let key = DayKey(viewID: viewID, date: date)
     let manualPosition = Dictionary(
@@ -228,7 +232,7 @@ extension LibraryState {
       let isLeftOver = scheduledDates[task.id].map { $0 < today } ?? false
       let isClarified = task.isClarified || deadlines[task.id] != nil
       return isClarified && task.priority != .someday && scheduledDates[task.id] != date
-        && (task.projectID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
+        && (task.parentID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
         && matches(task, filter, inProject: inProject)
     }.sorted(by: suggested).map(entry)
 
@@ -273,7 +277,7 @@ struct PlanRanking {
   let captureIndex: [TaskID: Int]
   /// Where each task filed in a project sits in a walk through the view's projects, depth first.
   let projectIndex: [TaskID: Int]
-  let projectTitles: [ProjectID: String]
+  let projectTitles: [TaskID: String]
   /// The day of the hard deadline of each task whose deadline is due.
   let deadlines: [TaskID: CalendarDate]
 
@@ -317,7 +321,7 @@ struct PlanRanking {
       case nil: "No priority"
       }
     var reason = priority
-    if let projectID = task.projectID, let title = projectTitles[projectID] { reason += ", in project \(title)" }
+    if let parentID = task.parentID, let title = projectTitles[parentID] { reason += ", in project \(title)" }
     if let deadline = deadlines[task.id] { reason += ", deadline \(deadline.isoString)" }
     return reason
   }

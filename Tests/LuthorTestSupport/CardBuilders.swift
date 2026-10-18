@@ -32,7 +32,7 @@ public func noted(
   )
 }
 
-/// Builds a `ProjectRenamed` envelope with short, readable defaults.
+/// Builds the `TaskRenamed` envelope that renames a project, with short, readable defaults.
 public func projectRenamed(
   _ project: String,
   to title: String,
@@ -44,11 +44,11 @@ public func projectRenamed(
     id: EventID(id ?? "rename-\(project)-\(title)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectRenamed(ProjectRenamed(projectID: ProjectID(project), title: title))
+    payload: .taskRenamed(TaskRenamed(taskID: TaskID(project), title: title))
   )
 }
 
-/// Builds a `ProjectNoted` envelope with short, readable defaults; `nil` notes clear them.
+/// Builds the `TaskNoted` envelope that notes a project, with short, readable defaults; `nil` notes clear them.
 public func projectNoted(
   _ project: String,
   _ notes: String?,
@@ -60,11 +60,11 @@ public func projectNoted(
     id: EventID(id ?? "note-\(project)-\(notes ?? "none")"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectNoted(ProjectNoted(projectID: ProjectID(project), notes: notes))
+    payload: .taskNoted(TaskNoted(taskID: TaskID(project), notes: notes))
   )
 }
 
-/// Builds a `ProjectKindChanged` envelope with short, readable defaults.
+/// Builds a `TaskKindChanged` envelope with short, readable defaults.
 public func kindChanged(
   _ project: String,
   to kind: ProjectKind,
@@ -76,6 +76,6 @@ public func kindChanged(
     id: EventID(id ?? "kind-\(project)-\(kind.rawValue)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .projectKindChanged(ProjectKindChanged(projectID: ProjectID(project), kind: kind))
+    payload: .taskKindChanged(TaskKindChanged(taskID: TaskID(project), kind: kind))
   )
 }

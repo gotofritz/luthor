@@ -17,7 +17,7 @@ extension Commands {
   /// tag it has writes nothing.
   public func tag(taskID: TaskID, with tagID: TagID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
-    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard let found = state.tagItems.first(where: { $0.id == tagID }) else { throw .noTag(tagID) }
     guard found.viewID == task.viewID else { throw .tagInOtherView(taskID, tagID) }
     guard !state.tags(of: taskID).contains(where: { $0.id == tagID }) else { return [] }
@@ -30,7 +30,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard state.tags(of: taskID).contains(where: { $0.id == tagID }) else { return [] }
     return [envelope(EventID(ids.next()), .taskUntagged(TaskUntagged(taskID: taskID, tagID: tagID)), log: log)]
   }
@@ -41,7 +41,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let name = try Self.tagName(name)
     var events: [EventEnvelope] = []
     let tagID: TagID
@@ -62,7 +62,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
+    guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     var wanted: [String] = []
     for name in names.map(Self.cleanTagName) where !name.isEmpty {
       if !wanted.contains(where: { $0.lowercased() == name.lowercased() }) { wanted.append(name) }

@@ -80,7 +80,8 @@ public struct TaskReclaimed: Equatable, Codable, Sendable {
   }
 }
 
-/// Gives up an open task for good: it leaves every list, without being completed.
+/// Gives up an open item: it leaves every list, without being completed, together with the items open in it.
+/// Reopening it brings them all back.
 public struct TaskDropped: Equatable, Codable, Sendable {
   public let taskID: TaskID
 

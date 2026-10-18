@@ -69,12 +69,12 @@ struct CreatedOnCommandTests {
   func captureIntoAProjectWritesTheDay() throws {
     let log = [projectCreated("p1", "Holiday", lamport: 1)]
 
-    let events = try makeCommands().capture(title: "pack", into: ProjectID("p1"), today: Self.today, log: log)
+    let events = try makeCommands().capture(title: "pack", into: TaskID("p1"), today: Self.today, log: log)
 
-    #expect(events.first == captured("id-2", "pack", id: "id-1", on: "2026-10-19", lamport: 2))
+    #expect(events.first == captured("id-2", "pack", id: "id-1", on: "2026-10-19", under: "p1", lamport: 2))
   }
 
-  @Test("creating a project writes a ProjectCreated with that day")
+  @Test("creating a project writes a TaskCaptured with that day")
   func createProjectWritesTheDay() throws {
     let events = try makeCommands().createProject(
       title: "Holiday", kind: .parallel, in: .default, today: Self.today, log: [])
@@ -87,7 +87,7 @@ struct CreatedOnCommandTests {
     let log = [projectCreated("p1", "Holiday", lamport: 1)]
 
     let events = try makeCommands().createProject(
-      title: "Flights", kind: .parallel, under: ProjectID("p1"), today: Self.today, log: log)
+      title: "Flights", kind: .parallel, under: TaskID("p1"), today: Self.today, log: log)
 
     #expect(events == [projectCreated("id-2", "Flights", under: "p1", id: "id-1", on: "2026-10-19", lamport: 2)])
   }

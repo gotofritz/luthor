@@ -100,13 +100,13 @@ struct QuickCaptureCommandTests {
     let commands = Commands(deviceID: DeviceID("mac"), ids: SequentialIDs())
     let created = try commands.createProject(title: "Home", kind: .parallel, in: .default, log: [])
 
-    let events = try commands.capture(title: "call bank !b", into: ProjectID("id-2"), log: created)
+    let events = try commands.capture(title: "call bank !b", into: TaskID("id-2"), log: created)
 
     #expect(
       events.map(\.payload) == [
-        .taskCaptured(TaskCaptured(taskID: TaskID("id-4"), title: "call bank", viewID: .default)),
+        .taskCaptured(
+          TaskCaptured(taskID: TaskID("id-4"), title: "call bank", viewID: .default, parentID: TaskID("id-2"))),
         .taskPrioritized(TaskPrioritized(taskID: TaskID("id-4"), priority: .important)),
-        .taskMovedToProject(TaskMovedToProject(taskID: TaskID("id-4"), projectID: ProjectID("id-2"))),
       ])
   }
 }

@@ -15,7 +15,7 @@ extension Commands {
   /// the review, and `nil` clears its own interval, so the default applies again. Setting the interval it has
   /// writes nothing.
   public func setReviewInterval(
-    of projectID: ProjectID,
+    of projectID: TaskID,
     to interval: ReviewInterval?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
@@ -23,28 +23,26 @@ extension Commands {
     _ = try activeProject(projectID, in: state)
     let interval = interval.map { ReviewInterval(days: $0.days) }
     guard state.reviewOverride(of: projectID) != interval else { return [] }
-    let set = ProjectReviewIntervalSet(projectID: projectID, interval: interval)
-    return [envelope(EventID(ids.next()), .projectReviewIntervalSet(set), log: log)]
+    let set = ReviewIntervalSet(taskID: projectID, interval: interval)
+    return [envelope(EventID(ids.next()), .reviewIntervalSet(set), log: log)]
   }
 
-  /// Marks the active project `projectID` reviewed on `date`, which is today. A project that was dropped is
+  /// Marks the open project `projectID` reviewed on `date`, which is today. A project that was dropped is
   /// refused. Reviewing a project on the day it was last reviewed writes nothing.
-  public func reviewProject(_ projectID: ProjectID, on date: CalendarDate, log: [EventEnvelope]) throws(CommandError)
+  public func reviewProject(_ projectID: TaskID, on date: CalendarDate, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
     let state = LibraryState.replay(log)
-    let project = try activeProject(projectID, in: state)
-    guard project.status != .dropped else { throw .projectDropped(projectID) }
+    _ = try activeProject(projectID, in: state)
     guard state.lastReviewDate(of: projectID) != date else { return [] }
-    let reviewed = ProjectReviewed(projectID: projectID, date: date)
-    return [envelope(EventID(ids.next()), .projectReviewed(reviewed), log: log)]
+    let reviewed = TaskReviewed(taskID: projectID, date: date)
+    return [envelope(EventID(ids.next()), .taskReviewed(reviewed), log: log)]
   }
 
-  /// Gives up the active project `projectID`; its tasks stay open. Dropping a project that was dropped writes
-  /// nothing.
-  public func dropProject(_ projectID: ProjectID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let project = try activeProject(projectID, in: LibraryState.replay(log))
-    guard project.status != .dropped else { return [] }
-    return [envelope(EventID(ids.next()), .projectDropped(ProjectDropped(projectID: projectID)), log: log)]
+  /// Gives up the open project `projectID` with every task and project open in it. Reopening it brings them
+  /// all back.
+  public func dropProject(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    _ = try activeProject(projectID, in: LibraryState.replay(log))
+    return [envelope(EventID(ids.next()), .taskDropped(TaskDropped(taskID: projectID)), log: log)]
   }
 }

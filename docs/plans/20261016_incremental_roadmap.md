@@ -363,15 +363,22 @@ Permanently… (context menu, after a confirmation).
 Usable: test and wrong items can be removed, and a task that grows can become
 a project.
 
-### 14c. One kind of item (design only, then three PRs)
+### 14c. One kind of item ✅
 
-From issue #50. A project is a task with children, so the two models become
-one before the format freezes. The design is
-[`20261018_unify_tasks_projects.md`](20261018_unify_tasks_projects.md): one
-`TaskID`, any item takes children, the `Project*` events fold into the task
-ones, and the log is started afresh (test data only, no migration). Three PRs:
-the domain with no visible change, then any item takes children in the UI, then
-planning learns containers. Not started.
+From issue #50, designed in
+[`20261018_unify_tasks_projects.md`](../archive/20261018_unify_tasks_projects.md).
+A project is a task with children, so the two models are one: one `TaskID`
+(`ProjectID` is gone), and `TaskCaptured` takes an optional parent and kind.
+`TaskMoved`, `TaskKindChanged`, `ReviewIntervalSet` and `TaskReviewed` serve
+both, and completing, dropping, renaming, noting and deleting an item take its
+subtree where it has one. A project card edits priority, estimate, due date,
+repeat and tags like a task's, any item can be filed under any other, and
+Duplicate and a repeat copy the whole subtree. Planning follows: only tasks
+are actionable, a due date ranks the tasks under it, the calendar marks the
+item that carries it, and a project's estimate rolls up from its open tasks.
+The event format changed with no migration: the log is started afresh.
+
+Usable: "plan the trip, due in spring" is one item.
 
 ### Stress test the desktop app (before 15)
 
@@ -921,7 +928,7 @@ issues, each worked out when it was taken off this list on 2026-10-18.
    field) touches the reducer, planning, calendar, review and the columns, and
    needs the log started afresh (test data only). It is the right direction, and cheapest before the
    format freezes in slice 15, so it is its own slice (14c, designed in
-   `20261018_unify_tasks_projects.md`). Until then Add Tasks
+   `20261018_unify_tasks_projects.md`, now in `docs/archive/`). Until then Add Tasks
    promotes a task to a project: priority, estimate, due date, tags, repeat,
    the day planned and a delegation are let go, as a project holds none of
    them. Not confirmed with the owner yet
@@ -937,3 +944,28 @@ issues, each worked out when it was taken off this list on 2026-10-18.
    starts a second series. Projects cannot be duplicated yet
 5. **The copy is a new task with the same title.** No "copy of" suffix
 
+## Decisions (2026-10-18, slice 14c)
+
+The five open questions of the plan took its recommended option; say if one
+should change.
+
+1. **Dropped items are hidden like completed ones**, listed under "Completed
+   and dropped", reopenable, and dropping takes the subtree. A skipped
+   occurrence of a repeating task is dropped too, so it is listed there
+2. **Repeat on a project copies its subtree**, so a task that gets a child
+   keeps its repeat. The copy's tasks carry no due dates
+3. **A project's priority does not flow down** to its tasks
+4. **A project's tags do not flow down**
+5. **The inbox lists unclarified tasks with no parent**; a project with no
+   parent is in Projects
+6. **Add Tasks makes the item a parallel project at once** (`TaskKindChanged`)
+   instead of waiting for its first child, so the columns have somewhere to
+   open; it keeps every field. There is no promote event
+7. **A project is never itself actionable.** A project whose tasks are all
+   done is still open until it is completed by hand
+8. **A project's estimate is its own, else the sum of its open tasks'**, shown
+   and never planned; its due date ranks the tasks under it and is marked on
+   the calendar once, on the project
+9. **A copy of a project holds copies of everything in it that was not given
+   up**, completed ones included, as open tasks with IDs worked out from the
+   copy's, so two devices make the same ones

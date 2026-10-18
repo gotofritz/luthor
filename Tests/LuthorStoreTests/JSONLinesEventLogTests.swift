@@ -28,31 +28,31 @@ import Testing
 
 @Suite("When project events are written as lines")
 struct ProjectEventLineFormatTests {
-  @Test("ProjectCreated is one sorted JSON object")
+  @Test("a project is a TaskCaptured with a kind, as one sorted JSON object")
   func projectCreatedIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(projectCreated("p1", "Move house", kind: .sequential, id: "e1", lamport: 1))
 
     #expect(
       line
-        == #"{"data":{"kind":"sequential","projectID":"p1","title":"Move house","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
+        == #"{"data":{"kind":"sequential","taskID":"p1","title":"Move house","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
     )
   }
 
-  @Test("TaskMovedToProject is one sorted JSON object")
-  func taskMovedToProjectIsOneSortedJSONObject() throws {
+  @Test("TaskMoved is one sorted JSON object")
+  func taskMovedIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(moved("t1", to: "p1", id: "e2", lamport: 2))
 
     #expect(
       line
-        == #"{"data":{"projectID":"p1","taskID":"t1"},"device":"mac","id":"e2","lamport":2,"type":"TaskMovedToProject"}"#
+        == #"{"data":{"parentID":"p1","taskID":"t1"},"device":"mac","id":"e2","lamport":2,"type":"TaskMoved"}"#
     )
   }
 
-  @Test("ProjectCompleted is one sorted JSON object")
+  @Test("completing a project is a TaskCompleted naming it")
   func projectCompletedIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(projectCompleted("p1", id: "e3", lamport: 3))
 
-    #expect(line == #"{"data":{"projectID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"ProjectCompleted"}"#)
+    #expect(line == #"{"data":{"taskID":"p1"},"device":"mac","id":"e3","lamport":3,"type":"TaskCompleted"}"#)
   }
 
   @Test(arguments: [projectCreated("p1", "Holiday"), moved("t1", to: "p1"), projectCompleted("p1")])
@@ -87,13 +87,12 @@ struct ViewEventLineFormatTests {
       line == #"{"data":{"taskID":"t1","viewID":"v1"},"device":"mac","id":"e3","lamport":3,"type":"TaskMovedToView"}"#)
   }
 
-  @Test("ProjectMovedToView is one sorted JSON object")
+  @Test("moving a project to a view is a TaskMovedToView naming it")
   func projectMovedToViewIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(projectMovedToView("p1", toView: "v1", id: "e4", lamport: 4))
 
     #expect(
-      line
-        == #"{"data":{"projectID":"p1","viewID":"v1"},"device":"mac","id":"e4","lamport":4,"type":"ProjectMovedToView"}"#
+      line == #"{"data":{"taskID":"p1","viewID":"v1"},"device":"mac","id":"e4","lamport":4,"type":"TaskMovedToView"}"#
     )
   }
 
@@ -107,12 +106,12 @@ struct ViewEventLineFormatTests {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
   }
 
-  @Test("a TaskCaptured or ProjectCreated line written before views decodes into the default view")
+  @Test("a TaskCaptured line for a task or a project written before views decodes into the default view")
   func preViewLinesDecodeIntoTheDefaultView() throws {
     let task =
       #"{"data":{"taskID":"t1","title":"buy milk"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
     let project =
-      #"{"data":{"kind":"parallel","projectID":"p1","title":"Holiday"},"device":"mac","id":"e2","lamport":2,"type":"ProjectCreated"}"#
+      #"{"data":{"kind":"parallel","taskID":"p1","title":"Holiday"},"device":"mac","id":"e2","lamport":2,"type":"TaskCaptured"}"#
 
     #expect(try EventLine.decode(task) == captured("t1", "buy milk", id: "e1", lamport: 1))
     #expect(try EventLine.decode(project) == projectCreated("p1", "Holiday", id: "e2", lamport: 2))
@@ -121,31 +120,31 @@ struct ViewEventLineFormatTests {
 
 @Suite("When nesting events are written as lines")
 struct NestingEventLineFormatTests {
-  @Test("ProjectCreated under a parent carries its parentID")
+  @Test("a TaskCaptured under a parent carries its parentID")
   func projectCreatedUnderAParentCarriesParentID() throws {
     let line = try EventLine.encode(projectCreated("p2", "Kitchen", under: "p1", id: "e1", lamport: 1))
 
     #expect(
       line
-        == #"{"data":{"kind":"parallel","parentID":"p1","projectID":"p2","title":"Kitchen","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"ProjectCreated"}"#
+        == #"{"data":{"kind":"parallel","parentID":"p1","taskID":"p2","title":"Kitchen","viewID":"default"},"device":"mac","id":"e1","lamport":1,"type":"TaskCaptured"}"#
     )
   }
 
-  @Test("ProjectMovedToProject is one sorted JSON object")
+  @Test("nesting a project is a TaskMoved with a parent")
   func projectMovedToProjectIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(nested("p2", under: "p1", id: "e2", lamport: 2))
 
     #expect(
       line
-        == #"{"data":{"parentID":"p1","projectID":"p2"},"device":"mac","id":"e2","lamport":2,"type":"ProjectMovedToProject"}"#
+        == #"{"data":{"parentID":"p1","taskID":"p2"},"device":"mac","id":"e2","lamport":2,"type":"TaskMoved"}"#
     )
   }
 
-  @Test("ProjectMovedToProject to the top has no parentID")
+  @Test("a TaskMoved to the top has no parentID")
   func unnestingHasNoParentID() throws {
     let line = try EventLine.encode(nested("p2", under: nil, id: "e3", lamport: 3))
 
-    #expect(line == #"{"data":{"projectID":"p2"},"device":"mac","id":"e3","lamport":3,"type":"ProjectMovedToProject"}"#)
+    #expect(line == #"{"data":{"taskID":"p2"},"device":"mac","id":"e3","lamport":3,"type":"TaskMoved"}"#)
   }
 
   @Test(
@@ -346,11 +345,11 @@ struct ReopenEventLineFormatTests {
     #expect(line == #"{"data":{"taskID":"t1"},"device":"mac","id":"e1","lamport":3,"type":"TaskReopened"}"#)
   }
 
-  @Test("ProjectReopened is one sorted JSON object")
+  @Test("reopening a project is a TaskReopened naming it")
   func projectReopenedIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(projectReopened("p1", id: "e2", lamport: 4))
 
-    #expect(line == #"{"data":{"projectID":"p1"},"device":"mac","id":"e2","lamport":4,"type":"ProjectReopened"}"#)
+    #expect(line == #"{"data":{"taskID":"p1"},"device":"mac","id":"e2","lamport":4,"type":"TaskReopened"}"#)
   }
 
   @Test(arguments: [reopened("t1"), projectReopened("p1")])
@@ -368,13 +367,13 @@ struct CardEventLineFormatTests {
     #expect(line == #"{"data":{"notes":"oat","taskID":"t1"},"device":"mac","id":"e1","lamport":3,"type":"TaskNoted"}"#)
   }
 
-  @Test("ProjectKindChanged is one sorted JSON object")
+  @Test("TaskKindChanged is one sorted JSON object")
   func projectKindChangedIsOneSortedJSONObject() throws {
     let line = try EventLine.encode(kindChanged("p1", to: .sequential, id: "e2", lamport: 3))
 
     #expect(
       line
-        == #"{"data":{"kind":"sequential","projectID":"p1"},"device":"mac","id":"e2","lamport":3,"type":"ProjectKindChanged"}"#
+        == #"{"data":{"kind":"sequential","taskID":"p1"},"device":"mac","id":"e2","lamport":3,"type":"TaskKindChanged"}"#
     )
   }
 

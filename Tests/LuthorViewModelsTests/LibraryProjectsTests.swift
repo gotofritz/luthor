@@ -62,9 +62,9 @@ struct ProjectListViewModelTests {
   func openingAProjectShowsItsTasks() {
     let (library, _) = makeInbox(Self.log)
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    #expect(library.sidebarSelection == .project(ProjectID("p1")))
+    #expect(library.sidebarSelection == .project(TaskID("p1")))
     #expect(library.tasks == [item("t1", "find a flat", in: "p1"), item("t2", "sign the lease", in: "p1")])
   }
 
@@ -72,7 +72,7 @@ struct ProjectListViewModelTests {
   func openingASequentialProjectMarksItsFirstTask() {
     let (library, _) = makeInbox(Self.log)
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.nextActions == [TaskID("t1")])
   }
@@ -82,7 +82,7 @@ struct ProjectListViewModelTests {
     let (library, _) = makeInbox(Self.log)
     library.selection = TaskID("t3")
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.selection == nil)
   }
@@ -90,23 +90,20 @@ struct ProjectListViewModelTests {
   @Test("the capture field captures into the project")
   func submitInAProjectCapturesIntoIt() {
     let (library, log) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
     library.draft = "book a van"
 
     library.submit()
 
     #expect(
-      log.events.suffix(2) == [
-        captured("id-2", "book a van", id: "id-1", on: "2026-10-19", lamport: 7),
-        moved("id-2", to: "p1", id: "id-3", lamport: 8),
-      ])
+      log.events.last == captured("id-2", "book a van", id: "id-1", on: "2026-10-19", under: "p1", lamport: 7))
     #expect(library.tasks.map(\.title) == ["find a flat", "sign the lease", "book a van"])
   }
 
   @Test("going back to the inbox shows the unfiled tasks, all of them next actions")
   func openingTheInboxShowsUnfiledTasks() {
     let (library, _) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     library.open(.inbox)
 
@@ -117,11 +114,11 @@ struct ProjectListViewModelTests {
   @Test("completing the project there shows the inbox again")
   func completingTheShownProjectShowsTheInbox() {
     let (library, log) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.completeProject(ProjectID("p1"))
+    library.completeProject(TaskID("p1"))
 
-    #expect(log.events.last?.payload == .projectCompleted(ProjectCompleted(projectID: ProjectID("p1"))))
+    #expect(log.events.last?.payload == .taskCompleted(TaskCompleted(taskID: TaskID("p1"))))
     #expect(library.projects == [])
     #expect(library.sidebarSelection == .inbox)
     #expect(library.tasks == [item("t3", "buy milk")])
@@ -130,7 +127,7 @@ struct ProjectListViewModelTests {
   @Test("a project completed elsewhere shows the inbox again on reload")
   func projectCompletedElsewhereShowsTheInbox() {
     let (library, log) = makeInbox(Self.log)
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     log.events.append(projectCompleted("p1", device: "cli", lamport: 7))
     library.reload()
@@ -153,7 +150,7 @@ struct FilingViewModelTests {
   func filedTaskLeavesTheInboxList() {
     let (library, log) = makeInbox(Self.log)
 
-    library.file(TaskID("t1"), into: ProjectID("p1"))
+    library.file(TaskID("t1"), into: TaskID("p1"))
 
     #expect(log.events.last == moved("t1", to: "p1", id: "id-1", lamport: 5))
     #expect(library.tasks.map(\.title) == ["buy milk", "pay rent"])
@@ -165,7 +162,7 @@ struct FilingViewModelTests {
     let (library, _) = makeInbox(Self.log)
     library.selection = TaskID("t2")
 
-    library.fileSelected(into: ProjectID("p1"))
+    library.fileSelected(into: TaskID("p1"))
 
     #expect(library.selection == TaskID("t3"))
   }
@@ -174,7 +171,7 @@ struct FilingViewModelTests {
   func fileSelectedWithoutASelectionDoesNothing() {
     let (library, log) = makeInbox(Self.log)
 
-    library.fileSelected(into: ProjectID("p1"))
+    library.fileSelected(into: TaskID("p1"))
 
     #expect(log.events == Self.log)
   }
@@ -184,7 +181,7 @@ struct FilingViewModelTests {
     let (library, log) = makeInbox(Self.log)
     log.events.append(projectCompleted("p1", device: "cli", lamport: 5))
 
-    library.file(TaskID("t1"), into: ProjectID("p1"))
+    library.file(TaskID("t1"), into: TaskID("p1"))
 
     #expect(log.events.count == Self.log.count + 1)
     #expect(library.projects == [])

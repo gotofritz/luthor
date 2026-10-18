@@ -3,13 +3,13 @@ import LuthorDomain
 /// What the sidebar can show: the inbox or one active project.
 public enum SidebarItem: Hashable, Sendable {
   case inbox
-  case project(ProjectID)
+  case project(TaskID)
 }
 
 /// The card a window can be editing: one of a task or one of a project.
 public enum CardTarget: Hashable, Sendable {
   case task(TaskID)
-  case project(ProjectID)
+  case project(TaskID)
 }
 
 /// The places the navigation rail leads to, in the order it lists them.
@@ -41,10 +41,10 @@ public enum ColumnEntry: Equatable, Sendable, Identifiable {
 /// One column of the project browser: the top-level projects, or the children of one project.
 public struct ProjectColumn: Equatable, Sendable, Identifiable {
   /// The project whose children the column lists; `nil` for the first column, of top-level projects.
-  public let parentID: ProjectID?
+  public let parentID: TaskID?
   public let entries: [ColumnEntry]
 
-  public init(parentID: ProjectID?, entries: [ColumnEntry]) {
+  public init(parentID: TaskID?, entries: [ColumnEntry]) {
     self.parentID = parentID
     self.entries = entries
   }

@@ -53,33 +53,33 @@ struct NestingReplayTests {
   func nestedProjectIsAChildOfItsParent() {
     let view = LibraryState.replay(Self.log).view(.default)
 
-    #expect(view.topLevelProjects.map(\.id) == [ProjectID("p1"), ProjectID("p3")])
-    #expect(view.subprojects(of: ProjectID("p1")).map(\.id) == [ProjectID("p2")])
-    #expect(view.projects.first { $0.id == ProjectID("p2") }?.parentID == ProjectID("p1"))
+    #expect(view.topLevelProjects.map(\.id) == [TaskID("p1"), TaskID("p3")])
+    #expect(view.subprojects(of: TaskID("p1")).map(\.id) == [TaskID("p2")])
+    #expect(view.projects.first { $0.id == TaskID("p2") }?.parentID == TaskID("p1"))
   }
 
   @Test("it can be nested to any depth")
   func projectsNestToAnyDepth() {
     let view = LibraryState.replay(Self.log + [nested("p3", under: "p2", lamport: 5)]).view(.default)
 
-    #expect(view.topLevelProjects.map(\.id) == [ProjectID("p1")])
-    #expect(view.subprojects(of: ProjectID("p2")).map(\.id) == [ProjectID("p3")])
+    #expect(view.topLevelProjects.map(\.id) == [TaskID("p1")])
+    #expect(view.subprojects(of: TaskID("p2")).map(\.id) == [TaskID("p3")])
   }
 
   @Test("moving it under another parent takes it out of the first")
   func renestingMovesTheProject() {
     let view = LibraryState.replay(Self.log + [nested("p2", under: "p3", lamport: 5)]).view(.default)
 
-    #expect(view.subprojects(of: ProjectID("p1")) == [])
-    #expect(view.subprojects(of: ProjectID("p3")).map(\.id) == [ProjectID("p2")])
+    #expect(view.subprojects(of: TaskID("p1")) == [])
+    #expect(view.subprojects(of: TaskID("p3")).map(\.id) == [TaskID("p2")])
   }
 
   @Test("moving it to the top makes it top-level again")
   func unnestingMakesItTopLevel() {
     let view = LibraryState.replay(Self.log + [nested("p2", under: nil, lamport: 5)]).view(.default)
 
-    #expect(view.topLevelProjects.map(\.id) == [ProjectID("p1"), ProjectID("p2"), ProjectID("p3")])
-    #expect(view.projects.first { $0.id == ProjectID("p1") }?.children == [])
+    #expect(view.topLevelProjects.map(\.id) == [TaskID("p1"), TaskID("p2"), TaskID("p3")])
+    #expect(view.projects.first { $0.id == TaskID("p1") }?.children == [])
   }
 
   @Test("nesting it again under the same parent keeps its place")
@@ -92,7 +92,7 @@ struct NestingReplayTests {
 
     let view = LibraryState.replay(log).view(.default)
 
-    #expect(view.subprojects(of: ProjectID("p1")).map(\.id) == [ProjectID("p2"), ProjectID("p3")])
+    #expect(view.subprojects(of: TaskID("p1")).map(\.id) == [TaskID("p2"), TaskID("p3")])
   }
 }
 
@@ -150,8 +150,8 @@ struct ConcurrentNestingReplayTests {
     let view = LibraryState.replay(order.map { Self.log[$0] }).view(.default)
 
     // Same lamport: device ID breaks the tie, "air" before "mac".
-    #expect(view.topLevelProjects.map(\.id) == [ProjectID("p1")])
-    #expect(view.subprojects(of: ProjectID("p1")).map(\.id) == [ProjectID("p2")])
+    #expect(view.topLevelProjects.map(\.id) == [TaskID("p1")])
+    #expect(view.subprojects(of: TaskID("p1")).map(\.id) == [TaskID("p2")])
   }
 }
 
@@ -234,8 +234,8 @@ struct NestedViewMoveReplayTests {
     let state = LibraryState.replay(Self.log + [projectMovedToView("p2", toView: "v1", lamport: 7)])
 
     #expect(state.view(.default).projects == [project("p1", "Home")])
-    #expect(state.view(ViewID("v1")).topLevelProjects.map(\.id) == [ProjectID("p2")])
-    #expect(state.view(ViewID("v1")).subprojects(of: ProjectID("p2")).map(\.id) == [ProjectID("p3")])
+    #expect(state.view(ViewID("v1")).topLevelProjects.map(\.id) == [TaskID("p2")])
+    #expect(state.view(ViewID("v1")).subprojects(of: TaskID("p2")).map(\.id) == [TaskID("p3")])
   }
 }
 
@@ -273,7 +273,7 @@ struct NestedNextActionTests {
   func nextActionsAreRecursive(case kinds: Case) {
     let view = Self.home(kinds.home, kitchen: kinds.kitchen)
 
-    #expect(view.nextActions(of: ProjectID("p1")).map(\.id.rawValue) == kinds.expected)
+    #expect(view.nextActions(of: TaskID("p1")).map(\.id.rawValue) == kinds.expected)
     #expect(view.nextActions.map(\.id.rawValue) == kinds.expected)
   }
 
@@ -288,7 +288,7 @@ struct NestedNextActionTests {
       moved("t2", to: "p2", lamport: 6),
     ]).view(.default)
 
-    #expect(view.nextActions(of: ProjectID("p2")).map(\.id.rawValue) == ["t2"])
+    #expect(view.nextActions(of: TaskID("p2")).map(\.id.rawValue) == ["t2"])
     #expect(view.nextActions.map(\.id.rawValue) == ["t1"])
   }
 
@@ -301,7 +301,7 @@ struct NestedNextActionTests {
       moved("t1", to: "p1", lamport: 4),
     ]).view(.default)
 
-    #expect(view.nextActions(of: ProjectID("p1")) == [])
+    #expect(view.nextActions(of: TaskID("p1")) == [])
   }
 
   @Test("a project of another view has none here")
@@ -313,7 +313,7 @@ struct NestedNextActionTests {
       moved("t1", to: "p1", lamport: 4),
     ]).view(.default)
 
-    #expect(view.nextActions(of: ProjectID("p1")) == [])
+    #expect(view.nextActions(of: TaskID("p1")) == [])
     #expect(view.nextActions == [])
   }
 }

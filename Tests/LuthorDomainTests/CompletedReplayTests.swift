@@ -62,11 +62,23 @@ struct CompletedTaskReplayTests {
     #expect(LibraryState.replay(log).view(.default).completedTasks.count == 1)
   }
 
-  @Test("a dropped task is not kept")
-  func droppedTaskIsNotCompleted() {
+  @Test("a dropped task is kept as dropped, not as completed")
+  func droppedTaskIsKeptAsDropped() {
     let log = [captured("t1", "buy milk", lamport: 1), dropped("t1", lamport: 2)]
+    let view = LibraryState.replay(log).view(.default)
 
-    #expect(LibraryState.replay(log).view(.default).completedTasks.isEmpty)
+    #expect(view.openTasks.isEmpty)
+    #expect(view.completedTasks.map(\.item.id) == [TaskID("t1")])
+    #expect(view.completedTasks.map(\.isDropped) == [true])
+  }
+
+  @Test("a dropped task can be reopened")
+  func droppedTaskCanBeReopened() {
+    let log = [captured("t1", "buy milk", lamport: 1), dropped("t1", lamport: 2), reopened("t1", lamport: 3)]
+    let view = LibraryState.replay(log).view(.default)
+
+    #expect(view.openTasks.map(\.id) == [TaskID("t1")])
+    #expect(view.completedTasks.isEmpty)
   }
 }
 
@@ -177,7 +189,7 @@ struct CompletedProjectReplayTests {
     ]
     let view = LibraryState.replay(log).view(.default)
 
-    #expect(view.completedProjects.map(\.item.parentID) == [ProjectID("p1")])
+    #expect(view.completedProjects.map(\.item.parentID) == [TaskID("p1")])
     #expect(view.projects == [project("p1", "Holiday")])
   }
 }

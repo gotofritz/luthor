@@ -42,8 +42,8 @@ struct CompletedShownViewModelTests {
     library.showCompleted = true
 
     #expect(library.columns.first?.entries.map(\.id) == ["project-p1", "project-p3"])
-    #expect(library.completedProjectIDs == [ProjectID("p3")])
-    #expect(library.reopenableProjectIDs == [ProjectID("p3")])
+    #expect(library.completedProjectIDs == [TaskID("p3")])
+    #expect(library.reopenableProjectIDs == [TaskID("p3")])
   }
 
   @Test("a completed loose task follows the inbox")
@@ -63,7 +63,7 @@ struct CompletedShownViewModelTests {
     let (library, _) = makeInbox(completedLog)
     library.showCompleted = true
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
     #expect(library.columns.last?.entries.map(\.id) == ["project-p2", "task-t1", "task-t2"])
     #expect(library.tasks.map(\.title) == ["book flights", "pack"])
@@ -76,13 +76,13 @@ struct CompletedShownViewModelTests {
     let (library, _) = makeInbox(log)
     library.showCompleted = true
 
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    #expect(library.path == [ProjectID("p1")])
+    #expect(library.path == [TaskID("p1")])
     #expect(library.columns.last?.entries.map(\.id) == ["project-p2", "task-t2", "task-t1"])
     #expect(library.completedTaskIDs == [TaskID("t2"), TaskID("t1")])
     #expect(library.reopenableTaskIDs == [TaskID("t2")])
-    #expect(library.reopenableProjectIDs == [ProjectID("p1"), ProjectID("p3")])
+    #expect(library.reopenableProjectIDs == [TaskID("p1"), TaskID("p3")])
   }
 
   @Test("the priorities list their completed tasks too")
@@ -126,12 +126,12 @@ struct CompletedShownViewModelTests {
   func completingTheShownProjectKeepsItShown() {
     let (library, _) = makeInbox(completedLog)
     library.showCompleted = true
-    library.open(.project(ProjectID("p1")))
+    library.open(.project(TaskID("p1")))
 
-    library.completeProject(ProjectID("p1"))
+    library.completeProject(TaskID("p1"))
 
-    #expect(library.path == [ProjectID("p1")])
-    #expect(library.completedProjectIDs.contains(ProjectID("p1")))
+    #expect(library.path == [TaskID("p1")])
+    #expect(library.completedProjectIDs.contains(TaskID("p1")))
   }
 }
 
@@ -156,7 +156,7 @@ struct ReopenViewModelTests {
     let (library, log) = makeInbox(completedLog)
     library.showCompleted = true
 
-    library.reopenProject(ProjectID("p3"))
+    library.reopenProject(TaskID("p3"))
 
     #expect(log.events.last == projectReopened("p3", id: "id-1", lamport: 14))
     #expect(library.completedProjectIDs.isEmpty)

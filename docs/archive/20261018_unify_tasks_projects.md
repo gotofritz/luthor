@@ -1,6 +1,6 @@
 # One Kind of Item: Tasks and Projects Merged
 
-Status: design, agreed in principle 2026-10-18 (issue #50). Not started. The
+Status: done in slice 14c of the roadmap (issue #50); kept as the design record. The
 design lands with the PR that added Duplicate, Delete and Add Tasks; the
 implementation is its own PRs, before slice 15 freezes the event format.
 
