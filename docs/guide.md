@@ -528,12 +528,17 @@ file or folder.
 
 ## Export and import as text
 
-File → **Export to Text…** saves everything as one YAML file (`format: 1`,
-then every event of the log, readable in any editor). File → **Import from
-Text…** adds the events of such a file that the log does not have yet, so
-importing the same file twice changes nothing, and importing a file from
-another Mac merges it. A file from a newer version of the app, or one that is
-not an export, is refused and nothing is changed.
+File → **Export to Text…** saves your views, tags, tasks and projects as one
+YAML file (`format: 1`), readable in any editor: for every item its title,
+notes, priority, estimate, kind, parent, day created, whether it is open,
+completed or dropped, and its planned day, due date, repeat, delegation and
+tags. It is a copy of what exists, not of how it came about: time logged,
+daily and weekly reviews, the plan's manual order and settings are not in it.
+File → **Import from Text…** adds the views, tags and items of such a file
+that you do not have yet, with the same IDs, so importing the same file twice
+changes nothing, and a file from another Mac merges. A file from a newer
+version of the app, or one that is not an export, is refused and nothing is
+changed.
 
 ## The same tasks on several Macs
 

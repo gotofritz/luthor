@@ -136,6 +136,8 @@ Sources/
     Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
+    LibraryExport.swift      LibraryExport (views, tags, items as plain Codable data) and LibraryState.export()
+    Commands+Import.swift    importLibrary: the events that add what an export holds and the library lacks
     StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
     Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project and an empty project a task
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
@@ -182,8 +184,7 @@ Sources/
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
                              type are skipped on read and stay in the file
-    EventText.swift          the log as YAML text (`format: 1`, one entry per event line) and back; the way
-                             in skips unknown event types (uses Yams)
+    LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),

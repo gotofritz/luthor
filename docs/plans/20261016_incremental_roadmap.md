@@ -423,13 +423,13 @@ moves with it.
 
 ### 15a. Export and import as text ✅
 
-File → Export to Text… writes the whole log as one YAML file (`format: 1`,
-then an entry for every event, the same fields as a log line), and Import from
-Text… adds the events the log lacks, so importing twice changes nothing and a
-file from another Mac merges. Unknown event types in a file are skipped, a
-newer format number is refused. It is a copy of the history, not a state
-snapshot, so it is lossless by construction and needs no mapping per field.
-The one new dependency is Yams (the YAML codec).
+File → Export to Text… writes the views, tags, tasks and projects as one YAML
+file (`format: 1`; per item the title, notes, priority, estimate, kind,
+parent, status, planned day, due date, repeat, delegation, tags). Import from
+Text… adds what the library lacks, by ID, as ordinary events, so importing
+twice changes nothing and a file from another Mac merges. It is the state,
+not the history: time logged, reviews and settings are not in it. The one new
+dependency is Yams (the YAML codec).
 
 ### 16. Speed pass
 
@@ -1079,5 +1079,11 @@ write when OK is pressed.
    notes, yet priority, estimates, repeat rules, delegation and the schedule
    would be invented attributes that no other tool reads, and it has no
    typed values. YAML is readable, diffable, typed and lossless for this
-   data. The file holds the events, not a state snapshot, so no field can be
-   forgotten in a mapping and it merges by event ID. OPML export is an optional extra for interop, not the backup format
+   data. The file holds tasks and projects, not events, so it stays
+   readable and does not change when events are added. OPML export is an optional extra for interop, not the backup format
+3. **No retention policy for the log yet.** Events are append-only and about
+   200 bytes each, so a year of heavy use is a few megabytes; slice 16
+   measures replay time before anything is built. If the log ever has to
+   shrink, the way is the text export: export, start a fresh log from the
+   import. That keeps tasks and projects and drops history (time logged,
+   reviews). Events are never deleted in place
