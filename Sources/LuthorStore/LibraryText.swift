@@ -15,8 +15,10 @@ import Yams
 /// ```
 public enum LibraryText {
   public static func export(_ library: LibraryExport) throws(EventLogError) -> String {
+    var encoder = YAMLEncoder()
+    encoder.options.sortKeys = true
     do {
-      return try YAMLEncoder(options: .init(sortKeys: true)).encode(library)
+      return try encoder.encode(library)
     } catch {
       throw .ioFailure("cannot write the export: \(error)")
     }
