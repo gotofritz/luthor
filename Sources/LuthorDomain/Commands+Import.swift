@@ -9,16 +9,7 @@ extension Commands {
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
     var writer = ImportWriter(commands: self, after: max(lamport, log.map(\.lamport).max() ?? 0))
-    for view in export.views {
-      if let known = state.views.first(where: { $0.id == view.id }) {
-        // An empty library has only the default view, which the export may have renamed.
-        if log.isEmpty && known.name != view.name {
-          writer.add(.viewRenamed(ViewRenamed(viewID: view.id, name: view.name)))
-        }
-      } else {
-        writer.add(.viewCreated(ViewCreated(viewID: view.id, name: view.name)))
-      }
-    }
+    writer.addViews(of: export, to: state, renaming: log.isEmpty)
     let knownTags = Set(state.tagItems.map(\.id))
     for tag in export.tags where !knownTags.contains(tag.id) {
       writer.add(.tagCreated(TagCreated(tagID: tag.id, name: tag.name, viewID: tag.view)))
@@ -66,6 +57,18 @@ private struct ImportWriter {
       EventEnvelope(
         id: EventID(commands.ids.next()), deviceID: commands.deviceID, lamport: next, payload: payload))
     next += 1
+  }
+
+  /// Creates the views the library lacks. With `renaming`, a view it has under another name takes the
+  /// export's: an empty library has only the default view, which the export may have renamed.
+  mutating func addViews(of export: LibraryExport, to state: LibraryState, renaming: Bool) {
+    for view in export.views {
+      if let known = state.views.first(where: { $0.id == view.id }) {
+        if renaming && known.name != view.name { add(.viewRenamed(ViewRenamed(viewID: view.id, name: view.name))) }
+      } else {
+        add(.viewCreated(ViewCreated(viewID: view.id, name: view.name)))
+      }
+    }
   }
 
   /// Captures the item and sets what it has while it is still open.
