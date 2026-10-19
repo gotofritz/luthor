@@ -99,17 +99,21 @@ struct LuthorApp: App {
     self.configuration = configuration
     library = Self.makeLibrary(
       log: configuration.makeEventLog(), deviceID: configuration.deviceID, view: library.currentView)
+    wireCompaction()
   }
 
-  /// Gives Settings → This Mac its Compact Log button: it rebuilds the log in the place now in use, then
-  /// reads it again.
+  /// Gives Settings → This Mac its Compact Log button: the handshake with the other Macs for the place now in
+  /// use, and the rebuild itself, after which the log is read again.
   private func wireCompaction() {
+    storageController.handshake = configuration.makeCompactionHandshake()
+    storageController.now = { ISO8601DateFormatter().string(from: Date()) }
     storageController.compaction = {
       let result = try LogCompactor.compact(
         configuration: configuration, ids: UUIDGenerator(), stamp: Self.backupStamp())
       library.reload()
       return result
     }
+    storageController.refreshCompaction()
   }
 
   private static func backupStamp() -> String {

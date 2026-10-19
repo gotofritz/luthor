@@ -57,6 +57,7 @@ struct StorageSetupSheet: View {
 struct ThisMacSettingsColumn: View {
   @Environment(StorageController.self) private var controller
   @State private var confirmingCompaction = false
+  @State private var confirmingForce = false
 
   private static let movingNote = """
     Moving to Dropbox copies the tasks of the Home Folder the first time. \
@@ -66,9 +67,35 @@ struct ThisMacSettingsColumn: View {
   private static let compactNote = """
     Rebuilds the log with one short run of events for each task and project, which makes it small again. \
     Time logged and reviewed days are dropped; tasks, projects, settings and project reviews stay. \
-    The old log and a YAML copy are kept in a backups folder next to it. Close Luthor on your other Macs \
-    and let Dropbox finish first.
+    The old log and a YAML copy are kept in a backups folder next to it. With Dropbox, the other Macs are \
+    asked to stop writing first and this Mac waits for them.
     """
+
+  private static let forceNote = """
+    A Mac that has not answered may have changes that have not reached Dropbox. Compacting now keeps what \
+    this Mac can see; those changes are applied on top when they arrive, but some may be overridden.
+    """
+
+  /// What the button row shows depends on how far the handshake with the other Macs has got.
+  @ViewBuilder private var compactionControls: some View {
+    switch controller.compactionProgress {
+    case .idle:
+      Button("Compact Log…") { confirmingCompaction = true }
+    case .waiting(let devices):
+      Text("Waiting for \(devices.joined(separator: ", ")) to stop writing and finish syncing. Open Luthor there.")
+        .font(.caption)
+      Button("Compact Anyway…") { confirmingForce = true }
+      Button("Cancel") { controller.cancelCompaction() }
+    case .ready:
+      Text("Every other Mac has stopped writing and its changes have arrived.")
+        .font(.caption)
+      Button("Compact Now") { controller.finishCompaction() }
+      Button("Cancel") { controller.cancelCompaction() }
+    case .pausedForOther(let device):
+      Text("\(device) is compacting the log. This Mac waits until it is done.")
+        .font(.caption)
+    }
+  }
 
   var body: some View {
     Form {
@@ -86,7 +113,7 @@ struct ThisMacSettingsColumn: View {
         }
       }
       Section("Log size") {
-        Button("Compact Log…") { confirmingCompaction = true }
+        compactionControls
         Text(Self.compactNote)
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -97,9 +124,14 @@ struct ThisMacSettingsColumn: View {
       }
     }
     .confirmationDialog("Compact the log?", isPresented: $confirmingCompaction) {
-      Button("Compact Log") { controller.compactLog() }
+      Button("Compact Log") { controller.startCompaction() }
     } message: {
       Text(Self.compactNote)
+    }
+    .confirmationDialog("Compact without waiting?", isPresented: $confirmingForce) {
+      Button("Compact Anyway", role: .destructive) { controller.finishCompaction(force: true) }
+    } message: {
+      Text(Self.forceNote)
     }
     .formStyle(.grouped)
     .frame(width: 320)

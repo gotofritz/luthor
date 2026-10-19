@@ -543,13 +543,21 @@ changed.
 ### Compacting the log
 
 The log only grows, because it keeps every change. Settings → This Mac →
-**Compact Log…** rebuilds it: it first copies the old log files and a YAML
-copy of your tasks into a `backups/compact-<date>` folder next to the log,
-then writes a new log with one short run of events for each task and project,
-checks that it holds the same library, and swaps it in. Tasks, projects,
-settings and the weekly project reviews stay; time logged and the days you
-reviewed are dropped. Close Luthor on your other Macs and let Dropbox finish
-before you do it, and delete the `backups` folder when you no longer need it.
+**Compact Log…** rebuilds it: it copies the old log files and a YAML copy of
+your tasks into a `backups/compact-<date>` folder next to the log, writes a
+new log with one short run of events for each task and project, checks that it
+holds the same library, and swaps it in. Tasks, projects, settings and the
+weekly project reviews stay; time logged and the days you reviewed are
+dropped. Delete the `backups` folder when you no longer need it.
+
+With Dropbox the Macs do not have to be together. Compact Log first asks the
+others, through small `compaction-…` files in the shared folder, to stop
+writing. Settings shows "Waiting for …" until each Mac that Luthor is open on
+has answered and its last changes have reached Dropbox; open Luthor there to
+let it answer. Then **Compact Now** rebuilds the log and every Mac writes
+again. If a Mac stays away you can **Cancel**, or **Compact Anyway**: the new
+log then outranks anything older, but changes that Mac made offline may be
+partly overridden when it comes back.
 
 ## The same tasks on several Macs
 

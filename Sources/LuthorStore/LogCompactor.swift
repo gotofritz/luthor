@@ -29,7 +29,8 @@ public enum LogCompactor {
     let yaml = try LibraryText.export(export)
     let after: [EventEnvelope]
     do {
-      after = try Commands(deviceID: configuration.deviceID, ids: ids).importLibrary(export, log: [])
+      after = try Commands(deviceID: configuration.deviceID, ids: ids).importLibrary(
+        export, log: [], startingAfter: before.map(\.lamport).max() ?? 0)
     } catch {
       throw .ioFailure("cannot rebuild the log: \(error)")
     }

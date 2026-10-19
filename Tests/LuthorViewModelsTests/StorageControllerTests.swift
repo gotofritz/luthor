@@ -134,45 +134,131 @@ struct StorageControllerTests {
 @MainActor
 @Suite("When the log is compacted from Settings")
 struct CompactLogTests {
-  private func controller(_ home: TemporaryDirectory) -> StorageController {
-    StorageController(saved: nil, home: home.url, deviceID: DeviceID("desk"), save: { _ in })
+  private final class Runs {
+    var count = 0
   }
 
-  @Test("it reports the backup and the events before and after")
-  func itReportsTheResult() throws {
+  private func controller(
+    _ home: TemporaryDirectory, shared device: String? = nil, runs: Runs = Runs()
+  ) -> StorageController {
+    let controller = StorageController(saved: nil, home: home.url, deviceID: DeviceID("desk"), save: { _ in })
+    if let device {
+      controller.handshake = CompactionHandshake(directory: home.url, deviceID: DeviceID(device))
+    }
+    controller.makeID = { "r1" }
+    controller.now = { "t" }
+    controller.compaction = {
+      runs.count += 1
+      return LogCompaction(eventsBefore: 900, eventsAfter: 40, backupFolder: home.file("backups/compact-s"))
+    }
+    return controller
+  }
+
+  private func writeEvents(_ count: Int, as device: String, in home: TemporaryDirectory) throws {
+    try DeviceFilesEventLog(directory: home.url, deviceID: DeviceID(device)).append(
+      (1...count).map { captured("\(device)\($0)", "task", id: "\(device)-\($0)", device: device, lamport: UInt64($0)) })
+  }
+
+  @Test("on this Mac only it runs at once and reports the backup and the events before and after")
+  func itRunsAtOnceWithoutAHandshake() throws {
     let home = try TemporaryDirectory()
     defer { home.remove() }
-    let controller = controller(home)
-    let backup = home.file("backups/compact-s")
-    controller.compaction = { LogCompaction(eventsBefore: 900, eventsAfter: 40, backupFolder: backup) }
+    let runs = Runs()
+    let controller = controller(home, runs: runs)
 
-    controller.compactLog()
+    controller.startCompaction()
 
+    #expect(runs.count == 1)
     #expect(controller.compactionMessage?.contains("900") == true)
     #expect(controller.compactionMessage?.contains("40") == true)
-    #expect(controller.compactionMessage?.contains(backup.path) == true)
+    #expect(controller.compactionMessage?.contains(home.file("backups/compact-s").path) == true)
   }
 
-  @Test("a failure is reported and nothing else happens")
+  @Test("a failure is reported")
   func aFailureIsReported() throws {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let controller = controller(home)
     controller.compaction = { throw .ioFailure("disk full") }
 
-    controller.compactLog()
+    controller.startCompaction()
 
     #expect(controller.compactionMessage?.contains("disk full") == true)
   }
 
-  @Test("with no compaction wired in, it does nothing")
-  func nothingWithoutACompaction() throws {
+  @Test("with a shared folder it waits for the other Mac, which stops writing when it sees the request")
+  func itWaitsForTheOtherMac() throws {
     let home = try TemporaryDirectory()
     defer { home.remove() }
-    let controller = controller(home)
+    try writeEvents(2, as: "mac", in: home)
+    try writeEvents(3, as: "laptop", in: home)
+    let runs = Runs()
+    let mac = controller(home, shared: "mac", runs: runs)
+    let laptop = controller(home, shared: "laptop")
 
-    controller.compactLog()
+    mac.startCompaction()
+    #expect(mac.compactionProgress == .waiting(for: ["laptop"]))
+    #expect(runs.count == 0)
 
-    #expect(controller.compactionMessage == nil)
+    laptop.refreshCompaction()
+    #expect(laptop.compactionProgress == .pausedForOther("mac"))
+
+    mac.refreshCompaction()
+    #expect(mac.compactionProgress == .ready)
+  }
+
+  @Test("finishing rebuilds the log once and lets the other Mac write again")
+  func finishingRebuildsOnce() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    try writeEvents(1, as: "mac", in: home)
+    try writeEvents(1, as: "laptop", in: home)
+    let runs = Runs()
+    let mac = controller(home, shared: "mac", runs: runs)
+    let laptop = controller(home, shared: "laptop")
+    mac.startCompaction()
+    laptop.refreshCompaction()
+    mac.refreshCompaction()
+
+    mac.finishCompaction()
+    laptop.refreshCompaction()
+
+    #expect(runs.count == 1)
+    #expect(mac.compactionProgress == .idle)
+    #expect(laptop.compactionProgress == .idle)
+  }
+
+  @Test("it does not go ahead while a Mac has not answered, unless forced")
+  func itDoesNotGoAheadUnlessForced() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    try writeEvents(1, as: "mac", in: home)
+    try writeEvents(1, as: "laptop", in: home)
+    let runs = Runs()
+    let mac = controller(home, shared: "mac", runs: runs)
+    mac.startCompaction()
+
+    mac.finishCompaction()
+    #expect(runs.count == 0)
+    #expect(mac.compactionMessage?.contains("laptop") == true)
+
+    mac.finishCompaction(force: true)
+    #expect(runs.count == 1)
+    #expect(mac.compactionProgress == .idle)
+  }
+
+  @Test("a failed rebuild leaves the request open, and cancelling closes it")
+  func aFailedRebuildLeavesTheRequestOpen() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let mac = controller(home, shared: "mac")
+    mac.compaction = { throw .ioFailure("disk full") }
+    mac.startCompaction()
+
+    mac.finishCompaction()
+    #expect(try #require(mac.handshake).openRequest() != nil)
+
+    mac.cancelCompaction()
+    #expect(try #require(mac.handshake).openRequest() == nil)
   }
 }

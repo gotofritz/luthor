@@ -187,6 +187,8 @@ Sources/
     LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
     LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds
                              the log from the library (export, then import), checks it, swaps it in
+    CompactionHandshake.swift  request/answer/done files in the shared folder so every Mac stops writing before a
+                             compaction; PausableEventLog refuses appends while this Mac has stopped
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),

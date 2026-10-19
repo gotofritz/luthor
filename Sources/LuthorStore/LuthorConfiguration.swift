@@ -60,8 +60,15 @@ public struct LuthorConfiguration: Equatable, Sendable {
 
   /// The log to read and append to.
   public func makeEventLog() -> any EventLog {
-    if let syncDirectory { return DeviceFilesEventLog(directory: syncDirectory, deviceID: deviceID) }
-    return JSONLinesEventLog(fileURL: logURL)
+    guard let syncDirectory else { return JSONLinesEventLog(fileURL: logURL) }
+    return PausableEventLog(
+      DeviceFilesEventLog(directory: syncDirectory, deviceID: deviceID),
+      handshake: CompactionHandshake(directory: syncDirectory, deviceID: deviceID))
+  }
+
+  /// The handshake that coordinates a compaction with the other devices; `nil` for a log on this Mac only.
+  public func makeCompactionHandshake() -> CompactionHandshake? {
+    syncDirectory.map { CompactionHandshake(directory: $0, deviceID: deviceID) }
   }
 
   /// Notices changes to the log made by someone else: another process, or the sync service.

@@ -2,10 +2,13 @@ extension Commands {
   /// The events that add what an export holds and the library does not have yet. An item, view or tag that
   /// exists is left as it is, so importing a file twice changes nothing, and a file from another Mac merges.
   /// Items are captured, given their fields while open, and only then completed or dropped, so a project
-  /// that took its items along when it was finished does so again.
-  public func importLibrary(_ export: LibraryExport, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+  /// that took its items along when it was finished does so again. The events count on from the Lamport counter
+  /// of `log`, or from `lamport` if that is higher, so they outrank any older events that turn up later.
+  public func importLibrary(
+    _ export: LibraryExport, log: [EventEnvelope], startingAfter lamport: UInt64 = 0
+  ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
-    var writer = ImportWriter(commands: self, log: log)
+    var writer = ImportWriter(commands: self, after: max(lamport, log.map(\.lamport).max() ?? 0))
     for view in export.views where !state.hasView(view.id) {
       writer.add(.viewCreated(ViewCreated(viewID: view.id, name: view.name)))
     }
@@ -46,9 +49,9 @@ private struct ImportWriter {
   var next: UInt64
   private(set) var events: [EventEnvelope] = []
 
-  init(commands: Commands, log: [EventEnvelope]) {
+  init(commands: Commands, after lamport: UInt64) {
     self.commands = commands
-    next = (log.map(\.lamport).max() ?? 0) + 1
+    next = lamport + 1
   }
 
   mutating func add(_ payload: EventPayload) {

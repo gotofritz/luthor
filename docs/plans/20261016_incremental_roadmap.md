@@ -1086,6 +1086,11 @@ write when OK is pressed.
    megabytes, and slice 16 measures replay time before anything more is built.
    When the log should shrink, Settings → This Mac → Compact Log backs up the
    old files and a YAML copy, rebuilds the log from the library (export, then
-   import), verifies it holds the same library and swaps it in. History (time
+   import), verifies it holds the same library and swaps it in. With several
+   Macs it first runs a handshake of small files in the shared folder (each
+   file has one writer): the asker requests, every other Mac answers and stops
+   writing, the asker waits until their last events have arrived, then
+   compacts; a Mac that stays away can be skipped by force, and the new events
+   outrank the old ones. History (time
    logged, reviewed days) is dropped; tasks, projects, settings and project
    reviews stay. Events are never deleted in place
