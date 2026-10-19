@@ -1,4 +1,8 @@
-# Luthor
+<p align="center">
+  <img src="docs/brand/luthor-icon.png" width="160" alt="Luthor: an alpine peak">
+</p>
+
+<h1 align="center">Luthor</h1>
 
 A task system built around the ALPEN daily-planning method, with OmniFocus as
 a reference: local-first and event-sourced.
@@ -127,13 +131,14 @@ projects made together. A project that
 is no longer wanted can be dropped (Drop Project: it and its open tasks leave
 the lists and the review; the Completed and dropped toggle lists them, and Reopen brings them back).
 
-Settings has two families of settings, Global and Local (overrides for the
-view currently shown): Global sets the numbers every view falls back to
+Settings has three families, Global, Views (a list of views, with overrides
+for the one picked; Edit View… in the view switcher opens it on the view
+shown) and This Mac: Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
 weekday), how often projects are reviewed and a default view;
-Local overrides the buffer and capacity for the current view only, and
+Views overrides the buffer and capacity for the view picked only, and
 follows the global value until switched on. Both also pick the accent colour
-(Global for all views, Local for the one shown). A third family, This Mac, chooses
+(Global for all views, Views for one). This Mac chooses
 where the tasks live (see below).
 
 The build is ad-hoc signed: the first launch of a copied app needs

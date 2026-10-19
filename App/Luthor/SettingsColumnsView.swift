@@ -2,10 +2,10 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The two columns of the settings place: families of settings in the first, the individual settings
-/// of the one picked in the second. Global settings are the built-in defaults every view falls back to;
-/// Local settings are overrides for the view currently shown, which fall back to the global value when
-/// cleared.
+/// The columns of the settings place: families of settings in the first, then the individual settings
+/// of the one picked (for Views, the list of views and the settings of the one picked). Global settings are the built-in defaults every view falls back to;
+/// Views lists every view, and the one picked has overrides of its own, which fall back to the global value
+/// when cleared.
 struct SettingsColumnsView: View {
   @Bindable var library: LibraryViewModel
   @State private var group = SettingsGroup.global
@@ -16,21 +16,28 @@ struct SettingsColumnsView: View {
       Divider()
       switch group {
       case .global: GlobalSettingsColumn(library: library)
-      case .local: LocalSettingsColumn(library: library)
+      case .views:
+        ViewListColumn(library: library)
+        Divider()
+        ViewSettingsColumn(library: library, viewID: library.viewEdited)
       case .thisMac: ThisMacSettingsColumn()
       }
+    }
+    // Edit View… in the view switcher opens the settings place on the view picked.
+    .onChange(of: library.viewBeingEdited, initial: true) { _, picked in
+      if picked != nil { group = .views }
     }
   }
 }
 
 /// A family of settings, as the first column of the settings place lists it.
 private enum SettingsGroup: Hashable, CaseIterable {
-  case global, local, thisMac
+  case global, views, thisMac
 
   var title: String {
     switch self {
     case .global: "Global"
-    case .local: "Local"
+    case .views: "Views"
     case .thisMac: "This Mac"
     }
   }
@@ -38,7 +45,7 @@ private enum SettingsGroup: Hashable, CaseIterable {
   var symbol: String {
     switch self {
     case .global: "globe"
-    case .local: "pin"
+    case .views: "square.stack"
     case .thisMac: "desktopcomputer"
     }
   }
@@ -123,30 +130,58 @@ private struct GlobalSettingsColumn: View {
   }
 }
 
-/// Overrides for the view currently shown; blank follows the global value.
-private struct LocalSettingsColumn: View {
+/// Every view, to pick the one whose settings the next column shows. Each row carries the view's accent.
+private struct ViewListColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
+    List(selection: picked) {
+      ForEach(library.views, id: \.id) { view in
+        Label {
+          Text(view.name)
+        } icon: {
+          Rectangle()
+            .fill(library.settings(of: view.id).themeAccent.fill)
+            .frame(width: 12, height: 12)
+        }
+        .tag(view.id)
+      }
+    }
+    .frame(width: 160)
+  }
+
+  private var picked: Binding<ViewID?> {
+    Binding(
+      get: { library.viewEdited },
+      set: { if let viewID = $0 { library.editView(viewID) } })
+  }
+}
+
+/// Overrides for one view; off follows the global value.
+private struct ViewSettingsColumn: View {
+  @Bindable var library: LibraryViewModel
+  let viewID: ViewID
+
+  var body: some View {
     Form {
-      Section(currentViewName) {
+      Section(viewName) {
         Text("Overrides for this view; off follows the global value.")
           .font(.caption)
           .foregroundStyle(.secondary)
       }
       Section("Planning") {
         OverridableStepper(
-          title: "Buffer", suffix: "%", value: library.viewSettings.bufferPercentage,
-          isOverridden: library.isOverriddenForCurrentView(.bufferPercentage), range: 0...100, step: 5,
-          setOverride: { library.changeSettingForCurrentView(.bufferPercentage, to: $0.map(String.init)) })
+          title: "Buffer", suffix: "%", value: library.settings(of: viewID).bufferPercentage,
+          isOverridden: library.isOverridden(.bufferPercentage, in: viewID), range: 0...100, step: 5,
+          setOverride: { library.changeSetting(.bufferPercentage, to: $0.map(String.init), for: viewID) })
       }
-      LocalAccentSection(library: library)
+      ViewAccentSection(library: library, viewID: viewID)
       Section("Capacity per weekday") {
         ForEach(Weekday.allCases, id: \.self) { weekday in
           OverridableStepper(
-            title: weekday.title, suffix: "m", value: library.viewSettings.capacity[weekday] ?? 0,
-            isOverridden: library.isCapacityOverriddenForCurrentView(weekday), range: 0...720, step: 15,
-            setOverride: { library.changeCapacityForCurrentView(weekday, minutes: $0) })
+            title: weekday.title, suffix: "m", value: library.settings(of: viewID).capacity[weekday] ?? 0,
+            isOverridden: library.isOverridden(weekday.capacityKey, in: viewID), range: 0...720, step: 15,
+            setOverride: { library.changeCapacity(weekday, minutes: $0, for: viewID) })
         }
       }
     }
@@ -154,8 +189,8 @@ private struct LocalSettingsColumn: View {
     .frame(width: 320)
   }
 
-  private var currentViewName: String {
-    library.views.first { $0.id == library.currentView }?.name ?? ""
+  private var viewName: String {
+    library.views.first { $0.id == viewID }?.name ?? ""
   }
 }
 

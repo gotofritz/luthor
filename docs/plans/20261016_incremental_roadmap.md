@@ -391,8 +391,10 @@ palette; the app turns the name into colour. The rail takes the accent as
 its fill and carries the logo's mountain, the window opens with the view's name
 and the place shown in large heavy type over a rule in the accent, and the
 planning views (capacity meter, calendar) use it too. Settings → Global sets the
-accent every view falls back to and Settings → Local gives the current view its
-own. The app has an icon (from the logo concepts; source in `docs/brand`).
+accent every view falls back to and Settings → Views lists every view, each
+with its own accent and overrides (Edit View… in the view switcher opens it on
+the view shown; this replaces the Local family, which only reached the view
+shown). The app has an icon (from the logo concepts; source in `docs/brand`).
 No new event: it is a `SettingChanged` with a new key, which older builds ignore.
 
 Usable: Work is blue, Private is plum, and the window says which at a glance.
@@ -1058,3 +1060,12 @@ write when OK is pressed.
    is red or orange so they never mean two things
 4. **The icon is the abstract alpine peak** of the logo concepts, rendered from
    `docs/brand/luthor-icon.svg` into `App/Luthor/Assets.xcassets`
+5. **Views replaces Local in Settings.** A list of views with the settings of
+   the one picked, instead of overrides for the view shown, so another view's
+   colour can be set without switching to it. The view model's settings
+   calls take a view; the `ForCurrentView` ones remain and use the view shown
+6. **The rail's mountain is the icon's, in three tones**: white for the lit
+   top, translucent white for the faces in light, a dark shade for the one in
+   shadow, on a clear sky, so it takes on each view's accent. The app also
+   sets its icon explicitly at start, as ⌘-Tab can keep showing a generic one
+   that Launch Services cached

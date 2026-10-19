@@ -184,6 +184,7 @@ private struct ViewSwitcher: View {
       Divider()
       Button("New View…") { start(.new, with: "") }
       Button("Rename View…") { start(.rename, with: currentName) }
+      Button("Edit View…") { library.editView(library.currentView) }
     } label: {
       Label(currentName, systemImage: "square.stack")
         .font(Theme.section)

@@ -13,6 +13,9 @@ import Observation
 public final class LibraryViewModel {
   /// Every view, the default one first.
   public internal(set) var views: [ViewItem] = []
+  /// The view the settings place shows the settings of, when one was picked (from the view switcher or the
+  /// list of views); `nil` means the view shown.
+  public internal(set) var viewBeingEdited: ViewID?
   /// The one view the window shows; nothing from another view is ever listed.
   public internal(set) var currentView: ViewID
   /// The place the navigation rail has picked.
@@ -224,6 +227,7 @@ public final class LibraryViewModel {
   /// project shown.
   public func show(_ section: NavigationSection) {
     self.section = section
+    viewBeingEdited = nil
     if section != .projects { sidebarSelection = .inbox }
     selection = nil
     editingCard = nil

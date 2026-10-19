@@ -216,7 +216,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
                              priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
                              as deletable bullets with clickable links and a field that adds one; LinkedText: a note as an AppKit text view, so
-                             the pointer is a hand over a link; SettingsColumnsView: Global/Local/This Mac setting families,
+                             the pointer is a hand over a link; SettingsColumnsView: Global/Views/This Mac setting families (Views: the list of views, then the settings of the one picked),
                              then the individual settings of the one picked; TodayView: the day's plan
                              and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
                              CalendarView: the list of days and the tasks of the one picked;
@@ -227,7 +227,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;
                              Theme: the accent of the view shown as `@Environment(\.theme)`, type styles and the mountain
-                             mark; AppearanceSettingsViews: the accent swatches of Settings → Global and Local;
+                             mark; AppearanceSettingsViews: the accent swatches of Settings → Global and Views;
                              Assets.xcassets: the app icon)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
@@ -235,7 +235,7 @@ Tests/
   Luthor<Module>Tests/       unit tests, one target per module
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
-docs/brand/                  source SVG of the app icon
+docs/brand/                  source SVG and PNG of the app icon (the README masthead)
 scripts/                     commit-message and coverage checks, and next-version.sh (release tag
                              from Conventional Commits), with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)

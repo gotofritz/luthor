@@ -94,29 +94,64 @@ extension View {
   }
 }
 
-/// The mountain of the logo, in its simplest shape: a peak with a lit face, so the app is recognisable at
-/// a glance among other windows.
+/// The mountain of the app icon in three tones on a clear sky: white for the lit top, a translucent white
+/// for the faces in light and a dark shade for the one in shadow, so on the rail it takes on the view's accent.
 struct LuthorMark: View {
-  var body: some View {
-    GeometryReader { geometry in
-      let size = geometry.size
-      ZStack {
-        Path { path in
-          path.move(to: CGPoint(x: 0, y: size.height))
-          path.addLine(to: CGPoint(x: size.width * 0.46, y: 0))
-          path.addLine(to: CGPoint(x: size.width, y: size.height))
-          path.closeSubpath()
-        }
-        .fill(.white)
-        Path { path in
-          path.move(to: CGPoint(x: size.width * 0.46, y: 0))
-          path.addLine(to: CGPoint(x: size.width, y: size.height))
-          path.addLine(to: CGPoint(x: size.width * 0.52, y: size.height))
-          path.closeSubpath()
-        }
-        .fill(Color.white.opacity(0.45))
+  /// A face of the mountain, its corners in the icon's own coordinates (the peak is near 1023, 108).
+  private struct Face {
+    let points: [CGPoint]
+    let shade: Shade
+
+    init(_ corners: [(CGFloat, CGFloat)], _ shade: Shade) {
+      points = corners.map { CGPoint(x: $0.0, y: $0.1) }
+      self.shade = shade
+    }
+  }
+
+  private enum Shade {
+    case lit, light, shadow
+
+    var color: Color {
+      switch self {
+      case .lit: Color.white
+      case .light: Color.white.opacity(0.55)
+      case .shadow: Color.black.opacity(0.3)
       }
     }
+  }
+
+  private static let faces = [
+    Face([(850, 350), (905, 315), (850, 410)], .lit),
+    Face([(1015, 120), (1023, 108), (1032, 120)], .lit),
+    Face([(1001, 178), (1032, 120), (1180, 300), (1115, 264), (1050, 230)], .lit),
+    Face([(850, 350), (1015, 120), (1032, 120), (1001, 178), (905, 315)], .light),
+    Face(
+      [(1050, 230), (1115, 264), (1180, 300), (1180, 410), (1098, 410), (1010, 286)], .light),
+    Face(
+      [(905, 315), (1001, 178), (1050, 230), (1010, 286), (1098, 410), (850, 410)], .shadow),
+  ]
+  private static let origin = CGPoint(x: 850, y: 108)
+  private static let extent = CGSize(width: 330, height: 302)
+
+  /// The width over the height the mountain is drawn in.
+  static let aspectRatio = extent.width / extent.height
+
+  var body: some View {
+    GeometryReader { geometry in
+      ForEach(Array(Self.faces.enumerated()), id: \.offset) { _, face in
+        Path { path in
+          for (index, point) in face.points.enumerated() {
+            let scaled = CGPoint(
+              x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
+              y: (point.y - Self.origin.y) / Self.extent.height * geometry.size.height)
+            if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
+          }
+          path.closeSubpath()
+        }
+        .fill(face.shade.color)
+      }
+    }
+    .aspectRatio(Self.aspectRatio, contentMode: .fit)
     .accessibilityHidden(true)
   }
 }

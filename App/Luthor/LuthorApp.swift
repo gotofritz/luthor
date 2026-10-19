@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LuthorDomain
 import LuthorStore
@@ -59,6 +60,14 @@ struct LuthorApp: App {
         view: UserDefaults.standard.string(forKey: Self.lastViewKey).map(ViewID.init) ?? .default))
   }
 
+  /// Gives the running app its icon explicitly. ⌘-Tab and the Dock show the icon of the running process, and
+  /// Launch Services can keep serving the generic one it cached before the app had an icon.
+  private static func setApplicationIcon() {
+    if let icon = NSImage(named: "AppIcon") {
+      NSApplication.shared.applicationIconImage = icon
+    }
+  }
+
   /// The process environment, with the device name a Mac app started from the Finder cannot get from a
   /// shell read from the app's defaults instead: `defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID desk`.
   private static func environment() -> [String: String] {
@@ -96,6 +105,7 @@ struct LuthorApp: App {
     Window("Luthor", id: "library") {
       LibraryView(library: library, configuration: configuration)
         .themed(library.viewSettings.themeAccent)
+        .onAppear { Self.setApplicationIcon() }
         .environment(storageController)
         .sheet(isPresented: .constant(storageController.needsSetup)) {
           StorageSetupSheet(controller: storageController)

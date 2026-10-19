@@ -16,7 +16,7 @@ struct NavigationRailView: View {
   var body: some View {
     VStack(spacing: 4) {
       LuthorMark()
-        .frame(width: 30, height: 26)
+        .frame(width: 36)
         .padding(.top, 8)
         .padding(.bottom, 14)
       ForEach(Self.mainSections, id: \.self) { section in

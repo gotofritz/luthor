@@ -8,11 +8,46 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, log: log) }
   }
 
+  /// Overrides a setting for the view `viewID`, or with `nil` clears the override back to the global value.
+  public func changeSetting(_ key: SettingKey, to value: String?, for viewID: ViewID) {
+    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, for: viewID, log: log) }
+  }
+
   /// Overrides a setting for the current view, or with `nil` clears the override back to the global
   /// value.
   public func changeSettingForCurrentView(_ key: SettingKey, to value: String?) {
-    let viewID = currentView
-    perform { (log) throws(CommandError) in try commands.changeSetting(key, to: value, for: viewID, log: log) }
+    changeSetting(key, to: value, for: currentView)
+  }
+
+  /// The settings the view `viewID` plans with, which need not be the view shown.
+  public func settings(of viewID: ViewID) -> Settings {
+    state.settings(for: viewID)
+  }
+
+  /// Whether `key` is overridden for the view `viewID`, rather than inherited from the global value.
+  public func isOverridden(_ key: SettingKey, in viewID: ViewID) -> Bool {
+    state.isOverridden(key, in: viewID)
+  }
+
+  /// Overrides the capacity of a weekday for the view `viewID`, or with `nil` clears the override.
+  public func changeCapacity(_ weekday: Weekday, minutes: Int?, for viewID: ViewID) {
+    changeSetting(weekday.capacityKey, to: minutes.map(String.init), for: viewID)
+  }
+
+  /// Overrides the accent of the view `viewID`, or with `nil` clears the override.
+  public func changeAccent(_ accent: ThemeAccent?, for viewID: ViewID) {
+    changeSetting(.themeAccent, to: accent?.rawValue, for: viewID)
+  }
+
+  /// Opens the settings place on the view `viewID`, which need not be the view shown.
+  public func editView(_ viewID: ViewID) {
+    show(.settings)
+    viewBeingEdited = viewID
+  }
+
+  /// The view whose settings the settings place shows: the one picked, else the view shown.
+  public var viewEdited: ViewID {
+    viewBeingEdited ?? currentView
   }
 
   /// Changes the global capacity of a weekday, or with `nil` clears it back to the built-in default.
@@ -32,7 +67,7 @@ extension LibraryViewModel {
 
   /// Overrides the accent for the current view, or with `nil` clears the override.
   public func changeAccentForCurrentView(_ accent: ThemeAccent?) {
-    changeSettingForCurrentView(.themeAccent, to: accent?.rawValue)
+    changeAccent(accent, for: currentView)
   }
 
   /// Whether `key` is overridden for the current view, rather than inherited from the global value.

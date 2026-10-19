@@ -15,22 +15,23 @@ struct GlobalAccentSection: View {
   }
 }
 
-/// The accent of the view shown: its own once switched on, otherwise the global one.
-struct LocalAccentSection: View {
+/// The accent of one view: its own once switched on, otherwise the global one.
+struct ViewAccentSection: View {
   @Bindable var library: LibraryViewModel
+  let viewID: ViewID
 
   var body: some View {
     Section("Appearance") {
-      let accent = library.viewSettings.themeAccent
-      let isOverridden = library.isOverriddenForCurrentView(.themeAccent)
+      let accent = library.settings(of: viewID).themeAccent
+      let isOverridden = library.isOverridden(.themeAccent, in: viewID)
       Toggle(
         "Accent: \(accent.title)\(isOverridden ? "" : " (global)")",
         isOn: Binding(
           get: { isOverridden },
-          set: { library.changeAccentForCurrentView($0 ? accent : nil) })
+          set: { library.changeAccent($0 ? accent : nil, for: viewID) })
       )
       if isOverridden {
-        AccentSwatches(selected: accent) { library.changeAccentForCurrentView($0) }
+        AccentSwatches(selected: accent) { library.changeAccent($0, for: viewID) }
       }
     }
   }
