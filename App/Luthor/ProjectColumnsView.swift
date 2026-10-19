@@ -24,7 +24,7 @@ struct ColumnView: View {
     List(selection: selection) {
       if let project = headProject {
         Label(project.title, systemImage: "arrowtriangle.down.fill")
-          .font(.headline)
+          .font(Theme.section)
           .tag(ColumnSelection.header)
           .contentShape(Rectangle())
           .onTapGesture { click(.header) }

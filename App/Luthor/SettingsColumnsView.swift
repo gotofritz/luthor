@@ -83,6 +83,7 @@ private struct GlobalSettingsColumn: View {
           }
         }
       }
+      GlobalAccentSection(library: library)
       Section("Views") {
         Picker("Default view", selection: defaultViewBinding) {
           ForEach(library.views, id: \.id) { view in
@@ -139,6 +140,7 @@ private struct LocalSettingsColumn: View {
           isOverridden: library.isOverriddenForCurrentView(.bufferPercentage), range: 0...100, step: 5,
           setOverride: { library.changeSettingForCurrentView(.bufferPercentage, to: $0.map(String.init)) })
       }
+      LocalAccentSection(library: library)
       Section("Capacity per weekday") {
         ForEach(Weekday.allCases, id: \.self) { weekday in
           OverridableStepper(

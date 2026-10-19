@@ -34,7 +34,7 @@ private struct DoneColumn: View {
         .padding([.horizontal, .bottom], 12)
       Divider()
       Text("Done")
-        .font(.headline)
+        .font(Theme.section)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       List {
@@ -60,7 +60,7 @@ private struct NotDoneColumn: View {
   var body: some View {
     VStack(spacing: 0) {
       Text("Not done: decide")
-        .font(.headline)
+        .font(Theme.section)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       Divider()
@@ -90,7 +90,7 @@ private struct ReviewHeader: View {
       }
       .help("Previous day")
       Text(title)
-        .font(.headline)
+        .font(Theme.section)
       Button {
         library.showNextDay()
       } label: {

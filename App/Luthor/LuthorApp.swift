@@ -95,6 +95,7 @@ struct LuthorApp: App {
   var body: some Scene {
     Window("Luthor", id: "library") {
       LibraryView(library: library, configuration: configuration)
+        .themed(library.viewSettings.themeAccent)
         .environment(storageController)
         .sheet(isPresented: .constant(storageController.needsSetup)) {
           StorageSetupSheet(controller: storageController)

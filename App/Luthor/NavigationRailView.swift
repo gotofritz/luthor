@@ -11,8 +11,14 @@ struct NavigationRailView: View {
   /// icon of its own: it is Today's other face, picked with the toggle in its header.
   private static let mainSections = NavigationSection.allCases.filter { $0 != .settings && $0 != .review }
 
+  @Environment(\.theme) private var theme
+
   var body: some View {
     VStack(spacing: 4) {
+      LuthorMark()
+        .frame(width: 30, height: 26)
+        .padding(.top, 8)
+        .padding(.bottom, 14)
       ForEach(Self.mainSections, id: \.self) { section in
         RailButton(library: library, section: section)
       }
@@ -21,7 +27,7 @@ struct NavigationRailView: View {
     }
     .padding(6)
     .frame(width: 72)
-    .background(.bar)
+    .background(theme.fill)
   }
 }
 
@@ -42,11 +48,11 @@ private struct RailButton: View {
       }
       .frame(maxWidth: .infinity)
       .padding(.vertical, 6)
-      .background(isPicked ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
+      .background(isPicked ? Color.white.opacity(0.22) : .clear, in: .rect(cornerRadius: 2))
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .foregroundStyle(isPicked ? Color.accentColor : .secondary)
+    .foregroundStyle(isPicked ? Color.white : Color.white.opacity(0.65))
     .help(section.title)
   }
 
