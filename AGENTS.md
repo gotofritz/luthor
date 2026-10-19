@@ -68,13 +68,21 @@ remote events → merge into log → deterministic replay → projection → UI
 ### Event-sourcing rules
 
 - Events are append-only. Code never edits or deletes a written event
-- The event format is soft until it is frozen (slice 15 of
-  `docs/plans/20261016_incremental_roadmap.md`). Until then a format change
-  may break old logs, provided it ships with a one-off migration script that
-  rewrites the log, or the change says the log is to be started afresh
-- Once frozen, event types are a public, persisted format. Never rename a
-  field or change its meaning; add a new event type or a new optional field
-  instead. Old logs must always replay, checked by golden-file tests
+- The event format is frozen (slice 15 of
+  `docs/plans/20261016_incremental_roadmap.md`). Events are a public,
+  persisted format on every device: never rename a field or change its
+  meaning; add a new event type or a new optional field instead. Old logs
+  must always replay, checked by the golden log in
+  `Tests/LuthorStoreTests/GoldenLogFixture.swift`. A PR that adds an event
+  type adds lines to that fixture; the tests fail if a type has none
+- A build skips an event type it does not know and leaves its line in the
+  log, so an older build can open a newer log. An event that is broken in
+  other ways is still an error
+- A breaking change to the format (one that cannot be done additively) is
+  allowed only with a one-off migration script that rewrites the log, a
+  tested backup of the log before it runs, and a breaking (`!`) Conventional
+  Commit, so the release version moves to the next major (minor while
+  below 1.0) and says the log needs migrating. Note it in the PR body
 - Each event carries a unique ID, the originating device ID and an ordering
   key. Replay of the same set of events in any arrival order produces the same
   state
@@ -172,7 +180,8 @@ Sources/
                              default view, as an extension (split out for file_length, not access)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
-    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
+    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
+                             type are skipped on read and stay in the file
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
@@ -232,7 +241,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
-  Luthor<Module>Tests/       unit tests, one target per module
+  Luthor<Module>Tests/       unit tests, one target per module; LuthorStoreTests holds the golden log
+                             (GoldenLogFixture.swift): a line for every event type, must always replay
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)

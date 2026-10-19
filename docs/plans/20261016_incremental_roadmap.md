@@ -408,30 +408,30 @@ big synthetic log, where launch replay time and capture latency are measured
 finds in the event format is fixed in the audit step of slice 15, while the
 format is still soft.
 
-### 15. Freeze the event format
+### 15. Freeze the event format ✅
 
-Safety work, no new feature: it keeps the log, the only copy of the tasks,
-from being broken by a later change. One PR, after slice 14 so its events
-enter v1.
+The event format is frozen; the `AGENTS.md` event rules apply in full. Replay
+skips an event type it does not know and leaves its line in the log, so an
+older build opens a newer log (before, the decoder threw `unreadableLine`). A
+synthetic golden log (`Tests/LuthorStoreTests/GoldenLogFixture.swift`) holds a
+line for every event type and every optional field; tests check that it
+decodes, round-trips and replays to the same state reversed and with
+duplicates, and fail when a type has no line. The audit found no wart worth a
+migration, so the log is untouched. Any later breaking change needs a
+migration script, a tested backup and a `!` commit, so the release version
+moves with it.
 
-- **Audit first.** The format is still soft, so this is the last cheap
-  moment to fix warts (event and field names, field shapes, raw values such
-  as `Priority` "A", setting key strings). Fixes ship with a one-off
-  migration script over the log. Whatever is left becomes permanent
-- **Unknown events are skipped, not fatal.** Replay ignores an event type it
-  does not know and leaves it untouched in the log, so an older build can
-  open a log written by a newer one (unknown setting keys already behave
-  this way). Today the decoder throws `unreadableLine` and the app refuses
-  to open the log
-- **Golden fixture.** One synthetic, checked-in log with every event type
-  and every optional field (`createdOn`, due dates…) must always replay to
-  the same state; the same events in shuffled order, and with duplicates,
-  give the same state. Never the real log. A PR that adds an event adds
-  lines to the fixture
-- **Strict rules from here.** The `AGENTS.md` event rules (never rename or
-  change the meaning of a field; add a new event type or an optional field)
-  now apply in full. The fixture and the `EventType` enum are the spec; no
-  separate format document
+### 15a. Export and import as text
+
+Not built yet; the next PR. The owner holds real data on two Macs, so a
+readable copy that does not depend on the app is a second safety net.
+
+- **Export** the current state of every view (items with their tree, notes,
+  priority, estimate, due date, repeat, tags, schedule, delegation, review
+  dates) to one YAML file, and **import** a file into a fresh log. The file is
+  a lossless snapshot of state, not of history, and carries `format: 1`
+- **YAML, not OPML, as the round-trip format** (see Decisions). OPML export
+  can follow later for outline tools
 
 ### 16. Speed pass
 
@@ -1069,3 +1069,16 @@ write when OK is pressed.
    shadow, on a clear sky, so it takes on each view's accent. The app also
    sets its icon explicitly at start, as ⌘-Tab can keep showing a generic one
    that Launch Services cached
+
+## Decisions (2026-10-19, slice 15)
+
+1. **Do it now, as a safety net, with strict rules.** The owner runs two Macs
+   with real data, so the format is frozen as is: no audit migration, because
+   nothing found is worth the risk. Breaking changes stay possible only with
+   a migration script, a tested backup and a `!` commit
+2. **Text export is YAML, not OPML.** OPML is what OmniFocus exports, but it
+   is an outline of text plus free attributes: it can carry the tree and
+   notes, yet priority, estimates, repeat rules, delegation and the schedule
+   would be invented attributes that no other tool reads, and it has no
+   typed values. YAML is readable, diffable, typed and lossless for this
+   data. OPML export is an optional extra for interop, not the backup format
