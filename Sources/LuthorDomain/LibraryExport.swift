@@ -28,6 +28,37 @@ public struct LibraryExport: Equatable, Codable, Sendable {
   }
 }
 
+extension LibraryExport {
+  /// What differs from `other`, in words, for an error that has to say why two libraries are not the same;
+  /// `nil` if they hold the same.
+  public func firstDifference(from other: LibraryExport) -> String? {
+    if views != other.views { return "the views differ" }
+    if tags != other.tags { return "the tags differ" }
+    if settings != other.settings { return "the settings differ" }
+    if reviewDefault != other.reviewDefault { return "the default review interval differs" }
+    if items.count != other.items.count { return "\(items.count) items became \(other.items.count)" }
+    for (before, after) in zip(items, other.items) where before != after {
+      let fields = before.differingFields(from: after)
+      return "\"\(before.title)\" (\(before.id.rawValue)) differs in \(fields.joined(separator: ", "))"
+    }
+    return nil
+  }
+}
+
+extension ExportedItem {
+  /// The names of the fields that differ from `other`; "position" when they are not the same item.
+  func differingFields(from other: ExportedItem) -> [String] {
+    if id != other.id { return ["position"] }
+    var names: [String] = []
+    for (mine, theirs) in zip(Mirror(reflecting: self).children, Mirror(reflecting: other).children) {
+      if let label = mine.label, String(describing: mine.value) != String(describing: theirs.value) {
+        names.append(label)
+      }
+    }
+    return names.isEmpty ? ["something else"] : names
+  }
+}
+
 public struct ExportedView: Equatable, Codable, Sendable {
   public var id: ViewID
   public var name: String
@@ -172,20 +203,29 @@ extension LibraryState {
     func visit(_ id: TaskID) {
       guard seen.insert(id).inserted else { return }
       result.append(id)
-      let filedHere = (filed[id] ?? []).filter { items[$0]?.item.parentID == id }
-      let rest = order.filter { items[$0]?.item.parentID == id && !filedHere.contains($0) }
+      let filedHere = (filed[id] ?? []).filter { linkedParent(of: $0) == id }
+      let rest = order.filter { linkedParent(of: $0) == id && !filedHere.contains($0) }
       for child in filedHere + rest { visit(child) }
     }
-    for id in order where items[id]?.item.parentID == nil { visit(id) }
+    for id in order where linkedParent(of: id) == nil { visit(id) }
     for id in order { visit(id) }
     return result
+  }
+
+  /// The parent an item is exported under. A parent in another view is let go: the link could not be written
+  /// again (an item is only filed in a parent of its own view), and reopening the item ignores it.
+  private func linkedParent(of id: TaskID) -> TaskID? {
+    guard let item = items[id]?.item, let parentID = item.parentID, items[parentID]?.item.viewID == item.viewID else {
+      return nil
+    }
+    return parentID
   }
 
   private func exportedItem(_ id: TaskID) -> ExportedItem? {
     guard let stored = items[id] else { return nil }
     let item = stored.item
     var exported = ExportedItem(
-      id: id, title: item.title, view: item.viewID, parent: item.parentID, kind: item.kind, notes: item.notes,
+      id: id, title: item.title, view: item.viewID, parent: linkedParent(of: id), kind: item.kind, notes: item.notes,
       priority: item.priority, estimate: item.estimate, createdOn: item.createdOn)
     switch stored.status {
     case .open: break

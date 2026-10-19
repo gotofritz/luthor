@@ -134,7 +134,12 @@ public final class StorageController {
         compactionMessage = "Still waiting for \(waiting.joined(separator: ", "))."
         return
       }
-      guard report({ try compaction() }) else { return }
+      guard report({ try compaction() }) else {
+        try handshake.cancel(open)
+        compactionProgress = .idle
+        compactionMessage = (compactionMessage ?? "") + " The request is cancelled, so every Mac can write again."
+        return
+      }
       try handshake.finish(open, at: now())
       compactionProgress = .idle
     } catch {

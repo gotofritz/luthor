@@ -34,8 +34,8 @@ public enum LogCompactor {
     } catch {
       throw .ioFailure("cannot rebuild the log: \(error)")
     }
-    guard LibraryState.replay(after).export() == export else {
-      throw .ioFailure("the rebuilt log does not hold the same library; nothing was changed")
+    if let difference = export.firstDifference(from: LibraryState.replay(after).export()) {
+      throw .ioFailure("the rebuilt log does not hold the same library (\(difference)); nothing was changed")
     }
 
     let folder = configuration.syncDirectory ?? configuration.logURL.deletingLastPathComponent()

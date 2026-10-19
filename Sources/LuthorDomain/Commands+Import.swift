@@ -9,8 +9,15 @@ extension Commands {
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
     var writer = ImportWriter(commands: self, after: max(lamport, log.map(\.lamport).max() ?? 0))
-    for view in export.views where !state.hasView(view.id) {
-      writer.add(.viewCreated(ViewCreated(viewID: view.id, name: view.name)))
+    for view in export.views {
+      if let known = state.views.first(where: { $0.id == view.id }) {
+        // An empty library has only the default view, which the export may have renamed.
+        if log.isEmpty && known.name != view.name {
+          writer.add(.viewRenamed(ViewRenamed(viewID: view.id, name: view.name)))
+        }
+      } else {
+        writer.add(.viewCreated(ViewCreated(viewID: view.id, name: view.name)))
+      }
     }
     let knownTags = Set(state.tagItems.map(\.id))
     for tag in export.tags where !knownTags.contains(tag.id) {

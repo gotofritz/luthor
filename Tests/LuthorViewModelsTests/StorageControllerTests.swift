@@ -250,8 +250,8 @@ struct CompactLogTests {
     #expect(mac.compactionProgress == .idle)
   }
 
-  @Test("a failed rebuild leaves the request open, and cancelling closes it")
-  func aFailedRebuildLeavesTheRequestOpen() throws {
+  @Test("a failed rebuild gives up the request, so every Mac writes again, and says why")
+  func aFailedRebuildCancelsTheRequest() throws {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let mac = controller(home, shared: "mac")
@@ -259,9 +259,10 @@ struct CompactLogTests {
     mac.startCompaction()
 
     mac.finishCompaction()
-    #expect(try #require(mac.handshake).openRequest() != nil)
 
-    mac.cancelCompaction()
     #expect(try #require(mac.handshake).openRequest() == nil)
+    #expect(mac.compactionProgress == .idle)
+    #expect(mac.compactionMessage?.contains("disk full") == true)
+    #expect(mac.compactionMessage?.contains("write again") == true)
   }
 }

@@ -92,4 +92,41 @@ struct LibraryExportTests {
 
     #expect(throws: CommandError.noView(ViewID("nowhere"))) { try commands.importLibrary(export, log: []) }
   }
+
+  @Test("a renamed default view keeps its name")
+  func aRenamedDefaultViewKeepsItsName() throws {
+    let events = [viewRenamed("default", to: "Home", lamport: 1), captured("t1", "milk", lamport: 2)]
+
+    let after = try imported(events)
+
+    #expect(after.export().views.first?.name == "Home")
+    #expect(after.export() == LibraryState.replay(events).export())
+  }
+
+  @Test("a task finished in a view its project later left is exported without that parent")
+  func aFinishedTaskLeftBehindInAnotherView() throws {
+    let events = [
+      viewCreated("work", "Work", lamport: 1),
+      projectCreated("p1", "Holiday", lamport: 2),
+      captured("t1", "Book flights", under: "p1", lamport: 3),
+      completed("t1", lamport: 4),
+      movedToView("p1", toView: "work", lamport: 5),
+    ]
+
+    let before = LibraryState.replay(events).export()
+
+    #expect(before.items.first { $0.id.rawValue == "t1" }?.parent == nil)
+    #expect(try imported(events).export() == before)
+  }
+
+  @Test("two libraries that differ say where")
+  func differencesAreNamed() {
+    let one = LibraryState.replay([captured("t1", "milk", lamport: 1)]).export()
+    let other = LibraryState.replay([captured("t1", "milk", lamport: 1), estimated("t1", as: 5, lamport: 2)]).export()
+    let more = LibraryState.replay([captured("t1", "milk", lamport: 1), captured("t2", "eggs", lamport: 2)]).export()
+
+    #expect(one.firstDifference(from: one) == nil)
+    #expect(one.firstDifference(from: other) == "\"milk\" (t1) differs in estimate")
+    #expect(one.firstDifference(from: more) == "1 items became 2")
+  }
 }

@@ -559,6 +559,10 @@ again. If a Mac stays away you can **Cancel**, or **Compact Anyway**: the new
 log then outranks anything older, but changes that Mac made offline may be
 partly overridden when it comes back.
 
+If the new log does not check out, Luthor changes nothing, says what differed
+(for example which task and which field), and cancels the request so every Mac
+writes again.
+
 ## The same tasks on several Macs
 
 Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,
