@@ -25,7 +25,8 @@ let package = Package(
     .testTarget(name: "LuthorDomainTests", dependencies: ["LuthorDomain", "LuthorTestSupport"]),
     .testTarget(
       name: "LuthorStoreTests",
-      dependencies: ["LuthorDomain", "LuthorStore", "LuthorTestSupport"]
+      dependencies: ["LuthorDomain", "LuthorStore", "LuthorTestSupport"],
+      resources: [.copy("Fixtures")]
     ),
     .testTarget(
       name: "LuthorViewModelsTests",

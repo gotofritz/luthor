@@ -156,7 +156,9 @@ struct CompactLogTests {
 
   private func writeEvents(_ count: Int, as device: String, in home: TemporaryDirectory) throws {
     try DeviceFilesEventLog(directory: home.url, deviceID: DeviceID(device)).append(
-      (1...count).map { captured("\(device)\($0)", "task", id: "\(device)-\($0)", device: device, lamport: UInt64($0)) })
+      (1...count).map {
+        captured("\(device)\($0)", "task", id: "\(device)-\($0)", device: device, lamport: UInt64($0))
+      })
   }
 
   @Test("on this Mac only it runs at once and reports the backup and the events before and after")

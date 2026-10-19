@@ -18,7 +18,7 @@ struct GoldenLogTests {
   @Test("every event type has a line, so none is left unguarded")
   func everyTypeHasALine() throws {
     let used = Set(
-      GoldenLogFixture.lines.compactMap { line in
+      try GoldenLogFixture.lines.compactMap { line in
         EventLine.knownTypes.first { line.hasSuffix("\"type\":\"" + $0 + "\"}") }
       })
     #expect(used == Set(EventLine.knownTypes))
@@ -57,7 +57,7 @@ struct GoldenLogTests {
   @Test("an event of a type from the future changes nothing")
   func aFutureEventChangesNothing() throws {
     let future = #"{"data":{"taskID":"t1"},"device":"phone","id":"e99","lamport":99,"type":"TaskSnoozed"}"#
-    let lines = GoldenLogFixture.lines + [future]
+    let lines = try GoldenLogFixture.lines + [future]
     let read = try lines.compactMap { try EventLine.decodeIfKnown($0) }
 
     #expect(LibraryState.replay(read) == LibraryState.replay(try events()))

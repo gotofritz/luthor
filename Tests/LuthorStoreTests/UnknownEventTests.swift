@@ -22,8 +22,11 @@ struct UnknownEventTests {
     let last = try EventLine.encode(captured("t2", "pay rent", id: "e2", lamport: 2))
     let log = try log([first, unknown, last], in: dir)
 
-    #expect(
-      try log.readAll() == [captured("t1", "buy milk", id: "e1", lamport: 1), captured("t2", "pay rent", id: "e2", lamport: 2)])
+    let expected = [
+      captured("t1", "buy milk", id: "e1", lamport: 1),
+      captured("t2", "pay rent", id: "e2", lamport: 2),
+    ]
+    #expect(try log.readAll() == expected)
   }
 
   @Test("the line stays in the file after more events are appended")

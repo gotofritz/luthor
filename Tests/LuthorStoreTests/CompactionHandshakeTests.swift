@@ -13,7 +13,9 @@ struct CompactionHandshakeTests {
   private func writeEvents(_ count: Int, as device: String, in dir: TemporaryDirectory) throws {
     let log = DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID(device))
     try log.append(
-      (1...count).map { captured("\(device)\($0)", "task", id: "\(device)-e\($0)", device: device, lamport: UInt64($0)) })
+      (1...count).map {
+        captured("\(device)\($0)", "task", id: "\(device)-e\($0)", device: device, lamport: UInt64($0))
+      })
   }
 
   @Test("there is no open request until one is made")
