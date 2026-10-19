@@ -29,7 +29,7 @@ public final class StorageController {
   public var dropboxFolderPath: String
   public private(set) var errorMessage: String?
   /// Rebuilds the log from the library it holds; set by the app, which knows the log and reloads after it.
-  public var compaction: (() throws(EventLogError) -> LogCompaction)?
+  public var compaction: (() throws -> LogCompaction)?
   /// The handshake with the other Macs; `nil` for a log on this Mac only, which needs none.
   public var handshake: CompactionHandshake?
   /// The time as text and a fresh ID, for requests and answers; set by the app.
@@ -155,7 +155,7 @@ public final class StorageController {
   }
 
   /// Runs the compaction and says what happened; whether it worked.
-  private func report(_ run: () throws(EventLogError) -> LogCompaction) -> Bool {
+  private func report(_ run: () throws -> LogCompaction) -> Bool {
     do {
       let result = try run()
       compactionMessage =
@@ -168,10 +168,11 @@ public final class StorageController {
     }
   }
 
-  private static func describe(_ error: EventLogError) -> String {
+  private static func describe(_ error: any Error) -> String {
+    guard let error = error as? EventLogError else { return "\(error)" }
     switch error {
-    case .ioFailure(let message): message
-    case .unreadableLine(let number): "Line \(number) of the event log is not readable. Nothing was changed."
+    case .ioFailure(let message): return message
+    case .unreadableLine(let number): return "Line \(number) of the event log is not readable. Nothing was changed."
     }
   }
 

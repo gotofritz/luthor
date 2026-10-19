@@ -181,7 +181,7 @@ struct CompactLogTests {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let controller = controller(home)
-    controller.compaction = { throw .ioFailure("disk full") }
+    controller.compaction = { throw EventLogError.ioFailure("disk full") }
 
     controller.startCompaction()
 
@@ -254,7 +254,7 @@ struct CompactLogTests {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let mac = controller(home, shared: "mac")
-    mac.compaction = { throw .ioFailure("disk full") }
+    mac.compaction = { throw EventLogError.ioFailure("disk full") }
     mac.startCompaction()
 
     mac.finishCompaction()
