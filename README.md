@@ -146,9 +146,6 @@ right-click → Open.
 
 ## Where the tasks live, and sync between Macs
 
-File → Export to Text… / Import from Text… copies your views, tags, tasks and projects to and
-from a readable YAML file (see the guide).
-
 The first time you start the app, a window asks where to keep the tasks:
 
 - **Dropbox**, the default: a folder the Dropbox desktop app syncs
@@ -175,6 +172,19 @@ makes on first start and keeps on that Mac, e.g. `events-MacBook-3f9a2c1b.jsonl`
 so two Macs with the same host name still write different files. To name a
 Mac yourself instead, `defaults write com.gotofritz.luthor LUTHOR_DEVICE_ID
 desk` and restart the app (give each Mac a different name).
+
+**Export and import.** File → Export to Text… / Import from Text… copies your
+views, tags, tasks and projects to and from a readable YAML file. Importing adds
+what you do not have yet, so it can merge a file from another Mac.
+
+**Keeping the log small.** The log keeps every change, so it only grows.
+Settings → This Mac → Compact Log… backs up the log files and a YAML copy in a
+`backups` folder, then rebuilds the log with one short run of events for each
+task and project (time logged and reviewed days are dropped). With Dropbox it
+first asks the other Macs, through small `compaction-…` files in the shared
+folder, to stop writing, and waits until each has answered and its last
+changes have arrived; Cancel or Compact Anyway are there for a Mac that stays
+away. See the guide for details.
 
 Environment variables override the choice, and are for running the app from a
 shell or Xcode: `LUTHOR_SYNC_DIR` (a shared folder), `LUTHOR_LOG` (a single
