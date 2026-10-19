@@ -1,4 +1,6 @@
 import Foundation
+import LuthorDomain
+import LuthorStore
 
 /// A synthetic event log, frozen with the event format (`Fixtures/golden-log.jsonl`): one line for every event
 /// type, with every optional field present on some line. It must always decode and replay. A change that breaks
@@ -10,5 +12,15 @@ enum GoldenLogFixture {
       else { throw CocoaError(.fileNoSuchFile) }
       return try String(contentsOf: url, encoding: .utf8).split(separator: "\n").map(String.init)
     }
+  }
+
+  /// The events of every line; a line this build does not know is an error, as the golden log has none.
+  static func events() throws -> [EventEnvelope] {
+    var events: [EventEnvelope] = []
+    for line in try lines {
+      guard let event = try EventLine.decodeIfKnown(line) else { throw CocoaError(.coderInvalidValue) }
+      events.append(event)
+    }
+    return events
   }
 }

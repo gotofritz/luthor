@@ -6,7 +6,7 @@ import Testing
 @Suite("When the tasks and projects are written as YAML text")
 struct LibraryTextTests {
   private func goldenExport() throws -> LibraryExport {
-    let events = try GoldenLogFixture.lines.map { try #require(EventLine.decodeIfKnown($0)) }
+    let events = try GoldenLogFixture.events()
     return LibraryState.replay(events).export()
   }
 

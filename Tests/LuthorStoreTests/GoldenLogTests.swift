@@ -5,9 +5,7 @@ import Testing
 @Suite("When the checked-in golden log is read")
 struct GoldenLogTests {
   private func events() throws -> [EventEnvelope] {
-    try GoldenLogFixture.lines.map { line in
-      try #require(EventLine.decodeIfKnown(line))
-    }
+    try GoldenLogFixture.events()
   }
 
   @Test("every line decodes")
