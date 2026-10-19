@@ -382,6 +382,21 @@ The event format changed with no migration: the log is started afresh.
 
 Usable: "plan the trip, due in spring" is one item.
 
+### 14d. Look and feel: a view's accent ✅
+
+The app has a face of its own, so its window can be told from Finder's and
+the rest at a glance, and each view has its own colour. `SettingKey.themeAccent`
+(per view, with a global fallback) names one of six accents from the logo
+palette; the app turns the name into colour. The rail takes the accent as
+its fill and carries the logo's mountain, the window opens with the view's name
+and the place shown in large heavy type over a rule in the accent, and the
+planning views (capacity meter, calendar) use it too. Settings → Global sets the
+accent every view falls back to and Settings → Local gives the current view its
+own. The app has an icon (from the logo concepts; source in `docs/brand`).
+No new event: it is a `SettingChanged` with a new key, which older builds ignore.
+
+Usable: Work is blue, Private is plum, and the window says which at a glance.
+
 ### Stress test the desktop app (before 15)
 
 Not a build slice: time spent using the Mac app hard before the format is
@@ -1025,3 +1040,21 @@ write when OK is pressed.
    or sub-project in it qualifies (`projectHasChildren` otherwise), and what
    was set on it stays. Old logs still replay, as every kind written so far is
    there. The context menu offers it on a project with nothing in it
+
+## Decisions (2026-10-19, look and feel)
+
+1. **The accent is a setting in the log**, not a per-Mac preference: a view's
+   colour belongs to the view, so it follows it to every Mac. A build that
+   does not know the key ignores it, and a value it does not know falls back to
+   navy
+2. **The domain names the accent, the app colours it.** `ThemeAccent` is six
+   names; their RGB, the light and dark variants, the type and the mountain
+   mark live in `App/Luthor/Theme.swift`. Views read `@Environment(\.theme)`
+   instead of `Color.accentColor`, so a view's colour is one read away
+3. **Flat and Swiss.** One grotesque (the system face) in three weights,
+   square swatches, a rule instead of a box, the accent used as a block (the
+   rail) and as a line (under the title) rather than sprinkled around. Red stays
+   for overdue and overloaded, orange for a follow-up that is due; no accent
+   is red or orange so they never mean two things
+4. **The icon is the abstract alpine peak** of the logo concepts, rendered from
+   `docs/brand/luthor-icon.svg` into `App/Luthor/Assets.xcassets`
