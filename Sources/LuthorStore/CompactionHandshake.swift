@@ -5,8 +5,8 @@ import LuthorDomain
 public struct CompactionRequest: Equatable, Codable, Sendable {
   public let id: String
   /// The file-name token of the device that asked.
-  public let by: String
-  public let at: String
+  public let device: String
+  public let requestedAt: String
 }
 
 /// The handshake that makes compaction safe with several Macs, done with small files in the shared folder.
@@ -52,7 +52,7 @@ public struct CompactionHandshake: Sendable {
   /// Asks every device to stop writing; this device has stopped. Refused while a request is open.
   public func request(id: String, at time: String) throws(EventLogError) -> CompactionRequest {
     if try openRequest() != nil { throw .ioFailure("Another compaction is already under way.") }
-    let request = CompactionRequest(id: id, by: token, at: time)
+    let request = CompactionRequest(id: id, device: token, requestedAt: time)
     try write(request, named: Self.name(id, "request"))
     return request
   }
@@ -62,11 +62,11 @@ public struct CompactionHandshake: Sendable {
   public func acknowledge(_ request: CompactionRequest, events: Int, at time: String) throws(EventLogError) {
     let name = Self.name(request.id, "ack-" + token)
     if try fileNames().contains(name) { return }
-    try write(Acknowledgement(device: token, at: time, events: events), named: name)
+    try write(Acknowledgement(device: token, time: time, events: events), named: name)
   }
 
   public func hasAcknowledged(_ request: CompactionRequest) throws(EventLogError) -> Bool {
-    if request.by == token { return true }
+    if request.device == token { return true }
     return try fileNames().contains(Self.name(request.id, "ack-" + token))
   }
 
@@ -92,11 +92,11 @@ public struct CompactionHandshake: Sendable {
 
   /// Lets every device write again after the log was compacted.
   public func finish(_ request: CompactionRequest, at time: String) throws(EventLogError) {
-    try write(Acknowledgement(device: token, at: time, events: 0), named: Self.name(request.id, "done"))
+    try write(Acknowledgement(device: token, time: time, events: 0), named: Self.name(request.id, "done"))
   }
 
   public func cancel(_ request: CompactionRequest) throws(EventLogError) {
-    try write(Acknowledgement(device: token, at: request.at, events: 0), named: Self.name(request.id, "cancel"))
+    try write(Acknowledgement(device: token, time: request.requestedAt, events: 0), named: Self.name(request.id, "cancel"))
   }
 
   /// The number of events in the device's own file, to put in its answer.
@@ -106,7 +106,7 @@ public struct CompactionHandshake: Sendable {
 
   private struct Acknowledgement: Codable {
     let device: String
-    let at: String
+    let time: String
     let events: Int
   }
 

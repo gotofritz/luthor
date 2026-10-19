@@ -80,12 +80,12 @@ public struct ExportedItem: Equatable, Codable, Sendable {
   }
 
   public struct Delegated: Equatable, Codable, Sendable {
-    public var to: String
+    public var person: String
     public var since: CalendarDate
     public var followUp: CalendarDate?
 
-    public init(to: String, since: CalendarDate, followUp: CalendarDate? = nil) {
-      self.to = to
+    public init(person: String, since: CalendarDate, followUp: CalendarDate? = nil) {
+      self.person = person
       self.since = since
       self.followUp = followUp
     }
@@ -200,7 +200,7 @@ extension LibraryState {
     exported.due = dueDates[id].map { ExportedItem.Due(date: $0.date, hard: $0.isHard) }
     exported.repeatRule = repeatRules[id]
     exported.delegated = delegations[id].map {
-      ExportedItem.Delegated(to: $0.person, since: $0.since, followUp: $0.followUpDate)
+      ExportedItem.Delegated(person: $0.person, since: $0.since, followUp: $0.followUpDate)
     }
     exported.reviewEvery = projectReviews.intervals[id].map { $0.days ?? 0 }
     exported.reviewedOn = projectReviews.reviewedOn[id]

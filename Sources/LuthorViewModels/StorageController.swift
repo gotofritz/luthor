@@ -106,11 +106,11 @@ public final class StorageController {
         compactionProgress = .idle
         return
       }
-      if open.by != handshake.token {
+      if open.device != handshake.token {
         if try !handshake.hasAcknowledged(open) {
           try handshake.acknowledge(open, events: try handshake.ownEventCount(), at: now())
         }
-        compactionProgress = .pausedForOther(open.by)
+        compactionProgress = .pausedForOther(open.device)
       } else {
         let waiting = try handshake.waitingFor(open)
         compactionProgress = waiting.isEmpty ? .ready : .waiting(for: waiting)
@@ -125,7 +125,7 @@ public final class StorageController {
   public func finishCompaction(force: Bool = false) {
     guard let handshake, let compaction else { return }
     do {
-      guard let open = try handshake.openRequest(), open.by == handshake.token else {
+      guard let open = try handshake.openRequest(), open.device == handshake.token else {
         compactionMessage = "No compaction of this Mac is waiting."
         return
       }
@@ -146,7 +146,7 @@ public final class StorageController {
   public func cancelCompaction() {
     guard let handshake else { return }
     do {
-      if let open = try handshake.openRequest(), open.by == handshake.token { try handshake.cancel(open) }
+      if let open = try handshake.openRequest(), open.device == handshake.token { try handshake.cancel(open) }
       compactionProgress = .idle
       compactionMessage = nil
     } catch {

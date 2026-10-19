@@ -76,15 +76,21 @@ private struct ImportWriter {
     if let day = item.scheduled { add(.taskScheduled(TaskScheduled(taskID: id, date: day))) }
     if let due = item.due { add(.taskDueSet(TaskDueSet(taskID: id, date: due.date, isHard: due.hard))) }
     if let rule = item.repeatRule { add(.taskRepeatSet(TaskRepeatSet(taskID: id, rule: rule))) }
+    addReviewFields(of: item)
+    if let handed = item.delegated {
+      add(
+        .taskDelegated(
+          TaskDelegated(taskID: id, to: handed.person, since: handed.since, followUpDate: handed.followUp)))
+    }
+  }
+
+  /// Sets the item's weekly review: interval, last review and chosen next review.
+  mutating func addReviewFields(of item: ExportedItem) {
+    let id = item.id
     if let days = item.reviewEvery {
       add(.reviewIntervalSet(ReviewIntervalSet(taskID: id, interval: ReviewInterval(days: days))))
     }
     if let day = item.reviewedOn { add(.taskReviewed(TaskReviewed(taskID: id, date: day))) }
     if let day = item.reviewNext { add(.reviewDateSet(ReviewDateSet(taskID: id, date: day))) }
-    if let handed = item.delegated {
-      add(
-        .taskDelegated(
-          TaskDelegated(taskID: id, to: handed.to, since: handed.since, followUpDate: handed.followUp)))
-    }
   }
 }

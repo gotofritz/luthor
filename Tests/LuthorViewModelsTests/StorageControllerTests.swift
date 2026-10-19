@@ -200,7 +200,7 @@ struct CompactLogTests {
 
     mac.startCompaction()
     #expect(mac.compactionProgress == .waiting(for: ["laptop"]))
-    #expect(runs.count == 0)
+    #expect(runs.isEmpty)
 
     laptop.refreshCompaction()
     #expect(laptop.compactionProgress == .pausedForOther("mac"))
@@ -241,7 +241,7 @@ struct CompactLogTests {
     mac.startCompaction()
 
     mac.finishCompaction()
-    #expect(runs.count == 0)
+    #expect(runs.isEmpty)
     #expect(mac.compactionMessage?.contains("laptop") == true)
 
     mac.finishCompaction(force: true)
