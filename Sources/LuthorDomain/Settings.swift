@@ -43,6 +43,13 @@ public enum SettingKey: String, Codable, Sendable, CaseIterable, Hashable {
   /// The default view; nothing reads it since the CLI was removed. Global only; a view cannot override
   /// which view is the default.
   case defaultViewID
+  /// The `ThemeAccent` a view is drawn in, by its raw value; per view, so each view looks its own.
+  case themeAccent
+}
+
+/// The colours a view can take as its accent. Names only: which colour each one is lives in the app.
+public enum ThemeAccent: String, Codable, Sendable, CaseIterable, Hashable {
+  case navy, alpine, glacier, forest, plum, graphite
 }
 
 /// The planning numbers a view resolves to: its own overrides, then the global values, then the
@@ -56,11 +63,17 @@ public struct Settings: Equatable, Sendable {
   public let bufferPercentage: Int
   /// Usable minutes for each weekday, before the buffer.
   public let capacity: [Weekday: Int]
+  /// The accent the view is drawn in.
+  public let themeAccent: ThemeAccent
 
-  public init(defaultEstimateMinutes: Int, bufferPercentage: Int, capacity: [Weekday: Int]) {
+  public init(
+    defaultEstimateMinutes: Int, bufferPercentage: Int, capacity: [Weekday: Int],
+    themeAccent: ThemeAccent = .navy
+  ) {
     self.defaultEstimateMinutes = defaultEstimateMinutes
     self.bufferPercentage = bufferPercentage
     self.capacity = capacity
+    self.themeAccent = themeAccent
   }
 }
 
@@ -124,7 +137,8 @@ extension LibraryState {
     return Settings(
       defaultEstimateMinutes: value(.defaultEstimateMinutes).flatMap(Int.init) ?? Settings.defaultEstimateMinutes,
       bufferPercentage: value(.bufferPercentage).flatMap(Int.init) ?? Settings.defaultBufferPercentage,
-      capacity: capacity
+      capacity: capacity,
+      themeAccent: value(.themeAccent).flatMap(ThemeAccent.init) ?? .navy
     )
   }
 }

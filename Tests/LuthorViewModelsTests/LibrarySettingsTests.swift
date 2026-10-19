@@ -115,3 +115,32 @@ struct SetDefaultViewViewModelTests {
     #expect(library.defaultViewID == ViewID("work"))
   }
 }
+
+@MainActor
+@Suite("When an accent is chosen for the current view")
+struct ChangeAccentViewModelTests {
+  @Test("the view resolves to it, and another view keeps the global accent")
+  func theViewResolvesToIt() {
+    let (library, log) = makeLibrary([viewCreated("work", "Work", lamport: 1)], view: ViewID("work"))
+
+    library.changeAccentForCurrentView(.forest)
+
+    #expect(library.viewSettings.themeAccent == .forest)
+    #expect(library.isOverriddenForCurrentView(.themeAccent))
+    #expect(log.events.last == settingChanged(.themeAccent, to: "forest", view: "work", id: "id-1", lamport: 2))
+    library.showView(.default)
+    #expect(library.viewSettings.themeAccent == .navy)
+  }
+
+  @Test("clearing it follows the global accent again")
+  func clearingFollowsTheGlobalAccent() {
+    let (library, _) = makeLibrary([viewCreated("work", "Work", lamport: 1)], view: ViewID("work"))
+    library.changeGlobalAccent(.alpine)
+    library.changeAccentForCurrentView(.forest)
+
+    library.changeAccentForCurrentView(nil)
+
+    #expect(library.viewSettings.themeAccent == .alpine)
+    #expect(!library.isOverriddenForCurrentView(.themeAccent))
+  }
+}

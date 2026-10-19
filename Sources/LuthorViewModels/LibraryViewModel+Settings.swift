@@ -25,6 +25,16 @@ extension LibraryViewModel {
     changeSettingForCurrentView(weekday.capacityKey, to: minutes.map(String.init))
   }
 
+  /// Changes the global accent, or with `nil` clears it back to the built-in one.
+  public func changeGlobalAccent(_ accent: ThemeAccent?) {
+    changeGlobalSetting(.themeAccent, to: accent?.rawValue)
+  }
+
+  /// Overrides the accent for the current view, or with `nil` clears the override.
+  public func changeAccentForCurrentView(_ accent: ThemeAccent?) {
+    changeSettingForCurrentView(.themeAccent, to: accent?.rawValue)
+  }
+
   /// Whether `key` is overridden for the current view, rather than inherited from the global value.
   public func isOverriddenForCurrentView(_ key: SettingKey) -> Bool {
     state.isOverridden(key, in: currentView)
