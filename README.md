@@ -146,6 +146,9 @@ right-click → Open.
 
 ## Where the tasks live, and sync between Macs
 
+File → Export to Text… / Import from Text… copies the whole log to and from a
+readable YAML file (see the guide).
+
 The first time you start the app, a window asks where to keep the tasks:
 
 - **Dropbox**, the default: a folder the Dropbox desktop app syncs

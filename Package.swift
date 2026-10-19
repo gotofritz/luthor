@@ -9,9 +9,13 @@ let package = Package(
     .library(name: "LuthorStore", targets: ["LuthorStore"]),
     .library(name: "LuthorViewModels", targets: ["LuthorViewModels"]),
   ],
+  dependencies: [
+    // Reads and writes the YAML text export (EventText).
+    .package(url: "https://github.com/jpsim/Yams.git", from: "5.1.3")
+  ],
   targets: [
     .target(name: "LuthorDomain"),
-    .target(name: "LuthorStore", dependencies: ["LuthorDomain"]),
+    .target(name: "LuthorStore", dependencies: ["LuthorDomain", .product(name: "Yams", package: "Yams")]),
     .target(name: "LuthorViewModels", dependencies: ["LuthorDomain", "LuthorStore"]),
     .target(
       name: "LuthorTestSupport",

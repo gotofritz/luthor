@@ -101,6 +101,31 @@ struct LuthorApp: App {
       log: configuration.makeEventLog(), deviceID: configuration.deviceID, view: library.currentView)
   }
 
+  /// Saves the whole log as a YAML file the user names.
+  private func exportToText() {
+    guard let text = library.exportText() else { return }
+    let panel = NSSavePanel()
+    panel.nameFieldStringValue = "luthor.yml"
+    guard panel.runModal() == .OK, let url = panel.url else { return }
+    do {
+      try text.write(to: url, atomically: true, encoding: .utf8)
+    } catch {
+      NSAlert(error: error).runModal()
+    }
+  }
+
+  /// Adds the events of a YAML export the user picks that the log does not have yet.
+  private func importFromText() {
+    let panel = NSOpenPanel()
+    panel.allowsMultipleSelection = false
+    guard panel.runModal() == .OK, let url = panel.url else { return }
+    do {
+      library.importText(try String(contentsOf: url, encoding: .utf8))
+    } catch {
+      NSAlert(error: error).runModal()
+    }
+  }
+
   var body: some Scene {
     Window("Luthor", id: "library") {
       LibraryView(library: library, configuration: configuration)
@@ -117,6 +142,10 @@ struct LuthorApp: App {
     }
     .defaultSize(width: 760, height: 640)
     .commands {
+      CommandGroup(replacing: .importExport) {
+        Button("Export to Text…") { exportToText() }
+        Button("Import from Text…") { importFromText() }
+      }
       CommandGroup(replacing: .appSettings) {
         Button("Settings…") { library.show(.settings) }
           .keyboardShortcut(",", modifiers: .command)

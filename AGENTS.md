@@ -182,6 +182,8 @@ Sources/
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
                              type are skipped on read and stay in the file
+    EventText.swift          the log as YAML text (`format: 1`, one entry per event line) and back; the way
+                             in skips unknown event types (uses Yams)
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
@@ -211,7 +213,7 @@ Sources/
                              `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, notes
                              on a card, deselecting a column and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
-                             filling the published state (columns, lists, completed items) in
+                             filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them

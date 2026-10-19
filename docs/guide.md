@@ -526,6 +526,15 @@ Mac only). Settings → This Mac changes the choice later; moving to Dropbox
 copies the Home Folder's tasks in the first time. Back up by copying the
 file or folder.
 
+## Export and import as text
+
+File → **Export to Text…** saves everything as one YAML file (`format: 1`,
+then every event of the log, readable in any editor). File → **Import from
+Text…** adds the events of such a file that the log does not have yet, so
+importing the same file twice changes nothing, and importing a file from
+another Mac merges it. A file from a newer version of the app, or one that is
+not an export, is refused and nothing is changed.
+
 ## The same tasks on several Macs
 
 Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,

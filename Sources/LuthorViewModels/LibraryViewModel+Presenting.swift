@@ -225,3 +225,30 @@ extension LibraryViewModel {
     }
   }
 }
+
+// Text export and import of the whole log.
+extension LibraryViewModel {
+  /// Every event of the log as YAML text, or `nil` with `errorMessage` set when it cannot be read.
+  public func exportText() -> String? {
+    do {
+      return try EventText.export(try log.readAll())
+    } catch {
+      errorMessage = Self.describe(error)
+      return nil
+    }
+  }
+
+  /// Adds the events of an export that the log does not have yet; importing a text twice adds nothing.
+  public func importText(_ text: String) {
+    do {
+      let imported = try EventText.events(from: text)
+      let current = try log.readAll()
+      var known = Set(current.map(\.id))
+      let fresh = imported.filter { known.insert($0.id).inserted }
+      try log.append(fresh)
+      show(current + fresh)
+    } catch {
+      errorMessage = Self.describe(error)
+    }
+  }
+}

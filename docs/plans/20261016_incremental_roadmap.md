@@ -421,17 +421,15 @@ migration, so the log is untouched. Any later breaking change needs a
 migration script, a tested backup and a `!` commit, so the release version
 moves with it.
 
-### 15a. Export and import as text
+### 15a. Export and import as text ✅
 
-Not built yet; the next PR. The owner holds real data on two Macs, so a
-readable copy that does not depend on the app is a second safety net.
-
-- **Export** the current state of every view (items with their tree, notes,
-  priority, estimate, due date, repeat, tags, schedule, delegation, review
-  dates) to one YAML file, and **import** a file into a fresh log. The file is
-  a lossless snapshot of state, not of history, and carries `format: 1`
-- **YAML, not OPML, as the round-trip format** (see Decisions). OPML export
-  can follow later for outline tools
+File → Export to Text… writes the whole log as one YAML file (`format: 1`,
+then an entry for every event, the same fields as a log line), and Import from
+Text… adds the events the log lacks, so importing twice changes nothing and a
+file from another Mac merges. Unknown event types in a file are skipped, a
+newer format number is refused. It is a copy of the history, not a state
+snapshot, so it is lossless by construction and needs no mapping per field.
+The one new dependency is Yams (the YAML codec).
 
 ### 16. Speed pass
 
@@ -1081,4 +1079,5 @@ write when OK is pressed.
    notes, yet priority, estimates, repeat rules, delegation and the schedule
    would be invented attributes that no other tool reads, and it has no
    typed values. YAML is readable, diffable, typed and lossless for this
-   data. OPML export is an optional extra for interop, not the backup format
+   data. The file holds the events, not a state snapshot, so no field can be
+   forgotten in a mapping and it merges by event ID. OPML export is an optional extra for interop, not the backup format
