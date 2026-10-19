@@ -413,7 +413,7 @@ format is still soft.
 The event format is frozen; the `AGENTS.md` event rules apply in full. Replay
 skips an event type it does not know and leaves its line in the log, so an
 older build opens a newer log (before, the decoder threw `unreadableLine`). A
-synthetic golden log (`Tests/LuthorStoreTests/GoldenLogFixture.swift`) holds a
+synthetic golden log (`Tests/LuthorStoreTests/Fixtures/golden-log.jsonl`) holds a
 line for every event type and every optional field; tests check that it
 decodes, round-trips and replays to the same state reversed and with
 duplicates, and fail when a type has no line. The audit found no wart worth a

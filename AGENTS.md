@@ -73,7 +73,7 @@ remote events → merge into log → deterministic replay → projection → UI
   persisted format on every device: never rename a field or change its
   meaning; add a new event type or a new optional field instead. Old logs
   must always replay, checked by the golden log in
-  `Tests/LuthorStoreTests/GoldenLogFixture.swift`. A PR that adds an event
+  `Tests/LuthorStoreTests/Fixtures/golden-log.jsonl`. A PR that adds an event
   type adds lines to that fixture; the tests fail if a type has none
 - A build skips an event type it does not know and leaves its line in the
   log, so an older build can open a newer log. An event that is broken in
@@ -249,7 +249,7 @@ Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
   Luthor<Module>Tests/       unit tests, one target per module; LuthorStoreTests holds the golden log
-                             (GoldenLogFixture.swift): a line for every event type, must always replay
+                             (Fixtures/golden-log.jsonl): a line for every event type, must always replay
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)
