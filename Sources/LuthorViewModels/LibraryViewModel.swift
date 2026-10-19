@@ -53,6 +53,10 @@ public final class LibraryViewModel {
   public internal(set) var globalSettings = LibraryState.replay([]).globalSettings
   /// The settings `currentView` plans with: its own overrides, then the global values.
   public internal(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
+  /// The settings of every view, and the keys each overrides, for a screen that shows the settings of a view
+  /// other than the one shown; `state` is not observed, so it cannot be read from a view body.
+  public internal(set) var settingsByView: [ViewID: Settings] = [:]
+  public internal(set) var overriddenKeysByView: [ViewID: Set<SettingKey>] = [:]
   /// The default view chosen in settings.
   public internal(set) var defaultViewID = ViewID.default
   /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned

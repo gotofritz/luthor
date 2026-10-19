@@ -2,6 +2,7 @@ import LuthorDomain
 import LuthorStore
 import LuthorTestSupport
 import LuthorViewModels
+import Observation
 import Testing
 
 @MainActor
@@ -97,5 +98,47 @@ struct EditViewTests {
 
     #expect(library.viewBeingEdited == nil)
     #expect(library.viewEdited == .default)
+  }
+}
+
+/// Set from the observer's `@Sendable` callback, which runs on the thread that made the change.
+private final class Flag: @unchecked Sendable {
+  var isSet = false
+}
+
+@MainActor
+@Suite("When a screen shows the settings of a view")
+struct ObserveViewSettingsTests {
+  static let work = ViewID("work")
+
+  @Test("it is told when another view's accent changes")
+  func itIsToldWhenAnotherViewsAccentChanges() {
+    let (library, _) = makeLibrary([viewCreated("work", "Work", lamport: 1)])
+    let told = Flag()
+    withObservationTracking {
+      _ = library.settings(of: Self.work)
+      _ = library.isOverridden(.themeAccent, in: Self.work)
+    } onChange: {
+      told.isSet = true
+    }
+
+    library.changeAccent(.plum, for: Self.work)
+
+    #expect(told.isSet)
+  }
+
+  @Test("it is told when the view shown has a setting overridden")
+  func itIsToldWhenTheViewShownHasASettingOverridden() {
+    let (library, _) = makeLibrary()
+    let told = Flag()
+    withObservationTracking {
+      _ = library.isOverridden(.bufferPercentage, in: .default)
+    } onChange: {
+      told.isSet = true
+    }
+
+    library.changeSetting(.bufferPercentage, to: "10", for: .default)
+
+    #expect(told.isSet)
   }
 }

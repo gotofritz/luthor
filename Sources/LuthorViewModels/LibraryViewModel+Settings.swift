@@ -21,12 +21,12 @@ extension LibraryViewModel {
 
   /// The settings the view `viewID` plans with, which need not be the view shown.
   public func settings(of viewID: ViewID) -> Settings {
-    state.settings(for: viewID)
+    settingsByView[viewID] ?? state.settings(for: viewID)
   }
 
   /// Whether `key` is overridden for the view `viewID`, rather than inherited from the global value.
   public func isOverridden(_ key: SettingKey, in viewID: ViewID) -> Bool {
-    state.isOverridden(key, in: viewID)
+    overriddenKeysByView[viewID]?.contains(key) ?? state.isOverridden(key, in: viewID)
   }
 
   /// Overrides the capacity of a weekday for the view `viewID`, or with `nil` clears the override.
@@ -72,7 +72,7 @@ extension LibraryViewModel {
 
   /// Whether `key` is overridden for the current view, rather than inherited from the global value.
   public func isOverriddenForCurrentView(_ key: SettingKey) -> Bool {
-    state.isOverridden(key, in: currentView)
+    isOverridden(key, in: currentView)
   }
 
   /// Whether a weekday's capacity is overridden for the current view.
