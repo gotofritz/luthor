@@ -20,7 +20,7 @@ struct CardNotesView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       Text("Notes")
-        .font(.headline)
+        .font(Theme.section)
       if bullets.isEmpty && !canAdd {
         Text("No notes")
           .foregroundStyle(.secondary)
@@ -63,7 +63,7 @@ struct NotesEditor: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       Text("Notes")
-        .font(.headline)
+        .font(Theme.section)
       TextEditor(text: $notes)
         .font(.body)
         .frame(minHeight: 120)

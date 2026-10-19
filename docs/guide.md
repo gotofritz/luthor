@@ -93,6 +93,9 @@ does not work yet. Navigating by keyboard alone is not possible yet either.
   trigger it by mistake
 - Create a view with New View… in the same menu; the window switches to it.
   Rename the current view with Rename View…. Names are unique, ignoring case
+- Each view has an accent colour, shown as the rail's fill, as the line under
+  the title and in the Today and Calendar places, so you can tell which view
+  you are in at a glance. Change it in Settings (see below)
 - The app opens on the view you used last on this Mac
 - A task can only be filed into a project of its own view. To take a task to
   another view, select it and use Task → Move to View: it lands in that
@@ -494,18 +497,23 @@ Today.
 
 ## Settings
 
-Settings shows two families in its first column: Global and Local.
+Settings shows three families in its first column: Global, Views and This Mac.
 
 - **Global** sets the numbers every view falls back to: the default estimate
   for a task given no estimate (5 minutes), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
   minutes (8 hours on weekdays, none at the weekend). It sets how often
   projects are reviewed (weekly; see Reviews), and picks the default
-  view
-- **Local** overrides the buffer and the weekday capacity for the view
-  currently shown. Each is a toggle: off, it follows the global value
-  (shown greyed with "(global)"); on, it shows its own value to change.
-  Switching it off returns to following the global value
+  view. Under Appearance it picks the accent colour views have unless they
+  choose their own (navy to start with)
+- **Views** lists every view, each with a small square in its accent
+  colour. Pick one to override the buffer and the weekday capacity for that
+  view alone. Each is a toggle: off, it follows the global value (shown
+  greyed with "(global)"); on, it shows its own value to change. Switching
+  it off returns to following the global value. Under Appearance the same
+  toggle gives the view its own accent colour, picked from six squares: use
+  one for Work and another for Private. Edit View… in the view switcher
+  opens Settings → Views on the view you are in
 
 Today plans the day with these numbers.
 

@@ -12,12 +12,14 @@ struct LibraryView: View {
   @Bindable var library: LibraryViewModel
   let configuration: LuthorConfiguration
   @FocusState private var captureFocused: Bool
+  @Environment(\.theme) private var theme
 
   var body: some View {
     HStack(spacing: 0) {
       NavigationRailView(library: library)
       Divider()
       VStack(spacing: 0) {
+        header
         topBar
         Divider()
         if library.section != .projects {
@@ -52,6 +54,31 @@ struct LibraryView: View {
     .onChange(of: library.sidebarSelection) { captureFocused = true }
     .onChange(of: library.section) { captureFocused = true }
     .task(id: configuration.location) { await watchLog() }
+  }
+
+  /// The view's name in small spaced capitals, the place shown in large heavy type and a rule in the view's
+  /// accent, so the window says at a glance which view it is.
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(currentViewName.uppercased())
+        .font(Theme.label)
+        .tracking(1.5)
+        .foregroundStyle(theme.ink)
+      Text(title)
+        .font(Theme.display)
+        .tracking(-0.5)
+        .lineLimit(1)
+      Rectangle()
+        .fill(theme.fill)
+        .frame(height: 3)
+        .padding(.top, 6)
+    }
+    .padding(.horizontal, 12)
+    .padding(.top, 12)
+  }
+
+  private var currentViewName: String {
+    library.views.first { $0.id == library.currentView }?.name ?? ""
   }
 
   /// The search box, which waits for its slice, the toggle for completed and dropped items and the view switcher.
@@ -157,9 +184,10 @@ private struct ViewSwitcher: View {
       Divider()
       Button("New View…") { start(.new, with: "") }
       Button("Rename View…") { start(.rename, with: currentName) }
+      Button("Edit View…") { library.editView(library.currentView) }
     } label: {
       Label(currentName, systemImage: "square.stack")
-        .font(.headline)
+        .font(Theme.section)
     }
     .menuStyle(.button)
     .buttonStyle(.borderless)

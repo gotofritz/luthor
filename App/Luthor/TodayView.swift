@@ -64,7 +64,7 @@ private struct DayHeader: View {
       }
       .help("Previous day")
       Text(title)
-        .font(.headline)
+        .font(Theme.section)
       Button {
         library.showNextDay()
       } label: {
@@ -101,6 +101,7 @@ private struct DayHeader: View {
 /// How much of the day is spoken for: the planned minutes, what is left to plan, and the buffer held back.
 /// An overloaded plan turns red and says by how much; it informs and never blocks.
 private struct CapacityMeter: View {
+  @Environment(\.theme) private var theme
   let capacity: DayCapacity
 
   var body: some View {
@@ -108,10 +109,10 @@ private struct CapacityMeter: View {
       GeometryReader { geometry in
         HStack(spacing: 0) {
           Rectangle()
-            .fill(capacity.isOverloaded ? Color.red : Color.accentColor)
+            .fill(capacity.isOverloaded ? Color.red : theme.fill)
             .frame(width: width(of: min(capacity.plannedMinutes, total), in: geometry.size.width))
           Rectangle()
-            .fill(Color.accentColor.opacity(0.15))
+            .fill(theme.fill.opacity(0.15))
             .frame(width: width(of: max(capacity.remainingMinutes, 0), in: geometry.size.width))
           Rectangle()
             .fill(Color.secondary.opacity(0.4))
@@ -162,7 +163,7 @@ private struct CandidatesColumn: View {
     VStack(spacing: 0) {
       HStack {
         Text("Candidates")
-          .font(.headline)
+          .font(Theme.section)
         Spacer()
         CandidateFilterMenu(library: library)
       }
@@ -186,7 +187,7 @@ private struct WaitingColumn: View {
   var body: some View {
     VStack(spacing: 0) {
       Text("Waiting for")
-        .font(.headline)
+        .font(Theme.section)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       Divider()

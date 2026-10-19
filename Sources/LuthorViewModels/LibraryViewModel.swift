@@ -13,6 +13,9 @@ import Observation
 public final class LibraryViewModel {
   /// Every view, the default one first.
   public internal(set) var views: [ViewItem] = []
+  /// The view the settings place shows the settings of, when one was picked (from the view switcher or the
+  /// list of views); `nil` means the view shown.
+  public internal(set) var viewBeingEdited: ViewID?
   /// The one view the window shows; nothing from another view is ever listed.
   public internal(set) var currentView: ViewID
   /// The place the navigation rail has picked.
@@ -50,6 +53,10 @@ public final class LibraryViewModel {
   public internal(set) var globalSettings = LibraryState.replay([]).globalSettings
   /// The settings `currentView` plans with: its own overrides, then the global values.
   public internal(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
+  /// The settings of every view, and the keys each overrides, for a screen that shows the settings of a view
+  /// other than the one shown; `state` is not observed, so it cannot be read from a view body.
+  public internal(set) var settingsByView: [ViewID: Settings] = [:]
+  public internal(set) var overriddenKeysByView: [ViewID: Set<SettingKey>] = [:]
   /// The default view chosen in settings.
   public internal(set) var defaultViewID = ViewID.default
   /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned
@@ -224,6 +231,7 @@ public final class LibraryViewModel {
   /// project shown.
   public func show(_ section: NavigationSection) {
     self.section = section
+    viewBeingEdited = nil
     if section != .projects { sidebarSelection = .inbox }
     selection = nil
     editingCard = nil

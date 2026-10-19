@@ -39,7 +39,7 @@ struct StorageSetupSheet: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       Text("Where should Luthor keep your tasks?")
-        .font(.headline)
+        .font(Theme.section)
       StorageChoiceForm(controller: controller)
       HStack {
         Spacer()

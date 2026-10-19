@@ -57,6 +57,11 @@ extension LibraryViewModel {
     }
     globalSettings = state.globalSettings
     viewSettings = state.settings(for: currentView)
+    settingsByView = Dictionary(uniqueKeysWithValues: views.map { ($0.id, state.settings(for: $0.id)) })
+    overriddenKeysByView = Dictionary(
+      uniqueKeysWithValues: views.map { view in
+        (view.id, Set(SettingKey.allCases.filter { state.isOverridden($0, in: view.id) }))
+      })
     defaultViewID = state.defaultViewID
     let view = state.view(currentView)
     projects = view.projects

@@ -54,7 +54,7 @@ private struct MonthHeading: View {
 
   var body: some View {
     Text("\(Self.monthNames[day.month - 1]) \(String(day.year))")
-      .font(.headline)
+      .font(Theme.section)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, 12)
       .padding(.top, 16)
@@ -64,6 +64,7 @@ private struct MonthHeading: View {
 
 /// One day: its weekday and date, and a mark with a count for the tasks planned for it and for those due on it.
 private struct CalendarDayRow: View {
+  @Environment(\.theme) private var theme
   let day: CalendarDay
   let isToday: Bool
   let isPicked: Bool
@@ -77,12 +78,12 @@ private struct CalendarDayRow: View {
         if isToday {
           Text("Today")
             .font(.caption)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(theme.ink)
         }
         Spacer()
         if day.plannedCount > 0 {
           Label("\(day.plannedCount)", systemImage: "circle.fill")
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(theme.ink)
             .help("\(day.plannedCount) planned")
         }
         if day.dueCount > 0 {
@@ -101,7 +102,7 @@ private struct CalendarDayRow: View {
   }
 
   private var background: Color {
-    if isPicked { return Color.accentColor.opacity(0.25) }
+    if isPicked { return theme.fill.opacity(0.25) }
     return day.date.weekday == .sunday ? Color.secondary.opacity(0.15) : .clear
   }
 }
@@ -113,7 +114,7 @@ private struct CalendarTasksColumn: View {
   var body: some View {
     VStack(spacing: 0) {
       Text(title)
-        .font(.headline)
+        .font(Theme.section)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       Divider()

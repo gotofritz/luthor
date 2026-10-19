@@ -1,4 +1,8 @@
-# Luthor
+<p align="center">
+  <img src="docs/brand/luthor-icon.png" width="160" alt="Luthor: an alpine peak">
+</p>
+
+<h1 align="center">Luthor</h1>
 
 A task system built around the ALPEN daily-planning method, with OmniFocus as
 a reference: local-first and event-sourced.
@@ -26,7 +30,8 @@ project's context menu, takes a task or a whole project across.
 
 A narrow rail on the left, icons with their names underneath, picks the place
 to look at: Inbox (a list of its tasks), Today, Calendar, Reviews (the glasses), Projects, Prios or Tags, with
-Settings pinned to the bottom (or ⌘,). Above the main area is a bar with a search box
+Settings pinned to the bottom (or ⌘,). The rail is filled with the accent colour of the view
+shown, so you can tell views apart (and the app from other windows) at a glance. Above the main area are the view's name and the place shown, in large type, then a bar with a search box
 (not working yet) and the view switcher.
 
 Prios lists the priorities Critical, Important, Optional and One day, and No
@@ -126,12 +131,14 @@ projects made together. A project that
 is no longer wanted can be dropped (Drop Project: it and its open tasks leave
 the lists and the review; the Completed and dropped toggle lists them, and Reopen brings them back).
 
-Settings has two families of settings, Global and Local (overrides for the
-view currently shown): Global sets the numbers every view falls back to
+Settings has three families, Global, Views (a list of views, with overrides
+for the one picked; Edit View… in the view switcher opens it on the view
+shown) and This Mac: Global sets the numbers every view falls back to
 (default estimate for an unestimated task, buffer percentage, capacity per
 weekday), how often projects are reviewed and a default view;
-Local overrides the buffer and capacity for the current view only, and
-follows the global value until switched on. A third family, This Mac, chooses
+Views overrides the buffer and capacity for the view picked only, and
+follows the global value until switched on. Both also pick the accent colour
+(Global for all views, Views for one). This Mac chooses
 where the tasks live (see below).
 
 The build is ad-hoc signed: the first launch of a copied app needs
