@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="deepSky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173F78"/><stop offset="1" stop-color="#2675C7"/></linearGradient>
+    <clipPath id="clip"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <g transform="translate(100 100) scale(2.4970) translate(-830 -55)">
+      <rect x="830" y="55" width="330" height="330" fill="url(#deepSky)"/>
+      <path d="M850 350 L1015 120 Q1023 108 1032 120 L1180 300 1180 410 850 410Z" fill="#E8F0FA"/>
+      <path d="M850 350 L1015 120 1032 120 1001 178 905 315Z" fill="#B7CDE5"/>
+      <path d="M1032 120 L1180 300 1180 410 1098 410 1010 286 1050 230 1021 190Z" fill="#3C78B8"/>
+      <path d="M905 315 L1001 178 1050 230 1010 286 1098 410 850 410Z" fill="#164A83"/>
+      <path d="M1001 178 L1032 120 1180 300 1115 264 1050 230Z" fill="#FFFFFF"/>
+      <path d="M1050 230 L1115 264 1180 300 1180 410 1098 410 1010 286Z" fill="#5D8FC5"/>
+    </g>
+  </g>
+</svg>
