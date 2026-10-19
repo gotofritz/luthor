@@ -136,6 +136,7 @@ struct StorageControllerTests {
 struct CompactLogTests {
   private final class Runs {
     var count = 0
+    var isEmpty: Bool { count < 1 }
   }
 
   private func controller(
