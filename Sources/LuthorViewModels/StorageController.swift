@@ -17,6 +17,10 @@ public final class StorageController {
   public var kind: LogStorage.Kind
   public var dropboxFolderPath: String
   public private(set) var errorMessage: String?
+  /// Rebuilds the log from the library it holds; set by the app, which knows the log and reloads after it.
+  public var compaction: (() throws(EventLogError) -> LogCompaction)?
+  /// What the last compaction did, or why it failed.
+  public private(set) var compactionMessage: String?
 
   private let home: URL
   private let deviceID: DeviceID
@@ -56,6 +60,23 @@ public final class StorageController {
     save(chosen)
     storage = chosen
     errorMessage = nil
+  }
+
+  /// Runs the compaction, if one is wired in, and says what happened in `compactionMessage`.
+  public func compactLog() {
+    guard let compaction else { return }
+    do {
+      let result = try compaction()
+      compactionMessage =
+        "Rebuilt the log: \(result.eventsBefore) events became \(result.eventsAfter). "
+        + "The old log and a YAML copy are in \(result.backupFolder.path)."
+    } catch {
+      switch error {
+      case .ioFailure(let message): compactionMessage = message
+      case .unreadableLine(let number):
+        compactionMessage = "Line \(number) of the event log is not readable. Nothing was changed."
+      }
+    }
   }
 
   private var defaultFolder: URL { LogStorage.defaultDropboxFolder(home: home) }

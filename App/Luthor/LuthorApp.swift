@@ -101,7 +101,24 @@ struct LuthorApp: App {
       log: configuration.makeEventLog(), deviceID: configuration.deviceID, view: library.currentView)
   }
 
-  /// Saves the whole log as a YAML file the user names.
+  /// Gives Settings → This Mac its Compact Log button: it rebuilds the log in the place now in use, then
+  /// reads it again.
+  private func wireCompaction() {
+    storageController.compaction = {
+      let result = try LogCompactor.compact(
+        configuration: configuration, ids: UUIDGenerator(), stamp: Self.backupStamp())
+      library.reload()
+      return result
+    }
+  }
+
+  private static func backupStamp() -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyyMMdd-HHmmss"
+    return formatter.string(from: Date())
+  }
+
+  /// Saves the views, tags, tasks and projects as a YAML file the user names.
   private func exportToText() {
     guard let text = library.exportText() else { return }
     let panel = NSSavePanel()
@@ -130,7 +147,10 @@ struct LuthorApp: App {
     Window("Luthor", id: "library") {
       LibraryView(library: library, configuration: configuration)
         .themed(library.viewSettings.themeAccent)
-        .onAppear { Self.setApplicationIcon() }
+        .onAppear {
+          Self.setApplicationIcon()
+          wireCompaction()
+        }
         .environment(storageController)
         .sheet(isPresented: .constant(storageController.needsSetup)) {
           StorageSetupSheet(controller: storageController)

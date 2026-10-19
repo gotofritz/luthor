@@ -48,6 +48,26 @@ struct LibraryExportTests {
     #expect(state.export().items.first { $0.id.rawValue == "p1" }?.createdOn == date("2026-10-12"))
   }
 
+  @Test("settings and the weekly project review are carried")
+  func settingsAndReviewsAreCarried() throws {
+    let events = [
+      projectCreated("p1", "Holiday", lamport: 1),
+      settingChanged(.themeAccent, to: "plum", view: "default", lamport: 2),
+      settingChanged(.bufferPercentage, to: "20", lamport: 3),
+      reviewDefaultSet(.every(days: 14), lamport: 4),
+      reviewIntervalSet("p1", to: .every(days: 3), lamport: 5),
+      projectReviewed("p1", on: "2026-10-19", lamport: 6),
+      reviewDateSet("p1", to: "2026-10-30", lamport: 7),
+    ]
+    let before = LibraryState.replay(events)
+
+    let after = try imported(events)
+
+    #expect(after.export() == before.export())
+    #expect(after.defaultReviewInterval == .every(days: 14))
+    #expect(after.nextReviewDate(of: TaskID("p1")) == date("2026-10-30"))
+  }
+
   @Test("importing what the library already has adds no events")
   func importingTwiceAddsNothing() throws {
     let export = LibraryState.replay(family).export()

@@ -130,3 +130,49 @@ struct StorageControllerTests {
     #expect(controller.lockedByEnvironment)
   }
 }
+
+@MainActor
+@Suite("When the log is compacted from Settings")
+struct CompactLogTests {
+  private func controller(_ home: TemporaryDirectory) -> StorageController {
+    StorageController(saved: nil, home: home.url, deviceID: DeviceID("desk"), save: { _ in })
+  }
+
+  @Test("it reports the backup and the events before and after")
+  func itReportsTheResult() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let controller = controller(home)
+    let backup = home.file("backups/compact-s")
+    controller.compaction = { LogCompaction(eventsBefore: 900, eventsAfter: 40, backupFolder: backup) }
+
+    controller.compactLog()
+
+    #expect(controller.compactionMessage?.contains("900") == true)
+    #expect(controller.compactionMessage?.contains("40") == true)
+    #expect(controller.compactionMessage?.contains(backup.path) == true)
+  }
+
+  @Test("a failure is reported and nothing else happens")
+  func aFailureIsReported() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let controller = controller(home)
+    controller.compaction = { throw .ioFailure("disk full") }
+
+    controller.compactLog()
+
+    #expect(controller.compactionMessage?.contains("disk full") == true)
+  }
+
+  @Test("with no compaction wired in, it does nothing")
+  func nothingWithoutACompaction() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let controller = controller(home)
+
+    controller.compactLog()
+
+    #expect(controller.compactionMessage == nil)
+  }
+}

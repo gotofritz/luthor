@@ -185,6 +185,8 @@ Sources/
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
                              type are skipped on read and stay in the file
     LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
+    LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds
+                             the log from the library (export, then import), checks it, swaps it in
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
@@ -216,7 +218,7 @@ Sources/
                              reading the log and
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
-    StorageController.swift  where the log lives: first-start choice and Settings → This Mac
+    StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar

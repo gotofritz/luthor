@@ -13,6 +13,17 @@ extension Commands {
     for tag in export.tags where !knownTags.contains(tag.id) {
       writer.add(.tagCreated(TagCreated(tagID: tag.id, name: tag.name, viewID: tag.view)))
     }
+    for setting in export.settings ?? [] {
+      guard let key = SettingKey(rawValue: setting.key) else { continue }
+      let existing: String? =
+        if let view = setting.view { state.viewSettingOverrides[view]?[key] } else { state.globalSettingValues[key] }
+      if existing == nil {
+        writer.add(.settingChanged(SettingChanged(key: key, value: setting.value, viewID: setting.view)))
+      }
+    }
+    if let days = export.reviewDefault, state.defaultReviewInterval == .weekly {
+      writer.add(.reviewDefaultSet(ReviewDefaultSet(interval: ReviewInterval(days: days))))
+    }
     let known = export.items.filter { state.items[$0.id] == nil }
     let viewIDs = Set(state.views.map(\.id) + export.views.map(\.id))
     if let missing = known.first(where: { !viewIDs.contains($0.view) }) { throw .noView(missing.view) }
@@ -62,6 +73,11 @@ private struct ImportWriter {
     if let day = item.scheduled { add(.taskScheduled(TaskScheduled(taskID: id, date: day))) }
     if let due = item.due { add(.taskDueSet(TaskDueSet(taskID: id, date: due.date, isHard: due.hard))) }
     if let rule = item.repeatRule { add(.taskRepeatSet(TaskRepeatSet(taskID: id, rule: rule))) }
+    if let days = item.reviewEvery {
+      add(.reviewIntervalSet(ReviewIntervalSet(taskID: id, interval: ReviewInterval(days: days))))
+    }
+    if let day = item.reviewedOn { add(.taskReviewed(TaskReviewed(taskID: id, date: day))) }
+    if let day = item.reviewNext { add(.reviewDateSet(ReviewDateSet(taskID: id, date: day))) }
     if let handed = item.delegated {
       add(
         .taskDelegated(

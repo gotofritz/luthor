@@ -1,21 +1,29 @@
 /// The tasks and projects of a library as plain data, for a text copy that does not depend on the event log:
-/// what exists and where it stands, not how it got there. History (time logged, reviews, the plan's manual
-/// order, settings) is not part of it.
+/// what exists and where it stands, not how it got there. History (time logged, reviewed days, the plan's
+/// manual order and single-day capacities) is not part of it. Settings and the weekly project review are, as
+/// they are state.
 public struct LibraryExport: Equatable, Codable, Sendable {
   public static let formatVersion = 1
 
   public var format: Int
   public var views: [ExportedView]
   public var tags: [ExportedTag]
+  /// Every setting that was changed, global and per view; left out when there is none.
+  public var settings: [ExportedSetting]?
+  /// Days between project reviews unless a project has its own, 0 for off; left out for the weekly default.
+  public var reviewDefault: Int?
   /// Parents come before their children, children in the order of their project; roots in capture order.
   public var items: [ExportedItem]
 
   public init(
-    format: Int = LibraryExport.formatVersion, views: [ExportedView], tags: [ExportedTag], items: [ExportedItem]
+    format: Int = LibraryExport.formatVersion, views: [ExportedView], tags: [ExportedTag],
+    settings: [ExportedSetting]? = nil, reviewDefault: Int? = nil, items: [ExportedItem]
   ) {
     self.format = format
     self.views = views
     self.tags = tags
+    self.settings = settings
+    self.reviewDefault = reviewDefault
     self.items = items
   }
 }
@@ -27,6 +35,19 @@ public struct ExportedView: Equatable, Codable, Sendable {
   public init(id: ViewID, name: String) {
     self.id = id
     self.name = name
+  }
+}
+
+public struct ExportedSetting: Equatable, Codable, Sendable {
+  public var key: String
+  public var value: String
+  /// The view it is set for; left out for a global setting.
+  public var view: ViewID?
+
+  public init(key: String, value: String, view: ViewID? = nil) {
+    self.key = key
+    self.value = value
+    self.view = view
   }
 }
 
@@ -88,12 +109,18 @@ public struct ExportedItem: Equatable, Codable, Sendable {
   public var repeatRule: RepeatRule?
   public var delegated: Delegated?
   public var tags: [TagID]?
+  /// Days between reviews of this project, 0 for off; left out when it has no interval of its own.
+  public var reviewEvery: Int?
+  public var reviewedOn: CalendarDate?
+  /// The day chosen for the next review.
+  public var reviewNext: CalendarDate?
 
   public init(
     id: TaskID, title: String, view: ViewID, parent: TaskID? = nil, kind: ProjectKind? = nil,
     notes: String? = nil, priority: Priority? = nil, estimate: Int? = nil, createdOn: CalendarDate? = nil,
     status: Status = .open, finishedWith: TaskID? = nil, scheduled: CalendarDate? = nil, due: Due? = nil,
-    repeatRule: RepeatRule? = nil, delegated: Delegated? = nil, tags: [TagID]? = nil
+    repeatRule: RepeatRule? = nil, delegated: Delegated? = nil, tags: [TagID]? = nil,
+    reviewEvery: Int? = nil, reviewedOn: CalendarDate? = nil, reviewNext: CalendarDate? = nil
   ) {
     self.id = id
     self.title = title
@@ -111,6 +138,9 @@ public struct ExportedItem: Equatable, Codable, Sendable {
     self.repeatRule = repeatRule
     self.delegated = delegated
     self.tags = tags
+    self.reviewEvery = reviewEvery
+    self.reviewedOn = reviewedOn
+    self.reviewNext = reviewNext
   }
 }
 
@@ -120,7 +150,18 @@ extension LibraryState {
     LibraryExport(
       views: views.map { ExportedView(id: $0.id, name: $0.name) },
       tags: tagItems.map { ExportedTag(id: $0.id, name: $0.name, view: $0.viewID) },
+      settings: exportedSettings(),
+      reviewDefault: projectReviews.defaultInterval == .weekly ? nil : projectReviews.defaultInterval.days ?? 0,
       items: exportOrder().compactMap(exportedItem))
+  }
+
+  private func exportedSettings() -> [ExportedSetting]? {
+    let global = globalSettingValues.map { ExportedSetting(key: $0.key.rawValue, value: $0.value) }
+    let perView = viewSettingOverrides.flatMap { view, values in
+      values.map { ExportedSetting(key: $0.key.rawValue, value: $0.value, view: view) }
+    }
+    let all = (global + perView).sorted { ($0.view?.rawValue ?? "", $0.key) < ($1.view?.rawValue ?? "", $1.key) }
+    return all.isEmpty ? nil : all
   }
 
   /// Roots in capture order, each followed by its descendants: first the items filed in it, in their order,
@@ -161,6 +202,9 @@ extension LibraryState {
     exported.delegated = delegations[id].map {
       ExportedItem.Delegated(to: $0.person, since: $0.since, followUp: $0.followUpDate)
     }
+    exported.reviewEvery = projectReviews.intervals[id].map { $0.days ?? 0 }
+    exported.reviewedOn = projectReviews.reviewedOn[id]
+    exported.reviewNext = projectReviews.chosenNext[id]
     if let tagIDs = taskTags[id], !tagIDs.isEmpty {
       exported.tags = tagItems.map(\.id).filter { tagIDs.contains($0) }
     }

@@ -540,6 +540,17 @@ changes nothing, and a file from another Mac merges. A file from a newer
 version of the app, or one that is not an export, is refused and nothing is
 changed.
 
+### Compacting the log
+
+The log only grows, because it keeps every change. Settings → This Mac →
+**Compact Log…** rebuilds it: it first copies the old log files and a YAML
+copy of your tasks into a `backups/compact-<date>` folder next to the log,
+then writes a new log with one short run of events for each task and project,
+checks that it holds the same library, and swaps it in. Tasks, projects,
+settings and the weekly project reviews stay; time logged and the days you
+reviewed are dropped. Close Luthor on your other Macs and let Dropbox finish
+before you do it, and delete the `backups` folder when you no longer need it.
+
 ## The same tasks on several Macs
 
 Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,

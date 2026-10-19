@@ -56,10 +56,18 @@ struct StorageSetupSheet: View {
 /// The "This Mac" settings: the place of the log, changed here after the first start.
 struct ThisMacSettingsColumn: View {
   @Environment(StorageController.self) private var controller
+  @State private var confirmingCompaction = false
 
   private static let movingNote = """
     Moving to Dropbox copies the tasks of the Home Folder the first time. \
     Moving back copies nothing: the Home Folder keeps the tasks it had.
+    """
+
+  private static let compactNote = """
+    Rebuilds the log with one short run of events for each task and project, which makes it small again. \
+    Time logged and reviewed days are dropped; tasks, projects, settings and project reviews stay. \
+    The old log and a YAML copy are kept in a backups folder next to it. Close Luthor on your other Macs \
+    and let Dropbox finish first.
     """
 
   var body: some View {
@@ -77,6 +85,21 @@ struct ThisMacSettingsColumn: View {
             .foregroundStyle(.secondary)
         }
       }
+      Section("Log size") {
+        Button("Compact Log…") { confirmingCompaction = true }
+        Text(Self.compactNote)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        if let message = controller.compactionMessage {
+          Text(message)
+            .font(.caption)
+        }
+      }
+    }
+    .confirmationDialog("Compact the log?", isPresented: $confirmingCompaction) {
+      Button("Compact Log") { controller.compactLog() }
+    } message: {
+      Text(Self.compactNote)
     }
     .formStyle(.grouped)
     .frame(width: 320)

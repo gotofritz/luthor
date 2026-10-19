@@ -1081,9 +1081,11 @@ write when OK is pressed.
    typed values. YAML is readable, diffable, typed and lossless for this
    data. The file holds tasks and projects, not events, so it stays
    readable and does not change when events are added. OPML export is an optional extra for interop, not the backup format
-3. **No retention policy for the log yet.** Events are append-only and about
-   200 bytes each, so a year of heavy use is a few megabytes; slice 16
-   measures replay time before anything is built. If the log ever has to
-   shrink, the way is the text export: export, start a fresh log from the
-   import. That keeps tasks and projects and drops history (time logged,
-   reviews). Events are never deleted in place
+3. **No automatic retention; a Compact Log button instead.** Events are
+   append-only and about 200 bytes each, so a year of heavy use is a few
+   megabytes, and slice 16 measures replay time before anything more is built.
+   When the log should shrink, Settings → This Mac → Compact Log backs up the
+   old files and a YAML copy, rebuilds the log from the library (export, then
+   import), verifies it holds the same library and swaps it in. History (time
+   logged, reviewed days) is dropped; tasks, projects, settings and project
+   reviews stay. Events are never deleted in place
