@@ -15,7 +15,7 @@ import Yams
 /// ```
 public enum LibraryText {
   public static func export(_ library: LibraryExport) throws(EventLogError) -> String {
-    var encoder = YAMLEncoder()
+    let encoder = YAMLEncoder()
     encoder.options.sortKeys = true
     do {
       return try encoder.encode(library)
