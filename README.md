@@ -146,8 +146,8 @@ right-click → Open.
 
 ## Where the tasks live, and sync between Macs
 
-File → Export to Text… / Import from Text… copies the whole log to and from a
-readable YAML file (see the guide).
+File → Export to Text… / Import from Text… copies your views, tags, tasks and projects to and
+from a readable YAML file (see the guide).
 
 The first time you start the app, a window asks where to keep the tasks:
 
