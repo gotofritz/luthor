@@ -96,7 +96,8 @@ public struct CompactionHandshake: Sendable {
   }
 
   public func cancel(_ request: CompactionRequest) throws(EventLogError) {
-    try write(Acknowledgement(device: token, time: request.requestedAt, events: 0), named: Self.name(request.id, "cancel"))
+    let cancelled = Acknowledgement(device: token, time: request.requestedAt, events: 0)
+    try write(cancelled, named: Self.name(request.id, "cancel"))
   }
 
   /// The number of events in the device's own file, to put in its answer.
