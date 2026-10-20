@@ -14,18 +14,21 @@ struct NavigationRailView: View {
   @Environment(\.theme) private var theme
 
   var body: some View {
-    VStack(spacing: 4) {
+    VStack(spacing: 0) {
       LuthorMark()
-        .frame(width: 36)
-        .padding(.top, 8)
-        .padding(.bottom, 14)
-      ForEach(Self.mainSections, id: \.self) { section in
-        RailButton(library: library, section: section)
+        .frame(maxWidth: .infinity)
+      VStack(spacing: 4) {
+        ForEach(Self.mainSections, id: \.self) { section in
+          RailButton(library: library, section: section)
+        }
+        Spacer()
+        RailButton(library: library, section: .settings)
       }
-      Spacer()
-      RailButton(library: library, section: .settings)
+      .padding(6)
+      .padding(.top, 14)
+      .frame(maxHeight: .infinity)
+      .background(LuthorMark.shadow)
     }
-    .padding(6)
     .frame(width: 72)
     .background(theme.fill)
   }
