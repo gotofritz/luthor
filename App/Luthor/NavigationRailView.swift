@@ -26,7 +26,7 @@ struct NavigationRailView: View {
         RailButton(library: library, section: .settings)
       }
       .padding(6)
-      .padding(.top, 14)
+      .padding(.top, 24)
       .frame(maxHeight: .infinity)
       .background(LuthorMark.shadow)
     }
