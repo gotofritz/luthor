@@ -97,6 +97,8 @@ extension View {
 /// The mountain of the app icon in three tones on a clear sky: white for the lit top, a translucent white
 /// for the faces in light and a dark shade for the one in shadow, so on the rail it takes on the view's accent.
 struct LuthorMark: View {
+  @Environment(\.theme) private var theme
+
   /// A face of the mountain, its corners in the icon's own coordinates (the peak is near 1023, 108).
   private struct Face {
     let points: [CGPoint]
@@ -120,7 +122,13 @@ struct LuthorMark: View {
     }
   }
 
-  /// The dark shade of the face in shadow; the rail below the mark is tinted with it too.
+  /// The tint that makes the sky lighter than the rail; the masthead is on it too.
+  nonisolated static let sky = Color.white.opacity(0.15)
+
+  /// The accent with a little white, so a bit darker than the sky: the ridge outline and the masthead rule.
+  nonisolated static let edge = Color.white.opacity(0.07)
+
+  /// The dark tint of the rail below the mark, which the ridge outline and the masthead rule share.
   nonisolated static let shadow = Color.black.opacity(0.3)
 
   /// The mountain's two sloping sides, left to right over the peak, in the icon's own coordinates.
@@ -147,7 +155,7 @@ struct LuthorMark: View {
   var body: some View {
     GeometryReader { geometry in
       ForEach(Array(Self.faces.enumerated()), id: \.offset) { _, face in
-        Path { path in
+        let outline = Path { path in
           for (index, point) in face.points.enumerated() {
             let scaled = CGPoint(
               x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
@@ -156,7 +164,9 @@ struct LuthorMark: View {
           }
           path.closeSubpath()
         }
-        .fill(face.shade.color)
+        // The dark face continues the rail, so it is laid on the rail's colour, not on the lighter sky.
+        if case .shadow = face.shade { outline.fill(theme.fill) }
+        outline.fill(face.shade.color)
       }
       Path { path in
         for (index, point) in Self.ridge.enumerated() {
@@ -166,7 +176,18 @@ struct LuthorMark: View {
           if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
         }
       }
-      .stroke(Color(red: 0.2, green: 0.2, blue: 0.2), style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
+      .stroke(theme.fill, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
+      .overlay {
+        Path { path in
+          for (index, point) in Self.ridge.enumerated() {
+            let scaled = CGPoint(
+              x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
+              y: (point.y - Self.origin.y) / Self.extent.height * geometry.size.height)
+            if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
+          }
+        }
+        .stroke(LuthorMark.edge, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
+      }
     }
     .aspectRatio(Self.aspectRatio, contentMode: .fit)
     .accessibilityHidden(true)
