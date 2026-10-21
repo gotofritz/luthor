@@ -71,10 +71,10 @@ struct LibraryView: View {
           .foregroundStyle(.white)
       }
       .padding(.horizontal, 12)
-      // The rule runs on to the rail, in the rail's tint, as if the mountain's outline shot out to the right.
+      // The rule runs on to the rail, in a shade a little darker than the sky, as if the mountain's outline shot out to the right.
       Rectangle()
         .fill(theme.fill)
-        .overlay(LuthorMark.shadow)
+        .overlay(LuthorMark.edge)
         .frame(height: 3)
         .padding(.top, 6)
     }

@@ -125,6 +125,9 @@ struct LuthorMark: View {
   /// The tint that makes the sky lighter than the rail; the masthead is on it too.
   nonisolated static let sky = Color.white.opacity(0.15)
 
+  /// A slight darkening of the accent: the ridge outline and the masthead rule, set off a little from the sky.
+  nonisolated static let edge = Color.black.opacity(0.05)
+
   /// The dark tint of the rail below the mark, which the ridge outline and the masthead rule share.
   nonisolated static let shadow = Color.black.opacity(0.3)
 
@@ -183,7 +186,7 @@ struct LuthorMark: View {
             if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
           }
         }
-        .stroke(LuthorMark.shadow, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
+        .stroke(LuthorMark.edge, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
       }
     }
     .aspectRatio(Self.aspectRatio, contentMode: .fit)
