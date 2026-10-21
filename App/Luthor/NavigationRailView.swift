@@ -18,7 +18,7 @@ struct NavigationRailView: View {
       LuthorMark()
         .frame(maxWidth: .infinity)
         .padding(.top, 30)
-        .background(Color.white.opacity(0.15))  // the sky, lighter than the rail below
+        .background(LuthorMark.sky)
       VStack(spacing: 4) {
         ForEach(Self.mainSections, id: \.self) { section in
           RailButton(library: library, section: section)

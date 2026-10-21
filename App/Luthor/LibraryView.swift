@@ -56,19 +56,20 @@ struct LibraryView: View {
     .task(id: configuration.location) { await watchLog() }
   }
 
-  /// The view's name in small spaced capitals, the place shown in large heavy type and a rule in the view's
-  /// accent, so the window says at a glance which view it is.
+  /// The app's name in small, widely spaced capitals, the place shown in large heavy type and a rule in the
+  /// view's accent, on the logo's sky, so the window says at a glance which view it is.
   private var header: some View {
     VStack(alignment: .leading, spacing: 2) {
       Group {
-        Text(currentViewName.uppercased())
-          .font(Theme.label)
-          .tracking(1.5)
-          .foregroundStyle(theme.ink)
+        Text("LUTHOR")
+          .font(.system(size: 11, weight: .regular))
+          .tracking(7)
+          .foregroundStyle(.white.opacity(0.7))
         Text(title)
           .font(Theme.display)
           .tracking(-0.5)
           .lineLimit(1)
+          .foregroundStyle(.white)
       }
       .padding(.horizontal, 12)
       // The rule runs on to the rail, in the rail's tint, as if the mountain's outline shot out to the right.
@@ -79,10 +80,14 @@ struct LibraryView: View {
         .padding(.top, 6)
     }
     .padding(.top, 12)
-  }
-
-  private var currentViewName: String {
-    library.views.first { $0.id == library.currentView }?.name ?? ""
+    .background {
+      // The sky of the logo, from the top edge of the window over to the right edge.
+      ZStack {
+        theme.fill
+        LuthorMark.sky
+      }
+      .ignoresSafeArea(edges: .top)
+    }
   }
 
   /// The search box, which waits for its slice, the toggle for completed and dropped items and the view switcher.
