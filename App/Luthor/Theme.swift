@@ -121,7 +121,7 @@ struct LuthorMark: View {
   }
 
   /// The dark shade of the face in shadow; the rail below the mark is tinted with it too.
-  static let shadow = Color.black.opacity(0.3)
+  nonisolated static let shadow = Color.black.opacity(0.3)
 
   /// The mountain's two sloping sides, left to right over the peak, in the icon's own coordinates.
   private static let ridge = [(850, 350), (1015, 120), (1023, 108), (1032, 120), (1180, 300)].map {
