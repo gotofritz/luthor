@@ -149,7 +149,7 @@ struct LuthorMark: View {
   var body: some View {
     GeometryReader { geometry in
       ForEach(Array(Self.faces.enumerated()), id: \.offset) { _, face in
-        Path { path in
+        let outline = Path { path in
           for (index, point) in face.points.enumerated() {
             let scaled = CGPoint(
               x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
@@ -158,7 +158,9 @@ struct LuthorMark: View {
           }
           path.closeSubpath()
         }
-        .fill(face.shade.color)
+        // The dark face continues the rail, so it is laid on the rail's colour, not on the lighter sky.
+        if case .shadow = face.shade { outline.fill(theme.fill) }
+        outline.fill(face.shade.color)
       }
       Path { path in
         for (index, point) in Self.ridge.enumerated() {

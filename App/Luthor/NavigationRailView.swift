@@ -17,7 +17,7 @@ struct NavigationRailView: View {
     VStack(spacing: 0) {
       LuthorMark()
         .frame(maxWidth: .infinity)
-        .padding(.top, 40)
+        .padding(.top, 30)
         .background(Color.white.opacity(0.15))  // the sky, lighter than the rail below
       VStack(spacing: 4) {
         ForEach(Self.mainSections, id: \.self) { section in
