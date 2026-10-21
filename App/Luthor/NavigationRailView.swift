@@ -20,6 +20,12 @@ struct NavigationRailView: View {
         .padding(.top, 30)
         .background(LuthorMark.sky)
       VStack(spacing: 4) {
+        Text("LUTHOR")
+          .font(.system(size: 8, weight: .regular))
+          .tracking(3)
+          .foregroundStyle(.white.opacity(0.7))
+          .padding(.top, 4)
+          .padding(.bottom, 14)
         ForEach(Self.mainSections, id: \.self) { section in
           RailButton(library: library, section: section)
         }

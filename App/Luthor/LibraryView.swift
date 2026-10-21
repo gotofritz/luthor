@@ -17,7 +17,6 @@ struct LibraryView: View {
   var body: some View {
     HStack(spacing: 0) {
       NavigationRailView(library: library)
-      Divider()
       VStack(spacing: 0) {
         header
         topBar
@@ -56,14 +55,14 @@ struct LibraryView: View {
     .task(id: configuration.location) { await watchLog() }
   }
 
-  /// The app's name in small, widely spaced capitals, the place shown in large heavy type and a rule in the
+  /// The view's name in small spaced capitals, the place shown in large heavy type and a rule in the
   /// view's accent, on the logo's sky, so the window says at a glance which view it is.
   private var header: some View {
     VStack(alignment: .leading, spacing: 2) {
       Group {
-        Text("LUTHOR")
-          .font(.system(size: 11, weight: .regular))
-          .tracking(7)
+        Text(currentViewName.uppercased())
+          .font(Theme.label)
+          .tracking(1.5)
           .foregroundStyle(.white.opacity(0.7))
         Text(title)
           .font(Theme.display)
@@ -88,6 +87,10 @@ struct LibraryView: View {
       }
       .ignoresSafeArea(edges: .top)
     }
+  }
+
+  private var currentViewName: String {
+    library.views.first { $0.id == library.currentView }?.name ?? ""
   }
 
   /// The search box, which waits for its slice, the toggle for completed and dropped items and the view switcher.
