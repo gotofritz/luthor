@@ -60,20 +60,24 @@ struct LibraryView: View {
   /// accent, so the window says at a glance which view it is.
   private var header: some View {
     VStack(alignment: .leading, spacing: 2) {
-      Text(currentViewName.uppercased())
-        .font(Theme.label)
-        .tracking(1.5)
-        .foregroundStyle(theme.ink)
-      Text(title)
-        .font(Theme.display)
-        .tracking(-0.5)
-        .lineLimit(1)
+      Group {
+        Text(currentViewName.uppercased())
+          .font(Theme.label)
+          .tracking(1.5)
+          .foregroundStyle(theme.ink)
+        Text(title)
+          .font(Theme.display)
+          .tracking(-0.5)
+          .lineLimit(1)
+      }
+      .padding(.horizontal, 12)
+      // The rule runs on to the rail, in the rail's tint, as if the mountain's outline shot out to the right.
       Rectangle()
         .fill(theme.fill)
+        .overlay(LuthorMark.shadow)
         .frame(height: 3)
         .padding(.top, 6)
     }
-    .padding(.horizontal, 12)
     .padding(.top, 12)
   }
 

@@ -17,7 +17,7 @@ struct NavigationRailView: View {
     VStack(spacing: 0) {
       LuthorMark()
         .frame(maxWidth: .infinity)
-        .padding(.top, 25)
+        .padding(.top, 40)
       VStack(spacing: 4) {
         ForEach(Self.mainSections, id: \.self) { section in
           RailButton(library: library, section: section)
