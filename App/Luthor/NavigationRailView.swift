@@ -20,7 +20,7 @@ struct NavigationRailView: View {
         .padding(.top, 30)
         .background(LuthorMark.sky)
       VStack(spacing: 4) {
-        // The letters are spread from the left edge of a button's background to its right edge.
+        // The letters are spread from the left edge of a button's background to its right edge, less a little.
         HStack(spacing: 0) {
           ForEach(Array("LUTHOR".enumerated()), id: \.offset) { index, letter in
             if index > 0 { Spacer(minLength: 0) }
@@ -29,9 +29,10 @@ struct NavigationRailView: View {
         }
         .font(.system(size: 8, weight: .regular))
         .foregroundStyle(.white.opacity(0.7))
+        .padding(.horizontal, 5)
         .padding(.top, 4)
         .padding(.bottom, 14)
-        .offset(y: -10)
+        .offset(y: -18)
         ForEach(Self.mainSections, id: \.self) { section in
           RailButton(library: library, section: section)
         }
