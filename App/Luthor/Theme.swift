@@ -117,7 +117,7 @@ struct LuthorMark: View {
       switch self {
       case .lit: Color.white
       case .light: Color.white.opacity(0.55)
-      case .shadow: Color.black.opacity(0.15)
+      case .shadow: LuthorMark.shadow
       }
     }
   }
