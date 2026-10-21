@@ -115,9 +115,17 @@ struct LuthorMark: View {
       switch self {
       case .lit: Color.white
       case .light: Color.white.opacity(0.55)
-      case .shadow: Color.black.opacity(0.3)
+      case .shadow: LuthorMark.shadow
       }
     }
+  }
+
+  /// The dark shade of the face in shadow; the rail below the mark is tinted with it too.
+  nonisolated static let shadow = Color.black.opacity(0.3)
+
+  /// The mountain's two sloping sides, left to right over the peak, in the icon's own coordinates.
+  private static let ridge = [(850, 350), (1015, 120), (1023, 108), (1032, 120), (1180, 300)].map {
+    CGPoint(x: $0.0, y: $0.1)
   }
 
   private static let faces = [
@@ -150,6 +158,15 @@ struct LuthorMark: View {
         }
         .fill(face.shade.color)
       }
+      Path { path in
+        for (index, point) in Self.ridge.enumerated() {
+          let scaled = CGPoint(
+            x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
+            y: (point.y - Self.origin.y) / Self.extent.height * geometry.size.height)
+          if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
+        }
+      }
+      .stroke(Color(red: 0.2, green: 0.2, blue: 0.2), style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
     }
     .aspectRatio(Self.aspectRatio, contentMode: .fit)
     .accessibilityHidden(true)

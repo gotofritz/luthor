@@ -15,12 +15,12 @@ struct NavigationStartTests {
   }
 
   @Test(
-    "the sections are the inbox, today, the calendar, the review, the weekly review, projects, priorities, tags and settings"
+    "the sections are the inbox, projects, priorities, today, the calendar, the review, the weekly review, tags and settings"
   )
-  func sectionsAreInboxTodayCalendarReviewWeeklyReviewProjectsPrioritiesTagsSettings() {
+  func sectionsAreInboxProjectsPrioritiesTodayCalendarReviewWeeklyReviewTagsSettings() {
     #expect(
       NavigationSection.allCases == [
-        .inbox, .today, .calendar, .review, .weeklyReview, .projects, .priorities, .tags, .settings,
+        .inbox, .projects, .priorities, .today, .calendar, .review, .weeklyReview, .tags, .settings,
       ])
   }
 }
