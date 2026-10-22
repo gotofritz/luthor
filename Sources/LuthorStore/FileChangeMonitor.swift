@@ -25,7 +25,8 @@ public struct FileChangeMonitor {
     last = Self.signatures(of: target)
   }
 
-  /// Watches every device log (`events-<device>.jsonl`) in the folder, as `DeviceFilesEventLog` writes them.
+  /// Watches every device log (`events-<device>.jsonl`) in the folder, as `DeviceFilesEventLog` writes them,
+  /// and the files of the compaction handshake.
   public init(directoryURL: URL) {
     target = .deviceLogs(folder: directoryURL)
     last = Self.signatures(of: target)
@@ -51,10 +52,15 @@ public struct FileChangeMonitor {
       } catch {
         return []
       }
-      return names.filter(DeviceFilesEventLog.isDeviceLog(named:)).sorted().compactMap {
+      return names.filter { DeviceFilesEventLog.isDeviceLog(named: $0) || isCompactionFile($0) }.sorted().compactMap {
         signature(of: folder.appendingPathComponent($0))
       }
     }
+  }
+
+  /// A request or an answer of the compaction handshake.
+  private static func isCompactionFile(_ name: String) -> Bool {
+    name.hasPrefix("compaction-") && name.hasSuffix(".json")
   }
 
   private static func signature(of url: URL) -> Signature? {

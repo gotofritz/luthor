@@ -225,3 +225,37 @@ extension LibraryViewModel {
     }
   }
 }
+
+// Text export and import of the tasks and projects.
+extension LibraryViewModel {
+  /// Every view, tag, task and project as YAML text, or `nil` with `errorMessage` set when the log cannot be
+  /// read.
+  public func exportText() -> String? {
+    do {
+      return try LibraryText.export(LibraryState.replay(try log.readAll()).export())
+    } catch {
+      errorMessage = Self.describe(error)
+      return nil
+    }
+  }
+
+  /// Adds the views, tags, tasks and projects of an export that the library does not have yet; importing a
+  /// text twice adds nothing.
+  public func importText(_ text: String) {
+    do {
+      let library = try LibraryText.library(from: text)
+      let current = try log.readAll()
+      let fresh: [EventEnvelope]
+      do {
+        fresh = try commands.importLibrary(library, log: current)
+      } catch {
+        errorMessage = "The export refers to a view it does not list."
+        return
+      }
+      try log.append(fresh)
+      show(current + fresh)
+    } catch {
+      errorMessage = Self.describe(error)
+    }
+  }
+}

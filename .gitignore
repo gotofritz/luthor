@@ -24,5 +24,7 @@ infra/.terraform.lock.hcl
 
 # never commit an event log
 *.jsonl
+# except the synthetic golden log the tests replay
+!Tests/LuthorStoreTests/Fixtures/golden-log.jsonl
 .tools/
 .env

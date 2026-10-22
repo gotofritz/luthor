@@ -526,6 +526,43 @@ Mac only). Settings → This Mac changes the choice later; moving to Dropbox
 copies the Home Folder's tasks in the first time. Back up by copying the
 file or folder.
 
+## Export and import as text
+
+File → **Export to Text…** saves your views, tags, tasks and projects as one
+YAML file (`format: 1`), readable in any editor: for every item its title,
+notes, priority, estimate, kind, parent, day created, whether it is open,
+completed or dropped, and its planned day, due date, repeat, delegation and
+tags. It is a copy of what exists, not of how it came about: time logged,
+daily and weekly reviews, the plan's manual order and settings are not in it.
+File → **Import from Text…** adds the views, tags and items of such a file
+that you do not have yet, with the same IDs, so importing the same file twice
+changes nothing, and a file from another Mac merges. A file from a newer
+version of the app, or one that is not an export, is refused and nothing is
+changed.
+
+### Compacting the log
+
+The log only grows, because it keeps every change. Settings → This Mac →
+**Compact Log…** rebuilds it: it copies the old log files and a YAML copy of
+your tasks into a `backups/compact-<date>` folder next to the log, writes a
+new log with one short run of events for each task and project, checks that it
+holds the same library, and swaps it in. Tasks, projects, settings and the
+weekly project reviews stay; time logged and the days you reviewed are
+dropped. Delete the `backups` folder when you no longer need it.
+
+With Dropbox the Macs do not have to be together. Compact Log first asks the
+others, through small `compaction-…` files in the shared folder, to stop
+writing. Settings shows "Waiting for …" until each Mac that Luthor is open on
+has answered and its last changes have reached Dropbox; open Luthor there to
+let it answer. Then **Compact Now** rebuilds the log and every Mac writes
+again. If a Mac stays away you can **Cancel**, or **Compact Anyway**: the new
+log then outranks anything older, but changes that Mac made offline may be
+partly overridden when it comes back.
+
+If the new log does not check out, Luthor changes nothing, says what differed
+(for example which task and which field), and cancels the request so every Mac
+writes again.
+
 ## The same tasks on several Macs
 
 Choose Dropbox on every Mac. Each Mac writes only its own file in the folder,

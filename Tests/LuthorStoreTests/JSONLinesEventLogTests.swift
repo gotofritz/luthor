@@ -320,7 +320,6 @@ struct SettingLineTests {
 
   @Test(arguments: [
     "not json",
-    #"{"data":{},"device":"mac","id":"e9","lamport":1,"type":"TaskExploded"}"#,
     #"{"data":{"taskID":"t1"},"device":"mac","id":"e9","type":"TaskCompleted"}"#,
   ])
   func unreadableLineFailsWithItsLineNumber(badLine: String) throws {

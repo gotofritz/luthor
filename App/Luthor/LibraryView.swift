@@ -13,6 +13,7 @@ struct LibraryView: View {
   let configuration: LuthorConfiguration
   @FocusState private var captureFocused: Bool
   @Environment(\.theme) private var theme
+  @Environment(StorageController.self) private var storage
 
   var body: some View {
     HStack(spacing: 0) {
@@ -168,7 +169,10 @@ struct LibraryView: View {
     var monitor = configuration.makeChangeMonitor()
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(1))
-      if monitor.poll() { library.reload() }
+      if monitor.poll() {
+        library.reload()
+        storage.refreshCompaction()
+      }
     }
   }
 }

@@ -27,7 +27,12 @@ public enum EventLine {
     throw .ioFailure("cannot encode event \(event.id.rawValue) as UTF-8")
   }
 
-  /// Throws `unreadableLine(0)`; callers that know the line number replace it.
+  /// Every event type this build understands, as written in the `type` field. The frozen event format: a type
+  /// is only ever added to this list, never renamed or removed.
+  public static var knownTypes: [String] { EventLineDTO.EventType.allCases.map(\.rawValue) }
+
+  /// Throws `unreadableLine(0)`; callers that know the line number replace it. Also throws for an event of a
+  /// type this build does not know; `decodeIfKnown` is the reader that skips those.
   public static func decode(_ line: String) throws(EventLogError) -> EventEnvelope {
     do {
       return try JSONDecoder().decode(EventLineDTO.self, from: Data(line.utf8)).event
@@ -35,6 +40,25 @@ public enum EventLine {
       throw .unreadableLine(0)
     }
   }
+
+  /// Like `decode`, but `nil` for a well-formed line whose `type` this build does not know, written by a newer
+  /// build. The caller skips it and leaves it in the log. A line that is not JSON, or lacks a `type`, still
+  /// throws `unreadableLine(0)`.
+  public static func decodeIfKnown(_ line: String) throws(EventLogError) -> EventEnvelope? {
+    let probe: EventTypeProbe
+    do {
+      probe = try JSONDecoder().decode(EventTypeProbe.self, from: Data(line.utf8))
+    } catch {
+      throw .unreadableLine(0)
+    }
+    guard EventLineDTO.EventType(rawValue: probe.type) != nil else { return nil }
+    return try decode(line)
+  }
+}
+
+/// Just the `type` of a line, to tell an unknown event from a damaged line.
+private struct EventTypeProbe: Decodable {
+  let type: String
 }
 
 /// The on-disk shape of one event line.
@@ -49,7 +73,7 @@ private struct EventLineDTO: Codable {
     case type, id, device, lamport, data
   }
 
-  private enum EventType: String, Codable {
+  fileprivate enum EventType: String, Codable, CaseIterable {
     case taskCaptured = "TaskCaptured"
     case taskCompleted = "TaskCompleted"
     case taskReopened = "TaskReopened"
@@ -215,7 +239,8 @@ public struct JSONLinesEventLog: Sendable {
     self.fileURL = fileURL
   }
 
-  /// All events in file order. A missing file is an empty log.
+  /// All events in file order, except those of a type this build does not know (a newer build wrote them);
+  /// they stay in the file untouched. A missing file is an empty log.
   public func readAll() throws(EventLogError) -> [EventEnvelope] {
     try readAll(skippingIncompleteTail: false)
   }
@@ -236,7 +261,7 @@ public struct JSONLinesEventLog: Sendable {
     var events: [EventEnvelope] = []
     for (index, line) in lines.enumerated() where !line.allSatisfy(\.isWhitespace) {
       do {
-        events.append(try EventLine.decode(String(line)))
+        if let event = try EventLine.decodeIfKnown(String(line)) { events.append(event) }
       } catch {
         // The last element has no newline after it; earlier ones always do.
         if skippingIncompleteTail && index == lines.count - 1 { break }

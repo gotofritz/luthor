@@ -68,13 +68,21 @@ remote events → merge into log → deterministic replay → projection → UI
 ### Event-sourcing rules
 
 - Events are append-only. Code never edits or deletes a written event
-- The event format is soft until it is frozen (slice 15 of
-  `docs/plans/20261016_incremental_roadmap.md`). Until then a format change
-  may break old logs, provided it ships with a one-off migration script that
-  rewrites the log, or the change says the log is to be started afresh
-- Once frozen, event types are a public, persisted format. Never rename a
-  field or change its meaning; add a new event type or a new optional field
-  instead. Old logs must always replay, checked by golden-file tests
+- The event format is frozen (slice 15 of
+  `docs/plans/20261016_incremental_roadmap.md`). Events are a public,
+  persisted format on every device: never rename a field or change its
+  meaning; add a new event type or a new optional field instead. Old logs
+  must always replay, checked by the golden log in
+  `Tests/LuthorStoreTests/Fixtures/golden-log.jsonl`. A PR that adds an event
+  type adds lines to that fixture; the tests fail if a type has none
+- A build skips an event type it does not know and leaves its line in the
+  log, so an older build can open a newer log. An event that is broken in
+  other ways is still an error
+- A breaking change to the format (one that cannot be done additively) is
+  allowed only with a one-off migration script that rewrites the log, a
+  tested backup of the log before it runs, and a breaking (`!`) Conventional
+  Commit, so the release version moves to the next major (minor while
+  below 1.0) and says the log needs migrating. Note it in the PR body
 - Each event carries a unique ID, the originating device ID and an ordering
   key. Replay of the same set of events in any arrival order produces the same
   state
@@ -128,6 +136,8 @@ Sources/
     Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
+    LibraryExport.swift      LibraryExport (views, tags, items as plain Codable data) and LibraryState.export()
+    Commands+Import.swift    importLibrary: the events that add what an export holds and the library lacks
     StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
     Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project and an empty project a task
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
@@ -172,7 +182,13 @@ Sources/
                              default view, as an extension (split out for file_length, not access)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
-    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec)
+    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
+                             type are skipped on read and stay in the file
+    LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
+    LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds
+                             the log from the library (export, then import), checks it, swaps it in
+    CompactionHandshake.swift  request/answer/done files in the shared folder so every Mac stops writing before a
+                             compaction; PausableEventLog refuses appends while this Mac has stopped
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
@@ -202,9 +218,9 @@ Sources/
                              `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, notes
                              on a card, deselecting a column and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
-                             filling the published state (columns, lists, completed items) in
+                             filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
-    StorageController.swift  where the log lives: first-start choice and Settings → This Mac
+    StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
@@ -232,7 +248,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
                              SequentialIDs, TemporaryDirectory
-  Luthor<Module>Tests/       unit tests, one target per module
+  Luthor<Module>Tests/       unit tests, one target per module; LuthorStoreTests holds the golden log
+                             (Fixtures/golden-log.jsonl): a line for every event type, must always replay
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)

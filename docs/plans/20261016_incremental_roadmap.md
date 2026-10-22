@@ -408,30 +408,28 @@ big synthetic log, where launch replay time and capture latency are measured
 finds in the event format is fixed in the audit step of slice 15, while the
 format is still soft.
 
-### 15. Freeze the event format
+### 15. Freeze the event format ✅
 
-Safety work, no new feature: it keeps the log, the only copy of the tasks,
-from being broken by a later change. One PR, after slice 14 so its events
-enter v1.
+The event format is frozen; the `AGENTS.md` event rules apply in full. Replay
+skips an event type it does not know and leaves its line in the log, so an
+older build opens a newer log (before, the decoder threw `unreadableLine`). A
+synthetic golden log (`Tests/LuthorStoreTests/Fixtures/golden-log.jsonl`) holds a
+line for every event type and every optional field; tests check that it
+decodes, round-trips and replays to the same state reversed and with
+duplicates, and fail when a type has no line. The audit found no wart worth a
+migration, so the log is untouched. Any later breaking change needs a
+migration script, a tested backup and a `!` commit, so the release version
+moves with it.
 
-- **Audit first.** The format is still soft, so this is the last cheap
-  moment to fix warts (event and field names, field shapes, raw values such
-  as `Priority` "A", setting key strings). Fixes ship with a one-off
-  migration script over the log. Whatever is left becomes permanent
-- **Unknown events are skipped, not fatal.** Replay ignores an event type it
-  does not know and leaves it untouched in the log, so an older build can
-  open a log written by a newer one (unknown setting keys already behave
-  this way). Today the decoder throws `unreadableLine` and the app refuses
-  to open the log
-- **Golden fixture.** One synthetic, checked-in log with every event type
-  and every optional field (`createdOn`, due dates…) must always replay to
-  the same state; the same events in shuffled order, and with duplicates,
-  give the same state. Never the real log. A PR that adds an event adds
-  lines to the fixture
-- **Strict rules from here.** The `AGENTS.md` event rules (never rename or
-  change the meaning of a field; add a new event type or an optional field)
-  now apply in full. The fixture and the `EventType` enum are the spec; no
-  separate format document
+### 15a. Export and import as text ✅
+
+File → Export to Text… writes the views, tags, tasks and projects as one YAML
+file (`format: 1`; per item the title, notes, priority, estimate, kind,
+parent, status, planned day, due date, repeat, delegation, tags). Import from
+Text… adds what the library lacks, by ID, as ordinary events, so importing
+twice changes nothing and a file from another Mac merges. It is the state,
+not the history: time logged, reviews and settings are not in it. The one new
+dependency is Yams (the YAML codec).
 
 ### 16. Speed pass
 
@@ -1069,3 +1067,30 @@ write when OK is pressed.
    shadow, on a clear sky, so it takes on each view's accent. The app also
    sets its icon explicitly at start, as ⌘-Tab can keep showing a generic one
    that Launch Services cached
+
+## Decisions (2026-10-19, slice 15)
+
+1. **Do it now, as a safety net, with strict rules.** The owner runs two Macs
+   with real data, so the format is frozen as is: no audit migration, because
+   nothing found is worth the risk. Breaking changes stay possible only with
+   a migration script, a tested backup and a `!` commit
+2. **Text export is YAML, not OPML.** OPML is what OmniFocus exports, but it
+   is an outline of text plus free attributes: it can carry the tree and
+   notes, yet priority, estimates, repeat rules, delegation and the schedule
+   would be invented attributes that no other tool reads, and it has no
+   typed values. YAML is readable, diffable, typed and lossless for this
+   data. The file holds tasks and projects, not events, so it stays
+   readable and does not change when events are added. OPML export is an optional extra for interop, not the backup format
+3. **No automatic retention; a Compact Log button instead.** Events are
+   append-only and about 200 bytes each, so a year of heavy use is a few
+   megabytes, and slice 16 measures replay time before anything more is built.
+   When the log should shrink, Settings → This Mac → Compact Log backs up the
+   old files and a YAML copy, rebuilds the log from the library (export, then
+   import), verifies it holds the same library and swaps it in. With several
+   Macs it first runs a handshake of small files in the shared folder (each
+   file has one writer): the asker requests, every other Mac answers and stops
+   writing, the asker waits until their last events have arrived, then
+   compacts; a Mac that stays away can be skipped by force, and the new events
+   outrank the old ones. History (time
+   logged, reviewed days) is dropped; tasks, projects, settings and project
+   reviews stay. Events are never deleted in place

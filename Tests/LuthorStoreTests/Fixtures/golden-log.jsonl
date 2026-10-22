@@ -1,0 +1,39 @@
+{"data":{"name":"Work","viewID":"work"},"device":"mac","id":"e01","lamport":1,"type":"ViewCreated"}
+{"data":{"createdOn":"2026-10-12","kind":"sequential","taskID":"p1","title":"Holiday","viewID":"work"},"device":"mac","id":"e02","lamport":2,"type":"TaskCaptured"}
+{"data":{"createdOn":"2026-10-12","parentID":"p1","taskID":"t1","title":"Book flights","viewID":"work"},"device":"mac","id":"e03","lamport":3,"type":"TaskCaptured"}
+{"data":{"taskID":"t2","title":"Buy milk"},"device":"mac","id":"e04","lamport":4,"type":"TaskCaptured"}
+{"data":{"taskID":"t2"},"device":"mac","id":"e05","lamport":5,"type":"TaskCompleted"}
+{"data":{"taskID":"t2"},"device":"mac","id":"e06","lamport":6,"type":"TaskReopened"}
+{"data":{"taskID":"t1","title":"Book the flights"},"device":"mac","id":"e07","lamport":7,"type":"TaskRenamed"}
+{"data":{"notes":"check dates","taskID":"t1"},"device":"mac","id":"e08","lamport":8,"type":"TaskNoted"}
+{"data":{"kind":"parallel","taskID":"p1"},"device":"mac","id":"e09","lamport":9,"type":"TaskKindChanged"}
+{"data":{"parentID":"p1","taskID":"t2"},"device":"mac","id":"e10","lamport":10,"type":"TaskMoved"}
+{"data":{"name":"Private","viewID":"private"},"device":"mac","id":"e11","lamport":11,"type":"ViewCreated"}
+{"data":{"name":"Home","viewID":"private"},"device":"mac","id":"e12","lamport":12,"type":"ViewRenamed"}
+{"data":{"taskID":"t2","viewID":"private"},"device":"mac","id":"e13","lamport":13,"type":"TaskMovedToView"}
+{"data":{"priority":"A","taskID":"t1"},"device":"mac","id":"e14","lamport":14,"type":"TaskPrioritized"}
+{"data":{"minutes":30,"taskID":"t1"},"device":"mac","id":"e15","lamport":15,"type":"TaskEstimated"}
+{"data":{"key":"themeAccent","value":"alpine","viewID":"work"},"device":"mac","id":"e16","lamport":16,"type":"SettingChanged"}
+{"data":{"key":"someFutureSetting","value":"x"},"device":"mac","id":"e17","lamport":17,"type":"SettingChanged"}
+{"data":{"date":"2026-10-19","taskID":"t1"},"device":"mac","id":"e18","lamport":18,"type":"TaskScheduled"}
+{"data":{"taskID":"t2"},"device":"mac","id":"e19","lamport":19,"type":"TaskUnscheduled"}
+{"data":{"date":"2026-10-19","taskIDs":["t1"],"viewID":"work"},"device":"mac","id":"e20","lamport":20,"type":"DayPlanOrdered"}
+{"data":{"date":"2026-10-19","minutes":240,"viewID":"work"},"device":"mac","id":"e21","lamport":21,"type":"DayCapacitySet"}
+{"data":{"followUpDate":"2026-10-26","since":"2026-10-19","taskID":"t1","to":"Sam"},"device":"mac","id":"e22","lamport":22,"type":"TaskDelegated"}
+{"data":{"taskID":"t1"},"device":"mac","id":"e23","lamport":23,"type":"TaskReclaimed"}
+{"data":{"taskID":"t2"},"device":"mac","id":"e24","lamport":24,"type":"TaskDropped"}
+{"data":{"date":"2026-11-01","isHard":true,"taskID":"t1"},"device":"mac","id":"e25","lamport":25,"type":"TaskDueSet"}
+{"data":{"name":"errand","tagID":"g1","viewID":"work"},"device":"mac","id":"e26","lamport":26,"type":"TagCreated"}
+{"data":{"tagID":"g1","taskID":"t1"},"device":"mac","id":"e27","lamport":27,"type":"TaskTagged"}
+{"data":{"tagID":"g1","taskID":"t1"},"device":"mac","id":"e28","lamport":28,"type":"TaskUntagged"}
+{"data":{"date":"2026-10-19","minutes":25,"taskID":"t1"},"device":"mac","id":"e29","lamport":29,"type":"TaskTimeLogged"}
+{"data":{"date":"2026-10-19","minutes":15,"viewID":"work"},"device":"mac","id":"e30","lamport":30,"type":"UnplannedTimeLogged"}
+{"data":{"date":"2026-10-19","note":"went well","viewID":"work"},"device":"mac","id":"e31","lamport":31,"type":"DayReviewed"}
+{"data":{"interval":7},"device":"mac","id":"e32","lamport":32,"type":"ReviewDefaultSet"}
+{"data":{"interval":3,"taskID":"p1"},"device":"mac","id":"e33","lamport":33,"type":"ReviewIntervalSet"}
+{"data":{"date":"2026-10-26","taskID":"p1"},"device":"mac","id":"e34","lamport":34,"type":"ReviewDateSet"}
+{"data":{"date":"2026-10-19","taskID":"p1"},"device":"mac","id":"e35","lamport":35,"type":"TaskReviewed"}
+{"data":{"rule":{"afterCompletion":false,"every":1,"unit":"week","weekdays":["monday"]},"taskID":"t1"},"device":"mac","id":"e36","lamport":36,"type":"TaskRepeatSet"}
+{"data":{"due":"2026-10-26","next":"r1","previous":"t1"},"device":"mac","id":"e37","lamport":37,"type":"TaskRecurred"}
+{"data":{"copy":"c1","createdOn":"2026-10-19","source":"t1"},"device":"phone","id":"e38","lamport":38,"type":"TaskDuplicated"}
+{"data":{"taskID":"c1"},"device":"phone","id":"e39","lamport":39,"type":"TaskDeleted"}

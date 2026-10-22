@@ -235,3 +235,50 @@ func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEve
     #expect(inbox.selection == nil)
   }
 }
+
+@MainActor
+@Suite("When the library is exported to text and imported again")
+struct TextTransferTests {
+  @Test("the text carries the tasks into an empty library")
+  func theTextCarriesTheTasks() throws {
+    let (source, _) = makeInbox([captured("t1", "buy milk", lamport: 1), captured("t2", "call mum", lamport: 2)])
+    let text = try #require(source.exportText())
+
+    let (target, targetLog) = makeInbox()
+    target.importText(text)
+
+    #expect(target.tasks == [item("t1", "buy milk"), item("t2", "call mum")])
+    #expect(targetLog.events.count == 2)
+  }
+
+  @Test("importing the same text twice adds nothing the second time")
+  func importingTwiceAddsNothing() throws {
+    let (source, _) = makeInbox([captured("t1", "buy milk", lamport: 1)])
+    let text = try #require(source.exportText())
+    let (target, targetLog) = makeInbox()
+
+    target.importText(text)
+    target.importText(text)
+
+    #expect(targetLog.events.count == 1)
+  }
+
+  @Test("text that is not an export leaves the log alone and shows an error")
+  func badTextShowsAnError() {
+    let (inbox, log) = makeInbox([captured("t1", "buy milk", lamport: 1)])
+
+    inbox.importText("just some words")
+
+    #expect(log.events.count == 1)
+    #expect(inbox.errorMessage != nil)
+  }
+
+  @Test("an unreadable log cannot be exported")
+  func unreadableLogCannotBeExported() {
+    let (inbox, log) = makeInbox()
+    log.readFailure = .unreadableLine(2)
+
+    #expect(inbox.exportText() == nil)
+    #expect(inbox.errorMessage != nil)
+  }
+}

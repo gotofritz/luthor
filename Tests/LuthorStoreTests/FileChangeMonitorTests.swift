@@ -91,6 +91,17 @@ struct FolderChangeMonitorTests {
     #expect(monitor.poll() == true)
   }
 
+  @Test("a compaction request or answer in the folder is a change")
+  func compactionFilesAreAChange() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    var monitor = FileChangeMonitor(directoryURL: dir.url)
+
+    _ = try CompactionHandshake(directory: dir.url, deviceID: DeviceID("mac")).request(id: "r1", at: "t")
+
+    #expect(monitor.poll() == true)
+  }
+
   @Test("a folder created after the monitor is a change")
   func folderCreatedLaterIsAChange() throws {
     let dir = try TemporaryDirectory()
