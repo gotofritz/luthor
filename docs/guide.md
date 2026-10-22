@@ -70,14 +70,14 @@ A narrow rail on the left lists the places, an icon with its name underneath.
 It does not expand. Click a place to look at it:
 
 - **Inbox**: your inbox tasks, as a list
+- **Projects**: the top-level projects, as Miller columns (see Projects)
+- **Prios**: the priorities, then the tasks that have one of them (see
+  Priorities)
 - **Today**: the plan of a day, with its capacity (see Today); the Plan /
   Review toggle at the top flips it to the day looked back on (see Review)
 - **Calendar**: the days, and the tasks of the one you pick (see Calendar)
 - **Reviews** (the glasses): the projects whose review is due (see Reviews).
   The review of a day is Today's other face (see Review)
-- **Projects**: the top-level projects, as Miller columns (see Projects)
-- **Prios**: the priorities, then the tasks that have one of them (see
-  Priorities)
 - **Tags**: the view's tags, then the tasks that carry the one you pick (see
   Tags)
 - **Settings**, pinned to the bottom of the rail (or ⌘,): the planning

@@ -15,12 +15,12 @@ public enum CardTarget: Hashable, Sendable {
 /// The places the navigation rail leads to, in the order it lists them.
 public enum NavigationSection: Hashable, Sendable, CaseIterable {
   case inbox
+  case projects
+  case priorities
   case today
   case calendar
   case review
   case weeklyReview
-  case projects
-  case priorities
   case tags
   case settings
 }

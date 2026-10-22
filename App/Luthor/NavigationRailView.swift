@@ -14,18 +14,36 @@ struct NavigationRailView: View {
   @Environment(\.theme) private var theme
 
   var body: some View {
-    VStack(spacing: 4) {
+    VStack(spacing: 0) {
       LuthorMark()
-        .frame(width: 36)
-        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 30)
+        .background(LuthorMark.sky)
+      VStack(spacing: 4) {
+        // The letters are spread from the left edge of a button's background to its right edge, less a little.
+        HStack(spacing: 0) {
+          ForEach(Array("LUTHOR".enumerated()), id: \.offset) { index, letter in
+            if index > 0 { Spacer(minLength: 0) }
+            Text(String(letter))
+          }
+        }
+        .font(.system(size: 8, weight: .regular))
+        .foregroundStyle(.white.opacity(0.7))
+        .padding(.horizontal, 5)
+        .padding(.top, 4)
         .padding(.bottom, 14)
-      ForEach(Self.mainSections, id: \.self) { section in
-        RailButton(library: library, section: section)
+        .offset(y: -18)
+        ForEach(Self.mainSections, id: \.self) { section in
+          RailButton(library: library, section: section)
+        }
+        Spacer()
+        RailButton(library: library, section: .settings)
       }
-      Spacer()
-      RailButton(library: library, section: .settings)
+      .padding(6)
+      .padding(.top, 24)
+      .frame(maxHeight: .infinity)
+      .background(LuthorMark.shadow)
     }
-    .padding(6)
     .frame(width: 72)
     .background(theme.fill)
   }

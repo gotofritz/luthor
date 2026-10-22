@@ -28,11 +28,11 @@ private let tagged3 = [
 @MainActor
 @Suite("When the Tags place is shown")
 struct LibraryTagsPlaceTests {
-  @Test("the rail has it after Prios and before Settings")
-  func theRailHasItAfterPrios() {
+  @Test("the rail has it after the weekly review and before Settings")
+  func theRailHasItAfterTheWeeklyReview() {
     let sections = NavigationSection.allCases
 
-    #expect(sections.firstIndex(of: .tags) == sections.firstIndex(of: .priorities).map { $0 + 1 })
+    #expect(sections.firstIndex(of: .tags) == sections.firstIndex(of: .weeklyReview).map { $0 + 1 })
     #expect(sections.firstIndex(of: .settings) == sections.firstIndex(of: .tags).map { $0 + 1 })
   }
 
