@@ -48,6 +48,18 @@ struct ColumnView: View {
         }
       }
       AddItemRow(library: library, parentID: column.parentID)
+      if column.parentID == nil, library.knownProjects.contains(where: { $0.parentID != nil }) {
+        // A list takes a drop only on its rows, and a drop on a project row nests inside it; this row is
+        // the place to drop a nested project to make it top-level again.
+        Label("Drop here for top level", systemImage: "arrow.up.to.line")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+          .contentShape(Rectangle())
+          .dropDestination(for: String.self) { payloads, _ in
+            library.drop(payloads, on: nil)
+          }
+      }
     }
     .frame(width: 260)
     .dropDestination(for: String.self) { payloads, _ in
