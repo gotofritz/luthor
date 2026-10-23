@@ -97,8 +97,8 @@ struct NewItemCardFlowTests {
 @MainActor
 @Suite("Given a project with a task, when the columns are clicked")
 struct ColumnCardFlowTests {
-  @Test("the last column shows the task card, and the parent project again brings the project card back")
-  func parentProjectDeselectsTheTask() throws {
+  @Test("the pencil of the project row swaps its list for its card, and a click on a task brings the list back")
+  func pencilSwapsTheListForTheCard() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -107,6 +107,8 @@ struct ColumnCardFlowTests {
     library.addTask(titled: "book flights", to: europe)
     let flights = try library.task("book flights")
 
+    #expect(library.cardTarget == nil)
+    library.toggleProjectCard(europe)
     #expect(library.cardTarget == .project(europe))
     library.selection = flights
     #expect(library.cardTarget == .task(flights))
@@ -114,7 +116,8 @@ struct ColumnCardFlowTests {
     library.open(.project(europe))
 
     #expect(library.selection == nil)
-    #expect(library.cardTarget == .project(europe))
+    #expect(library.projectCardOpen == false)
+    #expect(library.cardTarget == nil)
   }
 }
 

@@ -72,17 +72,27 @@ extension LibraryViewModel {
       selection = nil
       editingCard = nil
       newItem = nil
+      projectCardOpen = false
       present()
       return
     }
     open(.project(parentID))
   }
 
-  /// The card the last column shows: the task picked, else the project the columns lead to; `nil` when there
-  /// is neither.
+  /// What the pencil on a project's row does: shows the project's card in the column after the row, in place
+  /// of the list of its children, opening the project first if it is not the one shown. Pressed again, it
+  /// brings the list back.
+  public func toggleProjectCard(_ projectID: TaskID) {
+    let wasOpen = projectCardOpen && shownProjectID == projectID
+    open(.project(projectID))
+    projectCardOpen = !wasOpen
+  }
+
+  /// The card the last column shows: the task picked, else the card of the project shown while its pencil
+  /// is pressed; `nil` when there is neither.
   public var cardTarget: CardTarget? {
     if let task = selectedTask { return .task(task.id) }
-    if section == .projects, let project = shownProject { return .project(project.id) }
+    if projectCardOpen, section == .projects, let project = shownProject { return .project(project.id) }
     return nil
   }
 }

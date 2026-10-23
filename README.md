@@ -61,7 +61,7 @@ context menu; its sub-projects and open tasks go with it.
 Completed and dropped tasks and projects disappear, but the Completed and dropped toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
-its column opens, with the project's card after it. A card has no edit mode: it
+its column opens; the pencil on its row swaps that list for the project's card. A card has no edit mode: it
 shows the day it was created and every field, and a click on one edits it in
 place. The notes are bullet points (web addresses are
 clickable), each deletable, with a field to add one without editing. Priority (four icon buttons: storm, drizzle, cloud, moon),
