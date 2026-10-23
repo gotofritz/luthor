@@ -184,3 +184,28 @@ struct RepeatSummaryTests {
     #expect(rule.summary == summary)
   }
 }
+
+@MainActor
+@Suite("When the due date of a repeating task is cleared on its card")
+struct ClearDueOfRepeatingTaskTests {
+  @Test("the repeat stops with it, as a repeat counts from a due date")
+  func repeatStopsWithTheDueDate() {
+    let (library, _) = makeLibrary([captured("t1", "water plants", lamport: 1)])
+    library.setRepeat(TaskID("t1"), to: weekly)
+
+    library.clearDue(TaskID("t1"))
+
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
+    #expect(library.repeatRule(of: TaskID("t1")) == nil)
+  }
+
+  @Test("a task that does not repeat just loses its due date")
+  func plainTaskLosesItsDueDate() {
+    let (library, _) = makeLibrary([captured("t1", "pay tax", lamport: 1)])
+    library.setDue(TaskID("t1"), to: date("2026-11-01"), isHard: true)
+
+    library.clearDue(TaskID("t1"))
+
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
+  }
+}

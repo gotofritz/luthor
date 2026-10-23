@@ -18,6 +18,16 @@ extension LibraryViewModel {
     }
   }
 
+  /// Clears a task's due date. A repeat counts from the due date, so a task that repeats stops repeating too.
+  public func clearDue(_ taskID: TaskID) {
+    let day = planDate
+    perform { (log) throws(CommandError) in
+      var events = try commands.setRepeat(taskID: taskID, to: nil, dueIfNone: day, log: log)
+      events += try commands.setDue(taskID: taskID, to: nil, isHard: false, log: log + events)
+      return events
+    }
+  }
+
   /// Makes a task stop repeating; it stays, with its due date.
   public func stopRepeating(_ taskID: TaskID) {
     setRepeat(taskID, to: nil)

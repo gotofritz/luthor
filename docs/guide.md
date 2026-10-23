@@ -425,7 +425,8 @@ Repeat submenu for the common cases, and Stop Repeating.
 
 A repeat needs a due date to count from. Switching Repeat on for a task with
 none gives it one: the day Today shows, as a target date. The kind of the due
-date, a hard deadline or a target date, is kept by the next tasks.
+date, a hard deadline or a target date, is kept by the next tasks. Unticking
+the due date of a task that repeats stops the repeat too.
 
 Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and

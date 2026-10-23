@@ -59,7 +59,7 @@ struct CardFieldsForm: View {
     }
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
     Toggle("Due date", isOn: $fields.hasDue)
-      .disabled(fields.repeatRule != nil)
+      .onChange(of: fields.hasDue) { if !fields.hasDue { fields.repeatRule = nil } }
     if fields.hasDue {
       DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
       Picker("Kind", selection: $fields.dueIsHard) {

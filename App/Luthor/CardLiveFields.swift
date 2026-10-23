@@ -80,7 +80,6 @@ struct CardLiveFields: View {
       HStack {
         Toggle("", isOn: hasDue)
           .labelsHidden()
-          .disabled(library.repeatRule(of: id) != nil)
         DatePicker("Due", selection: dueDay, displayedComponents: .date)
           .opacity(due == nil ? 0.5 : 1)
       }
@@ -143,7 +142,13 @@ struct CardLiveFields: View {
   private var hasDue: Binding<Bool> {
     Binding(
       get: { library.dueDate(of: id) != nil },
-      set: { library.setDue(id, to: $0 ? library.today : nil, isHard: dueIsHard.wrappedValue) })
+      set: {
+        if $0 {
+          library.setDue(id, to: library.today, isHard: dueIsHard.wrappedValue)
+        } else {
+          library.clearDue(id)
+        }
+      })
   }
 
   private var dueDay: Binding<Date> {
