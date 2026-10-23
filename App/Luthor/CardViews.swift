@@ -37,15 +37,21 @@ struct TaskCardColumn: View {
       if isCompleted {
         completedLine
       }
-      if let due = library.dueDate(of: task.id) {
-        DueLine(due: due, today: library.today)
-      }
-      if let rule = library.repeatRule(of: task.id) {
-        RepeatLine(rule: rule)
-      }
-      if let tags = tagLine(of: library.tagItems(of: task.id)) {
-        Label(tags, systemImage: "tag")
-          .font(.callout)
+      if isCompleted {
+        if let due = library.dueDate(of: task.id) {
+          DueLine(due: due, today: library.today)
+        }
+        if let rule = library.repeatRule(of: task.id) {
+          RepeatLine(rule: rule)
+        }
+        if let tags = tagLine(of: library.tagItems(of: task.id)) {
+          Label(tags, systemImage: "tag")
+            .font(.callout)
+        }
+      } else {
+        CardLiveFields(
+          library: library, id: task.id, isProject: false, priority: task.priority, estimate: task.estimate,
+          title: task.title)
       }
       CardNotesView(library: library, itemID: task.id, notes: task.notes, canAdd: !isCompleted)
       if !isCompleted {
@@ -173,27 +179,29 @@ struct ProjectCard: View {
         )
         .font(.callout)
       }
-      if let due = library.dueDate(of: project.id) {
-        DueLine(due: due, today: library.today)
-      }
-      if let rule = library.repeatRule(of: project.id) {
-        RepeatLine(rule: rule)
-      }
-      if let tags = tagLine(of: library.tagItems(of: project.id)) {
-        Label(tags, systemImage: "tag")
+      if isCompleted {
+        if let due = library.dueDate(of: project.id) {
+          DueLine(due: due, today: library.today)
+        }
+        if let rule = library.repeatRule(of: project.id) {
+          RepeatLine(rule: rule)
+        }
+        if let tags = tagLine(of: library.tagItems(of: project.id)) {
+          Label(tags, systemImage: "tag")
+            .font(.callout)
+        }
+        if let next = library.nextReviewDate(of: project.id) {
+          Label(
+            "Next review \(next.isoString), \(library.reviewInterval(of: project.id).title.lowercased())",
+            systemImage: "eyeglasses"
+          )
           .font(.callout)
-      }
-      if let next = library.nextReviewDate(of: project.id) {
-        Label(
-          "Next review \(next.isoString), \(library.reviewInterval(of: project.id).title.lowercased())",
-          systemImage: "eyeglasses"
-        )
-        .font(.callout)
-        .foregroundStyle(next < library.today ? Color.red : Color.primary)
-      } else if !isCompleted {
-        Label("Review off", systemImage: "eyeglasses")
-          .font(.callout)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(next < library.today ? Color.red : Color.primary)
+        }
+      } else {
+        CardLiveFields(
+          library: library, id: project.id, isProject: true, priority: project.priority,
+          estimate: project.estimate, title: project.title, kind: project.kind)
       }
       CardNotesView(library: library, itemID: project.id, notes: project.notes, canAdd: !isCompleted)
     }

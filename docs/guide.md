@@ -141,12 +141,18 @@ is in the last column, where a task's card goes. Click the project's name at
 the head of its column, or the project again in the column before, to come
 back to its card from a task.
 
-A card is read-only. It shows the day the task or project was created
-("Created 2026-10-19", left out for what was created before the app kept the
-day), for a task its due date ("Deadline 2026-10-23" or "Target date
-2026-10-23", in red once the day has passed), how it repeats ("Repeats every
-week on Mon, Thu") and its tags ("@calls @home"), and the notes. It does not repeat the
-title, which is in the column before it.
+The card of an open task or project shows every field and each one is changed
+by clicking it, kept at once with no OK: the title (Return keeps it), the
+priority as a row of four buttons (click the lit one to clear it), the
+estimate, the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
+Tags field (names separated by commas; Return keeps them), and for a project
+its kind and how often it is reviewed. The due date is greyed out and shows
+today's date until it is set; picking a day sets it and ticks the box beside
+it, and unticking the box clears it. Hard deadline or Target date appears
+below once a date is set. Above them is the day the task or project was
+created ("Created 2026-10-19", left out for what was created before the app
+kept the day). A completed task or project shows its card read-only, with the
+same facts as lines of text.
 
 The notes are a list of bullet points, one for each line. Each bullet has a
 small cross that deletes it, and below them the "Add a note" field adds a
@@ -155,8 +161,8 @@ note on Return, without opening the editor. Web addresses in notes
 hand over one. A completed task or project
 shows its notes with no cross and no field.
 
-The pencil button at the top right of the card opens it for editing; nothing
-is written until OK:
+The pencil button at the top right of the card still opens a form with all the
+fields together; nothing is written until OK:
 
 - A task's card then has the title field, the priority and estimate pickers,
   the Due date switch (a day to pick, and whether it is a hard deadline or a

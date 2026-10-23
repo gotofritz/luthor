@@ -229,7 +229,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              the place picked and the card at their end; ProjectColumnsView: a project's column, headed by its name and
                              ended by a plus button and, while an item is being added, a box with its title; NewItemViews: the card
                              of an item being added, in edit mode; CardViews: the task card column, the project card in the
-                             last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
+                             last column when no task is picked (the fields of an open item are CardLiveFields, changed by clicking and kept at once; a pencil opens the editor with OK and Cancel; both edit
                              priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
                              as deletable bullets with clickable links and a field that adds one; LinkedText: a note as an AppKit text view, so
                              the pointer is a hand over a link; SettingsColumnsView: Global/Views/This Mac setting families (Views: the list of views, then the settings of the one picked),

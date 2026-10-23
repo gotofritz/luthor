@@ -328,3 +328,30 @@ struct ProjectCardEditModeTests {
     #expect(library.projects.map(\.createdOn) == [date("2026-10-19")])
   }
 }
+
+@MainActor
+@Suite("When a field of a card is changed on the card itself")
+struct CardFieldInPlaceTests {
+  @Test("a task's priority, estimate and due date each take effect at once")
+  func taskFieldsApplyAtOnce() {
+    let (library, _) = makeLibrary()
+
+    library.prioritize(TaskID("t2"), as: .important)
+    library.estimate(TaskID("t2"), as: 30)
+    library.setDue(TaskID("t2"), to: date("2026-10-30"), isHard: false)
+
+    #expect(library.tasks.first { $0.id == TaskID("t2") }?.priority == .important)
+    #expect(library.tasks.first { $0.id == TaskID("t2") }?.estimate == 30)
+    #expect(library.dueDate(of: TaskID("t2")) == DueDate(date: date("2026-10-30"), isHard: false))
+  }
+
+  @Test("setting the tags replaces the ones the task has")
+  func tagsAreReplaced() {
+    let (library, _) = makeLibrary()
+    library.tagTask(TaskID("t2"), named: "home")
+
+    library.setTags(TaskID("t2"), to: ["calls", "errands"])
+
+    #expect(library.tagItems(of: TaskID("t2")).map(\.name).sorted() == ["calls", "errands"])
+  }
+}
