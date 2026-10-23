@@ -33,6 +33,11 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.setReviewInterval(of: projectID, to: interval, log: log) }
   }
 
+  /// Chooses the day a project is reviewed next, in place of one interval after the last review.
+  public func setNextReview(of projectID: TaskID, to date: CalendarDate) {
+    perform { (log) throws(CommandError) in try commands.setNextReview(of: projectID, to: date, log: log) }
+  }
+
   /// How often the project is reviewed: its own interval, else the default.
   public func reviewInterval(of projectID: TaskID) -> ReviewInterval {
     state.reviewInterval(of: projectID)

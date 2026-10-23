@@ -46,6 +46,9 @@ struct CardLiveFields: View {
             Text(interval.title).tag(ReviewInterval?.some(interval))
           }
         }
+        if let next = library.nextReviewDate(of: id), library.reviewInterval(of: id) != .off {
+          DatePicker("Next review", selection: nextReviewBinding(next), displayedComponents: .date)
+        }
       }
     }
     .onAppear(perform: load)
@@ -123,6 +126,15 @@ struct CardLiveFields: View {
   private var reviewBinding: Binding<ReviewInterval?> {
     Binding(
       get: { library.reviewOverride(of: id) }, set: { library.setReviewInterval(of: id, to: $0) })
+  }
+
+  private func nextReviewBinding(_ next: CalendarDate) -> Binding<Date> {
+    Binding(
+      get: { next.startOfDay ?? Date() },
+      set: { picked in
+        guard let day = CalendarDate(dayOf: picked) else { return }
+        library.setNextReview(of: id, to: day)
+      })
   }
 
   private var repeatBinding: Binding<RepeatRule?> {

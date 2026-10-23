@@ -90,52 +90,6 @@ private struct ReviewProjectDetail: View {
   }
 }
 
-/// What the card of a project lets one set about its review, until OK keeps it: how often it is reviewed and the
-/// day of the next review.
-struct ReviewFields {
-  /// The interval the project has of its own; `nil` follows the default.
-  var interval: ReviewInterval?
-  var nextReviewDay: Date
-  private let originalNext: CalendarDate?
-  private let defaultInterval: ReviewInterval
-
-  @MainActor
-  init(library: LibraryViewModel, id: TaskID) {
-    interval = library.reviewOverride(of: id)
-    originalNext = library.nextReviewDate(of: id)
-    defaultInterval = library.reviewDefault
-    nextReviewDay = originalNext?.startOfDay ?? Date()
-  }
-
-  /// Whether the day can be set: only while the project is reviewed, and was before the card was opened.
-  var canSetNextReview: Bool {
-    originalNext != nil && (interval ?? defaultInterval) != .off
-  }
-
-  func draft() -> ProjectReviewDraft {
-    let picked = canSetNextReview ? CalendarDate(dayOf: nextReviewDay) : nil
-    return ProjectReviewDraft(interval: interval, nextReview: picked == originalNext ? nil : picked)
-  }
-}
-
-/// The review fields of a project's card in edit mode: how often, and the day of the next review.
-struct ProjectReviewFieldsForm: View {
-  let library: LibraryViewModel
-  @Binding var fields: ReviewFields
-
-  var body: some View {
-    Picker("Review", selection: $fields.interval) {
-      Text("Default (\(library.reviewDefault.title))").tag(ReviewInterval?.none)
-      ForEach(ReviewInterval.options(including: fields.interval), id: \.self) { interval in
-        Text(interval.title).tag(ReviewInterval?.some(interval))
-      }
-    }
-    if fields.canSetNextReview {
-      DatePicker("Next review", selection: $fields.nextReviewDay, displayedComponents: .date)
-    }
-  }
-}
-
 /// Drop: the button that gives the project up.
 private struct ProjectStatusButtons: View {
   @Bindable var library: LibraryViewModel

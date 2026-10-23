@@ -61,12 +61,12 @@ context menu; its sub-projects and open tasks go with it.
 Completed and dropped tasks and projects disappear, but the Completed and dropped toggle in the top
 bar lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
-its column opens, with the project's card after it. A card is read-only:
-it shows the day it was created, the due date and the notes, not the title,
-which is in the column before. The notes are bullet points (web addresses are
-clickable), each deletable, with a field to add one without editing. The pencil opens it
-for editing (title, priority, estimate, due date, repeat, tags and notes for a task; title,
-kind and notes for a project), and OK keeps the changes or Cancel drops them.
+its column opens, with the project's card after it. A card has no edit mode: it
+shows the day it was created and every field, and a click on one edits it in
+place. The notes are bullet points (web addresses are
+clickable), each deletable, with a field to add one without editing. Priority (four buttons),
+estimate (a logarithmic slider from 5 minutes to a week), due date, repeat and
+tags are kept as soon as they are changed.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
 minutes less the protected buffer, what is planned and what is left, red and
@@ -126,7 +126,7 @@ longest overdue first. Pick one to see its card and its tasks, which you can
 edit and add to in place, then Mark Reviewed (⇧⌘R) to move to the next. A
 project can be reviewed more or less often (or never) from its context menu or
 here, and Settings → Global sets the default for all of them. Its card shows the
-next review day and how often, and the pencil lets you move the day, to stagger
+next review day and how often, and you can move the day on the card, to stagger
 projects made together. A project that
 is no longer wanted can be dropped (Drop Project: it and its open tasks leave
 the lists and the review; the Completed and dropped toggle lists them, and Reopen brings them back).
