@@ -125,16 +125,11 @@ struct LuthorMark: View {
   /// The tint that makes the sky lighter than the rail; the masthead is on it too.
   nonisolated static let sky = Color.white.opacity(0.15)
 
-  /// The accent with a little white, so a bit darker than the sky: the ridge outline and the masthead rule.
+  /// The accent with a little white, so a bit darker than the sky: the masthead rule.
   nonisolated static let edge = Color.white.opacity(0.07)
 
-  /// The dark tint of the rail below the mark, which the ridge outline and the masthead rule share.
+  /// The dark tint of the rail below the mark.
   nonisolated static let shadow = Color.black.opacity(0.3)
-
-  /// The mountain's two sloping sides, left to right over the peak, in the icon's own coordinates.
-  private static let ridge = [(850, 350), (1015, 120), (1023, 108), (1032, 120), (1180, 300)].map {
-    CGPoint(x: $0.0, y: $0.1)
-  }
 
   private static let faces = [
     Face([(850, 350), (905, 315), (850, 410)], .lit),
@@ -167,26 +162,6 @@ struct LuthorMark: View {
         // The dark face continues the rail, so it is laid on the rail's colour, not on the lighter sky.
         if case .shadow = face.shade { outline.fill(theme.fill) }
         outline.fill(face.shade.color)
-      }
-      Path { path in
-        for (index, point) in Self.ridge.enumerated() {
-          let scaled = CGPoint(
-            x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
-            y: (point.y - Self.origin.y) / Self.extent.height * geometry.size.height)
-          if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
-        }
-      }
-      .stroke(theme.fill, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
-      .overlay {
-        Path { path in
-          for (index, point) in Self.ridge.enumerated() {
-            let scaled = CGPoint(
-              x: (point.x - Self.origin.x) / Self.extent.width * geometry.size.width,
-              y: (point.y - Self.origin.y) / Self.extent.height * geometry.size.height)
-            if index == 0 { path.move(to: scaled) } else { path.addLine(to: scaled) }
-          }
-        }
-        .stroke(LuthorMark.edge, style: StrokeStyle(lineWidth: 2, lineJoin: .miter))
       }
     }
     .aspectRatio(Self.aspectRatio, contentMode: .fit)
