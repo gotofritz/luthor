@@ -159,7 +159,7 @@ struct ReviewDayViewModelTests {
 
     library.reviewDay(note: "Too many calls")
 
-    #expect(log.events.last == dayReviewed(on: "2026-10-19", note: "Too many calls", id: "id-1", lamport: 11))
+    #expect(log.events.last == dayReviewed(on: "2026-10-19", note: "Too many calls", id: "id-2", lamport: 12))
     #expect(library.review.isReviewed)
     #expect(library.review.note == "Too many calls")
   }

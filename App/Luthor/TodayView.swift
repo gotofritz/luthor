@@ -3,56 +3,22 @@ import LuthorDomain
 import LuthorViewModels
 import SwiftUI
 
-/// The Today place: the plan of the day shown with its capacity meter, the candidates to pull in, and
-/// what is waited for. The plan and the candidates share the list selection, so the arrow keys walk
-/// through both and the Plan menu acts on the task selected.
+/// The Today place: the day shown as a calendar with its hours and capacity meter, beside the candidates to
+/// pull in and what is waited for. The calendar and the candidates share the list selection, so the arrow
+/// keys walk through both and the Plan menu acts on the task selected.
 struct TodayColumnsView: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
     HStack(spacing: 0) {
-      PlanColumn(library: library)
+      DayCalendarColumn(library: library)
       Divider()
       CandidatesColumn(library: library)
-      Divider()
-      WaitingColumn(library: library)
     }
   }
 }
 
-/// The day shown, its capacity meter and the ordered plan.
-private struct PlanColumn: View {
-  @Bindable var library: LibraryViewModel
-
-  var body: some View {
-    VStack(spacing: 0) {
-      PlanReviewToggle(library: library)
-        .padding([.horizontal, .top], 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-      DayHeader(library: library)
-      CapacityMeter(capacity: library.plan.capacity)
-        .padding([.horizontal, .bottom], 12)
-      Divider()
-      List(selection: $library.selection) {
-        if !library.carryOver.isEmpty {
-          Section("Left over from earlier days") {
-            ForEach(library.carryOver, id: \.entry.task.id) { leftOver in
-              PlanRow(library: library, entry: leftOver.entry, kind: .leftOver)
-                .tag(leftOver.entry.task.id)
-            }
-          }
-        }
-        ForEach(library.plan.entries, id: \.task.id) { entry in
-          PlanRow(library: library, entry: entry, kind: .planned)
-            .tag(entry.task.id)
-        }
-      }
-    }
-    .frame(width: 380)
-  }
-}
-
-private struct DayHeader: View {
+struct DayHeader: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
@@ -100,7 +66,7 @@ private struct DayHeader: View {
 
 /// How much of the day is spoken for: the planned minutes, what is left to plan, and the buffer held back.
 /// An overloaded plan turns red and says by how much; it informs and never blocks.
-private struct CapacityMeter: View {
+struct CapacityMeter: View {
   @Environment(\.theme) private var theme
   let capacity: DayCapacity
 
@@ -155,57 +121,75 @@ private struct CapacityMeter: View {
   }
 }
 
-/// The tasks that could be pulled into the plan of the day, in the suggested order.
+/// What the column beside the day shows: the tasks that could be pulled in, or the delegated ones.
+private enum CandidatesMode: String, CaseIterable {
+  case candidates = "Candidates"
+  case waiting = "Waiting for"
+}
+
+/// The tasks that could be pulled into the plan of the day, in the suggested order, or, switched over, the
+/// delegated tasks of the view, who has them and since when. Tasks left over from earlier days wait at the
+/// top of the candidates for a decision.
 private struct CandidatesColumn: View {
   @Bindable var library: LibraryViewModel
+  @State private var mode = CandidatesMode.candidates
 
   var body: some View {
     VStack(spacing: 0) {
-      HStack {
-        Text("Candidates")
-          .font(Theme.section)
-        Spacer()
-        CandidateFilterMenu(library: library)
+      Picker("Show", selection: $mode) {
+        ForEach(CandidatesMode.allCases, id: \.self) { mode in
+          Text(mode.rawValue).tag(mode)
+        }
       }
+      .pickerStyle(.segmented)
+      .labelsHidden()
       .padding(12)
       Divider()
-      List(selection: $library.selection) {
-        ForEach(library.plan.candidates, id: \.task.id) { entry in
-          PlanRow(library: library, entry: entry, kind: .candidate)
-            .tag(entry.task.id)
-        }
+      switch mode {
+      case .candidates: candidates
+      case .waiting: waiting
       }
     }
     .frame(width: 320)
   }
-}
 
-/// The delegated tasks of the view, who has them and since when.
-private struct WaitingColumn: View {
-  @Bindable var library: LibraryViewModel
-
-  var body: some View {
-    VStack(spacing: 0) {
-      Text("Waiting for")
-        .font(Theme.section)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-      Divider()
-      List {
-        ForEach(library.waiting, id: \.task.id) { item in
-          VStack(alignment: .leading, spacing: 2) {
-            Text(item.task.title)
-            Text(detail(of: item))
-              .font(.caption)
-              .foregroundStyle(item.isFollowUpDue ? Color.orange : Color.secondary)
-          }
-          .contextMenu {
-            Button("Reclaim") { library.reclaim(item.task.id) }
+  private var candidates: some View {
+    List(selection: $library.selection) {
+      if !library.carryOver.isEmpty {
+        Section("Left over from earlier days") {
+          ForEach(library.carryOver, id: \.entry.task.id) { leftOver in
+            PlanRow(library: library, entry: leftOver.entry, kind: .leftOver)
+              .tag(leftOver.entry.task.id)
           }
         }
       }
+      ForEach(library.plan.candidates, id: \.task.id) { entry in
+        PlanRow(library: library, entry: entry, kind: .candidate)
+          .tag(entry.task.id)
+      }
     }
-    .frame(width: 260)
+    // A task dropped here, from the calendar, goes back to the candidates.
+    .dropDestination(for: String.self) { items, _ in
+      guard let dropped = items.first else { return false }
+      library.removeFromPlan(TaskID(dropped))
+      return true
+    }
+  }
+
+  private var waiting: some View {
+    List {
+      ForEach(library.waiting, id: \.task.id) { item in
+        VStack(alignment: .leading, spacing: 2) {
+          Text(item.task.title)
+          Text(detail(of: item))
+            .font(.caption)
+            .foregroundStyle(item.isFollowUpDue ? Color.orange : Color.secondary)
+        }
+        .contextMenu {
+          Button("Reclaim") { library.reclaim(item.task.id) }
+        }
+      }
+    }
   }
 
   private func detail(of item: WaitingItem) -> String {
@@ -219,7 +203,7 @@ private struct WaitingColumn: View {
 
 /// One task of the plan, of the candidates or of the leftovers, with the minutes it counts for and why it
 /// sits there.
-private struct PlanRow: View {
+struct PlanRow: View {
   /// Where the task sits: in the plan of the day shown, among the candidates for it, or left over from an
   /// earlier day.
   enum Kind {
@@ -257,6 +241,7 @@ private struct PlanRow: View {
           .help(priority.title)
       }
     }
+    .draggable(entry.task.id.rawValue)
     .contextMenu {
       switch kind {
       case .planned:

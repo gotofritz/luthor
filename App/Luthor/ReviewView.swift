@@ -147,9 +147,11 @@ private struct ReviewRow: View {
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
         .foregroundStyle(.secondary)
-        .help(entry.isUnestimated ? "Unestimated: counted at the default estimate" : "Estimate")
-      MinutesField(minutes: entry.loggedMinutes) { library.logTime(entry.task.id, minutes: $0) }
-        .help("Minutes it took on this day")
+        .help(entry.isUnestimated ? "Unestimated: counted at the default estimate" : "Estimate when first planned")
+      MinutesField(minutes: entry.loggedMinutes, prompt: entry.task.estimate == nil ? nil : entry.currentMinutes) {
+        library.logTime(entry.task.id, minutes: $0)
+      }
+      .help("Minutes it took on this day; empty counts its length now")
     }
     .contextMenu {
       if !isDone {
@@ -195,11 +197,13 @@ private struct CloseReviewBox: View {
 /// as it was.
 private struct MinutesField: View {
   let minutes: Int?
+  /// What is logged when the review is closed with the field empty, shown greyed in it.
+  var prompt: Int?
   let commit: (Int?) -> Void
   @State private var text = ""
 
   var body: some View {
-    TextField("min", text: $text)
+    TextField("min", text: $text, prompt: Text(prompt.map(String.init) ?? "min"))
       .textFieldStyle(.roundedBorder)
       .multilineTextAlignment(.trailing)
       .frame(width: 56)

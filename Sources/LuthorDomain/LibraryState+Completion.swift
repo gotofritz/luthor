@@ -49,7 +49,8 @@ extension LibraryState {
     forgetPlanning(of: id)
   }
 
-  /// Opens an item completed or dropped on its own again, with everything that took along. It goes back into
+  /// Opens an item completed or dropped on its own again, with everything that took along. A task goes back to
+  /// the day it was done on. It goes back into
   /// its parent if that is open and in the item's view, else it is top-level. Ignores an item that is not
   /// completed or dropped, or that another item's completion or drop took along.
   mutating func reopen(_ taskID: TaskID) {
@@ -57,7 +58,7 @@ extension LibraryState {
     let reopened = [taskID] + finishedOrder.filter { items[$0]?.status.wasTaken(by: taskID) ?? false }
     for id in reopened {
       items[id]?.status = .open
-      reviewRecords.plannedDays.removeValue(forKey: id)
+      scheduledDates[id] = reviewRecords.plannedDays.removeValue(forKey: id)
     }
     finishedOrder.removeAll { reopened.contains($0) }
     if let parentID = stored.item.parentID, isOpen(parentID, in: stored.item.viewID) {

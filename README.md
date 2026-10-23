@@ -70,8 +70,9 @@ tags are kept as soon as they are changed.
 
 Today is the morning plan, one per view and day: a capacity meter (the day's
 minutes less the protected buffer, what is planned and what is left, red and
-informing when overloaded, never refusing), the ordered plan, the candidates
-to pull in, and Waiting for. Add a task to the plan with ⌘T or its context
+informing when overloaded, never refusing), the plan laid out on the day as in
+a calendar (start and end fields and zoom at the top; each weekday's defaults are in
+Settings; drag candidates onto it, drag blocks to other times), and the candidates to pull in, which a toggle switches to Waiting for. Add a task to the plan with ⌘T or its context
 menu; it keeps its place in the order you choose (⌥⌘↑ and ⌥⌘↓) and otherwise
 follows A before B before C, then project order, each place explained under
 the task. Decide on a task in one chord: Defer to Tomorrow (⌘D), Delegate…
@@ -85,13 +86,13 @@ them on by itself.
 Tags are `@calls`-style contexts that belong to one view. Type them in the Tags
 field of a task's card (names separated by commas; a new name creates the
 tag), or toggle them in a task's context menu. The Tags place lists the view's
-tags, then the tasks that carry the one picked. The Filter button above Today's
-candidates narrows them by tag, priority, project or deadline.
+tags, then the tasks that carry the one picked.
 
-A task can have a due date, set on its card: a hard deadline or a target date.
-A hard deadline that is due on the day Today shows (or overdue) puts the task
-ahead of the other tasks of its priority among the candidates, saying so under
-it; a target date only shows. A due date never plans a task by itself.
+A task can have a due date (a deadline) and a scheduled date (the day it is
+planned for in Today), both set on its card. A due date only ranks: the nearer
+it is, the nearer the task's rank comes to its own priority, and a far-off one
+drops to the bottom, saying so under the task. A task scheduled for another day
+sits at the bottom of Today's candidates.
 
 A task can repeat, set in the Repeat field of its card or from its context
 menu: every N days, weeks, months or years, a weekly one on chosen weekdays,
@@ -134,8 +135,8 @@ the lists and the review; the Completed and dropped toggle lists them, and Reope
 Settings has three families, Global, Views (a list of views, with overrides
 for the one picked; Edit View… in the view switcher opens it on the view
 shown) and This Mac: Global sets the numbers every view falls back to
-(default estimate for an unestimated task, buffer percentage, capacity per
-weekday), how often projects are reviewed and a default view;
+(default estimate for an unestimated task, buffer percentage, capacity and
+start and end of day per weekday), how often projects are reviewed and a default view;
 Views overrides the buffer and capacity for the view picked only, and
 follows the global value until switched on. Both also pick the accent colour
 (Global for all views, Views for one). This Mac chooses

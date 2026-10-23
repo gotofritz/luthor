@@ -211,14 +211,14 @@ struct DayReviewContentReplayTests {
     #expect(state.dayReview(for: .default, on: monday, today: monday).done.map(\.task.title) == ["pack"])
   }
 
-  @Test("a task that is reopened is no longer done")
+  @Test("a task that is reopened is no longer done, but is planned for its day again")
   func aTaskThatIsReopenedIsNoLongerDone() {
     let state = LibraryState.replay(plannedMonday + [reopened("t1", lamport: 13)])
 
     let review = state.dayReview(for: .default, on: monday, today: monday)
 
     #expect(review.done.isEmpty)
-    #expect(!review.notDone.map(\.task.title).contains("write report"))
+    #expect(review.notDone.map(\.task.title).contains("write report"))
   }
 
   @Test("a dropped task is gone from the review")
@@ -237,5 +237,43 @@ struct DayReviewContentReplayTests {
 
     #expect(review.done.isEmpty)
     #expect(review.notDone.isEmpty)
+  }
+}
+
+@Suite("When the estimate of a planned task changes during the day")
+struct PlannedEstimateReplayTests {
+  @Test("the review counts the task at the estimate it had when it was planned")
+  func theReviewCountsTheOriginalEstimate() {
+    let state = LibraryState.replay(plannedMonday + [estimated("t2", as: 45, lamport: 14)])
+
+    let review = state.dayReview(for: .default, on: monday, today: monday)
+
+    #expect(review.done.map(\.minutes) == [60])
+    #expect(review.notDone.map(\.minutes).first == 30)
+  }
+
+  @Test("a task planned with no estimate stays unestimated however it is estimated later")
+  func anUnestimatedTaskStaysUnestimated() {
+    let state = LibraryState.replay(plannedMonday + [estimated("t3", as: 20, lamport: 13)])
+
+    let review = state.dayReview(for: .default, on: monday, today: monday)
+    let tidy = review.notDone.first { $0.task.id == TaskID("t3") }
+
+    #expect(tidy?.isUnestimated == true)
+    #expect(tidy?.minutes == 5)
+  }
+}
+
+@Suite("When a planned task is lengthened during the day")
+struct CurrentLengthReplayTests {
+  @Test("the review keeps the first estimate and also has the length it has now")
+  func theReviewHasBothLengths() {
+    let state = LibraryState.replay(plannedMonday + [estimated("t2", as: 90, lamport: 13)])
+
+    let notDone = state.dayReview(for: .default, on: monday, today: monday).notDone
+    let bank = notDone.first { $0.task.id == TaskID("t2") }
+
+    #expect(bank?.minutes == 30)
+    #expect(bank?.currentMinutes == 90)
   }
 }

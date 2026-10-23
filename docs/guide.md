@@ -33,10 +33,14 @@ does updates this guide in the same PR (see the docs check in
 - **Plan**: the tasks you decided to do on one day in one view, in order. The
   work day and the evening are planned apart. A task keeps its identity when
   moved from day to day: rescheduling never duplicates it
-- **Due date**: when a task is due, set on its card. A *hard deadline* puts
-  the task ahead of the other tasks of its priority in Today's candidates
-  once it is due; a *target date* is only shown. A due date never plans a
-  task for a day by itself
+- **Due date**: a deadline, set on its card. It is a way to prioritise: the
+  closer it is, the closer the task's de facto priority comes to its own, and
+  on the due day they are equal. Months ahead the task ranks near the bottom of
+  the list. A due date plans nothing. There is one kind of due date: older logs
+  that say hard deadline or target date are read as plain due dates
+- **Scheduled date**: the day a task appears in Today's plan, set on its card
+  or by planning it in Today. On every other day it is at the bottom of the
+  candidates
 - **Repeat**: a task that comes back. Completing it makes the next one, due
   by its rule (every N days, weeks, months or years). It counts from a due
   date, so a task that repeats always has one
@@ -53,6 +57,10 @@ does updates this guide in the same PR (see the docs check in
   on by itself: it waits at the top of Today until you decide on it
 - **Review**: looking back on one day of a view: what was done, what was not,
   and how long it took against the estimates
+- **Day start and end**: when a day begins and ends on the calendar of Today.
+  Each weekday has its own in Settings; a day can have its own in Today
+- **Day changes at**: when one day turns into the next (04:00 unless you change it, up to 06:00). A
+  day's end may be set past midnight, up to that time, so a day can run from 17:00 to 01:00.
 - **Capacity**: the minutes a view has on a day. The weekday's capacity from
   Settings applies unless you set one for that day. The **buffer** is a
   percentage of it held back for interruptions; it is protected time, never a
@@ -105,11 +113,11 @@ does not work yet. Navigating by keyboard alone is not possible yet either.
 
 ## Capturing a task
 
-Type in the capture field and press Return. The field is always focused, so
-capture needs no click. The task goes to the Inbox of the current view. In
-the weekly review it goes into the project picked. The Projects place has no
-capture field: add tasks there with the plus button at the end of a column
-(see [Projects](#projects)).
+Type in the capture field of the Inbox and press Return. The field is always
+focused, so capture needs no click. The task goes to the Inbox of the current
+view. The field is only there in the Inbox; every other place has the room to
+itself. In the Projects place add tasks with the plus button at the end of a
+column (see [Projects](#projects)).
 
 Add `!a`, `!b`, `!c` or `!someday` for a priority and `<n>m` for an estimate
 in minutes, anywhere in what you type: `call bank !a 15m` captures "call
@@ -143,13 +151,13 @@ to bring the list back. Picking a task in the list shows the task's card.
 
 The card of an open task or project shows every field and each one is changed
 by clicking it, kept at once with no OK: the title (Return keeps it), the
-priority as a row of four icon buttons (a thunderstorm for Critical, drizzle for Important, a cloud for Optional, a moon with stars for One day; the name is the tooltip, and a click on the lit one clears it), the
-estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
+priority as a row of four icon buttons (a thunderstorm for Critical, drizzle for Important, a cloud for Optional, a moon with stars for One day; the name is the tooltip, and a click on the lit one clears it; the lit one has the view's accent as its background), the
+estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date and the scheduled date, Repeat (see [Repeating tasks](#repeating-tasks)), the
 Tags field (names separated by commas; Return keeps them), and for a project
-its kind and how often it is reviewed. The due date is greyed out and shows
-today's date until it is set; picking a day sets it and ticks the box beside
-it, and unticking the box clears it. Hard deadline or Target date appears
-below once a date is set. Above them is the day the task or project was
+its kind and how often it is reviewed. The Due and Scheduled rows (a task
+only; a project has no scheduled date) always show, greyed out with today's
+date until set: click the row, or pick a day, and it ticks and takes today or
+that day; unticking the box clears it. Above them is the day the task or project was
 created ("Created 2026-10-19", left out for what was created before the app
 kept the day). A completed task or project shows its card read-only, with the
 same facts as lines of text.
@@ -181,10 +189,63 @@ on the card.
 
 ## Today
 
-Today plans one day of the current view. Its first column shows the day
-(◀ and ▶, or ⌘[ and ⌘], move to the previous and next day; the Today button or
-⇧⌘T in the Plan menu comes back to today), the capacity meter and the plan.
-The second column lists candidates, the third what you are waiting for.
+Today plans one day of the current view. Its first column is the day as in a
+calendar (◀ and ▶, or ⌘[ and ⌘], move to the previous and next day; the Today
+button or ⇧⌘T in the Plan menu comes back to today): the hours of the day on a
+grid, the capacity meter and the plan laid out on the grid. The second column
+lists candidates; a toggle at its top switches it to what you are waiting for.
+
+**Day start and end.** Two fields at the top of the day set when it starts and
+ends (09:00 to 17:00 to begin with); the weekday's own hours come from Settings.
+Changing a field sets the hours of that day alone. The hours outside the day are shaded, and a plan longer than the
+day runs into them. The + and − magnifying glasses beside the fields zoom the
+grid in and out. On today a red line marks the time now.
+
+**No overlaps.** Tasks never overlap each other or a block. If a task's time,
+or the estimate of the task before it, leaves no room, it and the tasks after it
+move down to make room, and they move back if the room comes back. The time you
+gave a task is kept, so it returns to it when the room is there again.
+
+**Done tasks.** A task you complete stays on the calendar where it stood,
+greyed and struck through. It is locked: it cannot be dragged, and nothing
+dropped on it stays there, because other blocks go round it. Click its tick, or
+choose Reopen, to undo: the task is planned for the day again, at the same
+time. A done task takes no capacity.
+
+**Sessions.** A task done on and off through the day can have sessions: choose
+Split Off a Session… in its block's context menu. The window gives the part the
+task keeps (A, from and to) and the part cut off (B, from and to), each with a
+Now button. Under way, A ends now and B takes the rest from now. B becomes a
+block of its own, drawn with a dashed edge. Tick Defer and B is not put on the
+day: it becomes a new task of its length, among the candidates.
+The task's own block shrinks by those minutes (and goes when the sessions take
+all of them), so the estimate stays the total. Drag a session, or choose Set
+Times… on it, to move it; Remove Session gives its minutes back to the task.
+Stop Now makes the run you just did a session at its real time. Sessions push
+other blocks aside, and are pushed, like tasks.
+
+**Untracked time.** The calendar button beside the zoom buttons adds a block
+of time that is not tracked, such as lunch or shopping: a title, a start and an end, each with a Now button
+(the same window as Set Times… on a task). It is grey with a dashed edge, tasks flow round it, and it does not
+count in the capacity. Drag it to another time (it keeps its length), double-click
+it or choose Set Times… to change it, and Delete in its context menu or in that
+window takes it off.
+
+**Placing tasks.** Each planned task is a block as tall as its estimate (an
+unestimated one at the default estimate). Drag a candidate onto the grid to
+plan it at that time (to the quarter hour), and drag a block to another time to
+move it. A task dragged onto others wins its place: they move out of the way as you drag, and stay where they
+are put when you let go. A block's context menu has Start Now (on today: the same as Set Times… with
+now filled in; while the task is under way it reads Stop Now, which adds the minutes
+since the start to the time logged for the task and turns the run, from its start to now, into a session of the
+task; see Sessions above), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
+Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
+block back onto the candidates does the same. A task with no time of its own,
+such as one added with ⌘T, follows the others in the plan's order from the
+start of the day, or on today from now (to the quarter hour) if that is
+later, and goes round any task with a set time. A set time holds only while the
+task stays planned for that day. Click a block to select it; the other
+context-menu items move it in the order or decide on it.
 
 **Capacity.** The meter shows the usable time, what is planned and what is
 left, with the buffer as its own grey segment. A task with no estimate is
@@ -195,26 +256,21 @@ the task is still planned. To change one day's capacity, set it for that day
 (the weekday capacity from Settings applies otherwise).
 
 **Pulling tasks in.** Candidates are the open tasks of the view that are
-clarified (they have a priority, an estimate or a project) or whose hard
-deadline is due, so a deadline is not missed in the Inbox; not someday, not
+clarified (they have a priority, an estimate or a project) or whose due date
+has come, so a due date is not missed in the Inbox; not someday, not
 held back by a sequential project, and not delegated until their follow-up
-day. A task planned for a later day is a candidate too, so you can pull it
-forward. Select one and press ⌘T, or use Add to Plan in its context menu.
+day. A task planned for another day is a candidate too, at the bottom of the
+list, so you can pull it in. Select one and press ⌘T, or use Add to Plan in its context menu.
 Remove from Plan (⌥⌘T) returns it to the candidates.
 
-**Filtering the candidates.** The Filter button above the candidates narrows
-them by tag (pick several and a task needs all of them), priority, project (its
-sub-projects count) and deadline (due by the day shown, or within a week of it,
-whether hard or target). Clear Filter brings them all back. The filter only
-narrows the candidates: the plan is never filtered. It is not kept: it clears
-when you switch view or relaunch the app.
-
-**Order.** The plan is in a suggested order unless you set your own: A before
-B before C, then hard deadlines that are due on the day shown (the earliest
-first, overdue ones included), then the order of the tasks in their projects,
-then the order they were captured. Each task says why it sits where it does
-("A priority, in project Move house, deadline 2026-10-19"). A target date, or a
-hard deadline still ahead, changes nothing. Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
+**Order.** The plan is in a suggested order unless you set your own: by
+urgency, then the order of the tasks in their projects, then the order they
+were captured. Urgency counts days: a priority weighs A 0, B 10, C 20 and none
+30, plus the days left to the due date (no due date counts as 30, one more than
+90 days off as 90; an overdue one counts below zero). The smallest total
+comes first, so a critical task due in six months ranks below important ones with no deadline,
+which rank below one due next week, and a task due today comes first. Ties go to the higher priority. Each task says why it sits where it does
+("A priority, in project Move house, due 2026-10-19"). Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
 menu): from then on the order is yours, tasks you add later follow it, and it
 survives a relaunch.
 
@@ -239,7 +295,7 @@ a candidate again), and Defer to Tomorrow, Delegate…, Send to Someday and Drop
 Task work as above. Another Day, in the context menu, plans it for one of the
 next few days.
 
-**Waiting for.** Lists the delegated tasks of the view, the longest wait
+**Waiting for.** The toggle above the candidates lists the delegated tasks of the view, the longest wait
 first, with who and since when. On the follow-up day the task is a candidate
 again and the entry says to follow up. Reclaim (context menu) takes it back
 at any time; planning a delegated task also takes it back.
@@ -251,12 +307,12 @@ column is a list of days, one row across the column each, from 60 days back
 to a year ahead; it opens scrolled to today, which is in bold. Sundays have a
 tinted row. A filled circle with a number on a row means that many tasks are
 planned for the day; an orange diamond with a number means that many are due
-on it (hard deadline or target date). A day with neither has no mark.
+on it. A day with neither has no mark.
 Completed and dropped tasks leave their days.
 
 Click a day and the next column lists its tasks: the ones planned for it, in
 the order of its plan, then the ones that are only due on it. Each says why
-it is there, "Planned", "Deadline" or "Target date". Click a task and its card
+it is there, "Planned" or "Due". Click a task and its card
 opens in the column after, as everywhere else. The calendar only shows:
 planning, rescheduling and deciding on tasks are done in Today and Review. ⇧⌘C
 (Plan menu) opens it.
@@ -276,7 +332,9 @@ planned for the day, and the box that closes the review.
 hand; an empty field clears it. Time can be logged for a done task and for
 one not done, and for a day that is over. "Unplanned time" is the minutes of
 the day spent on work that was not in the plan. Typing again replaces the
-minutes of that day; nothing is added up behind your back. Planned minutes
+minutes of that day; nothing is added up behind your back, except by Stop Now.
+The field shows the estimate greyed when no time is logged, and closing the
+review logs that estimate for each done task that has an estimate and no time. Planned minutes
 use the estimate, or the default estimate for a task without one (shown
 "~5m").
 
@@ -318,8 +376,7 @@ as projects of their own. The first project is picked for you.
   red when overdue; edited in place as anywhere else) with the buttons
   below it: **Mark Reviewed**, how often it is reviewed, and its status
 - The third column lists its tasks, which you can complete, give a priority,
-  estimate or tags, open and edit, exactly as in the Projects place. The
-  capture field at the top adds a new task to the project picked
+  estimate or tags, open and edit, exactly as in the Projects place
 - **Mark Reviewed** (⇧⌘R, Plan → Mark Project Reviewed) records today as the
   day it was reviewed and picks the next project. The project is due again an
   interval later
@@ -362,7 +419,8 @@ appears to its right, and so on down the tree.
   column with the card of the new item, in edit mode with the title focused.
   The box shows the title as you type it. The card has a choice of a task, a
   parallel project or a sequential project (the first column offers only the
-  two projects, which are top-level there), and the fields of any card. A new
+  two projects, which are top-level there), and the fields of any card,
+  including the Due and Scheduled rows (a project has no Scheduled row). A new
   task starts with priority optional and an estimate of 5 minutes, a project
   with neither; switching the kind on the card swaps these defaults, unless
   you have changed that field yourself. Nothing is written until OK (or
@@ -432,8 +490,7 @@ task a due date, and unticking the due date never stops the repeat. A task
 with no due date repeats from the day it is done ("After it is done"), and
 "From the due date" cannot be picked until it has one. Clearing the due date of
 a task that repeats keeps the repeat and switches it to "After it is done". The
-kind of the due date, a hard deadline or a target date, is kept by the next
-tasks.
+next tasks get the day their rule gives as their due date.
 
 Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and
@@ -506,7 +563,14 @@ Settings shows three families in its first column: Global, Views and This Mac.
 - **Global** sets the numbers every view falls back to: the default estimate
   for a task given no estimate (5 minutes), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
-  minutes (8 hours on weekdays, none at the weekend). It sets how often
+  minutes (8 hours on weekdays, none at the weekend), and when each weekday
+starts and ends (09:00 to 17:00; a day's own fields in Today beat them). Day
+start and end and Capacity are single entries; each opens its settings in the
+next column. Day start and end is a week of quarter-hour rows: drag down a
+weekday's column to pick its hours (a click picks one quarter hour, Shift-click
+or Shift-drag adds to the hours the weekday has), and Reset
+above the column goes back to 09:00 to 17:00. Capacity is a list of fields, one
+for each weekday, in minutes. It sets how often
   projects are reviewed (weekly; see Reviews), and picks the default
   view. Under Appearance it picks the accent colour views have unless they
   choose their own (navy to start with)

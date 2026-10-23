@@ -24,6 +24,17 @@ extension LibraryViewModel {
     settingsByView[viewID] ?? state.settings(for: viewID)
   }
 
+  /// The last minute of the day shown, counted from its midnight: the day runs on past midnight until the time
+  /// the day changes.
+  public var dayLimit: Int {
+    settings(of: currentView).dayLimit
+  }
+
+  /// Changes when the day changes, in minutes after midnight, or with `nil` clears it back to 04:00.
+  public func changeGlobalDayChangesAt(_ minutes: Int?) {
+    changeGlobalSetting(.dayChangesAt, to: minutes.map(String.init))
+  }
+
   /// Whether `key` is overridden for the view `viewID`, rather than inherited from the global value.
   public func isOverridden(_ key: SettingKey, in viewID: ViewID) -> Bool {
     overriddenKeysByView[viewID]?.contains(key) ?? state.isOverridden(key, in: viewID)
@@ -53,6 +64,19 @@ extension LibraryViewModel {
   /// Changes the global capacity of a weekday, or with `nil` clears it back to the built-in default.
   public func changeGlobalCapacity(_ weekday: Weekday, minutes: Int?) {
     changeGlobalSetting(weekday.capacityKey, to: minutes.map(String.init))
+  }
+
+  /// Changes the global start and end of a weekday, in minutes after midnight, or with `nil` clears one
+  /// back to the built-in hour.
+  public func changeGlobalDayHours(_ weekday: Weekday, start: Int?, end: Int?) {
+    if let start { changeGlobalSetting(weekday.startKey, to: String(start)) }
+    if let end { changeGlobalSetting(weekday.endKey, to: String(end)) }
+  }
+
+  /// Takes a weekday's global start and end of day back to the built-in hours.
+  public func resetGlobalDayHours(_ weekday: Weekday) {
+    changeGlobalSetting(weekday.startKey, to: nil)
+    changeGlobalSetting(weekday.endKey, to: nil)
   }
 
   /// Overrides the capacity of a weekday for the current view, or with `nil` clears the override.

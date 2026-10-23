@@ -116,7 +116,8 @@ extension LibraryViewModel {
     var columns = [ProjectColumn(parentID: nil, entries: top)]
     for projectID in path {
       let open = projects.first { $0.id == projectID }?.children.compactMap { entry($0) } ?? []
-      columns.append(ProjectColumn(parentID: projectID, entries: open + completed.entries(under: projectID)))
+      let listed = open + completed.entries(under: projectID)
+      columns.append(ProjectColumn(parentID: projectID, entries: listed.projectsFirst))
     }
     return columns
   }
@@ -258,5 +259,12 @@ extension LibraryViewModel {
     } catch {
       errorMessage = Self.describe(error)
     }
+  }
+}
+
+extension [ColumnEntry] {
+  /// The sub-projects, then the tasks, each in the order they had.
+  var projectsFirst: [ColumnEntry] {
+    filter { if case .project = $0 { true } else { false } } + filter { if case .task = $0 { true } else { false } }
   }
 }
