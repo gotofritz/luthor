@@ -38,6 +38,8 @@ extension ThemeAccent {
     case .forest: "Forest"
     case .plum: "Plum"
     case .graphite: "Graphite"
+    case .red: "Red"
+    case .sunflower: "Sunflower"
     }
   }
 
@@ -50,6 +52,8 @@ extension ThemeAccent {
     case .forest: RGB(red: 0.184, green: 0.420, blue: 0.247)
     case .plum: RGB(red: 0.478, green: 0.243, blue: 0.494)
     case .graphite: RGB(red: 0.227, green: 0.251, blue: 0.282)
+    case .red: RGB(red: 0.757, green: 0.173, blue: 0.173)
+    case .sunflower: RGB(red: 0.851, green: 0.545, blue: 0.063)
     }
   }
 

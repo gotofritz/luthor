@@ -175,7 +175,7 @@ Sources/
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; effective hard
                              deadlines rank after priority; only tasks, never projects), waitingFor(in:today:)
-    Settings.swift           SettingKey, ThemeAccent (the six accent names; the app colours them), Weekday,
+    Settings.swift           SettingKey, ThemeAccent (the eight accent names; the app colours them), Weekday,
                              Settings (typed planning numbers and the view's accent); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
