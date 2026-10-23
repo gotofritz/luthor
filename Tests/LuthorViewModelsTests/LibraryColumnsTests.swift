@@ -230,3 +230,39 @@ struct CardColumnViewModelTests {
     #expect(library.cardTarget == .project(TaskID("p1")))
   }
 }
+
+@MainActor
+@Suite("When a note is edited on a card")
+struct CardNoteEditViewModelTests {
+  private let twoNotes = gardenLog + [noted("t1", "front first\nthen the back", lamport: 4)]
+
+  @Test("the bullet takes the new text and the others stay")
+  func bulletTakesTheNewText() {
+    let (library, _) = makeInbox(twoNotes)
+    library.open(.project(TaskID("p1")))
+
+    library.editNote(at: 0, of: TaskID("t1"), to: "front lawn first")
+
+    #expect(NoteBullets.bullets(in: library.tasks.first?.notes) == ["front lawn first", "then the back"])
+  }
+
+  @Test("a blank text deletes the bullet")
+  func blankTextDeletesTheBullet() {
+    let (library, _) = makeInbox(twoNotes)
+    library.open(.project(TaskID("p1")))
+
+    library.editNote(at: 1, of: TaskID("t1"), to: "  ")
+
+    #expect(NoteBullets.bullets(in: library.tasks.first?.notes) == ["front first"])
+  }
+
+  @Test("the same text writes nothing")
+  func sameTextWritesNothing() {
+    let (library, log) = makeInbox(twoNotes)
+    library.open(.project(TaskID("p1")))
+
+    library.editNote(at: 0, of: TaskID("t1"), to: "front first")
+
+    #expect(log.events == twoNotes)
+  }
+}

@@ -23,18 +23,33 @@ struct RepeatLine: View {
 /// years, on which weekdays, and counted from the due date or from the day it is done.
 struct RepeatEditor: View {
   @Binding var rule: RepeatRule?
+  /// Whether the item has a due date. Without one a repeat can only count from the day the item is done.
+  var hasDue = true
+
+  /// What the controls show while the item does not repeat: greyed out, and any of them switches Repeat on with it.
+  private var placeholder: RepeatRule {
+    RepeatRule(every: 1, unit: .week, afterCompletion: !hasDue)
+  }
 
   var body: some View {
+    let current = rule ?? placeholder
     VStack(alignment: .leading, spacing: 8) {
-      Toggle("Repeat", isOn: isRepeating)
-      if let current = rule {
-        Stepper("Every \(current.every)", value: every(of: current), in: 1...99)
-        Picker("", selection: unit(of: current)) {
-          ForEach(RepeatRule.Unit.allCases, id: \.self) { unit in
-            Text(unit.plural).tag(unit)
+      HStack {
+        Toggle("Repeat every", isOn: isRepeating)
+        Group {
+          Stepper("\(current.every)", value: every(of: current), in: 1...99)
+            .fixedSize()
+          Picker("", selection: unit(of: current)) {
+            ForEach(RepeatRule.Unit.allCases, id: \.self) { unit in
+              Text(unit.plural).tag(unit)
+            }
           }
+          .labelsHidden()
+          .fixedSize()
         }
-        .labelsHidden()
+        .opacity(rule == nil ? 0.5 : 1)
+      }
+      Group {
         if current.unit == .week && !current.afterCompletion {
           HStack(spacing: 4) {
             ForEach(Weekday.allCases, id: \.self) { day in
@@ -44,23 +59,31 @@ struct RepeatEditor: View {
           }
           .help("The days of the week; none repeats on the weekday of the due date")
         }
-        Picker("", selection: afterCompletion(of: current)) {
-          Text("From the due date").tag(false)
-          Text("After it is done").tag(true)
+        HStack(spacing: 4) {
+          ForEach([false, true], id: \.self) { after in
+            Button(after ? "After it is done" : "From the due date") {
+              afterCompletion(of: current).wrappedValue = after
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .tint(current.afterCompletion == after ? .accentColor : .secondary)
+            .disabled(!after && !hasDue)
+          }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        Text(current.summary)
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        if rule != nil {
+          Text(current.summary)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
       }
+      .opacity(rule == nil ? 0.5 : 1)
     }
   }
 
   private var isRepeating: Binding<Bool> {
     Binding(
       get: { rule != nil },
-      set: { rule = $0 ? RepeatRule(every: 1, unit: .week) : nil })
+      set: { rule = $0 ? placeholder : nil })
   }
 
   private func every(of current: RepeatRule) -> Binding<Int> {

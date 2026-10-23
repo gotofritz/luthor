@@ -44,6 +44,7 @@ extension LibraryViewModel {
 
   func show(_ events: [EventEnvelope]) {
     state = LibraryState.replay(events)
+    revision += 1
     errorMessage = nil
     present()
   }

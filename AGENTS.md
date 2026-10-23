@@ -221,6 +221,7 @@ Sources/
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
+    EstimateScale.swift      the estimate slider's logarithmic scale, 5 minutes to a week, and estimate labels
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
@@ -229,8 +230,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              the place picked and the card at their end; ProjectColumnsView: a project's column, headed by its name and
                              ended by a plus button and, while an item is being added, a box with its title; NewItemViews: the card
                              of an item being added, in edit mode; CardViews: the task card column, the project card in the
-                             last column when no task is picked (read-only, a pencil opens the editor with OK and Cancel; both edit
-                             priority, estimate, due date, repeat and tags through the shared form in CardFieldsForm); NotesViews: notes
+                             last column when no task is picked (the fields of an open item are CardLiveFields, changed by clicking and kept at once, with no edit mode; CardProjectPicker: the project tree pulldown at the top of a card; CardFieldsForm is the form of a new item's card); NotesViews: notes
                              as deletable bullets with clickable links and a field that adds one; LinkedText: a note as an AppKit text view, so
                              the pointer is a hand over a link; SettingsColumnsView: Global/Views/This Mac setting families (Views: the list of views, then the settings of the one picked),
                              then the individual settings of the one picked; TodayView: the day's plan

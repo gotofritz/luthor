@@ -48,12 +48,7 @@ struct CardFields {
 struct CardFieldsForm: View {
   let library: LibraryViewModel
   @Binding var fields: CardFields
-  /// The estimate the item has, offered beside the usual choices.
-  let currentEstimate: Int?
   let submit: () -> Void
-
-  /// Estimates offered next to the one the item has, in minutes.
-  private static let estimateChoices = [5, 15, 30, 60]
 
   var body: some View {
     Picker("Priority", selection: $fields.priority) {
@@ -62,12 +57,8 @@ struct CardFieldsForm: View {
         Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
       }
     }
-    Picker("Estimate", selection: $fields.estimate) {
-      Text("None").tag(Int?.none)
-      ForEach(estimateChoices, id: \.self) { Text("\($0)m").tag(Int?.some($0)) }
-    }
+    EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
     Toggle("Due date", isOn: $fields.hasDue)
-      .disabled(fields.repeatRule != nil)
     if fields.hasDue {
       DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
       Picker("Kind", selection: $fields.dueIsHard) {
@@ -76,8 +67,7 @@ struct CardFieldsForm: View {
       }
       .pickerStyle(.segmented)
     }
-    RepeatEditor(rule: $fields.repeatRule)
-      .onChange(of: fields.repeatRule) { giveRepeatADueDate() }
+    RepeatEditor(rule: $fields.repeatRule, hasDue: fields.hasDue)
     tagsField
   }
 
@@ -101,18 +91,5 @@ struct CardFieldsForm: View {
       .disabled(library.tags.isEmpty)
       .help("Add a tag")
     }
-  }
-
-  /// A repeat counts from a due date: turning one on gives an item with none the day Today shows, as a target date.
-  private func giveRepeatADueDate() {
-    guard fields.repeatRule != nil, !fields.hasDue else { return }
-    fields.hasDue = true
-    fields.dueDay = library.planDate.startOfDay ?? Date()
-    fields.dueIsHard = false
-  }
-
-  /// The choices, plus the estimate the item has when it is none of them.
-  private var estimateChoices: [Int] {
-    Array(Set(Self.estimateChoices + (currentEstimate.map { [$0] } ?? []))).sorted()
   }
 }

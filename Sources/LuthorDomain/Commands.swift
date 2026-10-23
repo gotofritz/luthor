@@ -176,17 +176,19 @@ public struct Commands {
     return [envelope(EventID(ids.next()), .taskMovedToView(moved), log: log)]
   }
 
-  /// Files the open task `taskID` into the active project `projectID`, which must be in the task's view.
-  /// Filing a task where it already is writes nothing.
+  /// Files the open task `taskID` into the active project `projectID`, which must be in the task's view; with no
+  /// project, takes it out of its project. Filing a task where it already is writes nothing.
   public func move(
     taskID: TaskID,
-    to projectID: TaskID,
+    to projectID: TaskID?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
     guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
-    let project = try activeProject(projectID, in: state)
-    guard task.viewID == project.viewID else { throw .otherView(taskID, projectID) }
+    if let projectID {
+      let project = try activeProject(projectID, in: state)
+      guard task.viewID == project.viewID else { throw .otherView(taskID, projectID) }
+    }
     guard task.parentID != projectID else { return [] }
     let moved = TaskMoved(taskID: taskID, parentID: projectID)
     return [envelope(EventID(ids.next()), .taskMoved(moved), log: log)]

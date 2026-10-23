@@ -67,6 +67,13 @@ public struct ProjectReviewDraft: Equatable, Sendable {
   }
 }
 
+/// A project as the pulldown of a card lists it: indented by how deep it is nested.
+public struct ProjectOutlineEntry: Equatable, Sendable, Identifiable {
+  public let id: TaskID
+  public let title: String
+  public let depth: Int
+}
+
 /// What a task's card in edit mode holds until OK keeps it.
 public struct TaskCardDraft: Equatable, Sendable {
   public var title: String

@@ -121,13 +121,13 @@ extension Priority {
     }
   }
 
-  /// The SF Symbol of the flag, filled more the more urgent the priority is.
+  /// The SF Symbol of the priority: a thunderstorm, drizzle, a cloud and, for one day, a moon with stars.
   var symbol: String {
     switch self {
-    case .critical: "flag.fill"
-    case .important: "flag"
-    case .optional: "flag.slash"
-    case .someday: "moon.zzz"
+    case .critical: "cloud.bolt.rain.fill"
+    case .important: "cloud.drizzle"
+    case .optional: "cloud"
+    case .someday: "moon.stars"
     }
   }
 }

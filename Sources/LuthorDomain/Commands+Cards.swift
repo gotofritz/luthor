@@ -42,6 +42,19 @@ extension Commands {
     return try setNotes(taskID: taskID, to: NoteBullets.notes(from: bullets), log: log)
   }
 
+  /// Replaces the bullet at `position` in the notes of the open task or project `taskID` with `text`, one bullet
+  /// for each non-blank line of it; blank text deletes the bullet. A position with no bullet, or the same text,
+  /// writes nothing.
+  public func editNote(taskID: TaskID, at position: Int, to text: String, log: [EventEnvelope])
+    throws(CommandError) -> [EventEnvelope]
+  {
+    let task = try openTask(taskID, in: LibraryState.replay(log))
+    var bullets = NoteBullets.bullets(in: task.notes)
+    guard bullets.indices.contains(position) else { return [] }
+    bullets.replaceSubrange(position...position, with: NoteBullets.bullets(in: text))
+    return try setNotes(taskID: taskID, to: NoteBullets.notes(from: bullets), log: log)
+  }
+
   /// Gives the active project `projectID` another title. A blank title is refused; the title it has writes
   /// nothing.
   public func renameProject(_ projectID: TaskID, to title: String, log: [EventEnvelope]) throws(CommandError)

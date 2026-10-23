@@ -6,9 +6,12 @@ import SwiftUI
 /// pointing hand over a link and the I-beam over the rest, as SwiftUI's `Text` does not when it is selectable.
 struct LinkedText: NSViewRepresentable {
   let text: String
+  /// What a click on the text outside a link does; a click on a link opens it.
+  var onClick: (() -> Void)?
 
   func makeNSView(context: Context) -> NSTextView {
-    let view = NSTextView(usingTextLayoutManager: false)
+    let view = ClickableTextView(usingTextLayoutManager: false)
+    view.onClick = onClick
     view.isEditable = false
     view.isSelectable = true
     view.drawsBackground = false
@@ -22,6 +25,7 @@ struct LinkedText: NSViewRepresentable {
   }
 
   func updateNSView(_ view: NSTextView, context: Context) {
+    (view as? ClickableTextView)?.onClick = onClick
     view.textStorage?.setAttributedString(attributedText)
   }
 
@@ -57,5 +61,23 @@ struct LinkedText: NSViewRepresentable {
       attributed.addAttribute(.link, value: link.url, range: shifted)
     }
     return attributed
+  }
+}
+
+/// A text view that hands a click outside its links on instead of selecting text, so a note can be edited by
+/// clicking it.
+private final class ClickableTextView: NSTextView {
+  var onClick: (() -> Void)?
+
+  override func mouseDown(with event: NSEvent) {
+    let point = convert(event.locationInWindow, from: nil)
+    let index = characterIndexForInsertion(at: point)
+    let onLink =
+      textStorage.map { index < $0.length && $0.attribute(.link, at: index, effectiveRange: nil) != nil } ?? false
+    if let onClick, !onLink {
+      onClick()
+    } else {
+      super.mouseDown(with: event)
+    }
   }
 }

@@ -266,3 +266,16 @@ struct ProjectReviewSettingsViewModelTests {
     #expect(library.nextActions.isEmpty)
   }
 }
+
+@MainActor
+@Suite("When the next review of a project is chosen on its card")
+struct ChooseNextReviewTests {
+  @Test("it is kept at once as the day the project is reviewed next")
+  func keptAtOnce() {
+    let (library, _) = makeLibrary(reviewable)
+
+    library.setNextReview(of: TaskID("p1"), to: date("2026-11-02"))
+
+    #expect(library.nextReviewDate(of: TaskID("p1")) == date("2026-11-02"))
+  }
+}

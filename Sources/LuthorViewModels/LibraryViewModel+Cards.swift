@@ -36,13 +36,13 @@ extension LibraryViewModel {
   func cardEvents(of taskID: TaskID, _ draft: TaskCardDraft, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let day = planDate
     var events = try commands.rename(taskID: taskID, to: draft.title, log: log)
     events += try commands.prioritize(taskID: taskID, as: draft.priority, log: log + events)
     events += try commands.estimate(taskID: taskID, as: draft.estimate, log: log + events)
     events += try commands.setDue(
       taskID: taskID, to: draft.due?.date, isHard: draft.due?.isHard ?? false, log: log + events)
-    events += try commands.setRepeat(taskID: taskID, to: draft.repeatRule, dueIfNone: day, log: log + events)
+    let rule = draft.due == nil ? draft.repeatRule?.countingFromCompletion : draft.repeatRule
+    events += try commands.setRepeat(taskID: taskID, to: rule, dueIfNone: nil, log: log + events)
     events += try commands.setNotes(taskID: taskID, to: draft.notes, log: log + events)
     events += try commands.setTags(taskID: taskID, to: draft.tags, log: log + events)
     return events

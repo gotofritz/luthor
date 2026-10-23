@@ -113,6 +113,9 @@ public final class LibraryViewModel {
   let clock: () -> CalendarDate
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
+  /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
+  /// tags, a review) reads this too, and the view is told when the log changes.
+  var revision = 0
 
   /// `today` tells the day it is; the default is the system clock.
   public init(
@@ -277,8 +280,8 @@ public final class LibraryViewModel {
     estimate(selected, as: minutes)
   }
 
-  /// Files a task into a project.
-  public func file(_ taskID: TaskID, into projectID: TaskID) {
+  /// Files a task into a project, or with `nil` takes it out of its project.
+  public func file(_ taskID: TaskID, into projectID: TaskID?) {
     perform { (log) throws(CommandError) in try commands.move(taskID: taskID, to: projectID, log: log) }
   }
 

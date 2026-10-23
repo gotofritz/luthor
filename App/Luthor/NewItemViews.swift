@@ -48,7 +48,7 @@ struct NewItemCardColumn: View {
           }
         }
         .pickerStyle(.segmented)
-        CardFieldsForm(library: library, fields: $fields, currentEstimate: item.card.estimate, submit: save)
+        CardFieldsForm(library: library, fields: $fields, submit: save)
           .onChange(of: fields.priority) { library.setNewItemPriority(fields.priority) }
           .onChange(of: fields.estimate) { library.setNewItemEstimate(fields.estimate) }
           .onChange(of: library.newItem?.card.priority) { _, priority in

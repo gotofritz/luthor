@@ -141,40 +141,43 @@ is in the last column, where a task's card goes. Click the project's name at
 the head of its column, or the project again in the column before, to come
 back to its card from a task.
 
-A card is read-only. It shows the day the task or project was created
-("Created 2026-10-19", left out for what was created before the app kept the
-day), for a task its due date ("Deadline 2026-10-23" or "Target date
-2026-10-23", in red once the day has passed), how it repeats ("Repeats every
-week on Mon, Thu") and its tags ("@calls @home"), and the notes. It does not repeat the
-title, which is in the column before it.
+The card of an open task or project shows every field and each one is changed
+by clicking it, kept at once with no OK: the title (Return keeps it), the
+priority as a row of four icon buttons (a thunderstorm for Critical, drizzle for Important, a cloud for Optional, a moon with stars for One day; the name is the tooltip, and a click on the lit one clears it), the
+estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
+Tags field (names separated by commas; Return keeps them), and for a project
+its kind and how often it is reviewed. The due date is greyed out and shows
+today's date until it is set; picking a day sets it and ticks the box beside
+it, and unticking the box clears it. Hard deadline or Target date appears
+below once a date is set. Above them is the day the task or project was
+created ("Created 2026-10-19", left out for what was created before the app
+kept the day). A completed task or project shows its card read-only, with the
+same facts as lines of text.
 
 The notes are a list of bullet points, one for each line. Each bullet has a
-small cross that deletes it, and below them the "Add a note" field adds a
+small cross that deletes it, and a click on a bullet turns it into a field (Return or a click elsewhere keeps the change; emptying it deletes the note), and below them the "Add a note" field adds a
 note on Return, without opening the editor. Web addresses in notes
 (`https://…` or `www.…`) are clickable links, and the pointer turns into a
 hand over one. A completed task or project
 shows its notes with no cross and no field.
 
-The pencil button at the top right of the card opens it for editing; nothing
-is written until OK:
+At the very top of an open card a pulldown shows the project the task is in
+(the project the project is in, for a project's card) as the whole tree of
+projects, indented by nesting. Pick another to move the task there, or No
+project to take it out of its project. This matters in Prios, Calendar and
+Tags, where the lists mix tasks of every project. A project cannot be moved into
+itself or into anything inside it.
 
-- A task's card then has the title field, the priority and estimate pickers,
-  the Due date switch (a day to pick, and whether it is a hard deadline or a
-  target date), the Repeat field (see [Repeating tasks](#repeating-tasks)),
-  the Tags field (names separated by commas; the tag button
-  beside it adds one the view already has), its project, the estimate history
-  if there is one, and the notes in a text field, one bullet to a line. A project's card has the same fields, and the kind (parallel or
-  sequential); it shows an estimate of its own or, failing that, the sum of its open tasks' estimates
-- A sequential project dims every child but its first open one, so the next
-  actions change at once. The kind can also be switched from Kind in the
-  project's context menu
-- OK (or Return in the title field) keeps what you changed; Cancel drops it.
-  A blank title is not kept: the card stays open so you can fix it. Clearing
-  the notes removes them
-- Showing another task, project or place closes the card without keeping
-  anything
-- A completed task or project shows its card too, with no pencil; Reopen is
-  on the card
+There is no edit mode: the card looks the same until you click a field, and
+that field is then edited and kept at once. The title (Return keeps it, and a
+blank title is not kept) heads the card, and a project's card also has its
+kind (parallel or sequential, which can also be switched from Kind in the
+project's context menu), how often it is reviewed and its next review day. A
+sequential project dims every child but its first open one, so the next
+actions change at once. A project shows an estimate of its own or, failing
+that, the sum of its open tasks' estimates. Clearing the notes' last bullet
+removes them. A completed task or project shows its card read-only; Reopen is
+on the card.
 
 ## Today
 
@@ -312,7 +315,7 @@ reviewed on a Monday is due again the Monday after. Sub-projects are reviewed
 as projects of their own. The first project is picked for you.
 
 - The second column is the picked project's card (its next review day, in
-  red when overdue; the pencil edits it as anywhere else) with the buttons
+  red when overdue; edited in place as anywhere else) with the buttons
   below it: **Mark Reviewed**, how often it is reviewed, and its status
 - The third column lists its tasks, which you can complete, give a priority,
   estimate or tags, open and edit, exactly as in the Projects place. The
@@ -333,8 +336,8 @@ changes the next review day at once.
 
 **Choosing the next review day.** A project card shows its next review day
 and how often it is reviewed. To spread projects made together over the weeks,
-press the pencil on the card and pick a day under Next review (and, if you
-like, a different interval under Review), then OK. The project is left out of
+pick a day under Next review on the card (and, if you
+like, a different interval under Review). The project is left out of
 the review until that day. Mark Reviewed drops the chosen day, and the next
 review is an interval after the day reviewed. A project whose review is off
 shows "Review off" and has no day to pick.
@@ -421,15 +424,19 @@ calendar marks the project itself. Its estimate is shown, not planned.
 ## Repeating tasks
 
 Routines (pay the rent, water the plants, the weekly report) are captured
-once. In a task's card, with the pencil, switch Repeat on and pick how often:
+once. In a task's card, switch Repeat on and pick how often:
 every N days, weeks, months or years. A weekly repeat can also pick the days
 of the week (Mon and Thu), and a repeat can count from the due date (the
 default) or from the day the task is done. The task's context menu has a
 Repeat submenu for the common cases, and Stop Repeating.
 
-A repeat needs a due date to count from. Switching Repeat on for a task with
-none gives it one: the day Today shows, as a target date. The kind of the due
-date, a hard deadline or a target date, is kept by the next tasks.
+Repeat and the due date are independent: switching Repeat on never gives a
+task a due date, and unticking the due date never stops the repeat. A task
+with no due date repeats from the day it is done ("After it is done"), and
+"From the due date" cannot be picked until it has one. Clearing the due date of
+a task that repeats keeps the repeat and switches it to "After it is done". The
+kind of the due date, a hard deadline or a target date, is kept by the next
+tasks.
 
 Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and
@@ -479,7 +486,7 @@ A tag is a label for a context: `@home`, `@calls`, `@deep-work`. Tags belong
 to a view, so the tags of Work and of Private are separate, even when they
 have the same name, and taking a task to another view leaves its tags behind.
 
-Put tags on a task in the Tags field of its card (pencil): type names
+Put tags on a task in the Tags field of its card: type names
 separated by commas, with or without the `@`, in any case. A name the view
 does not have yet creates the tag; a name you take out of the field takes
 the tag off the task. The tag button beside the field adds a tag the view

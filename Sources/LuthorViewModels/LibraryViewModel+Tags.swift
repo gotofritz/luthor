@@ -14,12 +14,18 @@ extension LibraryViewModel {
 
   /// The tags a task carries, in the order they were created.
   public func tagItems(of taskID: TaskID) -> [TagItem] {
-    state.tags(of: taskID)
+    _ = revision
+    return state.tags(of: taskID)
   }
 
   /// Puts the tag called `name` on a task, creating it in the task's view if the view has none of that name.
   public func tagTask(_ taskID: TaskID, named name: String) {
     perform { (log) throws(CommandError) in try commands.tag(taskID: taskID, named: name, log: log) }
+  }
+
+  /// Makes the tags of a task exactly the ones called `names`, creating those its view lacks.
+  public func setTags(_ taskID: TaskID, to names: [String]) {
+    perform { (log) throws(CommandError) in try commands.setTags(taskID: taskID, to: names, log: log) }
   }
 
   /// Puts a tag on a task, or takes it off if the task carries it.

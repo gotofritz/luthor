@@ -41,6 +41,28 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.deleteNote(taskID: itemID, at: position, log: log) }
   }
 
+  /// The projects of the view as a tree, each under its parent, for a card's pulldown. A project and everything
+  /// in it can be left out, as it cannot be moved into itself.
+  public func projectOutline(excludingSubtreeOf excluded: TaskID? = nil) -> [ProjectOutlineEntry] {
+    let ids = Set(knownProjects.map(\.id))
+    func entries(under parentID: TaskID?, depth: Int) -> [ProjectOutlineEntry] {
+      knownProjects
+        .filter { $0.id != excluded && $0.parentID.flatMap { ids.contains($0) ? $0 : nil } == parentID }
+        .flatMap { project in
+          [ProjectOutlineEntry(id: project.id, title: project.title, depth: depth)]
+            + entries(under: project.id, depth: depth + 1)
+        }
+    }
+    return entries(under: nil, depth: 0)
+  }
+
+  /// Replaces the note at `position` among the bullets of a task or project; blank text deletes it.
+  public func editNote(at position: Int, of itemID: TaskID, to text: String) {
+    perform { (log) throws(CommandError) in
+      try commands.editNote(taskID: itemID, at: position, to: text, log: log)
+    }
+  }
+
   /// What a click on the empty part of a column does: the column lists the children of the project
   /// `parentID`, or the top-level projects for `nil`. Everything beyond it closes, and the first column leaves
   /// no project shown; otherwise the project is shown with no task picked.

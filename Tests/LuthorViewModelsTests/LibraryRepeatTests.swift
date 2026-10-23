@@ -57,19 +57,17 @@ struct CompleteRepeatingViewModelTests {
 @MainActor
 @Suite("When a repeat is set or ended in the window")
 struct SetRepeatViewModelTests {
-  @Test("a task with no due date is given the day Today shows, as a target date")
-  func aTaskWithNoDueDateIsGivenTheDayTodayShows() {
+  @Test("a task with no due date stays without one, and repeats after it is done")
+  func aTaskWithNoDueDateStaysWithoutOne() {
     let (library, log) = makeLibrary([captured("t1", "water plants", lamport: 1)])
     library.showDay(date("2026-10-21"))
 
     library.setRepeat(TaskID("t1"), to: weekly)
 
-    #expect(
-      log.events.suffix(2) == [
-        dueSet("t1", on: "2026-10-21", hard: false, id: "id-1", lamport: 2),
-        repeatSet("t1", weekly, id: "id-2", lamport: 3),
-      ])
-    #expect(library.repeatRule(of: TaskID("t1")) == weekly)
+    let afterDone = RepeatRule(every: 1, unit: .week, afterCompletion: true)
+    #expect(log.events.suffix(1) == [repeatSet("t1", afterDone, id: "id-1", lamport: 2)])
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
+    #expect(library.repeatRule(of: TaskID("t1")) == afterDone)
   }
 
   @Test("stopping the repeat clears the rule and keeps the due date")
@@ -144,14 +142,15 @@ struct RepeatCardViewModelTests {
     #expect(log.events.count == written)
   }
 
-  @Test("a repeat with no due date is given the day Today shows")
-  func aRepeatWithNoDueDateIsGivenTheDayTodayShows() {
+  @Test("a repeat with no due date leaves it without one, and repeats after it is done")
+  func aRepeatWithNoDueDateLeavesItWithoutOne() {
     let (library, _) = makeLibrary([captured("t1", "water plants", lamport: 1)])
 
     library.editCard(.task(TaskID("t1")))
     library.saveCard(ofTask: TaskID("t1"), draft(weekly, due: nil))
 
-    #expect(library.dueDate(of: TaskID("t1")) == DueDate(date: monday, isHard: false))
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
+    #expect(library.repeatRule(of: TaskID("t1")) == RepeatRule(every: 1, unit: .week, afterCompletion: true))
   }
 
   @Test("OK with no repeat on a card that had one stops it")
@@ -182,5 +181,29 @@ struct RepeatSummaryTests {
     ])
   func theCardSaysHowOften(rule: RepeatRule, summary: String) {
     #expect(rule.summary == summary)
+  }
+}
+
+@MainActor
+@Suite("When the due date of a repeating task is cleared on its card")
+struct ClearDueOfRepeatingTaskTests {
+  @Test("the repeat stays, and from then on counts from the day the task is done")
+  func repeatStaysAndCountsFromCompletion() {
+    let (library, _) = makeLibrary(routine)
+
+    library.clearDue(TaskID("t1"))
+
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
+    #expect(library.repeatRule(of: TaskID("t1")) == RepeatRule(every: 1, unit: .week, afterCompletion: true))
+  }
+
+  @Test("a task that does not repeat just loses its due date")
+  func plainTaskLosesItsDueDate() {
+    let (library, _) = makeLibrary([captured("t1", "pay tax", lamport: 1)])
+    library.setDue(TaskID("t1"), to: date("2026-11-01"), isHard: true)
+
+    library.clearDue(TaskID("t1"))
+
+    #expect(library.dueDate(of: TaskID("t1")) == nil)
   }
 }

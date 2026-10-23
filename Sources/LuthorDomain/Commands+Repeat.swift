@@ -1,18 +1,18 @@
 // Repeating tasks: giving a task a rule, skipping one occurrence, and making the next task when one is done.
 extension Commands {
   /// Makes the open task `taskID` repeat by `rule`, or with `nil` stops it repeating. A repeat needs a due date
-  /// to count from, so a task with none is given `day` as a target date first. Setting the rule the task has
+  /// to count from, so a task with none is given `day` as a target date first, unless `day` is `nil`. Setting the rule the task has
   /// writes nothing.
   public func setRepeat(
     taskID: TaskID,
     to rule: RepeatRule?,
-    dueIfNone day: CalendarDate,
+    dueIfNone day: CalendarDate?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let state = LibraryState.replay(log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     var events: [EventEnvelope] = []
-    if rule != nil, state.dueDate(of: taskID) == nil {
+    if rule != nil, let day, state.dueDate(of: taskID) == nil {
       let due = TaskDueSet(taskID: taskID, date: day, isHard: false)
       events.append(envelope(EventID(ids.next()), .taskDueSet(due), log: log))
     }
