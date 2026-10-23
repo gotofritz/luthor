@@ -38,9 +38,8 @@ struct CardNotesView: View {
               .onSubmit { finishEditing(position) }
               .onChange(of: isEditing) { if !isEditing { finishEditing(position) } }
           } else {
-            LinkedText(text: bullet)
+            LinkedText(text: bullet, onClick: canAdd ? { startEditing(position, bullet) } : nil)
               .frame(maxWidth: .infinity, alignment: .leading)
-              .onTapGesture { if canAdd { startEditing(position, bullet) } }
           }
           if canAdd {
             Button {
