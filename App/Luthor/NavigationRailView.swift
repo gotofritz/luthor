@@ -124,7 +124,7 @@ extension Priority {
   /// The SF Symbol of the priority: a thunderstorm, drizzle, a cloud and, for one day, a moon with stars.
   var symbol: String {
     switch self {
-    case .critical: "cloud.bolt.rain"
+    case .critical: "cloud.bolt.rain.fill"
     case .important: "cloud.drizzle"
     case .optional: "cloud"
     case .someday: "moon.stars"
