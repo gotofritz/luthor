@@ -161,6 +161,13 @@ note on Return, without opening the editor. Web addresses in notes
 hand over one. A completed task or project
 shows its notes with no cross and no field.
 
+At the very top of an open card a pulldown shows the project the task is in
+(the project the project is in, for a project's card) as the whole tree of
+projects, indented by nesting. Pick another to move the task there, or No
+project to take it out of its project. This matters in Prios, Calendar and
+Tags, where the lists mix tasks of every project. A project cannot be moved into
+itself or into anything inside it.
+
 There is no edit mode: the card looks the same until you click a field, and
 that field is then edited and kept at once. The title (Return keeps it, and a
 blank title is not kept) heads the card, and a project's card also has its

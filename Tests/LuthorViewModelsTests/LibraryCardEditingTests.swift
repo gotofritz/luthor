@@ -386,3 +386,51 @@ struct CardFieldObservationTests {
     #expect(told.value)
   }
 }
+
+private let treeLog = [
+  projectCreated("p1", "Holiday", lamport: 1),
+  projectCreated("p2", "Flights", under: "p1", lamport: 2),
+  projectCreated("p3", "Garden", lamport: 3),
+  captured("t1", "book flights", lamport: 4), moved("t1", to: "p2", lamport: 5),
+]
+
+@MainActor
+@Suite("When a card offers the project tree")
+struct ProjectOutlineTests {
+  @Test("it lists every project under its parent, with its depth")
+  func listsTheTree() {
+    let (library, _) = makeLibrary(treeLog)
+
+    let outline = library.projectOutline()
+
+    #expect(outline.map(\.id) == [TaskID("p1"), TaskID("p2"), TaskID("p3")])
+    #expect(outline.map(\.depth) == [0, 1, 0])
+  }
+
+  @Test("it leaves out a project and everything inside it, so a project cannot be put under itself")
+  func leavesOutTheSubtree() {
+    let (library, _) = makeLibrary(treeLog)
+
+    let outline = library.projectOutline(excludingSubtreeOf: TaskID("p1"))
+
+    #expect(outline.map(\.id) == [TaskID("p3")])
+  }
+
+  @Test("filing a task into another project moves it")
+  func filingMovesTheTask() {
+    let (library, _) = makeLibrary(treeLog)
+
+    library.file(TaskID("t1"), into: TaskID("p3"))
+
+    #expect(library.knownProjects.first { $0.id == TaskID("p3") }?.children.count == 1)
+  }
+
+  @Test("filing a task into no project takes it out of its project")
+  func filingIntoNothingTakesItOut() {
+    let (library, _) = makeLibrary(treeLog)
+
+    library.file(TaskID("t1"), into: nil)
+
+    #expect(library.knownProjects.first { $0.id == TaskID("p2") }?.children.isEmpty == true)
+  }
+}

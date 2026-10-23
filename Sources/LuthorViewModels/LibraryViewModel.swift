@@ -280,8 +280,8 @@ public final class LibraryViewModel {
     estimate(selected, as: minutes)
   }
 
-  /// Files a task into a project.
-  public func file(_ taskID: TaskID, into projectID: TaskID) {
+  /// Files a task into a project, or with `nil` takes it out of its project.
+  public func file(_ taskID: TaskID, into projectID: TaskID?) {
     perform { (log) throws(CommandError) in try commands.move(taskID: taskID, to: projectID, log: log) }
   }
 

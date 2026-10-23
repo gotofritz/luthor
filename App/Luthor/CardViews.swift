@@ -26,6 +26,9 @@ struct TaskCardColumn: View {
 
   private var card: some View {
     VStack(alignment: .leading, spacing: 12) {
+      if !isCompleted {
+        CardProjectPicker(library: library, itemID: task.id, parentID: task.parentID, isProject: false)
+      }
       CreatedLine(day: task.createdOn)
       if isCompleted {
         completedLine
@@ -100,6 +103,9 @@ struct ProjectCard: View {
 
   private var card: some View {
     VStack(alignment: .leading, spacing: 10) {
+      if !isCompleted {
+        CardProjectPicker(library: library, itemID: project.id, parentID: project.parentID, isProject: true)
+      }
       CreatedLine(day: project.createdOn)
       if isCompleted {
         HStack {
