@@ -373,9 +373,8 @@ appears to its right, and so on down the tree.
 - Clicking in a column scrolls the columns so that it moves to the left edge,
   as in Finder, as far as the columns to its right leave room
 - Nest a project by dragging it onto another, or onto a column to move it
-  into that column's project. Drag it onto the “Drop here for top level” row
-  at the end of the first column (shown once a project is nested), or use Move
-  to Top Level in its context menu, to make it top-level again. A project cannot
+  into that column's project. Drag it onto the + at the end of the
+  first column, or use Move to Top Level in its context menu, to make it top-level again. A project cannot
   go inside itself or one of its own sub-projects
 - File a task by dragging it onto a project, or select it and press ⌥⌘1 to
   ⌥⌘9 for the first nine projects (Task → Move to Project)
