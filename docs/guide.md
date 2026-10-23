@@ -155,7 +155,7 @@ kept the day). A completed task or project shows its card read-only, with the
 same facts as lines of text.
 
 The notes are a list of bullet points, one for each line. Each bullet has a
-small cross that deletes it, and below them the "Add a note" field adds a
+small cross that deletes it, and a click on a bullet turns it into a field (Return or a click elsewhere keeps the change; emptying it deletes the note), and below them the "Add a note" field adds a
 note on Return, without opening the editor. Web addresses in notes
 (`https://…` or `www.…`) are clickable links, and the pointer turns into a
 hand over one. A completed task or project

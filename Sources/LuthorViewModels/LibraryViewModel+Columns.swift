@@ -41,6 +41,13 @@ extension LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.deleteNote(taskID: itemID, at: position, log: log) }
   }
 
+  /// Replaces the note at `position` among the bullets of a task or project; blank text deletes it.
+  public func editNote(at position: Int, of itemID: TaskID, to text: String) {
+    perform { (log) throws(CommandError) in
+      try commands.editNote(taskID: itemID, at: position, to: text, log: log)
+    }
+  }
+
   /// What a click on the empty part of a column does: the column lists the children of the project
   /// `parentID`, or the top-level projects for `nil`. Everything beyond it closes, and the first column leaves
   /// no project shown; otherwise the project is shown with no task picked.
