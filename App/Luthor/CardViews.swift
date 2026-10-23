@@ -95,7 +95,7 @@ struct ProjectCard: View {
   var body: some View {
     card
       .padding(12)
-    .id(project.id)
+      .id(project.id)
   }
 
   private var card: some View {
