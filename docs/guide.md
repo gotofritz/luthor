@@ -559,6 +559,11 @@ again. If a Mac stays away you can **Cancel**, or **Compact Anyway**: the new
 log then outranks anything older, but changes that Mac made offline may be
 partly overridden when it comes back.
 
+A request that is not finished within ten minutes (the app was quit, or a Mac
+never came back) is given up on its own, so it cannot hold the Macs back for
+good. While another Mac's request is open, Settings shows **Cancel Their
+Compaction…**, which ends it at once.
+
 If the new log does not check out, Luthor changes nothing, says what differed
 (for example which task and which field), and cancels the request so every Mac
 writes again.

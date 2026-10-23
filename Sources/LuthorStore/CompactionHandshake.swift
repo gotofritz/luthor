@@ -19,12 +19,18 @@ public struct CompactionRequest: Equatable, Codable, Sendable {
 ///    arrived, so nothing is left unsynced. It then compacts and writes `compaction-<id>-done.json`, and
 ///    every Mac writes again. A request can be cancelled (`-cancel.json`) the same way.
 public struct CompactionHandshake: Sendable {
+  /// How long a request stays open. A compaction that is not finished by then was interrupted (the app was
+  /// quit, the Mac went to sleep, or it never came back), and its request must not pause the Macs for good.
+  public static let lifetime: TimeInterval = 600
+
   public let directory: URL
   public let deviceID: DeviceID
+  private let now: @Sendable () -> Date
 
-  public init(directory: URL, deviceID: DeviceID) {
+  public init(directory: URL, deviceID: DeviceID, now: @escaping @Sendable () -> Date = { Date() }) {
     self.directory = directory
     self.deviceID = deviceID
+    self.now = now
   }
 
   /// The device's name as it appears in file names.
@@ -35,7 +41,7 @@ public struct CompactionHandshake: Sendable {
 
   public var token: String { Self.token(for: deviceID) }
 
-  /// The request nobody has finished or cancelled; the earliest one if there are several.
+  /// The request nobody has finished or cancelled and that has not run out; the earliest one if there are several.
   public func openRequest() throws(EventLogError) -> CompactionRequest? {
     let names = try fileNames()
     var requests: [CompactionRequest] = []
@@ -44,9 +50,15 @@ public struct CompactionHandshake: Sendable {
     }
     for request in requests.sorted(by: { $0.id < $1.id }) {
       let closed = names.contains(Self.name(request.id, "done")) || names.contains(Self.name(request.id, "cancel"))
-      if !closed { return request }
+      if !closed && !isExpired(request) { return request }
     }
     return nil
+  }
+
+  /// A request whose time cannot be read never runs out, as it cannot be told how old it is.
+  private func isExpired(_ request: CompactionRequest) -> Bool {
+    guard let asked = ISO8601DateFormatter().date(from: request.requestedAt) else { return false }
+    return now().timeIntervalSince(asked) > Self.lifetime
   }
 
   /// Asks every device to stop writing; this device has stopped. Refused while a request is open.
@@ -86,8 +98,13 @@ public struct CompactionHandshake: Sendable {
 
   /// Whether this device must not write events now: a request is open and it has stopped.
   public func isPaused() throws(EventLogError) -> Bool {
-    guard let request = try openRequest() else { return false }
-    return try hasAcknowledged(request)
+    try pausingRequest() != nil
+  }
+
+  /// The open request this device has stopped writing for, if any.
+  public func pausingRequest() throws(EventLogError) -> CompactionRequest? {
+    guard let request = try openRequest() else { return nil }
+    return try hasAcknowledged(request) ? request : nil
   }
 
   /// Lets every device write again after the log was compacted.
@@ -175,8 +192,10 @@ public struct PausableEventLog: EventLog {
   }
 
   public func append(_ events: [EventEnvelope]) throws(EventLogError) {
-    if try handshake.isPaused() {
-      throw .ioFailure("The log is being compacted. Try again in a moment.")
+    if let request = try handshake.pausingRequest() {
+      throw .ioFailure(
+        "The log is being compacted by \(request.device). Try again in a moment, or cancel it in Settings → This Mac."
+      )
     }
     try base.append(events)
   }

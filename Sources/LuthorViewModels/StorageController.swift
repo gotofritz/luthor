@@ -147,11 +147,11 @@ public final class StorageController {
     }
   }
 
-  /// Drops this Mac's open request, and every Mac writes again.
+  /// Drops the open request, this Mac's or another Mac's that was left behind, and every Mac writes again.
   public func cancelCompaction() {
     guard let handshake else { return }
     do {
-      if let open = try handshake.openRequest(), open.device == handshake.token { try handshake.cancel(open) }
+      if let open = try handshake.openRequest() { try handshake.cancel(open) }
       compactionProgress = .idle
       compactionMessage = nil
     } catch {
