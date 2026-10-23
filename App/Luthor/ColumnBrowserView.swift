@@ -162,10 +162,10 @@ struct ProjectRow: View {
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
     }
+    // The whole row, spacer included, is what a drag picks up. The drop lives on the row in the column
+    // (ColumnView), not here: one view that is both dragged and dropped on never starts a drag in a List.
+    .contentShape(Rectangle())
     .draggable(LibraryViewModel.dragPayload(for: project.id))
-    .dropDestination(for: String.self) { payloads, _ in
-      library.drop(payloads, on: project.id)
-    }
     .contextMenu {
       if isCompleted {
         if library.reopenableProjectIDs.contains(project.id) {

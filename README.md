@@ -52,7 +52,7 @@ and 5 minutes) and kept with OK; a project is parallel
 (every child is active) or sequential (only the first open child is; the rest
 are dimmed). The last column is always a card: the task picked or, with none,
 the project shown. Drag a project onto another to nest it, or onto the first
-column to make it top-level. File a task by dragging it onto a project, or
+column’s + to make it top-level. File a task by dragging it onto a project, or
 select it and press ⌥⌘1 to ⌥⌘9 for the first nine projects (Task → Move to
 Project). Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its

@@ -37,6 +37,9 @@ struct ColumnView: View {
             .tag(ColumnSelection.project(project.id))
             .contentShape(Rectangle())
             .onTapGesture { click(.project(project.id)) }
+            .dropDestination(for: String.self) { payloads, _ in
+              library.drop(payloads, on: project.id)
+            }
         case .task(let task):
           TaskRow(library: library, task: task)
             .tag(ColumnSelection.task(task.id))
@@ -116,6 +119,11 @@ private struct AddItemRow: View {
     .buttonStyle(.borderless)
     .help(parentID == nil ? "Add a project" : "Add a task or a project")
     .accessibilityLabel("Add")
+    // A list takes a drop only on its rows, and a drop on a project row nests inside it; this row is where
+    // a project dropped on the column lands, so the first column's makes it top-level.
+    .dropDestination(for: String.self) { payloads, _ in
+      library.drop(payloads, on: parentID)
+    }
   }
 }
 
