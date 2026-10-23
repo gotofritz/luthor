@@ -335,13 +335,14 @@ struct CardFieldInPlaceTests {
   @Test("a task's priority, estimate and due date each take effect at once")
   func taskFieldsApplyAtOnce() {
     let (library, _) = makeLibrary()
+    library.selection = TaskID("t2")
 
     library.prioritize(TaskID("t2"), as: .important)
     library.estimate(TaskID("t2"), as: 30)
     library.setDue(TaskID("t2"), to: date("2026-10-30"), isHard: false)
 
-    #expect(library.tasks.first { $0.id == TaskID("t2") }?.priority == .important)
-    #expect(library.tasks.first { $0.id == TaskID("t2") }?.estimate == 30)
+    #expect(library.selectedTask?.priority == .important)
+    #expect(library.selectedTask?.estimate == 30)
     #expect(library.dueDate(of: TaskID("t2")) == DueDate(date: date("2026-10-30"), isHard: false))
   }
 
