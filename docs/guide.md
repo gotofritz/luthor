@@ -515,7 +515,7 @@ Settings shows three families in its first column: Global, Views and This Mac.
   view alone. Each is a toggle: off, it follows the global value (shown
   greyed with "(global)"); on, it shows its own value to change. Switching
   it off returns to following the global value. Under Appearance the same
-  toggle gives the view its own accent colour, picked from six squares: use
+  toggle gives the view its own accent colour, picked from eight squares: use
   one for Work and another for Private. Edit View… in the view switcher
   opens Settings → Views on the view you are in
 

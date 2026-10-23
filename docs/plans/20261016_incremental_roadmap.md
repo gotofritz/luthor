@@ -386,7 +386,7 @@ Usable: "plan the trip, due in spring" is one item.
 
 The app has a face of its own, so its window can be told from Finder's and
 the rest at a glance, and each view has its own colour. `SettingKey.themeAccent`
-(per view, with a global fallback) names one of six accents from the logo
+(per view, with a global fallback) names one of eight accents from the logo
 palette; the app turns the name into colour. The rail takes the accent as
 its fill and carries the logo's mountain, the window opens with the view's name
 and the place shown in large heavy type over a rule in the accent, and the
@@ -1047,7 +1047,7 @@ write when OK is pressed.
    colour belongs to the view, so it follows it to every Mac. A build that
    does not know the key ignores it, and a value it does not know falls back to
    navy
-2. **The domain names the accent, the app colours it.** `ThemeAccent` is six
+2. **The domain names the accent, the app colours it.** `ThemeAccent` is eight
    names; their RGB, the light and dark variants, the type and the mountain
    mark live in `App/Luthor/Theme.swift`. Views read `@Environment(\.theme)`
    instead of `Color.accentColor`, so a view's colour is one read away

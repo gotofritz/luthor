@@ -49,7 +49,7 @@ public enum SettingKey: String, Codable, Sendable, CaseIterable, Hashable {
 
 /// The colours a view can take as its accent. Names only: which colour each one is lives in the app.
 public enum ThemeAccent: String, Codable, Sendable, CaseIterable, Hashable {
-  case navy, alpine, glacier, forest, plum, graphite
+  case navy, alpine, glacier, forest, plum, graphite, red, sunflower
 }
 
 /// The planning numbers a view resolves to: its own overrides, then the global values, then the

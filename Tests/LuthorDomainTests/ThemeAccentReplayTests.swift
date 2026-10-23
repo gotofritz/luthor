@@ -27,6 +27,13 @@ struct ThemeAccentReplayTests {
     #expect(state.settings(for: ViewID("work")).themeAccent == accent)
   }
 
+  @Test("red and sunflower are accents to choose", arguments: ["red", "sunflower"])
+  func redAndSunflowerAreKnown(name: String) {
+    let state = LibraryState.replay([settingChanged(.themeAccent, to: name, lamport: 1)])
+
+    #expect(state.globalSettings.themeAccent.rawValue == name)
+  }
+
   @Test("a view's own accent wins over the global one, and only for that view")
   func viewAccentWinsOverTheGlobalOne() {
     let state = LibraryState.replay(
