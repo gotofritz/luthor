@@ -19,8 +19,6 @@ struct CardLiveFields: View {
   @State private var tagsText = ""
   @State private var didLoad = false
 
-  private static let estimateChoices = [5, 15, 30, 60]
-
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       TextField("Title", text: $titleText)
@@ -35,10 +33,7 @@ struct CardLiveFields: View {
         .pickerStyle(.segmented)
       }
       priorityButtons
-      Picker("Estimate", selection: estimateBinding) {
-        Text("None").tag(Int?.none)
-        ForEach(estimateChoices, id: \.self) { Text("\($0)m").tag(Int?.some($0)) }
-      }
+      EstimateSlider(estimate: estimate) { library.estimate(id, as: $0) }
       dueFields
       RepeatEditor(rule: repeatBinding)
       TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
@@ -119,14 +114,6 @@ struct CardLiveFields: View {
 
   private func setPriority(_ priority: Priority?) {
     library.prioritize(id, as: priority)
-  }
-
-  private var estimateChoices: [Int] {
-    Array(Set(Self.estimateChoices + (estimate.map { [$0] } ?? []))).sorted()
-  }
-
-  private var estimateBinding: Binding<Int?> {
-    Binding(get: { estimate }, set: { library.estimate(id, as: $0) })
   }
 
   private var kindBinding: Binding<ProjectKind> {

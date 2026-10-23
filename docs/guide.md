@@ -144,7 +144,7 @@ back to its card from a task.
 The card of an open task or project shows every field and each one is changed
 by clicking it, kept at once with no OK: the title (Return keeps it), the
 priority as a row of four buttons (click the lit one to clear it), the
-estimate, the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
+estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
 Tags field (names separated by commas; Return keeps them), and for a project
 its kind and how often it is reviewed. The due date is greyed out and shows
 today's date until it is set; picking a day sets it and ticks the box beside
@@ -164,7 +164,7 @@ shows its notes with no cross and no field.
 The pencil button at the top right of the card still opens a form with all the
 fields together; nothing is written until OK:
 
-- A task's card then has the title field, the priority and estimate pickers,
+- A task's card then has the title field, the priority picker and the estimate slider,
   the Due date switch (a day to pick, and whether it is a hard deadline or a
   target date), the Repeat field (see [Repeating tasks](#repeating-tasks)),
   the Tags field (names separated by commas; the tag button

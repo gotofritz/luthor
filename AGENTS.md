@@ -221,6 +221,7 @@ Sources/
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
+    EstimateScale.swift      the estimate slider's logarithmic scale, 5 minutes to a week, and estimate labels
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar

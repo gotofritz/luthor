@@ -98,7 +98,7 @@ private struct TaskCardEditor: View {
         .textFieldStyle(.roundedBorder)
         .font(.title3)
         .onSubmit(save)
-      CardFieldsForm(library: library, fields: $fields, currentEstimate: task.estimate, submit: save)
+      CardFieldsForm(library: library, fields: $fields, submit: save)
       if let history = library.estimateHistory(ofTask: task.id) {
         LabeledContent("History", value: history.summary)
       }
@@ -242,7 +242,7 @@ private struct ProjectCardEditor: View {
         Label("Sequential", systemImage: ProjectKind.sequential.symbol).tag(ProjectKind.sequential)
       }
       .pickerStyle(.segmented)
-      CardFieldsForm(library: library, fields: $fields, currentEstimate: project.estimate, submit: save)
+      CardFieldsForm(library: library, fields: $fields, submit: save)
       ProjectReviewFieldsForm(library: library, fields: $review)
       if let history = library.estimateHistory(ofProject: project.id) {
         LabeledContent("History", value: history.summary)
