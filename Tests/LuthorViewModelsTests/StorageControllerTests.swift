@@ -265,4 +265,20 @@ struct CompactLogTests {
     #expect(mac.compactionMessage?.contains("disk full") == true)
     #expect(mac.compactionMessage?.contains("write again") == true)
   }
+
+  @Test("a request another Mac left open can be cancelled from here, and this Mac writes again")
+  func aLeftOverRequestCanBeCancelled() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let mac = CompactionHandshake(directory: home.url, deviceID: DeviceID("mac"))
+    _ = try mac.request(id: "r0", at: "t")
+    let laptop = controller(home, shared: "laptop")
+    laptop.refreshCompaction()
+    #expect(laptop.compactionProgress == .pausedForOther(mac.token))
+
+    laptop.cancelCompaction()
+
+    #expect(try #require(laptop.handshake).openRequest() == nil)
+    #expect(laptop.compactionProgress == .idle)
+  }
 }

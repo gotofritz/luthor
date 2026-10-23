@@ -58,6 +58,7 @@ struct ThisMacSettingsColumn: View {
   @Environment(StorageController.self) private var controller
   @State private var confirmingCompaction = false
   @State private var confirmingForce = false
+  @State private var confirmingCancel = false
 
   private static let movingNote = """
     Moving to Dropbox copies the tasks of the Home Folder the first time. \
@@ -92,8 +93,9 @@ struct ThisMacSettingsColumn: View {
       Button("Compact Now") { controller.finishCompaction() }
       Button("Cancel") { controller.cancelCompaction() }
     case .pausedForOther(let device):
-      Text("\(device) is compacting the log. This Mac waits until it is done.")
+      Text("\(device) is compacting the log. This Mac waits until it is done, or ten minutes.")
         .font(.caption)
+      Button("Cancel Their Compaction…") { confirmingCancel = true }
     }
   }
 
@@ -127,6 +129,15 @@ struct ThisMacSettingsColumn: View {
       Button("Compact Log") { controller.startCompaction() }
     } message: {
       Text(Self.compactNote)
+    }
+    .confirmationDialog("Cancel the other Mac's compaction?", isPresented: $confirmingCancel) {
+      Button("Cancel Compaction", role: .destructive) { controller.cancelCompaction() }
+    } message: {
+      Text(
+        """
+        Only do this if that Mac is not compacting any more, for example because it was quit. \
+        This Mac writes again.
+        """)
     }
     .confirmationDialog("Compact without waiting?", isPresented: $confirmingForce) {
       Button("Compact Anyway", role: .destructive) { controller.finishCompaction(force: true) }
