@@ -121,13 +121,13 @@ extension Priority {
     }
   }
 
-  /// The SF Symbol of the flag, filled more the more urgent the priority is.
-  var symbol: String {
+  /// The icon of the priority: fire, chili, rice bowl and, for one day, a rainbow.
+  var icon: String {
     switch self {
-    case .critical: "flag.fill"
-    case .important: "flag"
-    case .optional: "flag.slash"
-    case .someday: "moon.zzz"
+    case .critical: "🔥"
+    case .important: "🌶️"
+    case .optional: "🍚"
+    case .someday: "🌈"
     }
   }
 }

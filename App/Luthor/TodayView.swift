@@ -252,8 +252,7 @@ private struct PlanRow: View {
         .foregroundStyle(.secondary)
         .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
       if let priority = entry.task.priority {
-        Image(systemName: priority.symbol)
-          .foregroundStyle(.secondary)
+        Text(priority.icon)
           .help(priority.title)
       }
     }

@@ -54,7 +54,7 @@ struct CardFieldsForm: View {
     Picker("Priority", selection: $fields.priority) {
       Text("None").tag(Priority?.none)
       ForEach(Priority.allCases, id: \.self) { priority in
-        Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
+        Text("\(priority.icon) \(priority.title)").tag(Priority?.some(priority))
       }
     }
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }

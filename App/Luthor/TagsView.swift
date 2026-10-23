@@ -64,7 +64,7 @@ struct CandidateFilterMenu: View {
       Picker("Priority", selection: $library.candidateFilter.priority) {
         Text("Any").tag(Priority?.none)
         ForEach(Priority.allCases, id: \.self) { priority in
-          Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
+          Text("\(priority.icon) \(priority.title)").tag(Priority?.some(priority))
         }
       }
       Picker("Project", selection: $library.candidateFilter.projectID) {

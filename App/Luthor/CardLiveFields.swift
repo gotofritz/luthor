@@ -62,15 +62,14 @@ struct CardLiveFields: View {
         Button {
           setPriority(selected ? nil : option)
         } label: {
-          Label(option.title, systemImage: option.symbol)
-            .labelStyle(.titleAndIcon)
-            .lineLimit(1)
+          Text(option.icon)
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
         .tint(selected ? .accentColor : .secondary)
         .controlSize(.small)
-        .help(selected ? "Click again to clear the priority" : "Set the priority")
+        .help(selected ? "\(option.title): click again to clear" : option.title)
+        .accessibilityLabel(option.title)
       }
     }
   }
