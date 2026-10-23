@@ -143,7 +143,7 @@ back to its card from a task.
 
 The card of an open task or project shows every field and each one is changed
 by clicking it, kept at once with no OK: the title (Return keeps it), the
-priority as a row of four icon buttons (🔥 Critical, 🌶️ Important, 🍚 Optional, 🌈 One day; the name is the tooltip, and a click on the lit one clears it), the
+priority as a row of four icon buttons (a thunderstorm for Critical, drizzle for Important, a cloud for Optional, a moon with stars for One day; the name is the tooltip, and a click on the lit one clears it), the
 estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date, Repeat (see [Repeating tasks](#repeating-tasks)), the
 Tags field (names separated by commas; Return keeps them), and for a project
 its kind and how often it is reviewed. The due date is greyed out and shows

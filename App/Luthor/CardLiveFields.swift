@@ -62,7 +62,7 @@ struct CardLiveFields: View {
         Button {
           setPriority(selected ? nil : option)
         } label: {
-          Text(option.icon)
+          Image(systemName: option.symbol)
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)

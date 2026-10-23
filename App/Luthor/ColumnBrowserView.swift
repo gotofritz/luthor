@@ -115,12 +115,8 @@ private struct PriorityColumn: View {
       )
     ) {
       ForEach(LibraryViewModel.priorityRows, id: \.self) { priority in
-        Label {
-          Text(priority?.title ?? "No priority")
-        } icon: {
-          if let priority { Text(priority.icon) } else { Image(systemName: "circle.dashed") }
-        }
-        .tag(priority)
+        Label(priority?.title ?? "No priority", systemImage: priority?.symbol ?? "circle.dashed")
+          .tag(priority)
       }
     }
     .frame(width: 200)
@@ -246,7 +242,8 @@ struct TaskRow: View {
           .help("Estimate")
       }
       if let priority = task.priority {
-        Text(priority.icon)
+        Image(systemName: priority.symbol)
+          .foregroundStyle(.secondary)
           .help(priority.title)
       }
     }
@@ -309,7 +306,7 @@ private struct ItemFieldMenuItems: View {
   var body: some View {
     Menu("Priority") {
       ForEach(Priority.allCases, id: \.self) { priority in
-        Button("\(priority.icon) \(priority.title)") { library.prioritize(taskID, as: priority) }
+        Button(priority.title, systemImage: priority.symbol) { library.prioritize(taskID, as: priority) }
       }
       Divider()
       Button("None") { library.prioritize(taskID, as: nil) }

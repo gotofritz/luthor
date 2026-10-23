@@ -64,7 +64,7 @@ back. Click a task and a card opens in the next column; click a project and
 its column opens, with the project's card after it. A card has no edit mode: it
 shows the day it was created and every field, and a click on one edits it in
 place. The notes are bullet points (web addresses are
-clickable), each deletable, with a field to add one without editing. Priority (four icon buttons: 🔥 🌶️ 🍚 🌈),
+clickable), each deletable, with a field to add one without editing. Priority (four icon buttons: storm, drizzle, cloud, moon),
 estimate (a logarithmic slider from 5 minutes to a week), due date, repeat and
 tags are kept as soon as they are changed.
 

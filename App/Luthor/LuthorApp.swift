@@ -180,7 +180,7 @@ struct LuthorApp: App {
           .disabled(library.selection == nil)
         Menu("Priority") {
           ForEach(Priority.allCases, id: \.self) { priority in
-            Button("\(priority.icon) \(priority.title)") { library.prioritizeSelected(as: priority) }
+            Button(priority.title, systemImage: priority.symbol) { library.prioritizeSelected(as: priority) }
           }
           Divider()
           Button("None") { library.prioritizeSelected(as: nil) }

@@ -121,13 +121,13 @@ extension Priority {
     }
   }
 
-  /// The icon of the priority: fire, chili, rice bowl and, for one day, a rainbow.
-  var icon: String {
+  /// The SF Symbol of the priority: a thunderstorm, drizzle, a cloud and, for one day, a moon with stars.
+  var symbol: String {
     switch self {
-    case .critical: "🔥"
-    case .important: "🌶️"
-    case .optional: "🍚"
-    case .someday: "🌈"
+    case .critical: "cloud.bolt.rain"
+    case .important: "cloud.drizzle"
+    case .optional: "cloud"
+    case .someday: "moon.stars"
     }
   }
 }
