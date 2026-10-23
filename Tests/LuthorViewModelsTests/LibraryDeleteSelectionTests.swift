@@ -17,7 +17,7 @@ private let holidayLog = [
 @MainActor
 @Suite("When a project is deleted for good while the columns show it")
 struct DeleteShownProjectViewModelTests {
-  @Test("its parent is shown, with the parent's card")
+  @Test("its parent is shown")
   func theParentIsShown() {
     let (library, _) = makeInbox(holidayLog)
     library.open(.project(TaskID("p2")))
@@ -26,7 +26,7 @@ struct DeleteShownProjectViewModelTests {
 
     #expect(library.shownProject?.id == TaskID("p1"))
     #expect(library.path == [TaskID("p1")])
-    #expect(library.cardTarget == .project(TaskID("p1")))
+    #expect(library.cardTarget == nil)
   }
 
   @Test("so is the parent when a project further down the path was the one shown")
@@ -67,7 +67,7 @@ struct DeleteShownProjectViewModelTests {
 @MainActor
 @Suite("When a task is deleted for good")
 struct DeleteSelectedTaskViewModelTests {
-  @Test("its project stays shown, with the project's card")
+  @Test("its project stays shown")
   func theProjectStaysShown() {
     let (library, _) = makeInbox(holidayLog)
     library.open(.project(TaskID("p2")))
@@ -77,7 +77,7 @@ struct DeleteSelectedTaskViewModelTests {
 
     #expect(library.path == [TaskID("p1"), TaskID("p2")])
     #expect(library.selection == nil)
-    #expect(library.cardTarget == .project(TaskID("p2")))
+    #expect(library.cardTarget == nil)
   }
 
   @Test("somewhere other than the columns, the place shown stays")

@@ -134,12 +134,12 @@ took along cannot be reopened by itself; reopen the project.
 
 ## Cards
 
-In the Projects place the last column is always a card. Click a task and its
-card opens in the column after the list. Click a project and the column of
-its contents opens, starting with the project's own name; the project's card
-is in the last column, where a task's card goes. Click the project's name at
-the head of its column, or the project again in the column before, to come
-back to its card from a task.
+In the Projects place, click a task and its card opens in the column after the
+list. Click a project and the column of its contents opens. To edit the
+project itself, press the pencil on its row (it shows on the projects the
+columns lead through): the project's card takes the place of the list of its
+contents, right after the row. Press the pencil again, or click the project,
+to bring the list back. Picking a task in the list shows the task's card.
 
 The card of an open task or project shows every field and each one is changed
 by clicking it, kept at once with no OK: the title (Return keeps it), the
@@ -357,9 +357,6 @@ Projects show in Miller columns. The first column lists the top-level
 projects. Click a project to open it: a column of its sub-projects and tasks
 appears to its right, and so on down the tree.
 
-- The first row of every column after the first is the project it lists the
-  children of, by name, with a down triangle beside it. Click it to see that
-  project's card
 - The plus button at the end of a column adds to it. One press shows a box
   above the button, which cannot be typed in, and replaces the card in the next
   column with the card of the new item, in edit mode with the title focused.

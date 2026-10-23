@@ -143,13 +143,14 @@ struct CardColumnViewModelTests {
     #expect(library.cardTarget == nil)
   }
 
-  @Test("a project that is opened shows its own card")
-  func openedProjectShowsItsCard() {
+  @Test("a project that is opened lists its children and shows no card")
+  func openedProjectShowsNoCard() {
     let (library, _) = makeInbox(gardenLog)
 
     library.open(.project(TaskID("p1")))
 
-    #expect(library.cardTarget == .project(TaskID("p1")))
+    #expect(library.cardTarget == nil)
+    #expect(library.projectCardOpen == false)
   }
 
   @Test("a task that is picked shows its card instead")
@@ -162,7 +163,7 @@ struct CardColumnViewModelTests {
     #expect(library.cardTarget == .task(TaskID("t1")))
   }
 
-  @Test("opening the project again deselects the task and shows the project card")
+  @Test("opening the project again deselects the task and shows no card")
   func reopeningTheProjectDeselectsTheTask() {
     let (library, _) = makeInbox(gardenLog)
     library.open(.project(TaskID("p1")))
@@ -171,7 +172,7 @@ struct CardColumnViewModelTests {
     library.open(.project(TaskID("p1")))
 
     #expect(library.selection == nil)
-    #expect(library.cardTarget == .project(TaskID("p1")))
+    #expect(library.cardTarget == nil)
   }
 
   @Test("opening a sub-project's parent closes the sub-project's column")
@@ -182,7 +183,7 @@ struct CardColumnViewModelTests {
     library.open(.project(TaskID("p1")))
 
     #expect(library.columns.map(\.id) == ["top", "project-p1"])
-    #expect(library.cardTarget == .project(TaskID("p1")))
+    #expect(library.cardTarget == nil)
   }
 
   @Test("a task picked in the inbox shows its card")
@@ -215,7 +216,7 @@ struct CardColumnViewModelTests {
     library.deselectColumn(of: TaskID("p1"))
 
     #expect(library.columns.map(\.id) == ["top", "project-p1"])
-    #expect(library.cardTarget == .project(TaskID("p1")))
+    #expect(library.cardTarget == nil)
   }
 
   @Test("deselecting in the last column drops the task picked")
@@ -227,7 +228,82 @@ struct CardColumnViewModelTests {
     library.deselectColumn(of: TaskID("p1"))
 
     #expect(library.selection == nil)
+    #expect(library.cardTarget == nil)
+  }
+}
+
+@MainActor
+@Suite("When the pencil of a project row is pressed")
+struct ProjectCardPencilViewModelTests {
+  @Test("the project's card replaces its list of children")
+  func cardReplacesTheChildren() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+
+    library.toggleProjectCard(TaskID("p1"))
+
+    #expect(library.projectCardOpen)
     #expect(library.cardTarget == .project(TaskID("p1")))
+  }
+
+  @Test("on a project that is not open, it is opened first")
+  func unopenedProjectIsOpenedFirst() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p2")))
+
+    library.toggleProjectCard(TaskID("p1"))
+
+    #expect(library.path == [TaskID("p1")])
+    #expect(library.cardTarget == .project(TaskID("p1")))
+  }
+
+  @Test("pressing it again brings the list back")
+  func pressingAgainClosesTheCard() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+    library.toggleProjectCard(TaskID("p1"))
+
+    library.toggleProjectCard(TaskID("p1"))
+
+    #expect(library.projectCardOpen == false)
+    #expect(library.cardTarget == nil)
+  }
+
+  @Test("picking a task shows the task's card and closes the project's")
+  func pickingATaskClosesTheProjectCard() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+    library.toggleProjectCard(TaskID("p1"))
+
+    library.selection = TaskID("t1")
+
+    #expect(library.projectCardOpen == false)
+    #expect(library.cardTarget == .task(TaskID("t1")))
+  }
+
+  @Test("opening another project, or leaving the projects, closes the card")
+  func navigatingClosesTheProjectCard() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+    library.toggleProjectCard(TaskID("p1"))
+
+    library.open(.project(TaskID("p2")))
+    #expect(library.projectCardOpen == false)
+
+    library.toggleProjectCard(TaskID("p2"))
+    library.show(.inbox)
+    #expect(library.projectCardOpen == false)
+  }
+
+  @Test("starting a new item closes the project's card")
+  func newItemClosesTheProjectCard() {
+    let (library, _) = makeInbox(gardenLog)
+    library.open(.project(TaskID("p1")))
+    library.toggleProjectCard(TaskID("p1"))
+
+    library.beginNewItem(under: nil, kind: .project(.parallel))
+
+    #expect(library.projectCardOpen == false)
   }
 }
 

@@ -98,8 +98,11 @@ public final class LibraryViewModel {
         editingCard = nil
         newItem = nil
       }
+      if selection != nil { projectCardOpen = false }
     }
   }
+  /// Whether the card of the project shown replaces its list of children, as the pencil on its row does.
+  public internal(set) var projectCardOpen = false
   /// The card being edited, if any. Cards are read-only until Edit puts one here; OK and Cancel take it out.
   public internal(set) var editingCard: CardTarget?
   /// The item the plus button of a column started, edited on the card in the column after it until OK
@@ -144,6 +147,7 @@ public final class LibraryViewModel {
     selection = nil
     editingCard = nil
     newItem = nil
+    projectCardOpen = false
     present()
   }
 
@@ -227,6 +231,7 @@ public final class LibraryViewModel {
     selection = nil
     editingCard = nil
     newItem = nil
+    projectCardOpen = false
     present()
   }
 
@@ -239,6 +244,7 @@ public final class LibraryViewModel {
     selection = nil
     editingCard = nil
     newItem = nil
+    projectCardOpen = false
     present()
   }
 

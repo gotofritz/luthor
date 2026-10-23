@@ -7,8 +7,9 @@ import SwiftUI
 /// of the one picked. Review is the day looked back on. The weekly review is the projects due for review, the one
 /// picked with its card, and its tasks. The
 /// projects are the top-level projects first, then one column for each project on the way to the one shown, listing its sub-projects and tasks
-/// in the order they were added, headed by the project itself and ended by a plus button that adds to it. The
-/// last column is the card of the item being added, else of the task picked or, with none, of the project shown. The priorities are the four
+/// in the order they were added and ended by a plus button that adds to it. The pencil on a project's row swaps
+/// the list of its children for its card. The
+/// last column is the card of the item being added, else of the task picked or, while its pencil is pressed, of the project shown. The priorities are the four
 /// priorities and no priority, picked like the rows of any
 /// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
 /// one picked. Tasks that are not next actions are dimmed. Drag a task onto a
@@ -28,6 +29,11 @@ struct ColumnBrowserView: View {
         }
       }
     }
+  }
+
+  /// Whether the card of the project shown stands in for the column that lists its children.
+  private func isReplacedByCard(_ column: ProjectColumn) -> Bool {
+    library.projectCardOpen && column.parentID != nil && column.parentID == library.shownProject?.id
   }
 
   @ViewBuilder
@@ -50,11 +56,13 @@ struct ColumnBrowserView: View {
       Divider()
     case .projects:
       ForEach(Array(library.columns.enumerated()), id: \.element.id) { position, column in
-        ColumnView(library: library, column: column, position: position) {
-          withAnimation { proxy.scrollTo(column.id, anchor: .leading) }
+        if !isReplacedByCard(column) {
+          ColumnView(library: library, column: column, position: position) {
+            withAnimation { proxy.scrollTo(column.id, anchor: .leading) }
+          }
+          .id(column.id)
+          Divider()
         }
-        .id(column.id)
-        Divider()
       }
     case .priorities:
       PriorityColumn(library: library)
@@ -148,6 +156,21 @@ struct ProjectRow: View {
     library.completedProjectIDs.contains(project.id)
   }
 
+  /// Swaps the list of the project's children for its card, and back.
+  private var pencil: some View {
+    let isOpen = library.projectCardOpen && library.shownProject?.id == project.id
+    return Button {
+      library.toggleProjectCard(project.id)
+    } label: {
+      Image(systemName: "pencil")
+        .padding(4)
+        .background(isOpen ? Color.accentColor.opacity(0.25) : .clear, in: RoundedRectangle(cornerRadius: 5))
+    }
+    .buttonStyle(.plain)
+    .help(isOpen ? "Show the list of this project" : "Show the card of this project")
+    .accessibilityLabel("Edit")
+  }
+
   var body: some View {
     HStack {
       Label(project.title, systemImage: project.kind.symbol)
@@ -159,6 +182,9 @@ struct ProjectRow: View {
           .help("Dropped")
       }
       Spacer()
+      if library.path.contains(project.id) {
+        pencil
+      }
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
     }

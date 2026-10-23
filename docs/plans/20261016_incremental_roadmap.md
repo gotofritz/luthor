@@ -1094,3 +1094,14 @@ write when OK is pressed.
    outrank the old ones. History (time
    logged, reviewed days) is dropped; tasks, projects, settings and project
    reviews stay. Events are never deleted in place
+
+## Decisions (2026-10-23, editing a project in the columns)
+
+A project's column no longer starts with the project repeated at its head.
+The pencil on the project's own row (shown on the projects the columns lead
+through) swaps the list of its children for its card, in the column right
+after the row; pressed again it brings the list back. Opening a project shows
+its list with no card until a task is picked or the pencil is pressed. State
+is `projectCardOpen` in the view model, closed by picking a task, opening
+another project, starting a new item or leaving the Projects place. No event
+changes.

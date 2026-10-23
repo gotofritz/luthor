@@ -6,12 +6,9 @@ import SwiftUI
 private enum ColumnSelection: Hashable {
   case project(TaskID)
   case task(TaskID)
-  /// The first row of a project's column, the project itself, which picks its card.
-  case header
 }
 
-/// One column: the top-level projects, or the project at its head followed by its children, and a plus button
-/// at its end.
+/// One column: the top-level projects, or the children of a project, and a plus button at its end.
 struct ColumnView: View {
   @Bindable var library: LibraryViewModel
   let column: ProjectColumn
@@ -22,14 +19,6 @@ struct ColumnView: View {
 
   var body: some View {
     List(selection: selection) {
-      if let project = headProject {
-        Label(project.title, systemImage: "arrowtriangle.down.fill")
-          .font(Theme.section)
-          .tag(ColumnSelection.header)
-          .contentShape(Rectangle())
-          .onTapGesture { click(.header) }
-          .help("Show the card of this project")
-      }
       ForEach(column.entries) { entry in
         switch entry {
         case .project(let project):
@@ -55,18 +44,13 @@ struct ColumnView: View {
     }
   }
 
-  /// The project the column lists the children of; the first column has none.
-  private var headProject: Project? {
-    column.parentID.flatMap { id in library.knownProjects.first { $0.id == id } }
-  }
-
-  /// The project of the path this column leads to, else the task picked or, with none, the project at its head.
+  /// The project of the path this column leads to, else the task picked.
   private var selection: Binding<ColumnSelection?> {
     Binding(
       get: {
         if position < library.path.count { return .project(library.path[position]) }
         if column.parentID == nil { return nil }
-        return library.selection.map(ColumnSelection.task) ?? .header
+        return library.selection.map(ColumnSelection.task)
       },
       set: { picked in
         if let picked {
@@ -89,8 +73,6 @@ struct ColumnView: View {
     switch picked {
     case .project(let projectID):
       library.open(.project(projectID))
-    case .header:
-      if let parentID = column.parentID { library.open(.project(parentID)) }
     case .task(let taskID):
       if let parentID = column.parentID, library.path.last != parentID { library.open(.project(parentID)) }
       library.selection = taskID
