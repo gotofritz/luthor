@@ -110,7 +110,9 @@ Sources/
                              project is an item with a kind); TaskMoved, TaskKindChanged;
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
-                             TaskDelegated/Reclaimed, TaskDropped, TaskDueSet
+                             TaskDelegated/Reclaimed, TaskDropped, TaskDueSet, DayHoursSet (the start and end of one day),
+                             TaskStartSet (the minute a planned task starts at),
+                             DayBlockSet, DayBlockRemoved (BlockEvents.swift: untracked time on a day, such as lunch)
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
@@ -127,6 +129,7 @@ Sources/
     Commands.swift           command → new events; IDGenerator protocol, CommandError
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed or dropped task or project
+    Commands+Blocks.swift    add, change and remove a block of untracked time on a day
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
@@ -153,6 +156,7 @@ Sources/
     Project.swift            Project (an item with a kind: own priority and estimate, children) and ProjectChild
     LibraryState+Completion.swift  Completed<Item> (completed or dropped); finishing an item with its subtree,
                              and reopening it
+    LibraryState+Capacity.swift  capacity(in:on:planning:): a day's own capacity, else its weekday's
     LibraryState+Due.swift   DueDate (date + hard or target), applying TaskDueSet, dueDate(of:) and
                              effectiveDueDate(of:) (own, else the nearest ancestor's)
     LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
@@ -172,11 +176,14 @@ Sources/
     ViewState.swift          one view's open tasks, completed tasks and projects, inbox of
                              unclarified tasks, project tree, recursive next actions excluding
                              someday; tasks by priority
+    DayPlan.swift            the plan's types: Delegation, PlanEntry, DayCapacity, DayPlan (slots on the day's hours),
+                             PlanSlot, WaitingItem
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; effective hard
-                             deadlines rank after priority; only tasks, never projects), waitingFor(in:today:)
+                             deadlines rank after priority; only tasks, never projects; DayPlan.slots(notBefore:) lays the entries on the day's
+                             hours, set starts first), hours(in:on:), waitingFor(in:today:)
     Settings.swift           SettingKey, ThemeAccent (the eight accent names; the app colours them), Weekday,
-                             Settings (typed planning numbers and the view's accent); SettingChanged
+                             Settings (typed planning numbers, DayHours per weekday and the view's accent); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
                              default view, as an extension (split out for file_length, not access)
@@ -220,6 +227,7 @@ Sources/
                              reading the log and
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
+    ClockText.swift          clockText(_:), minutes after midnight as 09:00
     StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
     EstimateScale.swift      the estimate slider's logarithmic scale, 5 minutes to a week, and estimate labels
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
@@ -232,11 +240,14 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              last column while the pencil on the project's row is pressed, replacing its list (the fields of an open item are CardLiveFields, changed by clicking and kept at once, with no edit mode; CardProjectPicker: the project tree pulldown at the top of a card; CardFieldsForm is the form of a new item's card); NotesViews: notes
                              as deletable bullets with clickable links and a field that adds one; LinkedText: a note as an AppKit text view, so
                              the pointer is a hand over a link; SettingsColumnsView: Global/Views/This Mac setting families (Views: the list of views, then the settings of the one picked),
-                             then the individual settings of the one picked; TodayView: the day's plan
-                             and the Plan / Review toggle, capacity meter, leftovers, candidates, Waiting for, delegate dialog;
+                             then the individual settings of the one picked; WeekdaySettingsViews: the Global rows that open a
+                             column of their own, the weekday capacity fields and the quarter-hour grid for day start and end; TodayView: the candidates with a
+                             Waiting for toggle, leftovers, the day header, capacity meter, Plan / Review toggle, delegate dialog;
+                             DayCalendarView: the day as an hour grid with the start and end fields, zoom, drag and drop,
+                             set start times;
                              CalendarView: the list of days and the tasks of the one picked;
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
-                             TagsView: the Tags place's tag column and Today's candidate filter menu;
+                             TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;

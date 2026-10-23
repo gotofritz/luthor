@@ -91,6 +91,10 @@ private struct EventLineDTO: Codable {
     case taskUnscheduled = "TaskUnscheduled"
     case dayPlanOrdered = "DayPlanOrdered"
     case dayCapacitySet = "DayCapacitySet"
+    case dayHoursSet = "DayHoursSet"
+    case taskStartSet = "TaskStartSet"
+    case dayBlockSet = "DayBlockSet"
+    case dayBlockRemoved = "DayBlockRemoved"
     case taskDelegated = "TaskDelegated"
     case taskReclaimed = "TaskReclaimed"
     case taskDropped = "TaskDropped"
@@ -133,6 +137,10 @@ private struct EventLineDTO: Codable {
       case .taskUnscheduled: .taskUnscheduled(try container.decode(TaskUnscheduled.self, forKey: .data))
       case .dayPlanOrdered: .dayPlanOrdered(try container.decode(DayPlanOrdered.self, forKey: .data))
       case .dayCapacitySet: .dayCapacitySet(try container.decode(DayCapacitySet.self, forKey: .data))
+      case .dayHoursSet: .dayHoursSet(try container.decode(DayHoursSet.self, forKey: .data))
+      case .taskStartSet: .taskStartSet(try container.decode(TaskStartSet.self, forKey: .data))
+      case .dayBlockSet: .dayBlockSet(try container.decode(DayBlockSet.self, forKey: .data))
+      case .dayBlockRemoved: .dayBlockRemoved(try container.decode(DayBlockRemoved.self, forKey: .data))
       case .taskDelegated: .taskDelegated(try container.decode(TaskDelegated.self, forKey: .data))
       case .taskReclaimed: .taskReclaimed(try container.decode(TaskReclaimed.self, forKey: .data))
       case .taskDropped: .taskDropped(try container.decode(TaskDropped.self, forKey: .data))
@@ -199,6 +207,10 @@ private struct EventLineDTO: Codable {
     case .taskUnscheduled(let data): try write(.taskUnscheduled, data, to: &container)
     case .dayPlanOrdered(let data): try write(.dayPlanOrdered, data, to: &container)
     case .dayCapacitySet(let data): try write(.dayCapacitySet, data, to: &container)
+    case .dayHoursSet(let data): try write(.dayHoursSet, data, to: &container)
+    case .taskStartSet(let data): try write(.taskStartSet, data, to: &container)
+    case .dayBlockSet(let data): try write(.dayBlockSet, data, to: &container)
+    case .dayBlockRemoved(let data): try write(.dayBlockRemoved, data, to: &container)
     case .taskDelegated(let data): try write(.taskDelegated, data, to: &container)
     case .taskReclaimed(let data): try write(.taskReclaimed, data, to: &container)
     case .taskDropped(let data): try write(.taskDropped, data, to: &container)

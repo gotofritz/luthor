@@ -55,6 +55,19 @@ extension LibraryViewModel {
     changeGlobalSetting(weekday.capacityKey, to: minutes.map(String.init))
   }
 
+  /// Changes the global start and end of a weekday, in minutes after midnight, or with `nil` clears one
+  /// back to the built-in hour.
+  public func changeGlobalDayHours(_ weekday: Weekday, start: Int?, end: Int?) {
+    if let start { changeGlobalSetting(weekday.startKey, to: String(start)) }
+    if let end { changeGlobalSetting(weekday.endKey, to: String(end)) }
+  }
+
+  /// Takes a weekday's global start and end of day back to the built-in hours.
+  public func resetGlobalDayHours(_ weekday: Weekday) {
+    changeGlobalSetting(weekday.startKey, to: nil)
+    changeGlobalSetting(weekday.endKey, to: nil)
+  }
+
   /// Overrides the capacity of a weekday for the current view, or with `nil` clears the override.
   public func changeCapacityForCurrentView(_ weekday: Weekday, minutes: Int?) {
     changeSettingForCurrentView(weekday.capacityKey, to: minutes.map(String.init))

@@ -156,15 +156,14 @@ struct ProjectCard: View {
   }
 }
 
-/// When the task is due: a hard deadline or a target date, in red once the day has passed.
+/// When the task is due, in red once the day has passed.
 private struct DueLine: View {
   let due: DueDate
   let today: CalendarDate
 
   var body: some View {
     Label(
-      "\(due.isHard ? "Deadline" : "Target date") \(due.date.isoString)",
-      systemImage: due.isHard ? "exclamationmark.circle" : "calendar"
+      "Due \(due.date.isoString)", systemImage: "calendar"
     )
     .font(.callout)
     .foregroundStyle(due.date < today ? Color.red : Color.primary)

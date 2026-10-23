@@ -114,22 +114,26 @@ public final class LibraryViewModel {
 
   let log: any EventLog
   let clock: () -> CalendarDate
+  /// The minutes since midnight by the clock.
+  let minuteClock: () -> Int
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
 
-  /// `today` tells the day it is; the default is the system clock.
+  /// `today` tells the day it is and `now` the minutes since midnight; the default is the system clock.
   public init(
     log: any EventLog,
     commands: Commands,
     view: ViewID = .default,
-    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() }
+    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() },
+    now: @escaping () -> Int = { minutesSinceMidnight() }
   ) {
     self.log = log
     self.commands = commands
     clock = today
+    minuteClock = now
     currentView = view
     let day = today()
     self.today = day

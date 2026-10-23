@@ -6,8 +6,8 @@ import SwiftUI
 
 /// The window: the navigation rail on the left; on the right a bar with the search box and the view
 /// switcher, the capture field and the columns of the place picked. The capture field keeps the focus: Return
-/// captures into the inbox or the project shown, ↑ and ↓ select one of its tasks, ⌘Return completes it. In the
-/// projects there is no capture field: each column has a plus button that adds to it.
+/// captures into the inbox, ↑ and ↓ select one of its tasks, ⌘Return completes it. It is shown in the inbox only,
+/// where it takes the space it needs; the projects have a plus button on each column that adds to it.
 struct LibraryView: View {
   @Bindable var library: LibraryViewModel
   let configuration: LuthorConfiguration
@@ -22,7 +22,7 @@ struct LibraryView: View {
         header
         topBar
         Divider()
-        if library.section != .projects {
+        if library.section == .inbox {
           captureField
         }
         if let message = library.errorMessage {
@@ -113,7 +113,7 @@ struct LibraryView: View {
   }
 
   private var captureField: some View {
-    TextField("New task in \(captureTarget)", text: $library.draft)
+    TextField("New task in Inbox", text: $library.draft)
       .textFieldStyle(.plain)
       .font(.title3)
       .padding(12)
@@ -140,14 +140,6 @@ struct LibraryView: View {
 
   private var shownProject: Project? {
     library.shownProject
-  }
-
-  /// Where a captured task goes: the project the weekly review has picked, the project shown, or the inbox.
-  private var captureTarget: String {
-    if library.section == .weeklyReview {
-      return library.projectReview.first { $0.project.id == library.reviewProjectID }?.project.title ?? "Inbox"
-    }
-    return shownProject?.title ?? "Inbox"
   }
 
   private var title: String {

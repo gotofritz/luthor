@@ -15,6 +15,31 @@ public enum Weekday: String, Sendable, CaseIterable, Codable, Hashable {
     }
   }
 
+  /// The `SettingKey`s its start and end of day are stored under, in minutes after midnight.
+  public var startKey: SettingKey {
+    switch self {
+    case .monday: .dayStartMonday
+    case .tuesday: .dayStartTuesday
+    case .wednesday: .dayStartWednesday
+    case .thursday: .dayStartThursday
+    case .friday: .dayStartFriday
+    case .saturday: .dayStartSaturday
+    case .sunday: .dayStartSunday
+    }
+  }
+
+  public var endKey: SettingKey {
+    switch self {
+    case .monday: .dayEndMonday
+    case .tuesday: .dayEndTuesday
+    case .wednesday: .dayEndWednesday
+    case .thursday: .dayEndThursday
+    case .friday: .dayEndFriday
+    case .saturday: .dayEndSaturday
+    case .sunday: .dayEndSunday
+    }
+  }
+
   /// Minutes the weekday carries before any `SettingChanged` touches it: a working day, none at the
   /// weekend.
   public var builtInCapacityMinutes: Int {
@@ -22,6 +47,25 @@ public enum Weekday: String, Sendable, CaseIterable, Codable, Hashable {
     case .saturday, .sunday: 0
     case .monday, .tuesday, .wednesday, .thursday, .friday: 480
     }
+  }
+}
+
+/// When a day starts and ends, in minutes after midnight.
+public struct DayHours: Equatable, Sendable {
+  /// 09:00 to 17:00.
+  public static let builtIn = DayHours(start: 9 * 60, end: 17 * 60)
+
+  public let start: Int
+  public let end: Int
+
+  public init(start: Int, end: Int) {
+    self.start = start
+    self.end = end
+  }
+
+  /// Whether it is a stretch within one day: it starts before it ends, and both fall on that day.
+  public var isValid: Bool {
+    start >= 0 && end <= 24 * 60 && start < end
   }
 }
 
@@ -40,6 +84,11 @@ public enum SettingKey: String, Codable, Sendable, CaseIterable, Hashable {
   case capacityFriday
   case capacitySaturday
   case capacitySunday
+  /// When each weekday starts and ends, in minutes after midnight.
+  case dayStartMonday, dayStartTuesday, dayStartWednesday, dayStartThursday, dayStartFriday
+  case dayStartSaturday, dayStartSunday
+  case dayEndMonday, dayEndTuesday, dayEndWednesday, dayEndThursday, dayEndFriday, dayEndSaturday
+  case dayEndSunday
   /// The default view; nothing reads it since the CLI was removed. Global only; a view cannot override
   /// which view is the default.
   case defaultViewID
@@ -63,16 +112,19 @@ public struct Settings: Equatable, Sendable {
   public let bufferPercentage: Int
   /// Usable minutes for each weekday, before the buffer.
   public let capacity: [Weekday: Int]
+  /// When each weekday starts and ends.
+  public let dayHours: [Weekday: DayHours]
   /// The accent the view is drawn in.
   public let themeAccent: ThemeAccent
 
   public init(
     defaultEstimateMinutes: Int, bufferPercentage: Int, capacity: [Weekday: Int],
-    themeAccent: ThemeAccent = .navy
+    dayHours: [Weekday: DayHours] = [:], themeAccent: ThemeAccent = .navy
   ) {
     self.defaultEstimateMinutes = defaultEstimateMinutes
     self.bufferPercentage = bufferPercentage
     self.capacity = capacity
+    self.dayHours = dayHours
     self.themeAccent = themeAccent
   }
 }
@@ -134,10 +186,18 @@ extension LibraryState {
       uniqueKeysWithValues: Weekday.allCases.map { weekday in
         (weekday, value(weekday.capacityKey).flatMap(Int.init) ?? weekday.builtInCapacityMinutes)
       })
+    let dayHours = Dictionary(
+      uniqueKeysWithValues: Weekday.allCases.map { weekday in
+        let hours = DayHours(
+          start: value(weekday.startKey).flatMap(Int.init) ?? DayHours.builtIn.start,
+          end: value(weekday.endKey).flatMap(Int.init) ?? DayHours.builtIn.end)
+        return (weekday, hours.isValid ? hours : .builtIn)
+      })
     return Settings(
       defaultEstimateMinutes: value(.defaultEstimateMinutes).flatMap(Int.init) ?? Settings.defaultEstimateMinutes,
       bufferPercentage: value(.bufferPercentage).flatMap(Int.init) ?? Settings.defaultBufferPercentage,
       capacity: capacity,
+      dayHours: dayHours,
       themeAccent: value(.themeAccent).flatMap(ThemeAccent.init) ?? .navy
     )
   }

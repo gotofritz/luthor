@@ -9,7 +9,6 @@ struct CardFields {
   var estimate: Int?
   var hasDue: Bool
   var dueDay: Date
-  var dueIsHard: Bool
   var repeatRule: RepeatRule?
   var tagsText: String
 
@@ -20,7 +19,6 @@ struct CardFields {
     let due = library.dueDate(of: id)
     hasDue = due != nil
     dueDay = due?.date.startOfDay ?? Date()
-    dueIsHard = due?.isHard ?? true
     repeatRule = library.repeatRule(of: id)
     tagsText = library.tagItems(of: id).map(\.name).joined(separator: ", ")
   }
@@ -31,13 +29,12 @@ struct CardFields {
     self.estimate = estimate
     hasDue = false
     dueDay = Date()
-    dueIsHard = true
     repeatRule = nil
     tagsText = ""
   }
 
   func draft(title: String, notes: String) -> TaskCardDraft {
-    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
+    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: false) } : nil
     return TaskCardDraft(
       title: title, priority: priority, estimate: estimate, due: due, notes: notes,
       tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule)
@@ -61,11 +58,6 @@ struct CardFieldsForm: View {
     Toggle("Due date", isOn: $fields.hasDue)
     if fields.hasDue {
       DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
-      Picker("Kind", selection: $fields.dueIsHard) {
-        Text("Hard deadline").tag(true)
-        Text("Target date").tag(false)
-      }
-      .pickerStyle(.segmented)
     }
     RepeatEditor(rule: $fields.repeatRule, hasDue: fields.hasDue)
     tagsField

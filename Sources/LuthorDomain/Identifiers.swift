@@ -69,6 +69,15 @@ public struct TagID: Hashable, Codable, Sendable {
   }
 }
 
+/// Identifies a block of untracked time on a day, such as lunch.
+public struct BlockID: Hashable, Codable, Sendable {
+  public let rawValue: String
+
+  public init(_ rawValue: String) {
+    self.rawValue = rawValue
+  }
+}
+
 /// Identifies a view, a separate space such as Work or Private that every task and project belongs to.
 public struct ViewID: Hashable, Codable, Sendable {
   /// The view replay always creates; it holds everything written before views existed.
@@ -115,6 +124,17 @@ extension TaskID {
 }
 
 extension ViewID {
+  public init(from decoder: any Decoder) throws {
+    self.init(try decoder.singleValueContainer().decode(String.self))
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
+extension BlockID {
   public init(from decoder: any Decoder) throws {
     self.init(try decoder.singleValueContainer().decode(String.self))
   }

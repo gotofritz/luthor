@@ -56,8 +56,8 @@ struct EffectiveDueDateTests {
     #expect(candidates.map(\.task.title) == ["gather receipts", "fill the form", "water plants"])
   }
 
-  @Test("a target date does not rank")
-  func aTargetDateDoesNotRank() {
+  @Test("a target date ranks its tasks too")
+  func aTargetDateRanksItsTasks() {
     let state = LibraryState.replay(taxes + [dueSet("p1", on: "2026-10-19", hard: false, lamport: 8)])
 
     let candidates = state.plan(for: .default, on: monday, today: monday).candidates
