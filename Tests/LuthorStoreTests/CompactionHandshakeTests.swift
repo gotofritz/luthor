@@ -7,8 +7,11 @@ import Testing
 @Suite("When a Mac asks the others to stop writing so the log can be compacted")
 struct CompactionHandshakeTests {
   private func handshake(_ device: String, in dir: TemporaryDirectory) -> CompactionHandshake {
-    CompactionHandshake(directory: dir.url, deviceID: DeviceID(device))
+    CompactionHandshake(directory: dir.url, deviceID: DeviceID(device), now: { Self.fiveMinutesIn })
   }
+
+  /// A clock a few minutes after the time the requests of these tests carry, so none has run out.
+  private static let fiveMinutesIn = Date(timeIntervalSince1970: 1_792_425_900)
 
   private func writeEvents(_ count: Int, as device: String, in dir: TemporaryDirectory) throws {
     let log = DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID(device))
