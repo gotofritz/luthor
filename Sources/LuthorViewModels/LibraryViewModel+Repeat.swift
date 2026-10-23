@@ -9,20 +9,23 @@ extension LibraryViewModel {
     return state.repeatRule(of: taskID)
   }
 
-  /// Makes a task repeat by `rule`, or with `nil` stops it. A task with no due date is given the day Today
-  /// shows, as a target date, to count from.
+  /// Makes a task repeat by `rule`, or with `nil` stops it. A repeat never gives the task a due date, and one
+  /// with no due date is counted from the day the task is done.
   public func setRepeat(_ taskID: TaskID, to rule: RepeatRule?) {
-    let day = planDate
     perform { (log) throws(CommandError) in
-      try commands.setRepeat(taskID: taskID, to: rule, dueIfNone: day, log: log)
+      let hasDue = LibraryState.replay(log).dueDate(of: taskID) != nil
+      let rule = hasDue ? rule : rule?.countingFromCompletion
+      return try commands.setRepeat(taskID: taskID, to: rule, dueIfNone: nil, log: log)
     }
   }
 
-  /// Clears a task's due date. A repeat counts from the due date, so a task that repeats stops repeating too.
+  /// Clears a task's due date. A repeat stays, and is counted from the day the task is done from then on.
   public func clearDue(_ taskID: TaskID) {
-    let day = planDate
     perform { (log) throws(CommandError) in
-      var events = try commands.setRepeat(taskID: taskID, to: nil, dueIfNone: day, log: log)
+      var events: [EventEnvelope] = []
+      if let rule = LibraryState.replay(log).repeatRule(of: taskID) {
+        events += try commands.setRepeat(taskID: taskID, to: rule.countingFromCompletion, dueIfNone: nil, log: log)
+      }
       events += try commands.setDue(taskID: taskID, to: nil, isHard: false, log: log + events)
       return events
     }

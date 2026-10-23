@@ -95,7 +95,7 @@ it; a target date only shows. A due date never plans a task by itself.
 
 A task can repeat, set in the Repeat field of its card or from its context
 menu: every N days, weeks, months or years, a weekly one on chosen weekdays,
-counted from the due date or from the day it is done. Completing it makes the
+counted from the due date or from the day it is done (a task with no due date can only count from the day it is done; repeat and due date are independent). Completing it makes the
 next one, due by the rule; Skip This One passes over one occurrence, Stop
 Repeating clears the repeat, and Drop Task or Send to Someday end the series.
 

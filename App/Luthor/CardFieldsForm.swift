@@ -59,7 +59,6 @@ struct CardFieldsForm: View {
     }
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
     Toggle("Due date", isOn: $fields.hasDue)
-      .onChange(of: fields.hasDue) { if !fields.hasDue { fields.repeatRule = nil } }
     if fields.hasDue {
       DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
       Picker("Kind", selection: $fields.dueIsHard) {
@@ -68,8 +67,7 @@ struct CardFieldsForm: View {
       }
       .pickerStyle(.segmented)
     }
-    RepeatEditor(rule: $fields.repeatRule)
-      .onChange(of: fields.repeatRule) { giveRepeatADueDate() }
+    RepeatEditor(rule: $fields.repeatRule, hasDue: fields.hasDue)
     tagsField
   }
 
@@ -93,13 +91,5 @@ struct CardFieldsForm: View {
       .disabled(library.tags.isEmpty)
       .help("Add a tag")
     }
-  }
-
-  /// A repeat counts from a due date: turning one on gives an item with none the day Today shows, as a target date.
-  private func giveRepeatADueDate() {
-    guard fields.repeatRule != nil, !fields.hasDue else { return }
-    fields.hasDue = true
-    fields.dueDay = library.planDate.startOfDay ?? Date()
-    fields.dueIsHard = false
   }
 }

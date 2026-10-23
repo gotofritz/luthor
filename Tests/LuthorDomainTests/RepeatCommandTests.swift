@@ -29,6 +29,15 @@ struct SetRepeatCommandTests {
     #expect(events == [repeatSet("t1", weekly, id: "id-1", lamport: 3)])
   }
 
+  @Test("with no day passed in, a task with no due date is not given one")
+  func noDayPassedInGivesNoDueDate() throws {
+    let log = [captured("t1", "water plants", lamport: 1)]
+
+    let events = try makeCommands().setRepeat(taskID: TaskID("t1"), to: weekly, dueIfNone: nil, log: log)
+
+    #expect(events == [repeatSet("t1", weekly, id: "id-1", lamport: 2)])
+  }
+
   @Test("a task with no due date is given the day passed in, as a target date, first")
   func aTaskWithNoDueDateIsGivenOne() throws {
     let log = [captured("t1", "water plants", lamport: 1)]

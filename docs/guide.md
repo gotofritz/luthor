@@ -423,10 +423,13 @@ of the week (Mon and Thu), and a repeat can count from the due date (the
 default) or from the day the task is done. The task's context menu has a
 Repeat submenu for the common cases, and Stop Repeating.
 
-A repeat needs a due date to count from. Switching Repeat on for a task with
-none gives it one: the day Today shows, as a target date. The kind of the due
-date, a hard deadline or a target date, is kept by the next tasks. Unticking
-the due date of a task that repeats stops the repeat too.
+Repeat and the due date are independent: switching Repeat on never gives a
+task a due date, and unticking the due date never stops the repeat. A task
+with no due date repeats from the day it is done ("After it is done"), and
+"From the due date" cannot be picked until it has one. Clearing the due date of
+a task that repeats keeps the repeat and switches it to "After it is done". The
+kind of the due date, a hard deadline or a target date, is kept by the next
+tasks.
 
 Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and

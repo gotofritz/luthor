@@ -135,8 +135,8 @@ struct EndRepeatingFlowTests {
 @MainActor
 @Suite("Given a task with no due date, when I give it a repeat")
 struct RepeatWithoutDueDateFlowTests {
-  @Test("it gets the day Today shows, as a target date")
-  func itGetsTheDayTodayShows() throws {
+  @Test("it stays without one and repeats after it is done")
+  func itStaysWithoutOne() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -146,6 +146,7 @@ struct RepeatWithoutDueDateFlowTests {
 
     library.setRepeat(task, to: RepeatRule(every: 1, unit: .month))
 
-    #expect(library.dueDate(of: task) == DueDate(date: date("2026-10-21"), isHard: false))
+    #expect(library.dueDate(of: task) == nil)
+    #expect(library.repeatRule(of: task) == RepeatRule(every: 1, unit: .month, afterCompletion: true))
   }
 }

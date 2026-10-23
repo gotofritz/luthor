@@ -20,6 +20,11 @@ public struct RepeatRule: Equatable, Hashable, Sendable {
     self.afterCompletion = afterCompletion
   }
 
+  /// This rule counted from the day the task is done, as a task with no due date has to be.
+  public var countingFromCompletion: RepeatRule {
+    RepeatRule(every: every, unit: unit, afterCompletion: true)
+  }
+
   /// The due date of the next occurrence. Counted from completion, it is `completedOn` plus the interval.
   /// Otherwise it is the first date of the rule after the previous due date and after `today`, so a task done
   /// late does not leave a pile of missed occurrences behind. A month keeps the day number of the previous due

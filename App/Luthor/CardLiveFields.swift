@@ -35,7 +35,7 @@ struct CardLiveFields: View {
       priorityButtons
       EstimateSlider(estimate: estimate) { library.estimate(id, as: $0) }
       dueFields
-      RepeatEditor(rule: repeatBinding)
+      RepeatEditor(rule: repeatBinding, hasDue: library.dueDate(of: id) != nil)
       TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
         .textFieldStyle(.roundedBorder)
         .onSubmit(saveTags)
