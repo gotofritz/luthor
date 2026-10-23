@@ -335,15 +335,16 @@ struct CardFieldInPlaceTests {
   @Test("a task's priority, estimate and due date each take effect at once")
   func taskFieldsApplyAtOnce() {
     let (library, _) = makeLibrary()
-    library.selection = TaskID("t2")
+    library.open(.project(TaskID("p1")))
+    library.selection = TaskID("t1")
 
-    library.prioritize(TaskID("t2"), as: .important)
-    library.estimate(TaskID("t2"), as: 30)
-    library.setDue(TaskID("t2"), to: date("2026-10-30"), isHard: false)
+    library.prioritize(TaskID("t1"), as: .important)
+    library.estimate(TaskID("t1"), as: 30)
+    library.setDue(TaskID("t1"), to: date("2026-10-30"), isHard: false)
 
     #expect(library.selectedTask?.priority == .important)
     #expect(library.selectedTask?.estimate == 30)
-    #expect(library.dueDate(of: TaskID("t2")) == DueDate(date: date("2026-10-30"), isHard: false))
+    #expect(library.dueDate(of: TaskID("t1")) == DueDate(date: date("2026-10-30"), isHard: false))
   }
 
   @Test("setting the tags replaces the ones the task has")
