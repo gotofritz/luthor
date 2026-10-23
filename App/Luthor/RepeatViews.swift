@@ -24,11 +24,15 @@ struct RepeatLine: View {
 struct RepeatEditor: View {
   @Binding var rule: RepeatRule?
 
+  /// What the controls show while the item does not repeat: greyed out, and any of them switches Repeat on with it.
+  private static let placeholder = RepeatRule(every: 1, unit: .week)
+
   var body: some View {
+    let current = rule ?? Self.placeholder
     VStack(alignment: .leading, spacing: 8) {
       HStack {
-        Toggle(rule == nil ? "Repeat" : "Repeat every", isOn: isRepeating)
-        if let current = rule {
+        Toggle("Repeat every", isOn: isRepeating)
+        Group {
           Stepper("\(current.every)", value: every(of: current), in: 1...99)
             .fixedSize()
           Picker("", selection: unit(of: current)) {
@@ -39,8 +43,9 @@ struct RepeatEditor: View {
           .labelsHidden()
           .fixedSize()
         }
+        .opacity(rule == nil ? 0.5 : 1)
       }
-      if let current = rule {
+      Group {
         if current.unit == .week && !current.afterCompletion {
           HStack(spacing: 4) {
             ForEach(Weekday.allCases, id: \.self) { day in
@@ -56,10 +61,13 @@ struct RepeatEditor: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        Text(current.summary)
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        if rule != nil {
+          Text(current.summary)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
       }
+      .opacity(rule == nil ? 0.5 : 1)
     }
   }
 

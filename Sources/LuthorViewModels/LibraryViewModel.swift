@@ -113,6 +113,9 @@ public final class LibraryViewModel {
   let clock: () -> CalendarDate
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
+  /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
+  /// tags, a review) reads this too, and the view is told when the log changes.
+  var revision = 0
 
   /// `today` tells the day it is; the default is the system clock.
   public init(

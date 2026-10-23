@@ -25,7 +25,8 @@ extension LibraryViewModel {
 
   /// When a task is due; `nil` if it has no due date.
   public func dueDate(of taskID: TaskID) -> DueDate? {
-    state.dueDate(of: taskID)
+    _ = revision
+    return state.dueDate(of: taskID)
   }
 
   /// Fills the calendar's days and the tasks of the day picked.

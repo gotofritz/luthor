@@ -1,3 +1,4 @@
+import Observation
 import LuthorDomain
 import LuthorStore
 import LuthorTestSupport
@@ -355,5 +356,33 @@ struct CardFieldInPlaceTests {
     library.setTags(TaskID("t2"), to: ["calls", "errands"])
 
     #expect(library.tagItems(of: TaskID("t2")).map(\.name).sorted() == ["calls", "errands"])
+  }
+}
+
+private final class Told: @unchecked Sendable {
+  var value = false
+}
+
+@MainActor
+@Suite("When a card field read from the log changes")
+struct CardFieldObservationTests {
+  @Test("a view that read the due date is told", arguments: ["due", "repeat", "tags", "review"])
+  func readersAreNotified(field: String) {
+    let (library, _) = makeLibrary()
+    let told = Told()
+
+    withObservationTracking {
+      switch field {
+      case "due": _ = library.dueDate(of: TaskID("t1"))
+      case "repeat": _ = library.repeatRule(of: TaskID("t1"))
+      case "tags": _ = library.tagItems(of: TaskID("t1"))
+      default: _ = library.nextReviewDate(of: TaskID("p1"))
+      }
+    } onChange: {
+      told.value = true
+    }
+    library.setDue(TaskID("t1"), to: date("2026-10-30"), isHard: true)
+
+    #expect(told.value)
   }
 }

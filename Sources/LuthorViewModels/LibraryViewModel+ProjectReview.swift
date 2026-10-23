@@ -40,17 +40,20 @@ extension LibraryViewModel {
 
   /// How often the project is reviewed: its own interval, else the default.
   public func reviewInterval(of projectID: TaskID) -> ReviewInterval {
-    state.reviewInterval(of: projectID)
+    _ = revision
+    return state.reviewInterval(of: projectID)
   }
 
   /// The interval the project has of its own; `nil` while it follows the default.
   public func reviewOverride(of projectID: TaskID) -> ReviewInterval? {
-    state.reviewOverride(of: projectID)
+    _ = revision
+    return state.reviewOverride(of: projectID)
   }
 
   /// The day the project is reviewed next; `nil` when its review is off or it was dropped.
   public func nextReviewDate(of projectID: TaskID) -> CalendarDate? {
-    state.nextReviewDate(of: projectID)
+    _ = revision
+    return state.nextReviewDate(of: projectID)
   }
 
   /// Gives up a project; it is not reviewed, and its tasks stay open.

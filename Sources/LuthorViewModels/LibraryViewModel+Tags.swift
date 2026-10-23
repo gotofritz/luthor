@@ -14,7 +14,8 @@ extension LibraryViewModel {
 
   /// The tags a task carries, in the order they were created.
   public func tagItems(of taskID: TaskID) -> [TagItem] {
-    state.tags(of: taskID)
+    _ = revision
+    return state.tags(of: taskID)
   }
 
   /// Puts the tag called `name` on a task, creating it in the task's view if the view has none of that name.
