@@ -217,7 +217,7 @@ Sources/
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
-                             reviewing a day in LibraryViewModel+Review.swift, the weekly project review (due list, mark
+                             reviewing a day in LibraryViewModel+Review.swift, starting and stopping a task now in LibraryViewModel+Running.swift, the weekly project review (due list, mark
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
