@@ -58,6 +58,8 @@ public enum EventPayload: Equatable, Sendable {
   case taskStartSet(TaskStartSet)
   case dayBlockSet(DayBlockSet)
   case dayBlockRemoved(DayBlockRemoved)
+  case taskSessionSet(TaskSessionSet)
+  case taskSessionRemoved(TaskSessionRemoved)
   case taskDelegated(TaskDelegated)
   case taskReclaimed(TaskReclaimed)
   case taskDropped(TaskDropped)

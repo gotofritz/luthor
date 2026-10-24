@@ -68,3 +68,36 @@ public func blockRemoved(_ block: String, id: String? = nil, device: String = "m
     payload: .dayBlockRemoved(DayBlockRemoved(blockID: BlockID(block)))
   )
 }
+
+/// Builds a `TaskSessionSet` envelope: a stretch of a planned task's day set apart from the rest of it.
+public func sessionSet(
+  _ session: String,
+  _ task: String,
+  _ start: Int,
+  _ minutes: Int,
+  on day: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 2
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "session-\(session)-\(lamport)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskSessionSet(
+      TaskSessionSet(
+        sessionID: SessionID(session), taskID: TaskID(task), date: date(day), start: start, minutes: minutes))
+  )
+}
+
+/// Builds a `TaskSessionRemoved` envelope.
+public func sessionRemoved(_ session: String, id: String? = nil, device: String = "mac", lamport: UInt64 = 3)
+  -> EventEnvelope
+{
+  EventEnvelope(
+    id: EventID(id ?? "session-removed-\(session)-\(lamport)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .taskSessionRemoved(TaskSessionRemoved(sessionID: SessionID(session)))
+  )
+}

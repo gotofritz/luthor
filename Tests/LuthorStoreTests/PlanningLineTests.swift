@@ -77,6 +77,18 @@ struct PlanningLineTests {
     #expect(removed == #"{"data":{"blockID":"b1"},"device":"mac","id":"e10","lamport":10,"type":"DayBlockRemoved"}"#)
   }
 
+  @Test("a TaskSessionSet carries the task, the start and the minutes")
+  func taskSessionSetCarriesTheMinutes() throws {
+    let line = try EventLine.encode(sessionSet("s1", "t1", 540, 30, on: "2026-10-19", id: "e11", lamport: 11))
+    let removed = try EventLine.encode(sessionRemoved("s1", id: "e12", lamport: 12))
+
+    #expect(
+      line
+        == #"{"data":{"date":"2026-10-19","minutes":30,"sessionID":"s1","start":540,"taskID":"t1"},"device":"mac","id":"e11","lamport":11,"type":"TaskSessionSet"}"#
+    )
+    #expect(removed == #"{"data":{"sessionID":"s1"},"device":"mac","id":"e12","lamport":12,"type":"TaskSessionRemoved"}"#)
+  }
+
   @Test("a TaskDelegated without a follow-up date has no follow-up field")
   func taskDelegatedWithoutAFollowUpHasNoFollowUpField() throws {
     let line = try EventLine.encode(delegated("t1", to: "Sam", since: "2026-10-19", id: "e4", lamport: 4))

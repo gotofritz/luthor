@@ -34,7 +34,7 @@ struct RunningViewModelTests {
     #expect(library.isRunning(TaskID("t1")))
   }
 
-  @Test("stopping it logs the minutes since the start, keeps the start and ends the slot at the time now")
+  @Test("stopping it logs the minutes since the start and turns the run into a session, keeping the estimate")
   func stoppingLogsTheMinutes() {
     let clock = Clock(600)
     let library = makeLibrary(planned) { clock.minute }
@@ -43,8 +43,10 @@ struct RunningViewModelTests {
 
     library.stopNow(TaskID("t1"))
 
-    #expect(library.plan.entries.first?.start == 600)
-    #expect(library.plan.entries.first?.minutes == 45)
+    #expect(library.plan.sessions.map(\.start) == [600])
+    #expect(library.plan.sessions.map(\.minutes) == [45])
+    #expect(library.plan.entries.first?.minutes == 60)
+    #expect(library.planSlots.first?.entry.minutes == 15)
     #expect(!library.isRunning(TaskID("t1")))
     #expect(library.review.notDone.first?.loggedMinutes == 45)
   }
@@ -116,7 +118,7 @@ struct ReviewPrefillViewModelTests {
 @MainActor
 @Suite("When a task is stopped after its estimated end")
 struct RunningOverrunTests {
-  @Test("it stays where it started, grows to now and the next task keeps its place if there is room")
+  @Test("the run becomes a session up to now and the next task keeps its place if there is room")
   func itGrowsToNow() {
     let events =
       planned + [
@@ -131,8 +133,9 @@ struct RunningOverrunTests {
     library.stopNow(TaskID("t1"))
 
     let slots = library.planSlots
-    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.start == 600)
-    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.end == 699)
+    #expect(library.planSessions.map(\.start) == [600])
+    #expect(library.planSessions.map(\.end) == [699])
+    #expect(slots.first { $0.entry.task.id == TaskID("t1") } == nil)
     #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 705)
   }
 
@@ -150,7 +153,7 @@ struct RunningOverrunTests {
     library.stopNow(TaskID("t1"))
 
     let slots = library.planSlots
-    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.end == 690)
+    #expect(library.planSessions.map(\.end) == [690])
     #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 690)
   }
 }
@@ -277,5 +280,65 @@ struct SetTimesViewModelTests {
 
     #expect(library.plan.entries.first?.minutes == 60)
     #expect(library.plan.entries.first?.start == nil)
+  }
+}
+
+@MainActor
+@Suite("When a task is done on and off through the day")
+struct SessionViewModelTests {
+  @Test("a session takes its minutes from the task's own block, and the estimate stays")
+  func aSessionTakesItsMinutes() {
+    let library = makeLibrary(planned) { 0 }
+
+    library.addSession(of: TaskID("t1"), start: 540, end: 570)
+
+    #expect(library.planSessions.map(\.start) == [540])
+    #expect(library.planSessions.map(\.end) == [570])
+    #expect(library.planSlots.first?.entry.minutes == 30)
+    #expect(library.plan.entries.first?.minutes == 60)
+  }
+
+  @Test("a session dropped on another's place wins it and the other moves to the end of it")
+  func aSessionPushesAnother() {
+    let library = makeLibrary(planned) { 0 }
+    library.addSession(of: TaskID("t1"), start: 540, end: 570)
+    library.addSession(of: TaskID("t1"), start: 600, end: 630)
+    let moved = library.plan.sessions.last
+
+    library.placeSession(moved?.id ?? SessionID("none"), atMinute: 550)
+
+    #expect(library.planSessions.map(\.start) == [550, 580])
+    #expect(library.plan.sessions.map(\.start).sorted() == [550, 580])
+  }
+
+  @Test("removing a session gives its minutes back")
+  func removingGivesTheMinutesBack() {
+    let library = makeLibrary(planned) { 0 }
+    library.addSession(of: TaskID("t1"), start: 540, end: 570)
+
+    library.removeSession(library.plan.sessions.first?.id ?? SessionID("none"))
+
+    #expect(library.planSessions.isEmpty)
+    #expect(library.planSlots.first?.entry.minutes == 60)
+  }
+
+  @Test("a session that takes the whole estimate leaves no block of the task's own")
+  func aWholeSessionLeavesNoOwnBlock() {
+    let library = makeLibrary(planned) { 0 }
+
+    library.addSession(of: TaskID("t1"), start: 540, end: 600)
+
+    #expect(library.planSlots.isEmpty)
+    #expect(library.planSessions.count == 1)
+  }
+
+  @Test("setting the times of the task's own block keeps its sessions in the estimate")
+  func theEstimateKeepsTheSessions() {
+    let library = makeLibrary(planned) { 0 }
+    library.addSession(of: TaskID("t1"), start: 540, end: 570)
+
+    library.setTimes(TaskID("t1"), start: 600, end: 645)
+
+    #expect(library.plan.entries.first?.minutes == 75)
   }
 }

@@ -129,6 +129,8 @@ public struct LibraryState: Equatable, Sendable {
   var taskStarts: [TaskID: TaskStart] = [:]
   /// The blocks of untracked time on days.
   var dayBlocks: [BlockID: PlacedBlock] = [:]
+  /// The sessions of planned tasks: stretches of a task's day set apart from the rest of it.
+  var taskSessions: [SessionID: TaskSessionSet] = [:]
   /// What the daily review looks back on: logged time, reviewed days, and the day each completed task was
   /// planned for.
   var reviewRecords = ReviewRecords()
@@ -191,7 +193,7 @@ public struct LibraryState: Equatable, Sendable {
     case .taskDropped(let dropped):
       drop(dropped.taskID)
     case .dayPlanOrdered, .dayCapacitySet, .dayHoursSet, .taskStartSet, .dayBlockSet, .dayBlockRemoved, .taskDueSet,
-      .taskUnscheduled, .taskReclaimed:
+      .taskUnscheduled, .taskReclaimed, .taskSessionSet, .taskSessionRemoved:
       applyPlanning(payload)
     case .tagCreated, .taskTagged, .taskUntagged:
       applyTagEvent(payload)

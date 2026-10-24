@@ -16,6 +16,10 @@ public enum CommandError: Error, Equatable {
   case invalidHours
   /// No block of untracked time has this ID.
   case noBlock(BlockID)
+  /// No session has this ID.
+  case noSession(SessionID)
+  /// A session needs at least a minute, starting and ending within a day.
+  case invalidSession
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.
   case otherView(TaskID, TaskID)

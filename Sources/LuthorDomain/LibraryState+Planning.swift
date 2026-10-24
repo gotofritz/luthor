@@ -17,6 +17,10 @@ extension LibraryState {
       setBlock(block)
     case .dayBlockRemoved(let removed):
       dayBlocks.removeValue(forKey: removed.blockID)
+    case .taskSessionSet(let session):
+      setSession(session)
+    case .taskSessionRemoved(let removed):
+      taskSessions.removeValue(forKey: removed.sessionID)
     case .taskDueSet(let due):
       setDue(due)
     case .taskUnscheduled(let unscheduled):
@@ -57,6 +61,20 @@ extension LibraryState {
     dayBlocks[block.blockID] = PlacedBlock(
       viewID: block.viewID, date: block.date,
       block: DayBlock(id: block.blockID, title: block.title, start: block.start, end: block.end))
+  }
+
+  /// Ignores a session of a task that is not open, not planned for its day, or whose stretch does not fit the day.
+  mutating func setSession(_ session: TaskSessionSet) {
+    guard isOpen(session.taskID), scheduledDates[session.taskID] == session.date, session.minutes > 0,
+      (0..<24 * 60).contains(session.start)
+    else { return }
+    taskSessions[session.sessionID] = session
+  }
+
+  /// The sessions the tasks planned for that day have, earliest first.
+  public func sessions(on date: CalendarDate) -> [TaskSessionSet] {
+    taskSessions.values.filter { $0.date == date && scheduledDates[$0.taskID] == date }
+      .sorted { ($0.start, $0.sessionID.rawValue) < ($1.start, $1.sessionID.rawValue) }
   }
 
   /// The blocks of untracked time the view has on that day, earliest first.
@@ -191,7 +209,17 @@ extension LibraryState {
       plannedMinutes: entries.reduce(0) { $0 + $1.minutes }, unestimatedCount: entries.filter(\.isUnestimated).count)
     return DayPlan(
       viewID: viewID, date: date, entries: entries, candidates: candidates, capacity: capacity,
-      hours: hours(in: viewID, on: date), blocks: blocks(in: viewID, on: date))
+      hours: hours(in: viewID, on: date), blocks: blocks(in: viewID, on: date),
+      sessions: planSessions(on: date, of: entries))
+  }
+
+  /// The sessions of the day as the plan holds them, each with the task it belongs to.
+  private func planSessions(on date: CalendarDate, of entries: [PlanEntry]) -> [PlanSession] {
+    sessions(on: date).compactMap { session in
+      entries.first { $0.task.id == session.taskID }.map {
+        PlanSession(id: session.sessionID, task: $0.task, start: session.start, minutes: session.minutes)
+      }
+    }
   }
 
   /// The view's delegated tasks, the longest wait first.

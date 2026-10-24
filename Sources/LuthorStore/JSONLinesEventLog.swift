@@ -95,6 +95,8 @@ private struct EventLineDTO: Codable {
     case taskStartSet = "TaskStartSet"
     case dayBlockSet = "DayBlockSet"
     case dayBlockRemoved = "DayBlockRemoved"
+    case taskSessionSet = "TaskSessionSet"
+    case taskSessionRemoved = "TaskSessionRemoved"
     case taskDelegated = "TaskDelegated"
     case taskReclaimed = "TaskReclaimed"
     case taskDropped = "TaskDropped"
@@ -141,6 +143,8 @@ private struct EventLineDTO: Codable {
       case .taskStartSet: .taskStartSet(try container.decode(TaskStartSet.self, forKey: .data))
       case .dayBlockSet: .dayBlockSet(try container.decode(DayBlockSet.self, forKey: .data))
       case .dayBlockRemoved: .dayBlockRemoved(try container.decode(DayBlockRemoved.self, forKey: .data))
+      case .taskSessionSet: .taskSessionSet(try container.decode(TaskSessionSet.self, forKey: .data))
+      case .taskSessionRemoved: .taskSessionRemoved(try container.decode(TaskSessionRemoved.self, forKey: .data))
       case .taskDelegated: .taskDelegated(try container.decode(TaskDelegated.self, forKey: .data))
       case .taskReclaimed: .taskReclaimed(try container.decode(TaskReclaimed.self, forKey: .data))
       case .taskDropped: .taskDropped(try container.decode(TaskDropped.self, forKey: .data))
@@ -211,6 +215,8 @@ private struct EventLineDTO: Codable {
     case .taskStartSet(let data): try write(.taskStartSet, data, to: &container)
     case .dayBlockSet(let data): try write(.dayBlockSet, data, to: &container)
     case .dayBlockRemoved(let data): try write(.dayBlockRemoved, data, to: &container)
+    case .taskSessionSet(let data): try write(.taskSessionSet, data, to: &container)
+    case .taskSessionRemoved(let data): try write(.taskSessionRemoved, data, to: &container)
     case .taskDelegated(let data): try write(.taskDelegated, data, to: &container)
     case .taskReclaimed(let data): try write(.taskReclaimed, data, to: &container)
     case .taskDropped(let data): try write(.taskDropped, data, to: &container)

@@ -118,6 +118,8 @@ public struct DayPlan: Equatable, Sendable {
   public let hours: DayHours
   /// The blocks of untracked time on the day, earliest first; tasks go round them.
   public let blocks: [DayBlock]
+  /// The sessions of the planned tasks: stretches of their day set apart from the rest of it.
+  public let sessions: [PlanSession]
 
   public init(
     viewID: ViewID,
@@ -126,7 +128,8 @@ public struct DayPlan: Equatable, Sendable {
     candidates: [PlanEntry],
     capacity: DayCapacity,
     hours: DayHours = .builtIn,
-    blocks: [DayBlock] = []
+    blocks: [DayBlock] = [],
+    sessions: [PlanSession] = []
   ) {
     self.viewID = viewID
     self.date = date
@@ -135,6 +138,7 @@ public struct DayPlan: Equatable, Sendable {
     self.capacity = capacity
     self.hours = hours
     self.blocks = blocks
+    self.sessions = sessions
   }
 
   /// The entries on the day's hours, each as long as the minutes it counts for, and never on top of another or
@@ -151,50 +155,123 @@ public struct DayPlan: Equatable, Sendable {
   /// they are, and the tasks go round them, unless something is being moved: `moving` (a task, at `minute`) or
   /// `movingBlock` is laid first, and everything else makes room for it, blocks included.
   public func layout(
-    notBefore: Int = 0, moving: TaskID? = nil, to minute: Int = 0, movingBlock: DayBlock? = nil
+    notBefore: Int = 0, moving: TaskID? = nil, to minute: Int = 0, movingBlock: DayBlock? = nil,
+    movingSession: SessionID? = nil
   ) -> DayLayout {
-    var taken: [(start: Int, end: Int)] = []
-    func place(length: Int, from first: Int) -> Int {
-      var start = first
-      while let clash = taken.first(where: { $0.start < start + length && $0.end > start }) {
-        start = clash.end
-      }
-      taken.append((start: start, end: start + length))
-      return start
-    }
-    func slot(_ entry: PlanEntry, from first: Int) -> PlanSlot {
-      let start = place(length: entry.minutes, from: first)
-      return PlanSlot(entry: entry, start: start, end: start + entry.minutes)
-    }
-    func block(_ block: DayBlock, from first: Int) -> DayBlock {
-      let start = place(length: block.end - block.start, from: first)
-      return DayBlock(id: block.id, title: block.title, start: start, end: start + block.end - block.start)
-    }
-    let moved = entries.first { $0.task.id == moving }.map { slot($0, from: minute) }
-    let dragged = movingBlock.map { block($0, from: $0.start) }
+    var packer = Packer()
+    let own = ownEntries()
+    let moved = own.first { $0.task.id == moving }.map { packer.slot($0, from: minute) }
+    let draggedBlock = movingBlock.map { packer.block($0, from: $0.start) }
+    let draggedSession = sessions.first { $0.id == movingSession }.map { packer.session($0, from: minute) }
     let resident = blocks.filter { $0.id != movingBlock?.id }
       .sorted { $0.start < $1.start }
-      .map { block($0, from: $0.start) }
-    let own = entries.enumerated().filter { $0.element.start != nil && $0.element.task.id != moving }
-    let fixed = own.sorted { ($0.element.start ?? 0, $0.offset) < ($1.element.start ?? 0, $1.offset) }
-      .map { slot($0.element, from: $0.element.start ?? 0) }
+      .map { packer.block($0, from: $0.start) }
+    let fixedItems: [FixedItem] =
+      sessions.filter { $0.id != movingSession }.map { FixedItem.session($0) }
+      + own.filter { $0.start != nil && $0.task.id != moving }.map { FixedItem.task($0) }
+    var fixedSlots: [PlanSlot] = []
+    var fixedSessions: [SessionSlot] = []
+    for item in fixedItems.enumerated().sorted(by: { ($0.element.start, $0.offset) < ($1.element.start, $1.offset) }) {
+      switch item.element {
+      case .task(let entry): fixedSlots.append(packer.slot(entry, from: entry.start ?? 0))
+      case .session(let one): fixedSessions.append(packer.session(one, from: one.start))
+      }
+    }
     var cursor = max(hours.start, notBefore)
     var flowing: [PlanSlot] = []
-    for entry in entries where entry.start == nil && entry.task.id != moving {
-      let placed = slot(entry, from: cursor)
+    for entry in own where entry.start == nil && entry.task.id != moving {
+      let placed = packer.slot(entry, from: cursor)
       flowing.append(placed)
       cursor = placed.end
     }
     return DayLayout(
-      slots: (fixed + flowing + (moved.map { [$0] } ?? [])).sorted { $0.start < $1.start },
-      blocks: (resident + (dragged.map { [$0] } ?? [])).sorted { $0.start < $1.start })
+      slots: (fixedSlots + flowing + (moved.map { [$0] } ?? [])).sorted { $0.start < $1.start },
+      blocks: (resident + (draggedBlock.map { [$0] } ?? [])).sorted { $0.start < $1.start },
+      sessions: (fixedSessions + (draggedSession.map { [$0] } ?? [])).sorted { $0.start < $1.start })
   }
+
+  /// A task's own block is what its sessions leave of it, and goes when they take all of it.
+  private func ownEntries() -> [PlanEntry] {
+    entries.compactMap { entry in
+      let taken = sessions.filter { $0.task.id == entry.task.id }.reduce(0) { $0 + $1.minutes }
+      guard entry.minutes > taken else { return nil }
+      return PlanEntry(
+        task: entry.task, minutes: entry.minutes - taken, isUnestimated: entry.isUnestimated, reason: entry.reason,
+        start: entry.start)
+    }
+  }
+}
+
+/// What has a time of its own on a day: a task with a start, or a session.
+private enum FixedItem {
+  case task(PlanEntry)
+  case session(PlanSession)
+
+  var start: Int {
+    switch self {
+    case .task(let entry): entry.start ?? 0
+    case .session(let session): session.start
+    }
+  }
+}
+
+/// Lays stretches on a day one after another, each pushed past what is already there.
+private struct Packer {
+  private var taken: [(start: Int, end: Int)] = []
+
+  private mutating func place(length: Int, from first: Int) -> Int {
+    var start = first
+    while let clash = taken.first(where: { $0.start < start + length && $0.end > start }) {
+      start = clash.end
+    }
+    taken.append((start: start, end: start + length))
+    return start
+  }
+
+  mutating func slot(_ entry: PlanEntry, from first: Int) -> PlanSlot {
+    let start = place(length: entry.minutes, from: first)
+    return PlanSlot(entry: entry, start: start, end: start + entry.minutes)
+  }
+
+  mutating func block(_ block: DayBlock, from first: Int) -> DayBlock {
+    let length = block.end - block.start
+    let start = place(length: length, from: first)
+    return DayBlock(id: block.id, title: block.title, start: start, end: start + length)
+  }
+
+  mutating func session(_ session: PlanSession, from first: Int) -> SessionSlot {
+    let start = place(length: session.minutes, from: first)
+    return SessionSlot(session: session, start: start, end: start + session.minutes)
+  }
+}
+
+/// A stretch of a planned task's day set apart from the rest of it, as the plan holds it.
+public struct PlanSession: Equatable, Identifiable, Sendable {
+  public let id: SessionID
+  public let task: TaskItem
+  public let start: Int
+  public let minutes: Int
+
+  public init(id: SessionID, task: TaskItem, start: Int, minutes: Int) {
+    self.id = id
+    self.task = task
+    self.start = start
+    self.minutes = minutes
+  }
+}
+
+/// A session at its place in the day: minutes after midnight.
+public struct SessionSlot: Equatable, Sendable {
+  public let session: PlanSession
+  public let start: Int
+  public let end: Int
 }
 
 /// A day laid out: where the planned tasks and the blocks of untracked time stand, earliest first.
 public struct DayLayout: Equatable, Sendable {
   public let slots: [PlanSlot]
   public let blocks: [DayBlock]
+  public let sessions: [SessionSlot]
 }
 
 /// A planned task at its place in the day: minutes after midnight.

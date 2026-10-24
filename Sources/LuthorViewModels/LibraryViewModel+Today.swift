@@ -48,19 +48,30 @@ extension LibraryViewModel {
   /// The planned tasks of the day shown on its hours. On today the ones without a start of their own do not
   /// begin before it is now, rounded up to the quarter hour.
   public var planSlots: [PlanSlot] {
-    dayLayout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0, block: blockPreview).slots
+    shownLayout.slots
   }
 
   /// The blocks of untracked time of the day shown, where they stand: one dragged over the day is where it
   /// would land, and the ones in its way have moved.
   public var planBlocks: [DayBlock] {
-    dayLayout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0, block: blockPreview).blocks
+    shownLayout.blocks
+  }
+
+  /// The sessions of the day shown, where they stand, as the blocks are.
+  public var planSessions: [SessionSlot] {
+    shownLayout.sessions
+  }
+
+  private var shownLayout: DayLayout {
+    dayLayout(
+      moving: dragPreview?.taskID, to: dragPreview?.minute ?? sessionPreview?.minute ?? 0, block: blockPreview,
+      session: sessionPreview?.sessionID)
   }
 
   /// The one layout of a day, for what is shown while dragging and for what a drop keeps: the tasks and blocks
-  /// with `moving` laid first at `minute` and `block` laid first, the others making room. A candidate being
-  /// dragged counts as planned.
-  private func dayLayout(moving: TaskID?, to minute: Int, block: DayBlock?) -> DayLayout {
+  /// with `moving` (or the session `session`) laid first at `minute` and `block` laid first, the others making
+  /// room. A candidate being dragged counts as planned.
+  func dayLayout(moving: TaskID?, to minute: Int, block: DayBlock?, session: SessionID? = nil) -> DayLayout {
     var entries = plan.entries
     if let moving, !entries.contains(where: { $0.task.id == moving }),
       let candidate = plan.candidates.first(where: { $0.task.id == moving })
@@ -69,13 +80,14 @@ extension LibraryViewModel {
     }
     let shown = DayPlan(
       viewID: plan.viewID, date: plan.date, entries: entries, candidates: plan.candidates,
-      capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks)
-    return shown.layout(notBefore: notBefore, moving: moving, to: minute, movingBlock: block)
+      capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks, sessions: plan.sessions)
+    return shown.layout(
+      notBefore: notBefore, moving: moving, to: minute, movingBlock: block, movingSession: session)
   }
 
   /// The tasks with a time of their own and the blocks that a change moved, as the events that keep them where
   /// they now are. What was moved itself is left out: its own event says where it is.
-  private func keepPushed(
+  func keepPushed(
     _ after: DayLayout, from before: DayLayout, except movedID: String, on day: CalendarDate, log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     var events: [EventEnvelope] = []
@@ -92,10 +104,18 @@ extension LibraryViewModel {
           block.id, title: block.title, start: block.start, end: block.end, log: log + events)
       }
     }
+    for slot in after.sessions where slot.session.id.rawValue != movedID {
+      let was = before.sessions.first { $0.session.id == slot.session.id }?.start
+      if was != slot.start {
+        events += try commands.setSession(
+          slot.session.id, of: slot.session.task.id, on: day, start: slot.start, minutes: slot.session.minutes,
+          log: log + events)
+      }
+    }
     return events
   }
 
-  private var notBefore: Int {
+  var notBefore: Int {
     planDate == today ? (minuteClock() + 14) / 15 * 15 : 0
   }
 

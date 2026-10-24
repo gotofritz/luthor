@@ -112,12 +112,35 @@ func minutesOfDay(_ date: Date) -> Int {
   return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
 }
 
+/// What the times sheet is for: a planned task, a new session of one, or a session it has.
+private enum Timing: Identifiable {
+  case task(TaskID)
+  case newSession(TaskID)
+  case session(SessionID)
+
+  var id: String {
+    switch self {
+    case .task(let id): "task:\(id.rawValue)"
+    case .newSession(let id): "new:\(id.rawValue)"
+    case .session(let id): "session:\(id.rawValue)"
+    }
+  }
+
+  var heading: String {
+    switch self {
+    case .task: "Set Times"
+    case .newSession: "Split Off a Session"
+    case .session: "Set Times of the Session"
+    }
+  }
+}
+
 /// The hour grid, scrolled to the start of the day.
 private struct DayGrid: View {
   @Environment(\.theme) private var theme
   @Bindable var library: LibraryViewModel
   let hourHeight: CGFloat
-  @State private var timingTaskID: TaskID?
+  @State private var timing: Timing?
   @State private var editingBlock: DayBlock?
 
   private static let labelWidth: CGFloat = 48
@@ -125,8 +148,11 @@ private struct DayGrid: View {
   var body: some View {
     let plan = library.plan
     let slots = library.planSlots
-    let firstHour = max(0, min(plan.hours.start, slots.first?.start ?? plan.hours.start) / 60 - 1)
-    let lastHour = min(24, (max(plan.hours.end, slots.map(\.end).max() ?? plan.hours.end) + 59) / 60 + 1)
+    let sessions = library.planSessions
+    let firstStart = min(slots.first?.start ?? plan.hours.start, sessions.first?.start ?? plan.hours.start)
+    let firstHour = max(0, min(plan.hours.start, firstStart) / 60 - 1)
+    let lastEnd = max(slots.map(\.end).max() ?? 0, sessions.map(\.end).max() ?? 0)
+    let lastHour = min(24, (max(plan.hours.end, lastEnd) + 59) / 60 + 1)
     ScrollViewReader { proxy in
       ScrollView {
         ZStack(alignment: .topLeading) {
@@ -136,6 +162,13 @@ private struct DayGrid: View {
           }
           ForEach(slots, id: \.entry.task.id) { slot in
             block(slot, firstHour: firstHour)
+          }
+          ForEach(sessions, id: \.session.id) { slot in
+            SessionBlockView(
+              library: library, slot: slot, hourHeight: hourHeight, edit: { timing = .session(slot.session.id) }
+            )
+            .padding(.leading, Self.labelWidth + 8)
+            .padding(.top, offset(slot.start, firstHour: firstHour))
           }
           if library.planDate == library.today {
             nowLine(firstHour: firstHour)
@@ -152,10 +185,19 @@ private struct DayGrid: View {
     .sheet(item: $editingBlock) { editing in
       DayBlockSheet(library: library, block: editing, suggestedStart: editing.start) { editingBlock = nil }
     }
-    .sheet(isPresented: Binding(get: { timingTaskID != nil }, set: { if !$0 { timingTaskID = nil } })) {
-      if let taskID = timingTaskID {
-        TimesSheet(library: library, taskID: taskID, slot: slot(of: taskID)) { timingTaskID = nil }
-      }
+    .sheet(item: $timing) { target in
+      TimesSheet(
+        library: library, heading: target.heading, slot: slot(of: target),
+        apply: { start, end in apply(target, start: start, end: end) }
+      ) { timing = nil }
+    }
+  }
+
+  private func apply(_ target: Timing, start: Int, end: Int) {
+    switch target {
+    case .task(let taskID): library.setTimes(taskID, start: start, end: end)
+    case .newSession(let taskID): library.addSession(of: taskID, start: start, end: end)
+    case .session(let sessionID): library.setSessionTimes(sessionID, start: start, end: end)
     }
   }
 
@@ -166,16 +208,28 @@ private struct DayGrid: View {
       dragStarted: {
         library.draggedTaskID = nil
         library.draggedBlockID = dayBlock.id
+        library.draggedSessionID = nil
       }
     )
     .padding(.leading, Self.labelWidth + 8)
     .padding(.top, offset(dayBlock.start, firstHour: firstHour))
   }
 
-  private func slot(of taskID: TaskID) -> (start: Int, end: Int) {
-    let slot = library.planSlots.first { $0.entry.task.id == taskID }
-    let start = slot?.start ?? library.plan.hours.start
-    return (start, slot?.end ?? start + 30)
+  /// The times a sheet starts with: where the task or session stands now, or for a new session, a half hour
+  /// from now.
+  private func slot(of target: Timing) -> (start: Int, end: Int) {
+    switch target {
+    case .task(let taskID):
+      let slot = library.planSlots.first { $0.entry.task.id == taskID }
+      let start = slot?.start ?? library.plan.hours.start
+      return (start, slot?.end ?? start + 30)
+    case .newSession:
+      let start = min((library.minuteOfDay + 14) / 15 * 15, 24 * 60 - 30)
+      return (start, start + 30)
+    case .session(let sessionID):
+      let slot = library.planSessions.first { $0.session.id == sessionID }
+      return (slot?.start ?? 0, slot?.end ?? 30)
+    }
   }
 
   private func offset(_ minute: Int, firstHour: Int) -> CGFloat {
@@ -250,6 +304,7 @@ private struct DayGrid: View {
     .onDrag {
       library.draggedTaskID = entry.task.id
       library.draggedBlockID = nil
+      library.draggedSessionID = nil
       return NSItemProvider(object: entry.task.id.rawValue as NSString)
     }
     .contextMenu { blockMenu(entry) }
@@ -288,7 +343,8 @@ private struct DayGrid: View {
         Button("Start Now") { library.startNow(entry.task.id) }
       }
     }
-    Button("Set Times…") { timingTaskID = entry.task.id }
+    Button("Set Times…") { timing = .task(entry.task.id) }
+    Button("Split Off a Session…") { timing = .newSession(entry.task.id) }
     if entry.start != nil {
       Button("Follow the Other Tasks") { library.place(entry.task.id, atMinute: nil) }
     }
@@ -298,95 +354,5 @@ private struct DayGrid: View {
     Button("Move Later in the Order") { library.moveInPlan(entry.task.id, by: 1) }
     Divider()
     DecisionMenuItems(library: library, taskID: entry.task.id)
-  }
-}
-
-/// Asks when a planned task starts and ends, each with a Now button to fill in the time now.
-private struct TimesSheet: View {
-  @Bindable var library: LibraryViewModel
-  let taskID: TaskID
-  @State private var start: Date
-  @State private var end: Date
-  let close: () -> Void
-
-  init(library: LibraryViewModel, taskID: TaskID, slot: (start: Int, end: Int), close: @escaping () -> Void) {
-    self.library = library
-    self.taskID = taskID
-    self.close = close
-    _start = State(initialValue: clockDate(minutes: slot.start))
-    _end = State(initialValue: clockDate(minutes: slot.end))
-  }
-
-  private var isValid: Bool { minutesOfDay(end) > minutesOfDay(start) }
-
-  var body: some View {
-    Form {
-      HStack {
-        DatePicker("Starts at", selection: $start, displayedComponents: .hourAndMinute)
-        Button("Now") { start = clockDate(minutes: library.minuteOfDay) }
-      }
-      HStack {
-        DatePicker("Ends at", selection: $end, displayedComponents: .hourAndMinute)
-        Button("Now") { end = clockDate(minutes: library.minuteOfDay) }
-      }
-      HStack {
-        Spacer()
-        Button("Cancel", role: .cancel, action: close)
-        Button("OK") {
-          library.setTimes(taskID, start: minutesOfDay(start), end: minutesOfDay(end))
-          close()
-        }
-        .keyboardShortcut(.defaultAction)
-        .disabled(!isValid)
-      }
-    }
-    .padding()
-    .frame(width: 300)
-  }
-}
-
-/// Follows a drag over the hour grid: a dragged task shows where it would land while the others make room, and
-/// the drop keeps that.
-private struct DayDropDelegate: DropDelegate {
-  let library: LibraryViewModel
-  let firstHour: Int
-  let hourHeight: CGFloat
-
-  private func minute(at location: CGPoint) -> Int {
-    max(firstHour * 60 + Int(location.y / hourHeight * 60), 0) / 15 * 15
-  }
-
-  func dropUpdated(info: DropInfo) -> DropProposal? {
-    if let dragged = library.draggedTaskID {
-      library.dragPreview = (dragged, min(minute(at: info.location), 24 * 60 - 15))
-    } else if let dragged = library.draggedBlockID {
-      library.previewBlock(dragged, toStart: minute(at: info.location))
-    }
-    return DropProposal(operation: .move)
-  }
-
-  func dropExited(info: DropInfo) {
-    library.dragPreview = nil
-    library.blockPreview = nil
-  }
-
-  func performDrop(info: DropInfo) -> Bool {
-    let minute = minute(at: info.location)
-    library.dragPreview = nil
-    library.blockPreview = nil
-    library.draggedTaskID = nil
-    library.draggedBlockID = nil
-    guard let provider = info.itemProviders(for: [.text]).first else { return false }
-    _ = provider.loadObject(ofClass: NSString.self) { item, _ in
-      guard let dropped = item as? String else { return }
-      Task { @MainActor in
-        if let blockID = DayBlockView.blockID(in: dropped) {
-          library.moveBlock(blockID, toStart: minute)
-        } else {
-          library.place(TaskID(dropped), atMinute: min(minute, 24 * 60 - 15))
-        }
-      }
-    }
-    return true
   }
 }

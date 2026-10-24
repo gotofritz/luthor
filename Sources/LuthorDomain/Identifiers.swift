@@ -78,6 +78,15 @@ public struct BlockID: Hashable, Codable, Sendable {
   }
 }
 
+/// Identifies a session: a stretch of a task's day set apart from the rest of it, for a task done on and off.
+public struct SessionID: Hashable, Codable, Sendable {
+  public let rawValue: String
+
+  public init(_ rawValue: String) {
+    self.rawValue = rawValue
+  }
+}
+
 /// Identifies a view, a separate space such as Work or Private that every task and project belongs to.
 public struct ViewID: Hashable, Codable, Sendable {
   /// The view replay always creates; it holds everything written before views existed.
