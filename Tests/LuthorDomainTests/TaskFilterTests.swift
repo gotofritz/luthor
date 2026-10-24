@@ -87,9 +87,9 @@ struct CandidateFilterTests {
       .candidates.map(\.task.title)
   }
 
-  @Test("without a filter the plan is as it was")
+  @Test("without a filter the plan is in the suggested order")
   func withoutAFilterThePlanIsAsItWas() {
-    #expect(candidates(TaskFilter()) == ["pay tax", "call bank", "write report"])
+    #expect(candidates(TaskFilter()) == ["pay tax", "write report", "call bank"])
   }
 
   @Test("a tag keeps the candidates that carry it, in the suggested order")

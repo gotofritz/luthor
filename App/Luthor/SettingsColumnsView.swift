@@ -9,13 +9,22 @@ import SwiftUI
 struct SettingsColumnsView: View {
   @Bindable var library: LibraryViewModel
   @State private var group = SettingsGroup.global
+  @State private var detail: GlobalSettingsDetail?
 
   var body: some View {
     HStack(spacing: 0) {
       SettingsGroupColumn(selected: $group)
       Divider()
       switch group {
-      case .global: GlobalSettingsColumn(library: library)
+      case .global:
+        GlobalSettingsColumn(library: library, detail: $detail)
+        if let detail {
+          Divider()
+          switch detail {
+          case .dayHours: DayHoursSettingsColumn(library: library)
+          case .capacity: CapacitySettingsColumn(library: library)
+          }
+        }
       case .views:
         ViewListColumn(library: library)
         Divider()
@@ -67,6 +76,7 @@ private struct SettingsGroupColumn: View {
 /// The settings every view falls back to, unless it overrides them.
 private struct GlobalSettingsColumn: View {
   @Bindable var library: LibraryViewModel
+  @Binding var detail: GlobalSettingsDetail?
 
   var body: some View {
     Form {
@@ -76,12 +86,9 @@ private struct GlobalSettingsColumn: View {
           value: estimateBinding, in: 0...240, step: 5)
         Stepper("Buffer: \(library.globalSettings.bufferPercentage)%", value: bufferBinding, in: 0...100, step: 5)
       }
-      Section("Capacity per weekday") {
-        ForEach(Weekday.allCases, id: \.self) { weekday in
-          Stepper(
-            "\(weekday.title): \(library.globalSettings.capacity[weekday] ?? 0)m",
-            value: capacityBinding(weekday), in: 0...720, step: 15)
-        }
+      Section("Weekdays") {
+        SettingsDetailRow(title: "Day start and end", isOpen: detail == .dayHours) { detail = .dayHours }
+        SettingsDetailRow(title: "Capacity", isOpen: detail == .capacity) { detail = .capacity }
       }
       Section("Project review") {
         Picker("Review projects", selection: reviewDefaultBinding) {
@@ -113,12 +120,6 @@ private struct GlobalSettingsColumn: View {
     Binding(
       get: { library.globalSettings.bufferPercentage },
       set: { library.changeGlobalSetting(.bufferPercentage, to: String($0)) })
-  }
-
-  private func capacityBinding(_ weekday: Weekday) -> Binding<Int> {
-    Binding(
-      get: { library.globalSettings.capacity[weekday] ?? weekday.builtInCapacityMinutes },
-      set: { library.changeGlobalCapacity(weekday, minutes: $0) })
   }
 
   private var reviewDefaultBinding: Binding<ReviewInterval> {

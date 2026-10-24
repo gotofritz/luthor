@@ -63,6 +63,9 @@ extension LibraryViewModel {
       var events = try createEvents(for: item, titled: card.title, viewID: viewID, today: day, log: log)
       guard let itemID = events.createdItemID else { return events }
       events += try cardEvents(of: itemID, card, log: log + events)
+      if item.kind == .task, let scheduled = card.scheduled {
+        events += try commands.schedule(taskID: itemID, on: scheduled, log: log + events)
+      }
       return events
     }
     guard errorMessage == nil, let created = events.createdItemID else { return }

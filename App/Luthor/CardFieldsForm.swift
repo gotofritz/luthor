@@ -9,7 +9,8 @@ struct CardFields {
   var estimate: Int?
   var hasDue: Bool
   var dueDay: Date
-  var dueIsHard: Bool
+  var hasScheduled = false
+  var scheduledDay = Date()
   var repeatRule: RepeatRule?
   var tagsText: String
 
@@ -20,7 +21,6 @@ struct CardFields {
     let due = library.dueDate(of: id)
     hasDue = due != nil
     dueDay = due?.date.startOfDay ?? Date()
-    dueIsHard = due?.isHard ?? true
     repeatRule = library.repeatRule(of: id)
     tagsText = library.tagItems(of: id).map(\.name).joined(separator: ", ")
   }
@@ -31,16 +31,16 @@ struct CardFields {
     self.estimate = estimate
     hasDue = false
     dueDay = Date()
-    dueIsHard = true
     repeatRule = nil
     tagsText = ""
   }
 
   func draft(title: String, notes: String) -> TaskCardDraft {
-    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: dueIsHard) } : nil
+    let due = hasDue ? CalendarDate(dayOf: dueDay).map { DueDate(date: $0, isHard: false) } : nil
     return TaskCardDraft(
       title: title, priority: priority, estimate: estimate, due: due, notes: notes,
-      tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule)
+      tags: TaskCardDraft.tagNames(in: tagsText), repeatRule: repeatRule,
+      scheduled: hasScheduled ? CalendarDate(dayOf: scheduledDay) : nil)
   }
 }
 
@@ -49,6 +49,8 @@ struct CardFieldsForm: View {
   let library: LibraryViewModel
   @Binding var fields: CardFields
   let submit: () -> Void
+  /// Whether the item can be planned for a day: a task, not a project.
+  var canSchedule = true
 
   var body: some View {
     Picker("Priority", selection: $fields.priority) {
@@ -58,14 +60,23 @@ struct CardFieldsForm: View {
       }
     }
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
-    Toggle("Due date", isOn: $fields.hasDue)
-    if fields.hasDue {
+    HStack {
+      Toggle("", isOn: $fields.hasDue)
+        .labelsHidden()
       DatePicker("Due", selection: $fields.dueDay, displayedComponents: .date)
-      Picker("Kind", selection: $fields.dueIsHard) {
-        Text("Hard deadline").tag(true)
-        Text("Target date").tag(false)
+        .opacity(fields.hasDue ? 1 : 0.5)
+    }
+    .contentShape(.rect)
+    .onTapGesture { fields.hasDue = true }
+    if canSchedule {
+      HStack {
+        Toggle("", isOn: $fields.hasScheduled)
+          .labelsHidden()
+        DatePicker("Scheduled", selection: $fields.scheduledDay, displayedComponents: .date)
+          .opacity(fields.hasScheduled ? 1 : 0.5)
       }
-      .pickerStyle(.segmented)
+      .contentShape(.rect)
+      .onTapGesture { fields.hasScheduled = true }
     }
     RepeatEditor(rule: $fields.repeatRule, hasDue: fields.hasDue)
     tagsField

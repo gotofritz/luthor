@@ -111,25 +111,41 @@ public final class LibraryViewModel {
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
+  /// While a task is dragged over the day, where it would land: the tasks around it show making room.
+  /// The task being dragged on the day calendar, set when the drag starts.
+  public var draggedTaskID: TaskID?
+  /// The block of untracked time being dragged on the day calendar, set when the drag starts.
+  public var draggedBlockID: BlockID?
+  /// The session being dragged on the day calendar, set when the drag starts.
+  public var draggedSessionID: SessionID?
+  /// While a session is dragged over the day, where it would land.
+  public var sessionPreview: (sessionID: SessionID, minute: Int)?
+  /// While a block of untracked time is dragged over the day, where it would land.
+  public var blockPreview: DayBlock?
+  public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog
   let clock: () -> CalendarDate
+  /// The minutes since midnight by the clock.
+  let minuteClock: () -> Int
   let commands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
 
-  /// `today` tells the day it is; the default is the system clock.
+  /// `today` tells the day it is and `now` the minutes since midnight; the default is the system clock.
   public init(
     log: any EventLog,
     commands: Commands,
     view: ViewID = .default,
-    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() }
+    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() },
+    now: @escaping () -> Int = { minutesSinceMidnight() }
   ) {
     self.log = log
     self.commands = commands
     clock = today
+    minuteClock = now
     currentView = view
     let day = today()
     self.today = day

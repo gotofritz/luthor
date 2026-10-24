@@ -28,14 +28,14 @@ struct HardDeadlineFlowTests {
     library.setDue(report, to: date("2026-10-19"), isHard: true)
 
     #expect(library.plan.candidates.map(\.task.title) == ["write report", "pay tax"])
-    #expect(library.plan.candidates.map(\.reason) == ["B priority, deadline 2026-10-19", "B priority"])
+    #expect(library.plan.candidates.map(\.reason) == ["B priority, due 2026-10-19", "B priority"])
     let relaunched = launchApp(on: url)
     relaunched.show(.today)
     #expect(relaunched.plan.candidates.map(\.task.title) == ["write report", "pay tax"])
   }
 
-  @Test("a deadline still ahead leaves the order alone, and the day it comes due changes it")
-  func aDeadlineStillAheadLeavesTheOrderAlone() throws {
+  @Test("a deadline months ahead leaves the order alone, and the nearer it comes the higher the task ranks")
+  func aDeadlineMonthsAheadLeavesTheOrderAlone() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -45,11 +45,11 @@ struct HardDeadlineFlowTests {
     let report = try library.task("write report")
     library.prioritize(tax, as: .important)
     library.prioritize(report, as: .important)
-    library.setDue(report, to: date("2026-10-21"), isHard: true)
+    library.setDue(report, to: date("2027-04-21"), isHard: true)
     library.show(.today)
     #expect(library.plan.candidates.map(\.task.title) == ["pay tax", "write report"])
 
-    library.showDay(date("2026-10-21"))
+    library.showDay(date("2027-04-14"))
 
     #expect(library.plan.candidates.map(\.task.title) == ["write report", "pay tax"])
   }
@@ -69,8 +69,8 @@ struct HardDeadlineFlowTests {
     #expect(library.plan.candidates.map(\.task.title) == ["pay tax"])
   }
 
-  @Test("a target date does not reorder anything")
-  func aTargetDateDoesNotReorderAnything() throws {
+  @Test("a target date ranks the task like a deadline")
+  func aTargetDateRanksTheTask() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -84,7 +84,7 @@ struct HardDeadlineFlowTests {
     library.setDue(report, to: date("2026-10-19"), isHard: false)
     library.show(.today)
 
-    #expect(library.plan.candidates.map(\.task.title) == ["pay tax", "write report"])
+    #expect(library.plan.candidates.map(\.task.title) == ["write report", "pay tax"])
   }
 }
 

@@ -1,118 +1,3 @@
-/// Who a task was handed to, since when, and when it comes back to the candidates.
-public struct Delegation: Equatable, Sendable {
-  public let person: String
-  /// The day it was handed over.
-  public let since: CalendarDate
-  /// The day it comes back; `nil` until it is reclaimed.
-  public let followUpDate: CalendarDate?
-
-  public init(to person: String, since: CalendarDate, followUpDate: CalendarDate?) {
-    self.person = person
-    self.since = since
-    self.followUpDate = followUpDate
-  }
-
-  /// Whether the follow-up date has come on `today`. With no follow-up date it never does.
-  public func isFollowUpDue(on today: CalendarDate) -> Bool {
-    followUpDate.map { $0 <= today } ?? false
-  }
-}
-
-/// One view's plan for one day: the key of its manual order and its capacity.
-struct DayKey: Hashable, Sendable {
-  let viewID: ViewID
-  let date: CalendarDate
-}
-
-/// A task in a day's plan, or a candidate for it, with the minutes it counts for and why it sits there.
-public struct PlanEntry: Equatable, Sendable {
-  public let task: TaskItem
-  /// Minutes it counts for: its estimate, or the default estimate while it has none.
-  public let minutes: Int
-  /// Whether `minutes` is the default estimate, not one the task was given.
-  public let isUnestimated: Bool
-  /// What put it here: the order the user chose, or the rule that suggested it.
-  public let reason: String
-
-  public init(task: TaskItem, minutes: Int, isUnestimated: Bool, reason: String) {
-    self.task = task
-    self.minutes = minutes
-    self.isUnestimated = isUnestimated
-    self.reason = reason
-  }
-}
-
-/// How much of a day is spoken for. The buffer is protected capacity, never a task.
-public struct DayCapacity: Equatable, Sendable {
-  /// The day's capacity before the buffer.
-  public let availableMinutes: Int
-  /// Held back for interruptions and the unexpected.
-  public let bufferMinutes: Int
-  /// The minutes of the tasks in the plan, unestimated ones at the default estimate.
-  public let plannedMinutes: Int
-  /// How many of the planned tasks have no estimate of their own.
-  public let unestimatedCount: Int
-
-  public init(availableMinutes: Int, bufferMinutes: Int, plannedMinutes: Int, unestimatedCount: Int) {
-    self.availableMinutes = availableMinutes
-    self.bufferMinutes = bufferMinutes
-    self.plannedMinutes = plannedMinutes
-    self.unestimatedCount = unestimatedCount
-  }
-
-  /// What can be planned: the capacity less the buffer.
-  public var usableMinutes: Int {
-    availableMinutes - bufferMinutes
-  }
-
-  /// What is left to plan; negative when the plan is overloaded.
-  public var remainingMinutes: Int {
-    usableMinutes - plannedMinutes
-  }
-
-  /// Whether more is planned than can be done. A warning, never a refusal.
-  public var isOverloaded: Bool {
-    plannedMinutes > usableMinutes
-  }
-}
-
-/// One view's day: the tasks planned for it in order, the tasks that could be pulled in, and the capacity.
-public struct DayPlan: Equatable, Sendable {
-  public let viewID: ViewID
-  public let date: CalendarDate
-  public let entries: [PlanEntry]
-  public let candidates: [PlanEntry]
-  public let capacity: DayCapacity
-
-  public init(
-    viewID: ViewID,
-    date: CalendarDate,
-    entries: [PlanEntry],
-    candidates: [PlanEntry],
-    capacity: DayCapacity
-  ) {
-    self.viewID = viewID
-    self.date = date
-    self.entries = entries
-    self.candidates = candidates
-    self.capacity = capacity
-  }
-}
-
-/// A delegated task as the Waiting for list shows it.
-public struct WaitingItem: Equatable, Sendable {
-  public let task: TaskItem
-  public let delegation: Delegation
-  /// Whether the follow-up date has come, so the task is back among the candidates.
-  public let isFollowUpDue: Bool
-
-  public init(task: TaskItem, delegation: Delegation, isFollowUpDue: Bool) {
-    self.task = task
-    self.delegation = delegation
-    self.isFollowUpDue = isFollowUpDue
-  }
-}
-
 // Planning: how scheduling, delegating and dropping change the state, and the pure functions that turn it
 // into a day's plan. In its own file (SwiftLint file_length) rather than suppressed.
 extension LibraryState {
@@ -124,10 +9,23 @@ extension LibraryState {
       order(ordered)
     case .dayCapacitySet(let capacity):
       setCapacity(capacity)
+    case .dayHoursSet(let hours):
+      setHours(hours)
+    case .taskStartSet(let start):
+      setStart(start)
+    case .dayBlockSet(let block):
+      setBlock(block)
+    case .dayBlockRemoved(let removed):
+      dayBlocks.removeValue(forKey: removed.blockID)
+    case .taskSessionSet(let session):
+      setSession(session)
+    case .taskSessionRemoved(let removed):
+      taskSessions.removeValue(forKey: removed.sessionID)
     case .taskDueSet(let due):
       setDue(due)
     case .taskUnscheduled(let unscheduled):
       scheduledDates.removeValue(forKey: unscheduled.taskID)
+      taskStarts.removeValue(forKey: unscheduled.taskID)
     case .taskReclaimed(let reclaimed):
       delegations.removeValue(forKey: reclaimed.taskID)
     default:
@@ -138,6 +36,7 @@ extension LibraryState {
   /// Ignores an item that is not open and a task that is delegated, which has to be reclaimed first.
   mutating func schedule(_ scheduled: TaskScheduled) {
     guard isOpen(scheduled.taskID), delegations[scheduled.taskID] == nil else { return }
+    if scheduledDates[scheduled.taskID] != scheduled.date { taskStarts.removeValue(forKey: scheduled.taskID) }
     scheduledDates[scheduled.taskID] = scheduled.date
   }
 
@@ -153,6 +52,60 @@ extension LibraryState {
       dayCapacities[key] = minutes
     } else {
       dayCapacities.removeValue(forKey: key)
+    }
+  }
+
+  /// Ignores a block whose times do not make a stretch within one day.
+  mutating func setBlock(_ block: DayBlockSet) {
+    guard DayHours(start: block.start, end: block.end).isValid else { return }
+    dayBlocks[block.blockID] = PlacedBlock(
+      viewID: block.viewID, date: block.date,
+      block: DayBlock(id: block.blockID, title: block.title, start: block.start, end: block.end))
+  }
+
+  /// Ignores a session of a task that is not open, not planned for its day, or whose stretch does not fit the day.
+  mutating func setSession(_ session: TaskSessionSet) {
+    guard isOpen(session.taskID), scheduledDates[session.taskID] == session.date, session.minutes > 0,
+      (0..<24 * 60).contains(session.start)
+    else { return }
+    taskSessions[session.sessionID] = session
+  }
+
+  /// The sessions the tasks planned for that day have, earliest first.
+  public func sessions(on date: CalendarDate) -> [TaskSessionSet] {
+    taskSessions.values.filter { $0.date == date && scheduledDates[$0.taskID] == date }
+      .sorted { ($0.start, $0.sessionID.rawValue) < ($1.start, $1.sessionID.rawValue) }
+  }
+
+  /// The blocks of untracked time the view has on that day, earliest first.
+  public func blocks(in viewID: ViewID, on date: CalendarDate) -> [DayBlock] {
+    dayBlocks.values.filter { $0.viewID == viewID && $0.date == date }.map(\.block)
+      .sorted { ($0.start, $0.id.rawValue) < ($1.start, $1.id.rawValue) }
+  }
+
+  /// Ignores a task that is not planned for the day the start was set for.
+  mutating func setStart(_ start: TaskStartSet) {
+    guard scheduledDates[start.taskID] == start.date else { return }
+    if let minute = start.minute, (0..<24 * 60).contains(minute) {
+      taskStarts[start.taskID] = TaskStart(date: start.date, minute: minute)
+    } else {
+      taskStarts.removeValue(forKey: start.taskID)
+    }
+  }
+
+  /// The minute after midnight the task starts at on `date`, if it was given one for that day.
+  public func startMinute(of taskID: TaskID, on date: CalendarDate) -> Int? {
+    guard scheduledDates[taskID] == date, let start = taskStarts[taskID], start.date == date else { return nil }
+    return start.minute
+  }
+
+  /// Hours that do not make a day, or only one end of them, clear the day's own hours.
+  mutating func setHours(_ hours: DayHoursSet) {
+    let key = DayKey(viewID: hours.viewID, date: hours.date)
+    if let start = hours.start, let end = hours.end, DayHours(start: start, end: end).isValid {
+      dayHours[key] = DayHours(start: start, end: end)
+    } else {
+      dayHours.removeValue(forKey: key)
     }
   }
 
@@ -185,6 +138,16 @@ extension LibraryState {
     dayOrders[DayKey(viewID: viewID, date: date)]
   }
 
+  /// The hours set for the view on that day alone; `nil` while the weekday's hours apply.
+  public func hoursOverride(in viewID: ViewID, on date: CalendarDate) -> DayHours? {
+    dayHours[DayKey(viewID: viewID, date: date)]
+  }
+
+  /// The hours the view works on that day: its own for the day, else the weekday's from the settings.
+  public func hours(in viewID: ViewID, on date: CalendarDate) -> DayHours {
+    hoursOverride(in: viewID, on: date) ?? settings(for: viewID).dayHours[date.weekday] ?? .builtIn
+  }
+
   /// The capacity set for the view on that day alone; `nil` while the weekday's capacity applies.
   public func capacityOverride(in viewID: ViewID, on date: CalendarDate) -> Int? {
     dayCapacities[DayKey(viewID: viewID, date: date)]
@@ -193,23 +156,25 @@ extension LibraryState {
   /// The view's plan for `date`, as of `today`.
   ///
   /// The plan lists the tasks planned for the day: the order the user chose first, then the rest in the
-  /// suggested order. The suggestion is deterministic: A before B before C, then hard deadlines that are due
-  /// on the day (the earliest first), then the order of the tasks in their projects, then the order they were
-  /// captured. Candidates are the clarified open tasks that could be pulled in, and the unclarified ones whose
-  /// hard deadline is due, in the same suggested order: no someday task, no task a sequential project is
-  /// holding back, no delegated task until its follow-up date. A filter narrows the candidates only; the tasks
-  /// planned for the day stay.
+  /// suggested order. The suggestion is deterministic: by urgency, which is the priority's weight (A 0 days,
+  /// B 10, C 20, none 30) plus the days left to the due date, hard or target (none counts as 30, one more than 90 days
+  /// off as 90, an overdue one as less than zero), then by priority, then the order of the tasks in their
+  /// projects, then the order they were captured. Candidates are the clarified open tasks that could be pulled in, and the
+  /// unclarified ones whose hard deadline is due, in the same suggested order: no someday task, no task a
+  /// sequential project is holding back, no delegated task until its follow-up date. A task planned for another day
+  /// comes after all the others. A filter narrows the
+  /// candidates only; the tasks planned for the day stay.
   public func plan(
     for viewID: ViewID, on date: CalendarDate, today: CalendarDate, matching filter: TaskFilter = TaskFilter()
   ) -> DayPlan {
     let viewState = view(viewID)
     let planning = settings(for: viewID)
-    let deadlines = Dictionary(
-      uniqueKeysWithValues: viewState.openTasks.compactMap { task -> (TaskID, CalendarDate)? in
-        guard let due = effectiveDueDate(of: task.id), due.isHard, due.date <= date else { return nil }
-        return (task.id, due.date)
+    let dueDates = Dictionary(
+      uniqueKeysWithValues: viewState.openTasks.compactMap { task -> (TaskID, DueDate)? in
+        effectiveDueDate(of: task.id).map { (task.id, $0) }
       })
-    let ranking = PlanRanking(viewState, deadlines: deadlines)
+    let elsewhere = Set(scheduledDates.filter { $0.value != date }.keys)
+    let ranking = PlanRanking(viewState, dueDates: dueDates, on: date, elsewhere: elsewhere)
     let key = DayKey(viewID: viewID, date: date)
     let manualPosition = Dictionary(
       (dayOrders[key] ?? []).enumerated().map { (position, id) in (id, position) },
@@ -218,7 +183,8 @@ extension LibraryState {
     func entry(_ task: TaskItem) -> PlanEntry {
       PlanEntry(
         task: task, minutes: task.estimate ?? planning.defaultEstimateMinutes, isUnestimated: task.estimate == nil,
-        reason: manualPosition[task.id] == nil ? ranking.reason(for: task) : "Your order")
+        reason: manualPosition[task.id] == nil ? ranking.reason(for: task) : "Your order",
+        start: startMinute(of: task.id, on: date))
     }
     func suggested(_ lhs: TaskItem, before rhs: TaskItem) -> Bool {
       ranking.key(lhs, manual: manualPosition[lhs.id]) < ranking.key(rhs, manual: manualPosition[rhs.id])
@@ -230,19 +196,30 @@ extension LibraryState {
     let candidates = viewState.openTasks.filter { task in
       let isWaiting = delegations[task.id].map { !$0.isFollowUpDue(on: today) } ?? false
       let isLeftOver = scheduledDates[task.id].map { $0 < today } ?? false
-      let isClarified = task.isClarified || deadlines[task.id] != nil
+      let isClarified = task.isClarified || dueDates[task.id].map { $0.date <= date } ?? false
       return isClarified && task.priority != .someday && scheduledDates[task.id] != date
         && (task.parentID == nil || actionable.contains(task.id)) && !isWaiting && !isLeftOver
         && matches(task, filter, inProject: inProject)
     }.sorted(by: suggested).map(entry)
 
-    let weekday = date.weekday
-    let available = max(0, dayCapacities[key] ?? planning.capacity[weekday] ?? weekday.builtInCapacityMinutes)
+    let available = capacity(in: viewID, on: date, planning: planning)
     let percentage = min(max(planning.bufferPercentage, 0), 100)
     let capacity = DayCapacity(
       availableMinutes: available, bufferMinutes: available * percentage / 100,
       plannedMinutes: entries.reduce(0) { $0 + $1.minutes }, unestimatedCount: entries.filter(\.isUnestimated).count)
-    return DayPlan(viewID: viewID, date: date, entries: entries, candidates: candidates, capacity: capacity)
+    return DayPlan(
+      viewID: viewID, date: date, entries: entries, candidates: candidates, capacity: capacity,
+      hours: hours(in: viewID, on: date), blocks: blocks(in: viewID, on: date),
+      sessions: planSessions(on: date, of: entries))
+  }
+
+  /// The sessions of the day as the plan holds them, each with the task it belongs to.
+  private func planSessions(on date: CalendarDate, of entries: [PlanEntry]) -> [PlanSession] {
+    sessions(on: date).compactMap { session in
+      entries.first { $0.task.id == session.taskID }.map {
+        PlanSession(id: session.sessionID, task: $0.task, start: session.start, minutes: session.minutes)
+      }
+    }
   }
 
   /// The view's delegated tasks, the longest wait first.
@@ -259,15 +236,15 @@ extension LibraryState {
 /// Where a task sits in a plan; the smaller key goes first.
 struct PlanKey: Comparable {
   let manual: Int
+  /// Days of urgency: the priority's weight plus the days to the hard deadline, the smaller the sooner.
+  let urgency: Int
   let priority: Int
-  /// The day of a hard deadline that is due, else `Int.max`.
-  let deadline: Int
   let project: Int
   let capture: Int
 
   static func < (lhs: PlanKey, rhs: PlanKey) -> Bool {
-    (lhs.manual, lhs.priority, lhs.deadline, lhs.project, lhs.capture)
-      < (rhs.manual, rhs.priority, rhs.deadline, rhs.project, rhs.capture)
+    (lhs.manual, lhs.urgency, lhs.priority, lhs.project, lhs.capture)
+      < (rhs.manual, rhs.urgency, rhs.priority, rhs.project, rhs.capture)
   }
 }
 
@@ -278,11 +255,24 @@ struct PlanRanking {
   /// Where each task filed in a project sits in a walk through the view's projects, depth first.
   let projectIndex: [TaskID: Int]
   let projectTitles: [TaskID: String]
-  /// The day of the hard deadline of each task whose deadline is due.
-  let deadlines: [TaskID: CalendarDate]
+  /// The due date of each task that has one, hard deadline or target date.
+  let dueDates: [TaskID: DueDate]
+  /// Tasks planned for another day than the plan's: they rank after all the others.
+  let elsewhere: Set<TaskID>
+  /// The day the plan is for.
+  let day: CalendarDate
 
-  init(_ view: ViewState, deadlines: [TaskID: CalendarDate]) {
-    self.deadlines = deadlines
+  /// Days a task with no hard deadline counts as being from one.
+  static let horizonDays = 30
+  /// Days a hard deadline is capped at, so a task with a far-off one ranks below one with none.
+  static let farDays = 90
+  /// Added to the urgency of a task planned for another day, so it comes after every other task.
+  static let elsewhereOffset = 10_000
+
+  init(_ view: ViewState, dueDates: [TaskID: DueDate], on day: CalendarDate, elsewhere: Set<TaskID> = []) {
+    self.dueDates = dueDates
+    self.elsewhere = elsewhere
+    self.day = day
     let captured = view.openTasks.enumerated().map { (position, task) in (task.id, position) }
     captureIndex = Dictionary(captured, uniquingKeysWith: { first, _ in first })
     projectTitles = Dictionary(view.projects.map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
@@ -302,13 +292,30 @@ struct PlanRanking {
     projectIndex = index
   }
 
-  /// The place of a task in a plan: the user's own position first, then priority, deadline, project order,
+  /// The place of a task in a plan: the user's own position first, then urgency, priority, project order,
   /// capture order.
   func key(_ task: TaskItem, manual: Int?) -> PlanKey {
     PlanKey(
-      manual: manual ?? Int.max, priority: Self.rank(of: task.priority),
-      deadline: deadlines[task.id]?.daysSinceEpoch ?? Int.max, project: projectIndex[task.id] ?? Int.max,
+      manual: manual ?? Int.max, urgency: urgency(of: task), priority: Self.rank(of: task.priority),
+      project: projectIndex[task.id] ?? Int.max,
       capture: captureIndex[task.id] ?? Int.max)
+  }
+
+  /// The weight of the priority (A 0, B 10, C 20, none 30 days) plus the days left to the due date, at
+  /// most the far limit, and none counting as the horizon. Overdue counts below zero, so it comes first.
+  /// Someday tasks come last.
+  private func urgency(of task: TaskItem) -> Int {
+    let weight: Int
+    switch task.priority {
+    case .critical?: weight = 0
+    case .important?: weight = 10
+    case .optional?: weight = 20
+    case nil: weight = Self.horizonDays
+    case .someday?: return Int.max
+    }
+    let daysLeft = dueDates[task.id].map { $0.date.daysSinceEpoch - day.daysSinceEpoch } ?? Self.horizonDays
+    if elsewhere.contains(task.id) { return Self.elsewhereOffset + weight + min(daysLeft, Self.farDays) }
+    return weight + min(daysLeft, Self.farDays)
   }
 
   func reason(for task: TaskItem) -> String {
@@ -322,7 +329,7 @@ struct PlanRanking {
       }
     var reason = priority
     if let parentID = task.parentID, let title = projectTitles[parentID] { reason += ", in project \(title)" }
-    if let deadline = deadlines[task.id] { reason += ", deadline \(deadline.isoString)" }
+    if let due = dueDates[task.id] { reason += ", due \(due.date.isoString)" }
     return reason
   }
 

@@ -12,6 +12,14 @@ public enum CommandError: Error, Equatable {
   /// The project is active, or was completed along with another, so it cannot be reopened on its own.
   case noCompletedProject(TaskID)
   case noView(ViewID)
+  /// The hours of a day have to start before they end, both within the day.
+  case invalidHours
+  /// No block of untracked time has this ID.
+  case noBlock(BlockID)
+  /// No session has this ID.
+  case noSession(SessionID)
+  /// A session needs at least a minute, starting and ending within a day.
+  case invalidSession
   case duplicateViewName(String)
   /// The task and the project are in different views; only a move to the view takes a task across.
   case otherView(TaskID, TaskID)
