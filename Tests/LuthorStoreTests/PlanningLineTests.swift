@@ -86,7 +86,9 @@ struct PlanningLineTests {
       line
         == #"{"data":{"date":"2026-10-19","minutes":30,"sessionID":"s1","start":540,"taskID":"t1"},"device":"mac","id":"e11","lamport":11,"type":"TaskSessionSet"}"#
     )
-    #expect(removed == #"{"data":{"sessionID":"s1"},"device":"mac","id":"e12","lamport":12,"type":"TaskSessionRemoved"}"#)
+    #expect(
+      removed
+        == #"{"data":{"sessionID":"s1"},"device":"mac","id":"e12","lamport":12,"type":"TaskSessionRemoved"}"#)
   }
 
   @Test("a TaskDelegated without a follow-up date has no follow-up field")
