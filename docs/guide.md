@@ -214,7 +214,7 @@ takes it off.
 **Placing tasks.** Each planned task is a block as tall as its estimate (an
 unestimated one at the default estimate). Drag a candidate onto the grid to
 plan it at that time (to the quarter hour), and drag a block to another time to
-move it. A block's context menu has Set Start Time… (a time field),
+move it. A block's context menu has Set Start Time… (a time field, with a Now button),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
 block back onto the candidates does the same. A task with no time of its own,
 such as one added with ⌘T, follows the others in the plan's order from the

@@ -273,7 +273,7 @@ private struct DayGrid: View {
   }
 }
 
-/// Asks what time a planned task starts at.
+/// Asks what time a planned task starts at, with a Now button to fill in the time now.
 private struct StartTimeSheet: View {
   @Bindable var library: LibraryViewModel
   let taskID: TaskID
@@ -289,7 +289,10 @@ private struct StartTimeSheet: View {
 
   var body: some View {
     Form {
-      DatePicker("Starts at", selection: $time, displayedComponents: .hourAndMinute)
+      HStack {
+        DatePicker("Starts at", selection: $time, displayedComponents: .hourAndMinute)
+        Button("Now") { time = clockDate(minutes: library.minuteOfDay) }
+      }
       HStack {
         Spacer()
         Button("Cancel", role: .cancel, action: close)
