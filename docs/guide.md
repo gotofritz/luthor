@@ -393,7 +393,8 @@ appears to its right, and so on down the tree.
   column with the card of the new item, in edit mode with the title focused.
   The box shows the title as you type it. The card has a choice of a task, a
   parallel project or a sequential project (the first column offers only the
-  two projects, which are top-level there), and the fields of any card. A new
+  two projects, which are top-level there), and the fields of any card,
+  including the Due and Scheduled rows (a project has no Scheduled row). A new
   task starts with priority optional and an estimate of 5 minutes, a project
   with neither; switching the kind on the card swaps these defaults, unless
   you have changed that field yourself. Nothing is written until OK (or
