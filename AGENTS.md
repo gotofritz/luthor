@@ -112,7 +112,8 @@ Sources/
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
                              TaskDelegated/Reclaimed, TaskDropped, TaskDueSet, DayHoursSet (the start and end of one day),
                              TaskStartSet (the minute a planned task starts at),
-                             DayBlockSet, DayBlockRemoved (BlockEvents.swift: untracked time on a day, such as lunch)
+                             DayBlockSet, DayBlockRemoved (BlockEvents.swift: untracked time on a day, such as lunch),
+                             TaskSessionSet, TaskSessionRemoved (SessionEvents.swift: a stretch of a planned task's day set apart)
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
@@ -130,6 +131,7 @@ Sources/
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed or dropped task or project
     Commands+Blocks.swift    add, change and remove a block of untracked time on a day
+    Commands+Sessions.swift  set apart, change and remove a session of a planned task
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
     Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
@@ -181,7 +183,7 @@ Sources/
     LibraryState+Planning.swift  planning reducers and pure functions: plan(for:on:today:matching:) →
                              DayPlan (ordered entries with reasons, candidates, DayCapacity; effective hard
                              deadlines rank after priority; only tasks, never projects; DayPlan.slots(notBefore:) lays the entries on the day's
-                             hours, set starts first), hours(in:on:), waitingFor(in:today:)
+                             hours, set starts first; DayPlan.layout(...) lays tasks, blocks and sessions so none overlaps, the one moved winning), hours(in:on:), waitingFor(in:today:)
     Settings.swift           SettingKey, ThemeAccent (the eight accent names; the app colours them), Weekday,
                              Settings (typed planning numbers, DayHours per weekday and the view's accent); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
@@ -217,7 +219,7 @@ Sources/
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
                              delegation actions in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
-                             reviewing a day in LibraryViewModel+Review.swift, starting and stopping a task now in LibraryViewModel+Running.swift, the weekly project review (due list, mark
+                             reviewing a day in LibraryViewModel+Review.swift, starting and stopping a task now and giving it times in LibraryViewModel+Running.swift, a task's sessions in LibraryViewModel+Sessions.swift, the weekly project review (due list, mark
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
@@ -243,6 +245,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              then the individual settings of the one picked; WeekdaySettingsViews: the Global rows that open a
                              column of their own, the weekday capacity fields and the quarter-hour grid for day start and end; TodayView: the candidates with a
                              Waiting for toggle, leftovers, the day header, capacity meter, Plan / Review toggle, delegate dialog;
+                             SessionViews: a session's block and the sheet that asks for start and end; DayDropDelegate: a drag over the hour grid;
                              DayCalendarView: the day as an hour grid with the start and end fields, zoom, drag and drop,
                              set start times;
                              CalendarView: the list of days and the tasks of the one picked;

@@ -204,6 +204,15 @@ or the estimate of the task before it, leaves no room, it and the tasks after it
 move down to make room, and they move back if the room comes back. The time you
 gave a task is kept, so it returns to it when the room is there again.
 
+**Sessions.** A task done on and off through the day can have sessions: choose
+Split Off a Session… in its block's context menu, give a start and an end, and
+that stretch of the day becomes a block of its own, drawn with a dashed edge.
+The task's own block shrinks by those minutes (and goes when the sessions take
+all of them), so the estimate stays the total. Drag a session, or choose Set
+Times… on it, to move it; Remove Session gives its minutes back to the task.
+Stop Now makes the run you just did a session at its real time. Sessions push
+other blocks aside, and are pushed, like tasks.
+
 **Untracked time.** The calendar button beside the zoom buttons adds a block
 of time that is not tracked, such as lunch or shopping: a title, a start and an end, each with a Now button
 (the same window as Set Times… on a task). It is grey with a dashed edge, tasks flow round it, and it does not
@@ -217,8 +226,8 @@ plan it at that time (to the quarter hour), and drag a block to another time to
 move it. A task dragged onto others wins its place: they move out of the way as you drag, and stay where they
 are put when you let go. A block's context menu has Start Now (on today: the same as Set Times… with
 now filled in; while the task is under way it reads Stop Now, which adds the minutes
-since the start to the time logged for the task, keeps its start and ends its block at the time now; later
-tasks move along if the block now overlaps them), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
+since the start to the time logged for the task and turns the run, from its start to now, into a session of the
+task; see Sessions below), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
 block back onto the candidates does the same. A task with no time of its own,
 such as one added with ⌘T, follows the others in the plan's order from the
