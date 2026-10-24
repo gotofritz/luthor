@@ -162,7 +162,8 @@ private struct DayGrid: View {
   private func untracked(_ dayBlock: DayBlock, firstHour: Int) -> some View {
     DayBlockView(
       block: dayBlock, hourHeight: hourHeight, edit: { editingBlock = dayBlock },
-      delete: { library.removeBlock(dayBlock.id) }, dragStarted: {
+      delete: { library.removeBlock(dayBlock.id) },
+      dragStarted: {
         library.draggedTaskID = nil
         library.draggedBlockID = dayBlock.id
       }
