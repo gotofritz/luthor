@@ -192,3 +192,34 @@ struct DropOnAnotherViewModelTests {
     #expect(library.plan.entries.first { $0.task.id == TaskID("t1") }?.start == 600)
   }
 }
+
+@MainActor
+@Suite("When a block of untracked time is dropped on a task")
+struct DropBlockOnTaskViewModelTests {
+  private let events =
+    planned + [
+      startSet("t1", 600, on: "2026-10-19", lamport: 5),
+      blockSet("b1", "Lunch", 720, 780, on: "2026-10-19", lamport: 6),
+    ]
+
+  @Test("the task moves out of the way and keeps its new place")
+  func theTaskKeepsItsNewPlace() {
+    let library = makeLibrary(events) { 0 }
+
+    library.moveBlock(BlockID("b1"), toStart: 630)
+
+    #expect(library.planSlots.first?.start == 690)
+    #expect(library.plan.entries.first?.start == 690)
+  }
+
+  @Test("while it is dragged over the task, the task shows making room")
+  func theTaskMakesRoomWhileDragging() {
+    let library = makeLibrary(events) { 0 }
+
+    library.previewBlock(BlockID("b1"), toStart: 630)
+
+    #expect(library.planBlocks.first?.start == 630)
+    #expect(library.planSlots.first?.start == 690)
+    #expect(library.plan.entries.first?.start == 600)
+  }
+}

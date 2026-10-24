@@ -114,6 +114,10 @@ public final class LibraryViewModel {
   /// While a task is dragged over the day, where it would land: the tasks around it show making room.
   /// The task being dragged on the day calendar, set when the drag starts.
   public var draggedTaskID: TaskID?
+  /// The block of untracked time being dragged on the day calendar, set when the drag starts.
+  public var draggedBlockID: BlockID?
+  /// While a block of untracked time is dragged over the day, where it would land.
+  public var blockPreview: DayBlock?
   public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog

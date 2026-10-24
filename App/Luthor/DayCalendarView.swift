@@ -131,7 +131,7 @@ private struct DayGrid: View {
       ScrollView {
         ZStack(alignment: .topLeading) {
           grid(plan.hours, firstHour: firstHour, lastHour: lastHour)
-          ForEach(plan.blocks, id: \.id) { dayBlock in
+          ForEach(library.planBlocks, id: \.id) { dayBlock in
             untracked(dayBlock, firstHour: firstHour)
           }
           ForEach(slots, id: \.entry.task.id) { slot in
@@ -162,7 +162,10 @@ private struct DayGrid: View {
   private func untracked(_ dayBlock: DayBlock, firstHour: Int) -> some View {
     DayBlockView(
       block: dayBlock, hourHeight: hourHeight, edit: { editingBlock = dayBlock },
-      delete: { library.removeBlock(dayBlock.id) }, dragStarted: { library.draggedTaskID = nil }
+      delete: { library.removeBlock(dayBlock.id) }, dragStarted: {
+        library.draggedTaskID = nil
+        library.draggedBlockID = dayBlock.id
+      }
     )
     .padding(.leading, Self.labelWidth + 8)
     .padding(.top, offset(dayBlock.start, firstHour: firstHour))
@@ -250,6 +253,7 @@ private struct DayGrid: View {
     .onTapGesture { library.selection = entry.task.id }
     .onDrag {
       library.draggedTaskID = entry.task.id
+      library.draggedBlockID = nil
       return NSItemProvider(object: entry.task.id.rawValue as NSString)
     }
     .contextMenu { blockMenu(entry) }
@@ -328,18 +332,23 @@ private struct DayDropDelegate: DropDelegate {
   func dropUpdated(info: DropInfo) -> DropProposal? {
     if let dragged = library.draggedTaskID {
       library.dragPreview = (dragged, min(minute(at: info.location), 24 * 60 - 15))
+    } else if let dragged = library.draggedBlockID {
+      library.previewBlock(dragged, toStart: minute(at: info.location))
     }
     return DropProposal(operation: .move)
   }
 
   func dropExited(info: DropInfo) {
     library.dragPreview = nil
+    library.blockPreview = nil
   }
 
   func performDrop(info: DropInfo) -> Bool {
     let minute = minute(at: info.location)
     library.dragPreview = nil
+    library.blockPreview = nil
     library.draggedTaskID = nil
+    library.draggedBlockID = nil
     guard let provider = info.itemProviders(for: [.text]).first else { return false }
     _ = provider.loadObject(ofClass: NSString.self) { item, _ in
       guard let dropped = item as? String else { return }
