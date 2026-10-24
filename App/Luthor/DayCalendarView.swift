@@ -252,27 +252,30 @@ private struct DayGrid: View {
       library.draggedTaskID = entry.task.id
       return NSItemProvider(object: entry.task.id.rawValue as NSString)
     }
-    .contextMenu {
-      if library.planDate == library.today {
-        if library.isRunning(entry.task.id) {
-          Button("Stop Now") { library.stopNow(entry.task.id) }
-        } else {
-          Button("Start Now") { library.startNow(entry.task.id) }
-        }
-      }
-      Button("Set Start Time…") { timingTaskID = entry.task.id }
-      if entry.start != nil {
-        Button("Follow the Other Tasks") { library.place(entry.task.id, atMinute: nil) }
-      }
-      Button("Back to Candidates") { library.removeFromPlan(entry.task.id) }
-      Divider()
-      Button("Move Earlier in the Order") { library.moveInPlan(entry.task.id, by: -1) }
-      Button("Move Later in the Order") { library.moveInPlan(entry.task.id, by: 1) }
-      Divider()
-      DecisionMenuItems(library: library, taskID: entry.task.id)
-    }
+    .contextMenu { blockMenu(entry) }
     .padding(.leading, Self.labelWidth + 8)
     .padding(.top, offset(slot.start, firstHour: firstHour))
+  }
+
+  @ViewBuilder
+  private func blockMenu(_ entry: PlanEntry) -> some View {
+    if library.planDate == library.today {
+      if library.isRunning(entry.task.id) {
+        Button("Stop Now") { library.stopNow(entry.task.id) }
+      } else {
+        Button("Start Now") { library.startNow(entry.task.id) }
+      }
+    }
+    Button("Set Start Time…") { timingTaskID = entry.task.id }
+    if entry.start != nil {
+      Button("Follow the Other Tasks") { library.place(entry.task.id, atMinute: nil) }
+    }
+    Button("Back to Candidates") { library.removeFromPlan(entry.task.id) }
+    Divider()
+    Button("Move Earlier in the Order") { library.moveInPlan(entry.task.id, by: -1) }
+    Button("Move Later in the Order") { library.moveInPlan(entry.task.id, by: 1) }
+    Divider()
+    DecisionMenuItems(library: library, taskID: entry.task.id)
   }
 }
 
