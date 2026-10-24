@@ -60,10 +60,20 @@ struct DayBlockSheet: View {
     _end = State(initialValue: clockDate(minutes: block?.end ?? min(suggestedStart + 60, 24 * 60 - 1)))
   }
 
+  /// Starts the block at the time now, keeping its end after its start.
+  private func startNow() {
+    let now = library.minuteOfDay
+    start = clockDate(minutes: now)
+    if minutesOfDay(end) <= now { end = clockDate(minutes: min(now + 60, 24 * 60 - 1)) }
+  }
+
   var body: some View {
     Form {
       TextField("What", text: $title, prompt: Text("Lunch"))
-      DatePicker("From", selection: $start, displayedComponents: .hourAndMinute)
+      HStack {
+        DatePicker("From", selection: $start, displayedComponents: .hourAndMinute)
+        Button("Now", action: startNow)
+      }
       DatePicker("To", selection: $end, displayedComponents: .hourAndMinute)
       HStack {
         if let block {
