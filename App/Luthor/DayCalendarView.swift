@@ -226,7 +226,7 @@ private struct DayGrid: View {
   private func block(_ slot: PlanSlot, firstHour: Int) -> some View {
     let entry = slot.entry
     let isSelected = library.selection == entry.task.id
-    let detail = entry.start == nil ? entry.reason : "at a set time"
+    let height = max(CGFloat(entry.minutes) * hourHeight / 60 - 2, 24)
     return HStack(alignment: .top, spacing: 6) {
       Button {
         library.complete(entry.task.id)
@@ -235,19 +235,12 @@ private struct DayGrid: View {
       }
       .buttonStyle(.plain)
       .help("Complete")
-      VStack(alignment: .leading, spacing: 0) {
-        Text(entry.task.title)
-          .lineLimit(1)
-        Text("\(clockText(slot.start))–\(clockText(slot.end)) · \(detail)")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-      }
+      blockLabel(slot, height: height)
       Spacer(minLength: 0)
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 3)
-    .frame(height: max(CGFloat(entry.minutes) * hourHeight / 60 - 2, 24), alignment: .top)
+    .frame(height: height, alignment: .top)
     .background(theme.fill.opacity(isSelected ? 0.45 : 0.25), in: .rect(cornerRadius: 5))
     .overlay(RoundedRectangle(cornerRadius: 5).stroke(theme.fill.opacity(0.6)))
     .contentShape(.rect)
@@ -260,6 +253,28 @@ private struct DayGrid: View {
     .contextMenu { blockMenu(entry) }
     .padding(.leading, Self.labelWidth + 8)
     .padding(.top, offset(slot.start, firstHour: firstHour))
+  }
+
+  /// The title and times of a planned task: one line, cut off with an ellipsis, in a short block; two in a tall one.
+  @ViewBuilder
+  private func blockLabel(_ slot: PlanSlot, height: CGFloat) -> some View {
+    let entry = slot.entry
+    let detail = entry.start == nil ? entry.reason : "at a set time"
+    let times = "\(clockText(slot.start))–\(clockText(slot.end))"
+    if height < 44 {
+      Text("\(entry.task.title)  \(times)")
+        .lineLimit(1)
+        .truncationMode(.tail)
+    } else {
+      VStack(alignment: .leading, spacing: 0) {
+        Text(entry.task.title)
+          .lineLimit(1)
+        Text("\(times) · \(detail)")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+      }
+    }
   }
 
   @ViewBuilder
