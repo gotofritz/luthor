@@ -5,7 +5,7 @@ import SwiftUI
 
 /// The day shown as a day in a calendar: its start and end fields with the zoom buttons, the capacity meter and
 /// the planned tasks on an hour grid, each as tall as its estimate. A task stands at the time it was given (drag
-/// a candidate onto the grid, drag a block to another time, or Set Start Time…); the others follow one another
+/// a candidate onto the grid, drag a block to another time, or Set Times…); the others follow one another
 /// from the start of the day, or from now on today. Drag a block onto the candidates to take it off the plan.
 struct DayCalendarColumn: View {
   @Bindable var library: LibraryViewModel
