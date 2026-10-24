@@ -34,7 +34,7 @@ struct RunningViewModelTests {
     #expect(library.isRunning(TaskID("t1")))
   }
 
-  @Test("stopping it logs the minutes since the start, clears the start and ends the run")
+  @Test("stopping it logs the minutes since the start, keeps the start and ends the slot at the time now")
   func stoppingLogsTheMinutes() {
     let clock = Clock(600)
     let library = makeLibrary(planned) { clock.minute }
@@ -43,7 +43,8 @@ struct RunningViewModelTests {
 
     library.stopNow(TaskID("t1"))
 
-    #expect(library.plan.entries.first?.start == nil)
+    #expect(library.plan.entries.first?.start == 600)
+    #expect(library.plan.entries.first?.minutes == 45)
     #expect(!library.isRunning(TaskID("t1")))
     #expect(library.review.notDone.first?.loggedMinutes == 45)
   }
@@ -109,5 +110,47 @@ struct ReviewPrefillViewModelTests {
     library.reviewDay(note: "")
 
     #expect(library.review.done.first?.loggedMinutes == 45)
+  }
+}
+
+@MainActor
+@Suite("When a task is stopped after its estimated end")
+struct RunningOverrunTests {
+  @Test("it stays where it started, grows to now and the next task keeps its place if there is room")
+  func itGrowsToNow() {
+    let events =
+      planned + [
+        startSet("t1", 600, on: "2026-10-19", lamport: 5),
+        captured("t2", "next", lamport: 6), estimated("t2", as: 60, lamport: 7),
+        scheduled("t2", on: "2026-10-19", lamport: 8), startSet("t2", 705, on: "2026-10-19", lamport: 9),
+      ]
+    let clock = Clock(699)
+    let library = makeLibrary(events) { clock.minute }
+
+    #expect(library.isRunning(TaskID("t1")))
+    library.stopNow(TaskID("t1"))
+
+    let slots = library.planSlots
+    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.start == 600)
+    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.end == 699)
+    #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 705)
+  }
+
+  @Test("the next task moves along when the new end overlaps it")
+  func theNextTaskMovesAlong() {
+    let events =
+      planned + [
+        startSet("t1", 600, on: "2026-10-19", lamport: 5),
+        captured("t2", "next", lamport: 6), estimated("t2", as: 60, lamport: 7),
+        scheduled("t2", on: "2026-10-19", lamport: 8), startSet("t2", 665, on: "2026-10-19", lamport: 9),
+      ]
+    let clock = Clock(690)
+    let library = makeLibrary(events) { clock.minute }
+
+    library.stopNow(TaskID("t1"))
+
+    let slots = library.planSlots
+    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.end == 690)
+    #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 690)
   }
 }
