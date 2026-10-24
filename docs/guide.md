@@ -214,7 +214,9 @@ takes it off.
 **Placing tasks.** Each planned task is a block as tall as its estimate (an
 unestimated one at the default estimate). Drag a candidate onto the grid to
 plan it at that time (to the quarter hour), and drag a block to another time to
-move it. A block's context menu has Set Start Time… (a time field, with a Now button),
+move it. A block's context menu has Start Now (on today: the same as Set Start Time… with
+now filled in; while the task is under way it reads Stop Now, which adds the minutes
+since the start to the time logged for the task and drops its start), Set Start Time… (a time field, with a Now button),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
 block back onto the candidates does the same. A task with no time of its own,
 such as one added with ⌘T, follows the others in the plan's order from the
@@ -308,7 +310,9 @@ planned for the day, and the box that closes the review.
 hand; an empty field clears it. Time can be logged for a done task and for
 one not done, and for a day that is over. "Unplanned time" is the minutes of
 the day spent on work that was not in the plan. Typing again replaces the
-minutes of that day; nothing is added up behind your back. Planned minutes
+minutes of that day; nothing is added up behind your back, except by Stop Now.
+The field shows the estimate greyed when no time is logged, and closing the
+review logs that estimate for each done task that has an estimate and no time. Planned minutes
 use the estimate, or the default estimate for a task without one (shown
 "~5m").
 

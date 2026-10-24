@@ -257,6 +257,13 @@ private struct DayGrid: View {
     .onTapGesture { library.selection = entry.task.id }
     .draggable(entry.task.id.rawValue)
     .contextMenu {
+      if library.planDate == library.today {
+        if library.isRunning(entry.task.id) {
+          Button("Stop Now") { library.stopNow(entry.task.id) }
+        } else {
+          Button("Start Now") { library.startNow(entry.task.id) }
+        }
+      }
       Button("Set Start Time…") { timingTaskID = entry.task.id }
       if entry.start != nil {
         Button("Follow the Other Tasks") { library.place(entry.task.id, atMinute: nil) }
