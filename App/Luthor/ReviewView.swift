@@ -151,7 +151,7 @@ private struct ReviewRow: View {
       MinutesField(minutes: entry.loggedMinutes, prompt: entry.isUnestimated ? nil : entry.minutes) {
         library.logTime(entry.task.id, minutes: $0)
       }
-        .help("Minutes it took on this day")
+      .help("Minutes it took on this day")
     }
     .contextMenu {
       if !isDone {
