@@ -154,7 +154,7 @@ private struct DayGrid: View {
     }
     .sheet(isPresented: Binding(get: { timingTaskID != nil }, set: { if !$0 { timingTaskID = nil } })) {
       if let taskID = timingTaskID {
-        StartTimeSheet(library: library, taskID: taskID, minute: startMinute(of: taskID)) { timingTaskID = nil }
+        TimesSheet(library: library, taskID: taskID, slot: slot(of: taskID)) { timingTaskID = nil }
       }
     }
   }
@@ -172,8 +172,10 @@ private struct DayGrid: View {
     .padding(.top, offset(dayBlock.start, firstHour: firstHour))
   }
 
-  private func startMinute(of taskID: TaskID) -> Int {
-    library.planSlots.first { $0.entry.task.id == taskID }?.start ?? library.plan.hours.start
+  private func slot(of taskID: TaskID) -> (start: Int, end: Int) {
+    let slot = library.planSlots.first { $0.entry.task.id == taskID }
+    let start = slot?.start ?? library.plan.hours.start
+    return (start, slot?.end ?? start + 30)
   }
 
   private func offset(_ minute: Int, firstHour: Int) -> CGFloat {
@@ -286,7 +288,7 @@ private struct DayGrid: View {
         Button("Start Now") { library.startNow(entry.task.id) }
       }
     }
-    Button("Set Start Time…") { timingTaskID = entry.task.id }
+    Button("Set Times…") { timingTaskID = entry.task.id }
     if entry.start != nil {
       Button("Follow the Other Tasks") { library.place(entry.task.id, atMinute: nil) }
     }
@@ -299,34 +301,43 @@ private struct DayGrid: View {
   }
 }
 
-/// Asks what time a planned task starts at, with a Now button to fill in the time now.
-private struct StartTimeSheet: View {
+/// Asks when a planned task starts and ends, each with a Now button to fill in the time now.
+private struct TimesSheet: View {
   @Bindable var library: LibraryViewModel
   let taskID: TaskID
-  @State private var time: Date
+  @State private var start: Date
+  @State private var end: Date
   let close: () -> Void
 
-  init(library: LibraryViewModel, taskID: TaskID, minute: Int, close: @escaping () -> Void) {
+  init(library: LibraryViewModel, taskID: TaskID, slot: (start: Int, end: Int), close: @escaping () -> Void) {
     self.library = library
     self.taskID = taskID
     self.close = close
-    _time = State(initialValue: clockDate(minutes: minute))
+    _start = State(initialValue: clockDate(minutes: slot.start))
+    _end = State(initialValue: clockDate(minutes: slot.end))
   }
+
+  private var isValid: Bool { minutesOfDay(end) > minutesOfDay(start) }
 
   var body: some View {
     Form {
       HStack {
-        DatePicker("Starts at", selection: $time, displayedComponents: .hourAndMinute)
-        Button("Now") { time = clockDate(minutes: library.minuteOfDay) }
+        DatePicker("Starts at", selection: $start, displayedComponents: .hourAndMinute)
+        Button("Now") { start = clockDate(minutes: library.minuteOfDay) }
+      }
+      HStack {
+        DatePicker("Ends at", selection: $end, displayedComponents: .hourAndMinute)
+        Button("Now") { end = clockDate(minutes: library.minuteOfDay) }
       }
       HStack {
         Spacer()
         Button("Cancel", role: .cancel, action: close)
         Button("OK") {
-          library.place(taskID, atMinute: minutesOfDay(time))
+          library.setTimes(taskID, start: minutesOfDay(start), end: minutesOfDay(end))
           close()
         }
         .keyboardShortcut(.defaultAction)
+        .disabled(!isValid)
       }
     }
     .padding()

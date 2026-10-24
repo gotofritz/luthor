@@ -254,3 +254,28 @@ struct DropTaskOnBlockViewModelTests {
     #expect(library.plan.blocks.first?.start == 720)
   }
 }
+
+@MainActor
+@Suite("When a planned task is given a start and an end")
+struct SetTimesViewModelTests {
+  @Test("the start is its start and the minutes between are its estimate")
+  func theEndSetsTheEstimate() {
+    let library = makeLibrary(planned) { 0 }
+
+    library.setTimes(TaskID("t1"), start: 600, end: 645)
+
+    #expect(library.planSlots.first?.start == 600)
+    #expect(library.planSlots.first?.end == 645)
+    #expect(library.plan.entries.first?.minutes == 45)
+  }
+
+  @Test("an end that is not after the start changes nothing")
+  func anEndBeforeTheStartChangesNothing() {
+    let library = makeLibrary(planned) { 0 }
+
+    library.setTimes(TaskID("t1"), start: 600, end: 600)
+
+    #expect(library.plan.entries.first?.minutes == 60)
+    #expect(library.plan.entries.first?.start == nil)
+  }
+}

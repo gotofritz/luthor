@@ -40,4 +40,12 @@ extension LibraryViewModel {
       return events
     }
   }
+
+  /// Gives a planned task a start and an end: the end sets its estimate to the minutes between them, and the
+  /// tasks and blocks around it make room. Nothing happens unless the end is after the start.
+  public func setTimes(_ taskID: TaskID, start: Int, end: Int) {
+    guard end > start else { return }
+    estimate(taskID, as: end - start)
+    place(taskID, atMinute: start)
+  }
 }

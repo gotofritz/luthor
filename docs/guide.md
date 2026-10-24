@@ -215,10 +215,10 @@ takes it off.
 unestimated one at the default estimate). Drag a candidate onto the grid to
 plan it at that time (to the quarter hour), and drag a block to another time to
 move it. A task dragged onto others wins its place: they move out of the way as you drag, and stay where they
-are put when you let go. A block's context menu has Start Now (on today: the same as Set Start Time… with
+are put when you let go. A block's context menu has Start Now (on today: the same as Set Times… with
 now filled in; while the task is under way it reads Stop Now, which adds the minutes
 since the start to the time logged for the task, keeps its start and ends its block at the time now; later
-tasks move along if the block now overlaps them), Set Start Time… (a time field, with a Now button),
+tasks move along if the block now overlaps them), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
 block back onto the candidates does the same. A task with no time of its own,
 such as one added with ⌘T, follows the others in the plan's order from the
