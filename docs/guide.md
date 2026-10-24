@@ -205,11 +205,11 @@ move down to make room, and they move back if the room comes back. The time you
 gave a task is kept, so it returns to it when the room is there again.
 
 **Untracked time.** The calendar button beside the zoom buttons adds a block
-of time that is not tracked, such as lunch or shopping: a title, a start (with a Now button) and
-an end. It is grey with a dashed edge, tasks flow round it, and it does not
+of time that is not tracked, such as lunch or shopping: a title, a start and an end, each with a Now button
+(the same window as Set Times… on a task). It is grey with a dashed edge, tasks flow round it, and it does not
 count in the capacity. Drag it to another time (it keeps its length), double-click
-it or choose Edit… to change it, and Delete in its context menu or in Edit
-takes it off.
+it or choose Set Times… to change it, and Delete in its context menu or in that
+window takes it off.
 
 **Placing tasks.** Each planned task is a block as tall as its estimate (an
 unestimated one at the default estimate). Drag a candidate onto the grid to

@@ -3,7 +3,7 @@ import LuthorViewModels
 import SwiftUI
 
 /// A block of untracked time on the day grid, such as lunch: grey rather than the accent, so it reads as time
-/// the plan keeps clear. Drag it to another time; double-click or Edit… changes it, Delete takes it off.
+/// the plan keeps clear. Drag it to another time; double-click or Set Times… changes it, Delete takes it off.
 struct DayBlockView: View {
   let block: DayBlock
   let hourHeight: CGFloat
@@ -32,7 +32,7 @@ struct DayBlockView: View {
       return NSItemProvider(object: DayBlockView.payload(block.id) as NSString)
     }
     .contextMenu {
-      Button("Edit…", action: edit)
+      Button("Set Times…", action: edit)
       Button("Delete", role: .destructive, action: delete)
     }
   }
@@ -64,21 +64,19 @@ struct DayBlockSheet: View {
     _end = State(initialValue: clockDate(minutes: block?.end ?? min(suggestedStart + 60, 24 * 60 - 1)))
   }
 
-  /// Starts the block at the time now, keeping its end after its start.
-  private func startNow() {
-    let now = library.minuteOfDay
-    start = clockDate(minutes: now)
-    if minutesOfDay(end) <= now { end = clockDate(minutes: min(now + 60, 24 * 60 - 1)) }
-  }
+  private var isValid: Bool { minutesOfDay(end) > minutesOfDay(start) }
 
   var body: some View {
     Form {
       TextField("What", text: $title, prompt: Text("Lunch"))
       HStack {
-        DatePicker("From", selection: $start, displayedComponents: .hourAndMinute)
-        Button("Now", action: startNow)
+        DatePicker("Starts at", selection: $start, displayedComponents: .hourAndMinute)
+        Button("Now") { start = clockDate(minutes: library.minuteOfDay) }
       }
-      DatePicker("To", selection: $end, displayedComponents: .hourAndMinute)
+      HStack {
+        DatePicker("Ends at", selection: $end, displayedComponents: .hourAndMinute)
+        Button("Now") { end = clockDate(minutes: library.minuteOfDay) }
+      }
       HStack {
         if let block {
           Button("Delete", role: .destructive) {
@@ -97,6 +95,7 @@ struct DayBlockSheet: View {
           close()
         }
         .keyboardShortcut(.defaultAction)
+        .disabled(!isValid)
       }
     }
     .padding()
