@@ -144,29 +144,57 @@ public struct DayPlan: Equatable, Sendable {
   /// gaps. A plan longer than the day runs past its end. Slots come earliest first. With `moving`, that entry
   /// is laid first at the minute `to`, as if it had been dropped there, and the others make room for it.
   public func slots(notBefore: Int = 0, moving: TaskID? = nil, to minute: Int = 0) -> [PlanSlot] {
-    var taken = blocks.map { (start: $0.start, end: $0.end) }
-    func place(_ entry: PlanEntry, from first: Int) -> PlanSlot {
+    layout(notBefore: notBefore, moving: moving, to: minute).slots
+  }
+
+  /// The day laid out: the slots of the entries and the blocks, none on top of another. The blocks stand where
+  /// they are, and the tasks go round them, unless something is being moved: `moving` (a task, at `minute`) or
+  /// `movingBlock` is laid first, and everything else makes room for it, blocks included.
+  public func layout(
+    notBefore: Int = 0, moving: TaskID? = nil, to minute: Int = 0, movingBlock: DayBlock? = nil
+  ) -> DayLayout {
+    var taken: [(start: Int, end: Int)] = []
+    func place(length: Int, from first: Int) -> Int {
       var start = first
-      while let clash = taken.first(where: { $0.start < start + entry.minutes && $0.end > start }) {
+      while let clash = taken.first(where: { $0.start < start + length && $0.end > start }) {
         start = clash.end
       }
-      taken.append((start: start, end: start + entry.minutes))
+      taken.append((start: start, end: start + length))
+      return start
+    }
+    func slot(_ entry: PlanEntry, from first: Int) -> PlanSlot {
+      let start = place(length: entry.minutes, from: first)
       return PlanSlot(entry: entry, start: start, end: start + entry.minutes)
     }
-    let moved = entries.first { $0.task.id == moving }.map { place($0, from: minute) }
+    func block(_ block: DayBlock, from first: Int) -> DayBlock {
+      let start = place(length: block.end - block.start, from: first)
+      return DayBlock(id: block.id, title: block.title, start: start, end: start + block.end - block.start)
+    }
+    let moved = entries.first { $0.task.id == moving }.map { slot($0, from: minute) }
+    let dragged = movingBlock.map { block($0, from: $0.start) }
+    let resident = blocks.filter { $0.id != movingBlock?.id }
+      .sorted { $0.start < $1.start }
+      .map { block($0, from: $0.start) }
     let own = entries.enumerated().filter { $0.element.start != nil && $0.element.task.id != moving }
     let fixed = own.sorted { ($0.element.start ?? 0, $0.offset) < ($1.element.start ?? 0, $1.offset) }
-      .map { place($0.element, from: $0.element.start ?? 0) }
-    let flowStart = max(hours.start, notBefore)
-    var cursor = flowStart
+      .map { slot($0.element, from: $0.element.start ?? 0) }
+    var cursor = max(hours.start, notBefore)
     var flowing: [PlanSlot] = []
     for entry in entries where entry.start == nil && entry.task.id != moving {
-      let slot = place(entry, from: cursor)
-      flowing.append(slot)
-      cursor = slot.end
+      let placed = slot(entry, from: cursor)
+      flowing.append(placed)
+      cursor = placed.end
     }
-    return (fixed + flowing + (moved.map { [$0] } ?? [])).sorted { $0.start < $1.start }
+    return DayLayout(
+      slots: (fixed + flowing + (moved.map { [$0] } ?? [])).sorted { $0.start < $1.start },
+      blocks: (resident + (dragged.map { [$0] } ?? [])).sorted { $0.start < $1.start })
   }
+}
+
+/// A day laid out: where the planned tasks and the blocks of untracked time stand, earliest first.
+public struct DayLayout: Equatable, Sendable {
+  public let slots: [PlanSlot]
+  public let blocks: [DayBlock]
 }
 
 /// A planned task at its place in the day: minutes after midnight.

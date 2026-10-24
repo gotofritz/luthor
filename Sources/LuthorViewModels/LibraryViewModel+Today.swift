@@ -48,40 +48,48 @@ extension LibraryViewModel {
   /// The planned tasks of the day shown on its hours. On today the ones without a start of their own do not
   /// begin before it is now, rounded up to the quarter hour.
   public var planSlots: [PlanSlot] {
-    layout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0, block: blockPreview)
+    dayLayout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0, block: blockPreview).slots
   }
 
-  /// The blocks of untracked time of the day shown; one dragged over the day is where it would land.
+  /// The blocks of untracked time of the day shown, where they stand: one dragged over the day is where it
+  /// would land, and the ones in its way have moved.
   public var planBlocks: [DayBlock] {
-    plan.blocks.map { $0.id == blockPreview?.id ? (blockPreview ?? $0) : $0 }
+    dayLayout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0, block: blockPreview).blocks
   }
 
-  /// The one layout of a day, for what is shown while dragging and for what a drop keeps: the day's slots with
-  /// `moving` laid first at `minute` and `block` in place of the block of its ID, the others making room. A
-  /// candidate being dragged counts as planned.
-  private func layout(moving: TaskID?, to minute: Int, block: DayBlock?) -> [PlanSlot] {
+  /// The one layout of a day, for what is shown while dragging and for what a drop keeps: the tasks and blocks
+  /// with `moving` laid first at `minute` and `block` laid first, the others making room. A candidate being
+  /// dragged counts as planned.
+  private func dayLayout(moving: TaskID?, to minute: Int, block: DayBlock?) -> DayLayout {
     var entries = plan.entries
     if let moving, !entries.contains(where: { $0.task.id == moving }),
       let candidate = plan.candidates.first(where: { $0.task.id == moving })
     {
       entries.append(candidate)
     }
-    let blocks = plan.blocks.map { $0.id == block?.id ? (block ?? $0) : $0 }
     let shown = DayPlan(
       viewID: plan.viewID, date: plan.date, entries: entries, candidates: plan.candidates,
-      capacity: plan.capacity, hours: plan.hours, blocks: blocks)
-    return shown.slots(notBefore: notBefore, moving: moving, to: minute)
+      capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks)
+    return shown.layout(notBefore: notBefore, moving: moving, to: minute, movingBlock: block)
   }
 
-  /// The tasks with a time of their own that a change moved, as the events that keep them where they now are.
+  /// The tasks with a time of their own and the blocks that a change moved, as the events that keep them where
+  /// they now are. What was moved itself is left out: its own event says where it is.
   private func keepPushed(
-    _ after: [PlanSlot], from before: [PlanSlot], except taskID: TaskID?, on day: CalendarDate, log: [EventEnvelope]
+    _ after: DayLayout, from before: DayLayout, except movedID: String, on day: CalendarDate, log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     var events: [EventEnvelope] = []
-    for slot in after where slot.entry.task.id != taskID && slot.entry.start != nil {
-      let was = before.first { $0.entry.task.id == slot.entry.task.id }?.start
+    for slot in after.slots where slot.entry.task.id.rawValue != movedID && slot.entry.start != nil {
+      let was = before.slots.first { $0.entry.task.id == slot.entry.task.id }?.start
       if was != slot.start {
         events += try commands.setStart(taskID: slot.entry.task.id, on: day, minute: slot.start, log: log + events)
+      }
+    }
+    for block in after.blocks where block.id.rawValue != movedID {
+      let was = before.blocks.first { $0.id == block.id }?.start
+      if was != block.start {
+        events += try commands.updateBlock(
+          block.id, title: block.title, start: block.start, end: block.end, log: log + events)
       }
     }
     return events
@@ -103,11 +111,11 @@ extension LibraryViewModel {
   public func place(_ taskID: TaskID, atMinute minute: Int?) {
     let day = planDate
     dragPreview = nil
-    let before = layout(moving: nil, to: 0, block: nil)
-    let after = minute.map { layout(moving: taskID, to: $0, block: nil) } ?? []
+    let before = dayLayout(moving: nil, to: 0, block: nil)
+    let after = minute.map { dayLayout(moving: taskID, to: $0, block: nil) } ?? before
     perform { (log) throws(CommandError) in
       let placed = try commands.setStart(taskID: taskID, on: day, minute: minute, log: log)
-      return try placed + keepPushed(after, from: before, except: taskID, on: day, log: log + placed)
+      return try placed + keepPushed(after, from: before, except: taskID.rawValue, on: day, log: log + placed)
     }
   }
 
@@ -183,11 +191,11 @@ extension LibraryViewModel {
   public func updateBlock(_ blockID: BlockID, title: String, start: Int, end: Int) {
     let day = planDate
     blockPreview = nil
-    let before = layout(moving: nil, to: 0, block: nil)
-    let after = layout(moving: nil, to: 0, block: DayBlock(id: blockID, title: title, start: start, end: end))
+    let before = dayLayout(moving: nil, to: 0, block: nil)
+    let after = dayLayout(moving: nil, to: 0, block: DayBlock(id: blockID, title: title, start: start, end: end))
     perform { (log) throws(CommandError) in
       let changed = try commands.updateBlock(blockID, title: title, start: start, end: end, log: log)
-      return try changed + keepPushed(after, from: before, except: nil, on: day, log: log + changed)
+      return try changed + keepPushed(after, from: before, except: blockID.rawValue, on: day, log: log + changed)
     }
   }
 

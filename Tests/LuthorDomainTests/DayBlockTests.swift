@@ -127,6 +127,34 @@ struct NoOverlapTests {
     #expect(result.map(\.start) == [620, 650])
   }
 
+  @Test("a task dropped on a block wins its place and the block moves to the end of it")
+  func aDroppedTaskPushesABlock() {
+    let plan = LibraryState.replay(
+      tasks + [blockSet("b1", "Lunch", 720, 780, on: "2026-10-19", lamport: 9)]
+    ).plan(for: .default, on: monday, today: monday)
+
+    let result = plan.layout(moving: TaskID("t1"), to: 700)
+
+    #expect(result.slots.first { $0.entry.task.id == TaskID("t1") }?.start == 700)
+    #expect(result.blocks.map(\.start) == [760])
+    #expect(result.blocks.map(\.end) == [820])
+  }
+
+  @Test("a block dropped on another block wins its place and the other moves to the end of it")
+  func aDroppedBlockPushesABlock() {
+    let plan = LibraryState.replay(
+      tasks + [
+        blockSet("b1", "Lunch", 720, 780, on: "2026-10-19", lamport: 9),
+        blockSet("b2", "Shopping", 900, 930, on: "2026-10-19", lamport: 10),
+      ]
+    ).plan(for: .default, on: monday, today: monday)
+
+    let result = plan.layout(movingBlock: DayBlock(id: BlockID("b2"), title: "Shopping", start: 740, end: 770))
+
+    #expect(result.blocks.map(\.id) == [BlockID("b2"), BlockID("b1")])
+    #expect(result.blocks.map(\.start) == [740, 770])
+  }
+
   @Test("a longer estimate pushes the tasks after it later")
   func aLongerEstimatePushesTheRestLater() {
     let before = slots([
