@@ -227,7 +227,7 @@ move it. A task dragged onto others wins its place: they move out of the way as 
 are put when you let go. A block's context menu has Start Now (on today: the same as Set Times… with
 now filled in; while the task is under way it reads Stop Now, which adds the minutes
 since the start to the time logged for the task and turns the run, from its start to now, into a session of the
-task; see Sessions below), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
+task; see Sessions above), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
 block back onto the candidates does the same. A task with no time of its own,
 such as one added with ⌘T, follows the others in the plan's order from the
