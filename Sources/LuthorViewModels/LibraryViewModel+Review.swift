@@ -29,11 +29,11 @@ extension LibraryViewModel {
     let day = planDate
     let unlogged = review.done.filter { $0.loggedMinutes == nil && !$0.isUnestimated }
     perform { (log) throws(CommandError) in
-      var events = try commands.reviewDay(of: viewID, on: day, note: note, log: log)
+      var events: [EventEnvelope] = []
       for entry in unlogged {
         events += try commands.logTime(taskID: entry.task.id, on: day, minutes: entry.minutes, log: log + events)
       }
-      return events
+      return events + (try commands.reviewDay(of: viewID, on: day, note: note, log: log + events))
     }
   }
 
