@@ -141,8 +141,9 @@ public struct DayPlan: Equatable, Sendable {
   /// on a block. A task with a start of its own stands there, unless something before it is in the way: it then
   /// moves to the end of that, and so does everything after it. The others follow one another in the plan's
   /// order from the start of the day, or from `notBefore` (the time now, on today) if that is later, in the
-  /// gaps. A plan longer than the day runs past its end. Slots come earliest first.
-  public func slots(notBefore: Int = 0) -> [PlanSlot] {
+  /// gaps. A plan longer than the day runs past its end. Slots come earliest first. With `moving`, that entry
+  /// is laid first at the minute `to`, as if it had been dropped there, and the others make room for it.
+  public func slots(notBefore: Int = 0, moving: TaskID? = nil, to minute: Int = 0) -> [PlanSlot] {
     var taken = blocks.map { (start: $0.start, end: $0.end) }
     func place(_ entry: PlanEntry, from first: Int) -> PlanSlot {
       var start = first
@@ -152,18 +153,19 @@ public struct DayPlan: Equatable, Sendable {
       taken.append((start: start, end: start + entry.minutes))
       return PlanSlot(entry: entry, start: start, end: start + entry.minutes)
     }
-    let own = entries.enumerated().filter { $0.element.start != nil }
+    let moved = entries.first { $0.task.id == moving }.map { place($0, from: minute) }
+    let own = entries.enumerated().filter { $0.element.start != nil && $0.element.task.id != moving }
     let fixed = own.sorted { ($0.element.start ?? 0, $0.offset) < ($1.element.start ?? 0, $1.offset) }
       .map { place($0.element, from: $0.element.start ?? 0) }
     let flowStart = max(hours.start, notBefore)
     var cursor = flowStart
     var flowing: [PlanSlot] = []
-    for entry in entries where entry.start == nil {
+    for entry in entries where entry.start == nil && entry.task.id != moving {
       let slot = place(entry, from: cursor)
       flowing.append(slot)
       cursor = slot.end
     }
-    return (fixed + flowing).sorted { $0.start < $1.start }
+    return (fixed + flowing + (moved.map { [$0] } ?? [])).sorted { $0.start < $1.start }
   }
 }
 

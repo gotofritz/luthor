@@ -115,6 +115,18 @@ struct NoOverlapTests {
     #expect(result.map(\.end) == [660, 690])
   }
 
+  @Test("a task dropped on another's place wins it and the other moves to the end of it")
+  func aDroppedTaskWinsItsPlace() {
+    let plan = LibraryState.replay(
+      tasks + [startSet("t1", 600, on: "2026-10-19", lamport: 9), startSet("t2", 800, on: "2026-10-19", lamport: 10)]
+    ).plan(for: .default, on: monday, today: monday)
+
+    let result = plan.slots(moving: TaskID("t2"), to: 620)
+
+    #expect(result.map(\.entry.task.id) == [TaskID("t2"), TaskID("t1")])
+    #expect(result.map(\.start) == [620, 650])
+  }
+
   @Test("a longer estimate pushes the tasks after it later")
   func aLongerEstimatePushesTheRestLater() {
     let before = slots([

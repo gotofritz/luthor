@@ -143,16 +143,9 @@ private struct DayGrid: View {
         }
         .frame(height: CGFloat(lastHour - firstHour) * hourHeight)
         .padding(.trailing, 12)
-        .dropDestination(for: String.self) { items, location in
-          guard let dropped = items.first else { return false }
-          let minute = max(firstHour * 60 + Int(location.y / hourHeight * 60), 0) / 15 * 15
-          if let blockID = DayBlockView.blockID(in: dropped) {
-            library.moveBlock(blockID, toStart: minute)
-          } else {
-            library.place(TaskID(dropped), atMinute: min(minute, 24 * 60 - 15))
-          }
-          return true
-        }
+        .onDrop(
+          of: [.text],
+          delegate: DayDropDelegate(library: library, firstHour: firstHour, hourHeight: hourHeight))
       }
       .onAppear { proxy.scrollTo(plan.hours.start / 60, anchor: .top) }
     }
@@ -169,7 +162,7 @@ private struct DayGrid: View {
   private func untracked(_ dayBlock: DayBlock, firstHour: Int) -> some View {
     DayBlockView(
       block: dayBlock, hourHeight: hourHeight, edit: { editingBlock = dayBlock },
-      delete: { library.removeBlock(dayBlock.id) }
+      delete: { library.removeBlock(dayBlock.id) }, dragStarted: { library.draggedTaskID = nil }
     )
     .padding(.leading, Self.labelWidth + 8)
     .padding(.top, offset(dayBlock.start, firstHour: firstHour))
@@ -255,7 +248,10 @@ private struct DayGrid: View {
     .overlay(RoundedRectangle(cornerRadius: 5).stroke(theme.fill.opacity(0.6)))
     .contentShape(.rect)
     .onTapGesture { library.selection = entry.task.id }
-    .draggable(entry.task.id.rawValue)
+    .onDrag {
+      library.draggedTaskID = entry.task.id
+      return NSItemProvider(object: entry.task.id.rawValue as NSString)
+    }
     .contextMenu {
       if library.planDate == library.today {
         if library.isRunning(entry.task.id) {
@@ -312,5 +308,46 @@ private struct StartTimeSheet: View {
     }
     .padding()
     .frame(width: 300)
+  }
+}
+
+/// Follows a drag over the hour grid: a dragged task shows where it would land while the others make room, and
+/// the drop keeps that.
+private struct DayDropDelegate: DropDelegate {
+  let library: LibraryViewModel
+  let firstHour: Int
+  let hourHeight: CGFloat
+
+  private func minute(at location: CGPoint) -> Int {
+    max(firstHour * 60 + Int(location.y / hourHeight * 60), 0) / 15 * 15
+  }
+
+  func dropUpdated(info: DropInfo) -> DropProposal? {
+    if let dragged = library.draggedTaskID {
+      library.dragPreview = (dragged, min(minute(at: info.location), 24 * 60 - 15))
+    }
+    return DropProposal(operation: .move)
+  }
+
+  func dropExited(info: DropInfo) {
+    library.dragPreview = nil
+  }
+
+  func performDrop(info: DropInfo) -> Bool {
+    let minute = minute(at: info.location)
+    library.dragPreview = nil
+    library.draggedTaskID = nil
+    guard let provider = info.itemProviders(for: [.text]).first else { return false }
+    _ = provider.loadObject(ofClass: NSString.self) { item, _ in
+      guard let dropped = item as? String else { return }
+      Task { @MainActor in
+        if let blockID = DayBlockView.blockID(in: dropped) {
+          library.moveBlock(blockID, toStart: minute)
+        } else {
+          library.place(TaskID(dropped), atMinute: min(minute, 24 * 60 - 15))
+        }
+      }
+    }
+    return true
   }
 }

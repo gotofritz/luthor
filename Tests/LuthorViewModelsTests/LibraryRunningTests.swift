@@ -154,3 +154,41 @@ struct RunningOverrunTests {
     #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 690)
   }
 }
+
+@MainActor
+@Suite("When a task is dropped on the place of another")
+struct DropOnAnotherViewModelTests {
+  @Test("the other moves out of the way and keeps its new place")
+  func theOtherKeepsItsNewPlace() {
+    let events =
+      planned + [
+        startSet("t1", 600, on: "2026-10-19", lamport: 5),
+        captured("t2", "next", lamport: 6), estimated("t2", as: 30, lamport: 7),
+        scheduled("t2", on: "2026-10-19", lamport: 8), startSet("t2", 800, on: "2026-10-19", lamport: 9),
+      ]
+    let library = makeLibrary(events) { 0 }
+
+    library.place(TaskID("t2"), atMinute: 620)
+
+    let slots = library.planSlots
+    #expect(slots.first { $0.entry.task.id == TaskID("t2") }?.start == 620)
+    #expect(slots.first { $0.entry.task.id == TaskID("t1") }?.start == 650)
+    #expect(library.plan.entries.first { $0.task.id == TaskID("t1") }?.start == 650)
+  }
+
+  @Test("while it is dragged over, the others show making room")
+  func theOthersMakeRoomWhileDragging() {
+    let events =
+      planned + [
+        startSet("t1", 600, on: "2026-10-19", lamport: 5),
+        captured("t2", "next", lamport: 6), estimated("t2", as: 30, lamport: 7),
+        scheduled("t2", on: "2026-10-19", lamport: 8), startSet("t2", 800, on: "2026-10-19", lamport: 9),
+      ]
+    let library = makeLibrary(events) { 0 }
+
+    library.dragPreview = (TaskID("t2"), 620)
+
+    #expect(library.planSlots.first { $0.entry.task.id == TaskID("t1") }?.start == 650)
+    #expect(library.plan.entries.first { $0.task.id == TaskID("t1") }?.start == 600)
+  }
+}

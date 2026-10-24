@@ -214,7 +214,8 @@ takes it off.
 **Placing tasks.** Each planned task is a block as tall as its estimate (an
 unestimated one at the default estimate). Drag a candidate onto the grid to
 plan it at that time (to the quarter hour), and drag a block to another time to
-move it. A block's context menu has Start Now (on today: the same as Set Start Time… with
+move it. A task dragged onto others wins its place: they move out of the way as you drag, and stay where they
+are put when you let go. A block's context menu has Start Now (on today: the same as Set Start Time… with
 now filled in; while the task is under way it reads Stop Now, which adds the minutes
 since the start to the time logged for the task, keeps its start and ends its block at the time now; later
 tasks move along if the block now overlaps them), Set Start Time… (a time field, with a Now button),

@@ -48,8 +48,24 @@ extension LibraryViewModel {
   /// The planned tasks of the day shown on its hours. On today the ones without a start of their own do not
   /// begin before it is now, rounded up to the quarter hour.
   public var planSlots: [PlanSlot] {
-    let now = minuteClock()
-    return plan.slots(notBefore: planDate == today ? (now + 14) / 15 * 15 : 0)
+    layout(moving: dragPreview?.taskID, to: dragPreview?.minute ?? 0)
+  }
+
+  /// The day's slots with `moving` laid first at `minute`. A candidate being dragged counts as planned.
+  private func layout(moving: TaskID?, to minute: Int) -> [PlanSlot] {
+    var shown = plan
+    if let moving, !plan.entries.contains(where: { $0.task.id == moving }),
+      let candidate = plan.candidates.first(where: { $0.task.id == moving })
+    {
+      shown = DayPlan(
+        viewID: plan.viewID, date: plan.date, entries: plan.entries + [candidate], candidates: plan.candidates,
+        capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks)
+    }
+    return shown.slots(notBefore: notBefore, moving: moving, to: minute)
+  }
+
+  private var notBefore: Int {
+    planDate == today ? (minuteClock() + 14) / 15 * 15 : 0
   }
 
   /// The minutes since midnight by the clock, for the line that marks now on today's calendar.
@@ -59,10 +75,23 @@ extension LibraryViewModel {
 
   /// Plans a task for the day shown, starting at the minute after midnight, or with `nil` following the tasks
   /// before it. Moving a planned task is the same call.
+  /// A task put on a start time wins the place: the tasks with a time of their own that it overlaps move to
+  /// make room, and keep the places they were given.
   public func place(_ taskID: TaskID, atMinute minute: Int?) {
     let day = planDate
+    dragPreview = nil
+    let before = layout(moving: nil, to: 0)
+    let after = minute.map { layout(moving: taskID, to: $0) } ?? []
+    let pushed = after.filter { slot in
+      slot.entry.task.id != taskID && slot.entry.start != nil
+        && before.first { $0.entry.task.id == slot.entry.task.id }?.start != slot.start
+    }
     perform { (log) throws(CommandError) in
-      try commands.setStart(taskID: taskID, on: day, minute: minute, log: log)
+      var events = try commands.setStart(taskID: taskID, on: day, minute: minute, log: log)
+      for slot in pushed {
+        events += try commands.setStart(taskID: slot.entry.task.id, on: day, minute: slot.start, log: log + events)
+      }
+      return events
     }
   }
 

@@ -111,6 +111,10 @@ public final class LibraryViewModel {
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
+  /// While a task is dragged over the day, where it would land: the tasks around it show making room.
+  /// The task being dragged on the day calendar, set when the drag starts.
+  public var draggedTaskID: TaskID?
+  public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog
   let clock: () -> CalendarDate

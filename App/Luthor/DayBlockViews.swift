@@ -9,6 +9,7 @@ struct DayBlockView: View {
   let hourHeight: CGFloat
   let edit: () -> Void
   let delete: () -> Void
+  let dragStarted: () -> Void
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -26,7 +27,10 @@ struct DayBlockView: View {
     .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.6), style: StrokeStyle(dash: [4, 3])))
     .contentShape(.rect)
     .onTapGesture(count: 2, perform: edit)
-    .draggable(DayBlockView.payload(block.id))
+    .onDrag {
+      dragStarted()
+      return NSItemProvider(object: DayBlockView.payload(block.id) as NSString)
+    }
     .contextMenu {
       Button("Edit…", action: edit)
       Button("Delete", role: .destructive, action: delete)
