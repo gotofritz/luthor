@@ -188,8 +188,9 @@ private struct DayGrid: View {
     .sheet(item: $timing) { target in
       TimesSheet(
         library: library, heading: target.heading, slot: slot(of: target),
-        apply: { start, end in apply(target, start: start, end: end) }
-      ) { timing = nil }
+        apply: { start, end in apply(target, start: start, end: end) },
+        close: { timing = nil }
+      )
     }
   }
 
