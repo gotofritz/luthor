@@ -49,8 +49,18 @@ extension LibraryViewModel {
     sessionPreview = (sessionID, minute)
   }
 
-  /// Gives a session's minutes back to its task.
+  /// Takes a session off the day, with its minutes: the task's estimate shrinks by them, so the task's own block
+  /// does not grow into the place. A session that was all of the estimate leaves it as it is.
   public func removeSession(_ sessionID: SessionID) {
-    perform { (log) throws(CommandError) in try commands.removeSession(sessionID, log: log) }
+    guard let session = plan.sessions.first(where: { $0.id == sessionID }) else { return }
+    let taskID = session.task.id
+    let remaining = (plan.entries.first { $0.task.id == taskID }?.minutes ?? 0) - session.minutes
+    perform { (log) throws(CommandError) in
+      var events = try commands.removeSession(sessionID, log: log)
+      if remaining > 0 {
+        events += try commands.estimate(taskID: taskID, as: remaining, log: log + events)
+      }
+      return events
+    }
   }
 }

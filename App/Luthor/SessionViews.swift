@@ -3,7 +3,7 @@ import LuthorViewModels
 import SwiftUI
 
 /// A session of a task on the day grid: a stretch of its day set apart from the rest. Drag it to another time,
-/// or choose Set Times… to change it; Remove Session gives its minutes back to the task.
+/// or choose Set Times… to change it; Remove Session takes it off the day with its minutes.
 struct SessionBlockView: View {
   @Environment(\.theme) private var theme
   @Bindable var library: LibraryViewModel

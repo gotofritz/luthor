@@ -311,15 +311,16 @@ struct SessionViewModelTests {
     #expect(library.plan.sessions.map(\.start).sorted() == [550, 580])
   }
 
-  @Test("removing a session gives its minutes back")
-  func removingGivesTheMinutesBack() {
+  @Test("removing a session takes its minutes with it, and the task's own block stays as it was")
+  func removingTakesTheMinutesWithIt() {
     let library = makeLibrary(planned) { 0 }
     library.addSession(of: TaskID("t1"), start: 540, end: 570)
 
     library.removeSession(library.plan.sessions.first?.id ?? SessionID("none"))
 
     #expect(library.planSessions.isEmpty)
-    #expect(library.planSlots.first?.entry.minutes == 60)
+    #expect(library.planSlots.first?.entry.minutes == 30)
+    #expect(library.plan.entries.first?.minutes == 30)
   }
 
   @Test("a session that takes the whole estimate leaves no block of the task's own")

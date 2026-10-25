@@ -220,7 +220,8 @@ block of its own, drawn with a dashed edge. Tick Defer and B is not put on the
 day: it becomes a new task of its length, among the candidates.
 The task's own block shrinks by those minutes (and goes when the sessions take
 all of them), so the estimate stays the total. Drag a session, or choose Set
-Times… on it, to move it; Remove Session gives its minutes back to the task.
+Times… on it, to move it; Remove Session takes it off the day with its minutes, and the
+task is that much shorter.
 Stop Now makes the run you just did a session at its real time. Sessions push
 other blocks aside, and are pushed, like tasks.
 
