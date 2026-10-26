@@ -239,7 +239,8 @@ public final class LibraryViewModel {
   public var logProblemsMessage: String? {
     guard let first = logProblems.first else { return nil }
     let count = logProblems.count == 1 ? "1 line" : "\(logProblems.count) lines"
-    return "\(count) of the event log could not be read and were left out, starting with line \(first.line) of \(first.file)."
+    return "\(count) of the event log could not be read and were left out, "
+      + "starting with line \(first.line) of \(first.file)."
   }
 
   /// Moves this device's unreadable lines into a `.rejected` file beside the log, then reloads. Another

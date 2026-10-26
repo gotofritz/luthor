@@ -24,11 +24,18 @@ private final class DamagedLog: EventLog, @unchecked Sendable {
 }
 
 @MainActor
+private func makeLibrary() -> LibraryViewModel {
+  LibraryViewModel(
+    log: DamagedLog(), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()),
+    today: { date("2026-10-19") })
+}
+
+@MainActor
 @Suite("When the log has a damaged line")
 struct DamagedLogViewModelTests {
   @Test("the window opens with the readable tasks and says what was left out")
   func opensAndReports() {
-    let library = LibraryViewModel(log: DamagedLog(), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), today: { date("2026-10-19") })
+    let library = makeLibrary()
 
     library.reload()
 
@@ -39,7 +46,7 @@ struct DamagedLogViewModelTests {
 
   @Test("repairing clears the message")
   func repairingClearsTheMessage() {
-    let library = LibraryViewModel(log: DamagedLog(), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), today: { date("2026-10-19") })
+    let library = makeLibrary()
     library.reload()
 
     library.repairLog()
