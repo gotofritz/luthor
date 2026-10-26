@@ -44,7 +44,7 @@ fails under 90% line coverage of `Sources/` (`make coverage`).
 
 ### CI-Linux. Fast Linux job for the package ✅
 
-A `linux` job (`swift:6.0` container, `make test-linux`: `swift build` and
+A `linux` job (`swift:6.2` container, `make test-linux`: `swift build` and
 `swift test`, no Xcode, lint or coverage gate) runs next to the macOS job, so
 agent sessions without a toolchain get quick feedback. The macOS job stays
 the full check. Issue #85.

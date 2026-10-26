@@ -16,7 +16,7 @@ jobs:
   linux:
     name: make test-linux
     runs-on: ubuntu-latest
-    container: swift:6.0
+    container: swift:6.2
     steps:
       - name: Install make
         run: apt-get update && apt-get install -y make git
