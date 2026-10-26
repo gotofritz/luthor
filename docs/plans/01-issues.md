@@ -423,3 +423,161 @@ point notarising the Mac build and attaching it to releases is a Makefile step.
 Developer Program question, add `notarytool` to `make dist`.
 
 **Done when** the install steps match what happens on the author's current macOS.
+
+
+## Security assessment: risk and attack surface (external review, 2026-10-26)
+
+Scope: the repo at `fix/assessment-2026-10-25` (Swift packages, Mac app target, CI/release workflows, Terraform).
+Method: code reading of the store, sync, import and CI layers; nothing was run. Severity is for a single-user,
+local-first app whose log lives in a Dropbox folder. Findings below may duplicate others and are meant to be
+merged later.
+
+### Threat model
+
+| Asset | Where | Who can reach it |
+|-------|-------|------------------|
+| Event log (tasks, notes, time, plans) | `~/.luthor/events.jsonl` or `Dropbox/backups/Luthor/events-<device>.jsonl` | the user's Mac account; Dropbox (the company); anyone the folder is shared with; anyone holding the Dropbox account |
+| Release binary | GitHub Releases, ad-hoc signed | anyone downloading it; the repo owner's CI |
+| Repo and CI | public GitHub repo | contributors, forks, dependencies fetched in CI |
+
+There is no server, no network code in the app (no `URLSession`), no auth. The realistic attack surface is
+therefore (1) files other parties can place in the shared folder, (2) text the user imports, (3) the build and
+release pipeline, and (4) confidentiality of data at rest.
+
+### Findings
+
+**S-1 (medium) Sixteen third-party Python wheels (14 MB) are committed at the repo root.**
+`PasteDeploy`, `eventlet`, `lxml`, `cryptography`, `requests`, `swift` (OpenStack), `urllib3` and others, added in
+`c23826a feat(store)!: freeze event format (#63)` and still on `main`. They have nothing to do with a Swift app,
+are unreviewable binaries in a public repo, bloat every clone, and will trigger dependency scanners. Treat as an
+accidental `pip download`. Fix: `git rm *.whl`, add `*.whl` to `.gitignore`, confirm nothing in the repo or CI
+reads them. History rewrite is not needed unless the wheels are considered sensitive.
+
+**S-2 (medium) Anyone who can write into the shared folder can forge or shadow events; nothing authenticates a
+device file.**
+`DeviceFilesEventLog.readAll` merges every `events-*.jsonl` (including the "conflict copies" it deliberately
+accepts). The `device` field inside an event is not checked against the file name, there is no signature or MAC,
+and replay de-duplicates by event ID *after* sorting by Lamport counter, so a forged copy of an existing event
+ID with a lower counter wins over the genuine one, and a `TaskDeleted` or `TaskDropped` with a high counter
+wins over everything. Relevant if the Dropbox folder is ever shared, the Dropbox account is phished, or a
+rogue app has Dropbox write access. Options: accept as documented risk (one user, own folder) and say so in
+`docs/guide.md`; or sign each line with a per-device key kept in the Keychain and refuse unsigned or
+mismatched lines. At minimum, reject a line whose `device` differs from its file's device token.
+
+**S-3 (medium) A single forged event with `lamport = 18446744073709551615` crashes every write.**
+`Commands.envelope` (`Commands.swift:329`) computes `(log.map(\.lamport).max() ?? 0) + 1` and
+`ImportWriter` does `lamport + 1` / `next += 1` (`Commands+Import.swift:52,59`). In Swift, `UInt64` overflow
+traps, so once such a line is in any device file the app crashes on the next capture, edit or compaction, on every
+launch, and the line can only be removed by editing the file by hand. The same line from a buggy build has the
+same effect. Fix: use `&+`/saturating add with a typed error (`CommandError.logCorrupt`), or reject lamports
+above a sane bound when reading. Test: golden-log style fixture with the maximum value.
+
+**S-4 (medium) A compaction request file can pause every Mac indefinitely.**
+`CompactionHandshake.isExpired` returns `false` when `requestedAt` cannot be parsed, and a time in the future
+also never expires (`now - asked` is negative). Any file named `compaction-<x>-request.json` with such a value
+makes `PausableEventLog.append` refuse all writes on all devices until someone cancels it from Settings. It also
+trusts the *content*: the request's `id` is taken from the JSON, not from the file name. Fix: treat an unparsable
+or future `requestedAt` as expired (or as the file's modification date), and require `id` to equal the id in the
+file name.
+
+**S-5 (low-medium) Path traversal through the compaction request `id`.**
+`CompactionHandshake.name(_:_:)` builds `compaction-\(id)-ack-<token>.json`, `-done.json` and `-cancel.json` from
+`request.id` read out of an untrusted file, then writes it with `appendingPathComponent`. An id such as
+`x/../../..` combined with a directory the attacker also syncs into the folder (`compaction-x`) makes the app
+write a small JSON file outside the shared folder, with a name that must end in `-done.json` or
+`-ack-<token>.json`. The impact is limited by the fixed suffix and content, but it is a write primitive driven by
+file contents from another party. Fix: validate ids against `^[A-Za-z0-9-]{1,64}$` when reading and when
+creating (they are UUIDs today).
+
+**S-6 (medium) Compaction deletes other devices' files on the strength of an advisory handshake.**
+`LogCompactor.replace` removes every other `events-*.jsonl` after the handshake. The handshake only works if every
+device runs a build that knows it. An older build, a Mac that is asleep, or a late Dropbox sync that lands
+after the "events have arrived" check means those events are removed from the live log; they survive only in
+`backups/compact-<stamp>/` and are not merged back. Mitigation ideas: write a tombstone/marker so a build that
+does not know the handshake refuses to open a folder that holds one; keep the other devices' files renamed
+rather than deleted until each device has acknowledged the done marker; add a test where a device appends
+between the ack and the swap and the event is not lost.
+
+**S-7 (medium) Plain-text personal data at rest and in Dropbox; some files are world-readable.**
+The log is plain JSON (task titles, notes, time spent, daily reviews). The event files are created `0600`
+(`JSONLinesEventLog.append`), but several siblings are not: the `.new` temporary file made by
+`LogCompactor.replace` (`Data().write`, default `0644`, and it may become the live log), `library.yml` in
+`backups/compact-*`, the handshake JSON files, the `~/.luthor` directory and the `backups` folders (default
+`0755`), and `backups/` holds a full copy of the log after every compaction and is never pruned. Dropbox itself
+and anything with the shared folder see everything. Fixes: create the directory `0700` and every file `0600`
+(set attributes explicitly, test with `stat`), document the Dropbox trust assumption in the guide, and offer to
+prune old backups.
+
+**S-8 (low-medium) Untrusted YAML import: possible alias expansion and no size or shape limits.**
+`LibraryText.library(from:)` decodes a user-picked file with Yams. libyaml has no alias-expansion limit, and
+decoding a document of nested anchors (a "billion laughs" file) into `LibraryExport` can balloon memory and
+hang the main thread. There is also no cap on file size or item count, and an imported text can contain very
+long titles or notes that go into the log forever (the log is append-only). Fix: reject files above a size limit
+before decoding (a few MB), refuse documents containing aliases (`*x`), cap per-field lengths, and add a test
+with a nested-alias fixture. Import runs on the main thread, so a bad file is also a UI freeze.
+
+**S-9 (low) The app is not sandboxed and not notarised.**
+`App/Luthor.xcodeproj` has hardened runtime but no entitlements file, so no App Sandbox, and signing is ad-hoc
+(`CODE_SIGN_IDENTITY = "-"`). A compromised dependency or a parsing bug therefore runs with the user's full file
+access, and users who download the release zip must bypass Gatekeeper by hand. The app only needs the Dropbox
+folder, the home log and user-picked import/export files. A sandbox with a security-scoped bookmark for the
+chosen folder would limit blast radius; it is a real piece of work, so decide deliberately. Notarisation needs an
+Apple Developer ID. Until then, the README should say how to verify the zip (S-11).
+
+**S-10 (low-medium) No dependency lock file and no automated dependency or secret scanning.**
+`Package.swift` takes `Yams from: "5.1.3"` and there is no committed `Package.resolved`, so every CI build and
+every release resolves whatever 5.x is newest. Yams embeds libyaml and parses untrusted input (S-8), so that is
+the one dependency that matters. There is no `.github/dependabot.yml`, no `SECURITY.md`, and
+`infra/repository.tf` does not enable secret scanning, push protection or Dependabot alerts
+(`security_and_analysis`). `.gitignore` ignores `*.jsonl` but not `backups/`, `library.yml` or `*.yml`
+exports. Fix: commit `Package.resolved`, add Dependabot for `swift` and `github-actions`, enable the repo
+security features in Terraform, add a short `SECURITY.md`.
+
+**S-11 (low-medium) CI and release hygiene.**
+- Actions are pinned by tag (`actions/checkout@v4`, `actions/upload-artifact@v4`), not commit SHA.
+- `make tools` downloads SwiftLint with `curl -fsSL` and does not check a checksum, then runs it in CI.
+- `release.yml` grants `contents: write` for the whole workflow, including the `pull_request` trigger that
+  runs `make dist` from PR code. Fork PRs get a read-only token, but a branch in the repo does not. Move the
+  write permission to the publishing steps (a separate job that needs the build job).
+- A hand-pushed tag goes into `make dist VERSION=$VERSION` and then into shell recipes via `$(VERSION)` in the
+  `Makefile`. Git allows `;`, `$`, backticks and `|` in tag names, so a tag like ``v1;cmd`` is a command
+  injection on a runner holding a write token. Only owners can push tags, but quote the value and validate it
+  against `^v[0-9]+\.[0-9]+\.[0-9]+$` in the workflow.
+- Release zips carry no checksum, signature or build provenance. Add `actions/attest-build-provenance` and a
+  `SHA256SUMS` file, and say in the README how to verify.
+- The `main` ruleset has `required_approving_review_count = 0` and no bypass list, which suits one person;
+  just note that a compromised owner token can still merge without review.
+
+**S-12 (low) Smaller items.**
+- `NoteLinks` turns `www.` text into `http://` links; use `https://`. Only http(s) links are generated, which is
+  the right call; keep a test that `javascript:`, `file:` and custom schemes never become links.
+- `LUTHOR_LOG`, `LUTHOR_SYNC_DIR` and `LUTHOR_DEVICE_ID` (also read from `UserDefaults`) override where the
+  log lives. A process that can set the app's environment or defaults can redirect the log; that is already
+  full compromise of the account, so this is informational only.
+- `DeviceFilesEventLog.fileName(for:)` sanitises the device ID to `[A-Za-z0-9._-]`, which is good. Two different
+  IDs that sanitise to the same string (`my host` and `my-host`) share one file, which would break the
+  "one writer per file" rule; the machine ID suffix makes this unlikely, but a test would pin it.
+- `readAll` loads whole files into memory as one `String`. A multi-hundred-megabyte file (corrupt or hostile)
+  stalls the app at launch. A size guard with a clear error is enough.
+
+### What looks good
+
+- No network code, no credentials, no secrets in the repo; Dropbox is used only through its desktop app's folder.
+- The event file is opened `O_APPEND` with `0600`, and the device file name is sanitised.
+- Unknown event types are skipped, and a parse error is reported with a line number rather than swallowed.
+- Parent/child cycles are refused in the reducer (`LibraryState+Items.swift:171`), so a forged `TaskMoved`
+  cannot loop the tree walks.
+- Reducers are pure and deterministic; the compactor checks the rebuilt library equals the old one and backs
+  up before deleting.
+- `ENABLE_USER_SCRIPT_SANDBOXING` and hardened runtime are on; CI uses read-only `contents` permission outside
+  the release workflow; squash-only merges and required checks protect `main`.
+
+### Suggested order
+
+1. S-3 (crash on max Lamport) and S-4/S-5 (handshake input validation): small, test-first, and they close the
+   ways a stray file can break every device.
+2. S-1 (remove the wheels), S-10 (lock file, Dependabot, `SECURITY.md`): minutes of work.
+3. S-7 (file modes) and S-8 (import limits).
+4. S-2 and S-6 are design decisions: write down the trust assumption now; change the format or the handshake
+   only if the folder is ever shared with someone else or an older build can still be running.
+5. S-9 and the rest of S-11 when a signing identity is available.
