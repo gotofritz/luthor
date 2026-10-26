@@ -1708,7 +1708,7 @@ Done when: a new Yams or `actions/checkout` release produces a PR that passes or
 Priority: P3
 
 Evidence:
-- The tracker holds 31 issues (21 open), none with a label or milestone, among them an open bug: #65 "bug: repeating task" (ticking a repeating task done moves its due date with no sign that this round was done, mostly in the Prios view), open since 21 Oct, while releases kept shipping.
+- The tracker holds 31 issues (20 open), none that I could see with a label or milestone, among them an open bug: #65 "bug: repeating task" (ticking a repeating task done moves its due date with no sign that this round was done, mostly in the Prios view), open since 21 Oct, while releases kept shipping.
 - Open work lives in four places: GitHub issues (#16 to #79), the roadmap's slices, `docs/plans/*.md` and now this file. Nothing says which wins. Some issues are large feature requests that the roadmap or the ALPEN plan may already cover or have ruled out (command palette, global capture hotkey, month view, CloudKit transport, perspectives), others are small fixes.
 - `AGENTS.md` says "Reference issues when relevant" but does not say how an issue becomes a slice or a PR.
 
