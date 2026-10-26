@@ -697,3 +697,102 @@ macOS crash reports are enough.
 
 P-2, then P-1 (small and test-first, protect the data), P-3, P-10, P-7 and P-9 (minutes of work), then P-4,
 P-6, P-11, with P-5 and P-8 when they start to matter.
+
+---
+
+## Architect's assessment: long-term evolution (second independent pass)
+
+IDs use the `A-` prefix so they do not clash with the other pass; merge duplicates later. Each item is
+here because it changes whether the app survives years of daily use, not for completeness.
+
+### A-1. Stop an older build writing to a newer log
+
+**Problem.** A build skips event types it does not know (`JSONLinesEventLog`, AGENTS.md "Event-sourcing
+rules") and carries on. With two Macs on different versions, the older one replays a library that is
+missing the effect of those events, shows it as truth, and lets the user edit on top of it. A new optional
+field on a known event is dropped the same way, silently. The edits it writes are valid events, so the
+damage is a wrong picture that then drives wrong decisions (a task shown as open that is done, a plan
+that ignores a new rule), not corruption.
+
+**Proposal.** Count the events skipped on read, expose it in `LibraryViewModel`, and when it is above zero
+show a banner ("this log has changes from a newer Luthor") and make the app read-only until updated.
+Optional and cheaper: a `minReader` marker event (an additive new type) that a build older than it
+refuses to write past. Test first: a log with an unknown line opens read-only.
+
+**Why now.** Free before iOS exists; once a second client ships on its own cadence, version skew is the
+normal case, not the exception.
+
+### A-2. Decide what compaction may forget, before the log gets big
+
+**Problem.** `LogCompactor` rebuilds the log from `LibraryState.export()`, which by design drops history
+(time logged, reviewed days, estimate history, plan orders; see the doc comments in `LibraryExport.swift`
+and `LogCompactor.swift`). That conflicts with "events are the source of truth": the one operation meant
+to keep the app fast for years permanently deletes the data behind the daily review and estimate
+calibration, which are the point of ALPEN (L and N). Compaction is also a stop-the-world handshake across
+all devices.
+
+**Proposal.** Pick one and write it in the architecture doc: (a) compaction keeps history events
+(`TaskTimeLogged`, `UnplannedTimeLogged`, `DayReviewed`) and only collapses edit chatter on items, or
+(b) take a **snapshot event** that is a checkpoint (state at lamport N) while leaving older events in an
+archive file that replay does not read but that is never deleted. (b) removes the need for the handshake
+because a snapshot is just another append. Either way compaction must be a test of "history queries give
+the same answers before and after".
+
+### A-3. Make a user action cost O(change), not O(log)
+
+**Problem.** `LibraryViewModel.perform` calls `log.readAll()` (reads and decodes every device file) and
+`Commands` computes the next Lamport as `(log.map(\.lamport).max() ?? 0) + 1`, then `show` replays the
+entire list again. Every keystroke-level action is two full passes over the history. The roadmap defers
+SQLite until replay is "measurably slow", which is right, but nothing measures it, so the decision will
+be made by the app feeling sluggish.
+
+**Proposal.** Small and no new dependency: (1) the view model keeps the replayed `LibraryState` and the
+max Lamport in memory and applies only the new events (`reduce` already exists), re-reading the files
+only when `FileChangeMonitor` reports an outside write; (2) add a benchmark test that generates a
+synthetic 5 years of use (roughly 300k events) and records read plus replay time, with a budget in the
+roadmap's slice 16 so "slow" has a number. SQLite stays deferred.
+
+### A-4. Run the package tests on Linux CI
+
+**Problem.** CI is macOS-only (`macos-26`), and AGENTS.md notes remote agent sessions often have no Swift
+toolchain, so the test-first rule cannot be followed there: tests are written and only seen to run after a
+push. `LuthorDomain`, `LuthorStore` and `LuthorViewModels` use Foundation only (the app target is the only
+SwiftUI user).
+
+**Proposal.** Add an `ubuntu-latest` job running `swift test --filter` over the three packages (excluding
+anything needing AppKit or `Yams` problems, if any) and a Dockerfile or setup step for agent sessions that
+installs the same toolchain. Fastest feedback loop for the most-tested layers, cheaper minutes than macOS,
+and it keeps the domain honestly platform-free, which the iOS app and any future non-Apple client depend
+on. Keep `make check-ci` as the full gate.
+
+### A-5. Property-based convergence tests across every event type
+
+**Problem.** The core promise is "replay of the same set of events in any arrival order produces the same
+state". Today that is covered by shuffle tests on chosen scenarios and a golden log. Concurrent edits
+between two Macs are exactly where an event-sourced design with Lamport ordering breaks quietly: an edit
+to an item another device deleted, a move into a project that was meanwhile completed, a drop and a
+reschedule of the same task, two devices producing the same `TaskID.recurring(after:)`.
+
+**Proposal.** One test target that generates random sequences of valid commands on two simulated
+devices (using the existing `Commands`, `SequentialIDs`, `InMemoryEventLog`), merges the logs in random
+interleavings, and asserts equal `LibraryState` plus no crash. Runs seeded and fast in `make test`.
+Fix whatever it finds; each failing seed becomes a regression test. This is the safety net for slice 17
+(Dropbox API) and for iOS, where concurrency is routine.
+
+### A-6. Keep the code map honest with a script
+
+**Problem.** The Code map in AGENTS.md is ~100 lines that must be hand-edited in every PR that touches a
+file, and it is already the most likely thing to drift. A map that is wrong is worse than none for the
+agents that rely on it.
+
+**Proposal.** A small `scripts/check-code-map.sh` (with a shell test, like the other scripts) that fails
+`make lint` when a file named in the map does not exist, or a source file under `Sources/` or `App/Luthor/`
+is not mentioned in it. No generation, just a guard; the prose stays hand-written.
+
+### Not proposed (considered, left alone)
+
+- SQLite/GRDB projections: correct to defer; A-3 gives the trigger a number.
+- A CloudKit/other sync backend: the per-device-file design already isolates this behind the log
+  protocol; revisit only if Dropbox API sync (slice 17) proves painful.
+- Splitting `LibraryState` into more types: the extension-per-concern layout is working; the file-length
+  pressure is cosmetic.
