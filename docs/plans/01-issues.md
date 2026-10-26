@@ -1718,3 +1718,263 @@ Proposal:
 - Reproduce #65 as a failing acceptance test and decide whether the fix is a display change (show "done for now" on a recurring task) or a domain change; the second needs a new optional field or event, not a change to an existing one.
 
 Done when: every open issue has a label and a roadmap line or a closing comment, and #65 is either fixed with a test or has a plan.
+
+---
+
+# User-impact assessment (U-1 to U-10)
+
+Written from the point of view of the one person who uses Luthor every day: what gets in their way, what can
+silently cost them data or trust, and what the ALPEN loop (capture, estimate, buffer, decide, review) still
+lacks. Based on reading the README, the guide, the roadmap and the code; the app was not run in this session
+(no Swift toolchain or Mac), so every item names the file or guide line that shows it. Overlap with the
+other assessments (A-, S-, P-, C-, D-, G-, E-, T-, H-) is expected and can be merged later.
+
+Priorities: **High** = silently loses data or trust, or blocks a daily action; **Medium** = daily friction or a
+missing core promise; **Low** = polish that pays back over years.
+
+## U-1. Search is a dead control, and there is no way to find a task by name
+
+**Priority:** High
+
+**Evidence:** `App/Luthor/LibraryView.swift:100` draws `TextField("Search", text: .constant(""))` with the
+tooltip "Search comes in a later slice". The guide says "Search does not work yet". The only way to reach a
+task is to remember which project, priority, tag or day it sits under and walk the Miller columns to it.
+Search has no slice in the roadmap, only a placeholder.
+
+**Impact:** A box that looks like search and does nothing teaches the user not to trust the bar. Once the
+library holds a few hundred items (completed ones included), "where did I put the dentist task?" has no
+answer short of opening every project. Capture is fast but retrieval is not.
+
+**Proposal:** Until it works, hide the box. Then build it as a pure domain function over the reducer state:
+case- and diacritic-insensitive match on title, notes and tag names, within the current view, open items
+first, completed and dropped behind the existing toggle. Show results as a list; picking one opens its card
+and reveals its place in the columns. ⌘F focuses the box. No new event, no index until the speed pass says one
+is needed.
+
+**Done when:** typing in the box lists matching items of the current view; picking a result selects it in
+its project column; an acceptance test covers capture, search, open card; nothing of another view appears.
+
+## U-2. There is no undo, and several one-click actions cannot be taken back
+
+**Priority:** High
+
+**Evidence:** The guide states "There is no undo" for Delete Permanently (`docs/guide.md:476`) and no `Undo`
+command exists anywhere in `App/` or `Sources/`. Other actions that are easy to trigger by accident and
+awkward to reverse: ⇧⌘⌫ Drop Task, ⌘Y Send to Someday and ⌘D Defer to Tomorrow (single chords on the selected
+row), and dropping a project onto the wrong project in the columns (`ColumnBrowserView.swift:194`, drag and
+drop), which reparents it and its whole subtree. Reopen exists for completed and dropped items, but a
+mis-dropped project, a wrong priority or a deferred day has no inverse the user can find.
+
+**Impact:** The app is built on an append-only log, which is the best possible basis for undo, yet the
+user gets less safety than a plain text editor. Fear of the chords slows the very daily-decision flow
+(ALPEN "E") the app is for.
+
+**Proposal:** Add Edit → Undo / Redo (⌘Z, ⇧⌘Z) for the user's own last commands in the running session.
+Keep a stack in the view model of the commands' reverse: the previous parent, priority, estimate, planned
+day, due date and so on, read from the state before the command. Undo appends the compensating events;
+it never edits or removes a written one. Start with the reversible set (complete, drop, someday, defer,
+priority, estimate, move, schedule, rename, tag). Delete Permanently stays confirmed and irreversible, and
+says so in the dialog. Pair this with a short "Dropped 'call bank'. Undo" line after a chord.
+
+**Done when:** each command in the set is undone and redone by a view-model test, with the log still
+replaying to the same state in any order; the golden log is untouched (no new event type is needed).
+
+## U-3. A mistyped or moved Dropbox folder silently becomes a local-only folder, and nothing shows whether sync works
+
+**Priority:** High
+
+**Evidence:** `LogStorage.defaultDropboxFolder` is hard-coded to `~/Dropbox/backups/Luthor`
+(`Sources/LuthorStore/LogStorage.swift:24`). The folder is a free-text field (`App/Luthor/StorageSetupView.swift:21`),
+and `prepare` calls `createDirectory(... withIntermediateDirectories: true)` (`LogStorage.swift:53`). If the
+Dropbox on that Mac is not at `~/Dropbox` (recent Dropbox clients on macOS keep it under
+`~/Library/CloudStorage/`), or the path has a typo, the app happily creates an ordinary folder there and
+reports success. The README says "Wait for Dropbox to finish syncing before you quit a Mac", but the app has
+nowhere that tells the user whether the other Mac has been seen, or when its last event arrived.
+
+**Impact:** The user believes two Macs are in sync and discovers weeks later that each has been writing to its
+own unsynced folder. Merging that is possible (events are idempotent), but the trust is gone and the
+other Mac's recent days look lost.
+
+**Proposal:** (1) Replace the text field with a folder picker (`NSOpenPanel`, folder only, starting at the
+detected Dropbox location). (2) Do not create missing parents above the chosen folder: if the folder's
+parent is not an existing directory, say so and ask. (3) Warn when the chosen folder is not inside a
+Dropbox-managed location (the `.dropbox` marker or the `~/Library/CloudStorage/Dropbox*` pattern). (4) In
+Settings → This Mac, show a line per device file seen: its name, its last change time (the file's modification date)
+and whether this Mac has unread events from it.
+
+**Done when:** choosing a folder that does not exist or is not under Dropbox asks first; the sync line shows
+the other Mac's file and its last-change time; storage tests cover each refusal and run against a temporary
+directory, never the user's Dropbox.
+
+## U-4. Tasks and projects inside a project cannot be put in order, which breaks sequential projects
+
+**Priority:** Medium (High for anyone who uses sequential projects)
+
+**Evidence:** Children are "in the order they were added" (`docs/guide.md:27`); the reducer orders by
+`captureOrder` (`Sources/LuthorDomain/LibraryState+Items.swift:127`). `TaskMoved` carries a parent but no
+position, and the columns have no `onMove`. A sequential project hands out only its first open child as the
+next action, so its order is its meaning, and it is fixed at creation. Today the only way to change it is to
+delete or duplicate-and-delete items and re-add them.
+
+**Impact:** Sequential projects (steps of a house move, a tax return) are planned by thinking, and thinking
+changes the order. The user either avoids sequential projects or recreates tasks, losing their time log and
+history. The plan's own ordering (⌥⌘↑/↓) shows the app already knows that manual order matters.
+
+**Proposal:** Add a new, optional event `TaskReordered` (additive; a line for it in the golden log): the
+item, its parent and the sibling it now follows (`nil` = first). The reducer keeps a per-parent order
+override, with the same deterministic tie-break as the day plan so two Macs converge. UI: drag a row inside
+its column, and Move Up / Move Down in the context menu and Task menu (⌃⌥⌘↑/↓). Duplicate and the repeat copy
+keep the order of the source.
+
+**Done when:** reordering survives replay in any arrival order and a relaunch; the next-action rules for
+sequential projects follow the new order; an acceptance test reorders the steps of a sequential project and
+sees the next action change.
+
+## U-5. Triaging the Inbox is one task at a time and needs the mouse or menus
+
+**Priority:** Medium
+
+**Evidence:** `LibraryViewModel.selection` is a single `TaskID?` (`LibraryViewModel.swift:95`), so there is no
+multi-select, no bulk priority, estimate, project or tag. The Task menu's Priority and Estimate submenus have
+no keyboard shortcuts (`LuthorApp.swift:181-196`); only the first nine projects have chords. The guide admits
+"Navigating by keyboard alone is not possible yet", and only Today, Calendar, Day Review and Project Reviews
+have a menu shortcut: Inbox, Projects, Prios, Tags have none. After a weekend the Inbox may hold 30 tasks,
+and the AGENTS.md principle is that "speed of capture and interaction is a feature".
+
+**Impact:** The clarify step (ALPEN "A" then "L") is where the day's plan is made, and it is the slowest
+interaction in the app: pick the row, open a submenu, pick a priority, open a submenu, pick an estimate, over
+and over.
+
+**Proposal:** (1) Shortcuts for the common values: ⌃1…⌃4 priority (A, B, C, someday), ⌃5…⌃8 for 5/15/30/60
+minutes, shown in the menus. (2) Multi-select in the list (the Prios place already uses Mac-style range
+and toggle picking) with the Task menu acting on all picked rows as one command batch (one undo step, see
+U-2). (3) Menu items and shortcuts (⌘1…⌘7) for every place in the rail. (4) An Inbox-zero line when the inbox
+empties.
+
+**Done when:** a view-model test files, prioritises and estimates five selected tasks with one command
+each; the Task and Plan menus show a shortcut for every place and every priority; the guide's sentence about
+keyboard navigation is replaced by the shortcut list.
+
+## U-6. Capture exists only in the Inbox, and the capture syntax cannot name a project, tag or date
+
+**Priority:** Medium
+
+**Evidence:** The capture field is drawn only when `library.section == .inbox` (`LibraryView.swift:25`); the
+guide says the field is "only there in the Inbox". `QuickCapture.parse` knows only `!a/!b/!c/!someday` and `<n>m`
+(`Sources/LuthorDomain/QuickCapture.swift`). The global capture hotkey (#34) and the command palette (#35) were
+deliberately cut (roadmap, slice 16), and that stays out of scope here. The app also always opens on the Inbox
+(`LibraryViewModel.showView` and init set `section = .inbox`) so that capture is one keystroke away, which
+means it never opens on the morning plan.
+
+**Impact:** A thought that arrives while planning Today or reading a project means leaving the place, going
+to Inbox, typing, and finding one's way back. A task that has an obvious project, tag or due date still
+needs a second pass on its card.
+
+**Proposal:** (1) An in-app capture sheet from every place (⌘N or ⌥⌘N, a single line, Return to save, Escape
+to cancel, focus returns to where the user was). (2) Extend the pure parser: `#project name` (matching an
+open project of the view by prefix, ambiguous = leave it in the Inbox), `@tag`, and `^tomorrow`, `^fri`,
+`^2026-11-03` for a due date. Unmatched text stays in the title, so nothing is lost. (3) Once capture works
+everywhere, open on the last place used, like the last view already is.
+
+**Done when:** table-style parser tests cover each token and the ambiguous cases; the sheet is reachable from
+Today and Calendar; capturing `pay rent #Home @calls ^fri !a 5m` leaves one clarified task with all five
+fields set; the guide's capture section lists the syntax.
+
+## U-7. Compact Log erases the time logged and the reviewed days, which the ALPEN review depends on
+
+**Priority:** Medium
+
+**Evidence:** `docs/guide.md:619` and the README: after Compact Log "time logged and reviewed days are
+dropped". `LogCompactor` rebuilds from a `LibraryExport`, which holds no history (the export is "a copy of what
+exists, not of how it came about"). The Review place, the estimate history ("Estimated 60m, took 90m") and
+the card's estimate facts all read that data. The compaction does keep a backup folder, but nothing in the
+app reads it back.
+
+**Impact:** The one maintenance command the app offers deletes the evidence that the planning method is
+working. The user who compacts after a year loses a year of estimate-versus-actual data, exactly the thing
+U-10 would build on. (Overlaps the architecture assessment's A-3; this is the user-visible half.)
+
+**Proposal:** Make compaction carry the review data across: for every task, one `TaskTimeLogged` per day with
+the minutes as last set; for every reviewed day, one `DayReviewed` with its note; keep unplanned time.
+Both event types already exist, so the format does not change. Until then, the confirmation dialog must name
+what will be lost in plain words, and the dialog should have the user type the backup folder name or tick a
+box, not just press OK.
+
+**Done when:** a compaction test builds a log with logged time, unplanned time and reviewed days and shows the
+new log replays to the same `dayReview` for every day; the guide drops the sentence about data lost.
+
+## U-8. Tags and views cannot be renamed, merged or deleted
+
+**Priority:** Medium
+
+**Evidence:** The guide says "There is no way yet to rename or delete a tag" (`docs/guide.md:554`); typing a
+name into the Tags field creates the tag silently, so `@call`, `@calls` and `@Calls ` all exist within a
+view (case is folded, a plural is not). Views can be created and renamed but not removed or hidden
+(`Events.swift` has `ViewCreated` and `ViewRenamed` only). The Tags place counts open tasks for every tag
+ever made, including unused ones.
+
+**Impact:** One typo is permanent clutter in every tag picker and the Tags place. After a year the list is a
+record of every slip. A view made to try the app stays in the switcher for good.
+
+**Proposal:** New additive events `TagRenamed`, `TagMerged(into:)`, `TagDeleted` and `ViewArchived` (with
+golden-log lines). UI: Rename, Merge Into… and Delete in a tag's context menu in the Tags place; "Hide empty
+tags" toggle; Archive View in the view switcher (the view and its items stay in the log; Unarchive in
+Settings → Views). Merge re-tags the tasks with the surviving tag. Warn when a new tag name is within edit
+distance 1 of an existing one ("Did you mean @calls?").
+
+**Done when:** each event replays in any order to the same state; an old build skips the new lines without
+error; renaming a tag keeps it on its tasks; an archived view disappears from the switcher but its log lines
+stay.
+
+## U-9. A task cannot be held back until a start date
+
+**Priority:** Medium
+
+**Evidence:** The ALPEN spec defines `available_at` ("never schedule work before its availability date"), the
+guide says of repeating tasks "there is no start date" (`docs/guide.md:502`), and Events/PlanningEvents have no such
+field. Today's candidates are "open tasks of the view that are clarified, or whose due date has come". The only
+ways to keep a task away are Someday, a sequential project or scheduling it for a day (which shows at the
+bottom of the other days' candidates).
+
+**Impact:** "Order the tickets once the sale opens on the 3rd" and "chase this after the holiday" have no
+honest representation. The task either clutters every morning's candidate list or goes to Someday and is
+forgotten, because nothing promotes it. A repeating task also shows up the moment it is created, not near its
+due day.
+
+**Proposal:** Add an optional `TaskAvailableSet` event (date or nil) and a Defer row on the card next to Due
+and Scheduled, plus "Defer Until…" in the context menu. Candidates, next actions and Prios hide a task until
+its date has come (a "Show deferred" toggle next to Completed and dropped); the Calendar marks the day it
+becomes available. Repeating tasks can optionally be created available N days before due. The date is a
+domain function with `today` injected, as for due dates.
+
+**Done when:** a deferred task is absent from Today's candidates before its date and present from it;
+replay and shuffle tests pass; old logs replay unchanged; the guide describes the field.
+
+## U-10. The review shows each task's estimate against its time, but never how reliable the user's estimates are
+
+**Priority:** Low
+
+**Evidence:** The ALPEN spec says reviews should "use historical estimates to inform future duration
+estimates". The app keeps `estimateHistory(ofTask:)` and `(ofProject:)` and shows them per task on the review
+and cards (`LibraryViewModel+Review.swift:41`). There is no aggregate: no overall ratio, none by priority or
+tag, and the estimate slider and menus offer fixed values (5/15/30/60) with no hint.
+
+**Impact:** The "N" of ALPEN is the step that makes the buffer percentage real. Without a summary the user
+has to sum the review by hand to learn that they run 40% over on `@calls`, so the 40% buffer in Settings is a
+guess for ever.
+
+**Proposal:** A pure `LibraryState` function `estimateAccuracy(for:since:)` over the logged time: total ratio,
+and by priority and tag, for the last 30 or 90 days (days with no logged time excluded). Show it as one line
+at the foot of the Review ("Last 30 days: estimates ran 25% short; calls 60% short") and in Settings → Global
+beside the buffer percentage, with a suggestion, never an automatic change. Needs U-7 so a compaction does
+not erase it.
+
+**Done when:** table-driven tests of the ratio over fixed logs; the line shows in the Review and in Settings;
+no estimate or setting is changed by the app.
+
+## Considered and not raised
+
+- A global capture hotkey and a command palette were cut on purpose (slice 16); not re-raised.
+- Notifications and a Dock badge for leftovers or a due review: possible later, but nothing here is lost
+  without them, and the Today place already lists the leftovers first.
+- Calendar integration, dependencies between tasks and AI estimates are deferred by the spec itself.
