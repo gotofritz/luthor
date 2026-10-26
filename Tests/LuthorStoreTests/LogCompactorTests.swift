@@ -164,4 +164,3 @@ struct LogCompactorTests {
     #expect(mac.count >= 5)
   }
 }
-

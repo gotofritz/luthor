@@ -175,9 +175,7 @@ struct CompactionHandshakeTests {
   }
 
   /// Writes a request file by hand, as another Mac, an older build or a stranger in the folder might.
-  private func plant(
-    _ json: String, named name: String, in dir: TemporaryDirectory
-  ) throws {
+  private func plant(_ json: String, named name: String, in dir: TemporaryDirectory) throws {
     try json.write(to: dir.file(name), atomically: true, encoding: .utf8)
   }
 
