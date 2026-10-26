@@ -1978,3 +1978,103 @@ no estimate or setting is changed by the app.
 - Notifications and a Dock badge for leftovers or a due review: possible later, but nothing here is lost
   without them, and the Today place already lists the leftovers first.
 - Calendar integration, dependencies between tasks and AI estimates are deferred by the spec itself.
+
+## Developer-experience assessment (new contributor view, 2026-10-26)
+
+Findings from cloning the repo as a newcomer and trying to get from "clone" to "first green PR". IDs use the `X-`
+prefix. Overlap with other assessments is expected and will be merged later.
+
+### X-1: No fast, non-macOS feedback loop (Linux CI job and agent sandboxes)
+
+- **Where:** `.github/workflows/ci.yml` (one job, `macos-26`), `AGENTS.md` ("Remote agent sessions may have no Swift
+  toolchain")
+- **Problem:** The only way to know whether a change builds is a full macOS run of `make check-ci` (lint, build,
+  tests with coverage, `xcodebuild` of the app). A contributor on Linux, or a remote agent session, cannot run the
+  mandatory red/green TDD loop at all: in the sandbox used for this assessment `swift`, `xcodebuild` and even
+  `download.swift.org` are unavailable (the toolchain download returns 403), so CI is the only compiler.
+  `AGENTS.md` mandates "watch the test fail first" and then tells agents to push and read CI, which defeats it.
+- **Why it looks fixable:** `LuthorDomain`, `LuthorStore` and `LuthorViewModels` import only Foundation,
+  Observation and Yams. `JSONLinesEventLog.swift` and `LuthorConfiguration.swift` already have `Glibc` branches, and
+  `scripts/coverage-report.sh` already says it works with "a swift.org toolchain on Linux", but nothing ever runs
+  on Linux, so that portability is unverified and will rot.
+- **Suggested fix:** add a cheap `ubuntu-latest` job (swift.org container or `swift-actions/setup-swift`) running
+  `make test-unit` and `make test-acceptance` for the package targets; fix whatever is macOS-only (or `#if`-skip it
+  with a documented reason). Keep `macos-26` for lint, the app build and the release. Then document the Linux
+  route in README's Development section and, if wanted, a `SessionStart` hook that installs the toolchain for
+  remote sessions.
+- **Impact:** high for contributors and agents (hours saved per PR); also cuts macOS runner minutes.
+
+### X-2: No safe way to run the app against throwaway data
+
+- **Where:** README "Mac app" and "Where the tasks live"; `Makefile` (`app`, `install`)
+- **Problem:** `make app` then `open ...Luthor.app` starts the app on the real log: `~/.luthor/events.jsonl`, or the
+  Dropbox folder chosen in the first-start modal, which syncs to the user's other Macs. `LUTHOR_LOG` and
+  `LUTHOR_SYNC_DIR` exist, but `open` does not pass shell environment to the app, the README mentions them only
+  in passing, and nothing generates sample data. A contributor trying a UI change (Today, Review, Calendar) either
+  works against their real task list, where a bug writes bad events that the frozen format then keeps forever and
+  that can sync to Dropbox, or must hand-build a log. The UI has no screenshot or UI tests, so a quick manual look
+  is the main verification for views.
+- **Suggested fix:** add `make run` (or `make dev`) that builds the app and launches the binary directly with
+  `LUTHOR_LOG` pointing into a temp or `.build/` directory, optionally pre-filled from a checked-in synthetic seed
+  log (a variant of the golden log, with views, projects, a repeating task, a planned day and a reviewed day).
+  Add one sentence to README Development saying never to run a development build on the real log.
+- **Impact:** medium-high. It protects the "never lose user data" rule and makes UI work reviewable.
+
+### X-3: Builds and tooling are not reproducible or integrity-checked
+
+- **Where:** `Package.swift` (Yams `from: 5.1.3`), no `Package.resolved`, `Makefile` `tools` target, `.github/`
+- **Problem:**
+  - `Package.resolved` is not committed (and not ignored), so every checkout, CI run and release resolves Yams
+    afresh. A new Yams minor release can change CI or the released app without any commit in this repo.
+  - `make tools` downloads `portable_swiftlint.zip` with `curl -fsSL` and runs the binary with no checksum check,
+    on every CI run (nothing is cached). The version is pinned but the content is not. It is also a macOS-only
+    build; on Linux the target fails with an unhelpful exec error.
+  - No `.github/dependabot.yml`, so neither the pinned SwiftLint, the Yams pin nor the Actions versions
+    (`actions/checkout@v4`) get update PRs.
+- **Suggested fix:** commit `Package.resolved`; add a `SWIFTLINT_SHA256` next to `SWIFTLINT_VERSION` and verify it
+  in `make tools` (fail with a clear message on mismatch or on a non-macOS host); add Dependabot for
+  `github-actions` and `swift`.
+- **Impact:** medium. Small changes, and it keeps "built to last" true for the release pipeline.
+
+### X-4: Repo-local agent config contradicts the documented workflow and is unmaintained noise
+
+- **Where:** `.claude/settings.json`, `.claude/hooks/caveman-*.sh`, `.claude/skills/caveman*`, `AGENTS.md`
+  ("Commits & Branches")
+- **Problem:**
+  - The `SessionStart` hook injects "Before any work, ask the user which git branch to work on. Do not use the
+    session-start branch." `AGENTS.md` says the opposite: use the branch the prompt names without asking. In
+    unattended, scheduled or cloud sessions this blocks on a question nobody sees, or the agent ignores the hook,
+    and a contributor cannot tell which instruction wins.
+  - About 390 lines of shell plus four skills (`caveman`, `caveman-commit`, `caveman-compress`, `caveman-review`) are
+    vendored into the repo to change the agent's reply style. They write a flag file under the user's `~/.claude`.
+    `.claude/hooks/test-caveman-patterns.sh` is wired into neither `make test` nor CI, so it can break silently.
+    There is no note of where it came from or how to update it, and `caveman-commit` is a second source of
+    commit-message rules next to `scripts/check-conventional-commit.sh`.
+- **Suggested fix:** drop the branch-question hook, or reword it to "use the branch the task names; ask only if none
+  is named", so it matches `AGENTS.md`. Decide whether the caveman tooling belongs in the repo: if it stays, say
+  where it comes from and run its test in `make test`; if it is a personal preference, move it to the user-level
+  `~/.claude`.
+- **Impact:** medium. It removes a conflicting instruction that every agent session hits first.
+
+### X-5: Documentation is duplicated, and the docs checklist is manual
+
+- **Where:** `README.md` (316 lines), `docs/guide.md` (655 lines), `AGENTS.md` ("Docs check"), no
+  `.github/pull_request_template.md`
+- **Problem:**
+  - The README's "Mac app" section (about 130 lines of single-line paragraphs) re-describes nearly every feature
+    that `docs/guide.md` documents (Today, Review, Tags, Repeat, Calendar, Settings, sync, export, compaction), and
+    carries install, release and Terraform setup too. A feature PR has to update both in matching words, and the
+    "Docs check" adds three more places (roadmap, plans archive, code map). Paragraphs of 600+ characters on one
+    line give unreadable diffs and make review comments hard to attach.
+  - The Development section the README gives a newcomer says only "Needs Xcode", `make tools`, `make hooks`,
+    `make check-ci`. It gives no minimum Xcode, Swift or macOS version (the manifest needs tools 6.0 and macOS 14,
+    CI uses `macos-26`), and does not list `make test-unit`, `make test-acceptance` or `swift test --filter` for the
+    red/green loop. Those live only in `AGENTS.md`, which is written for agents.
+  - `AGENTS.md` requires "say in the PR that these were checked", but no PR template exists, so the requirement
+    rests on memory.
+- **Suggested fix:** shrink the README to what it is (what the app is, install, link to the guide, development
+  setup) and leave feature description to `docs/guide.md`; move Terraform/repo-settings setup to
+  `docs/repository-settings.md` or `infra/README.md`. Add the missing Development facts (versions, test commands). Add
+  a `pull_request_template.md` with the docs-check items as a checklist. Wrap prose at about 80 columns, as
+  `AGENTS.md` does, so diffs are line-based.
+- **Impact:** medium. It lowers the cost of every future feature PR and the first-hour cost for a newcomer.
