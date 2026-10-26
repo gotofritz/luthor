@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.0
     steps:
+      - name: Install make
+        run: apt-get update && apt-get install -y make git
       - uses: actions/checkout@v4
       - name: Build and test the package
         run: make test-linux
