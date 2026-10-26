@@ -15,6 +15,7 @@ struct CardLiveFields: View {
   let title: String
   var kind: ProjectKind = .parallel
 
+  @Environment(\.theme) private var theme
   @State private var titleText = ""
   @State private var tagsText = ""
   @State private var didLoad = false
@@ -54,7 +55,8 @@ struct CardLiveFields: View {
     .onAppear(perform: load)
   }
 
-  /// One button for each priority; the one the item has stands out, and a click on it clears the priority.
+  /// One button for each priority; the one the item has stands out on the accent's background, and a click on it
+  /// clears the priority.
   private var priorityButtons: some View {
     HStack(spacing: 4) {
       ForEach(Priority.allCases, id: \.self) { option in
@@ -64,10 +66,12 @@ struct CardLiveFields: View {
         } label: {
           Image(systemName: option.symbol)
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 3)
+            .foregroundStyle(selected ? Color.white : Color.secondary)
+            .background(selected ? theme.fill : Color.secondary.opacity(0.12), in: .rect(cornerRadius: 5))
+            .contentShape(.rect)
         }
-        .buttonStyle(.bordered)
-        .tint(selected ? .accentColor : .secondary)
-        .controlSize(.small)
+        .buttonStyle(.plain)
         .help(selected ? "\(option.title): click again to clear" : option.title)
         .accessibilityLabel(option.title)
       }
@@ -83,13 +87,21 @@ struct CardLiveFields: View {
         DatePicker("Due", selection: dueDay, displayedComponents: .date)
           .opacity(due == nil ? 0.5 : 1)
       }
-      if due != nil {
-        Picker("Kind", selection: dueIsHard) {
-          Text("Hard deadline").tag(true)
-          Text("Target date").tag(false)
+      .contentShape(.rect)
+      .onTapGesture {
+        if due == nil { library.setDue(id, to: library.today, isHard: false) }
+      }
+      if !isProject {
+        HStack {
+          Toggle("", isOn: isScheduled)
+            .labelsHidden()
+          DatePicker("Scheduled", selection: scheduledDay, displayedComponents: .date)
+            .opacity(library.scheduledDate(of: id) == nil ? 0.5 : 1)
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
+        .contentShape(.rect)
+        .onTapGesture {
+          if library.scheduledDate(of: id) == nil { library.schedule(id, on: library.today) }
+        }
       }
     }
   }
@@ -144,7 +156,7 @@ struct CardLiveFields: View {
       get: { library.dueDate(of: id) != nil },
       set: {
         if $0 {
-          library.setDue(id, to: library.today, isHard: dueIsHard.wrappedValue)
+          library.setDue(id, to: library.today, isHard: false)
         } else {
           library.clearDue(id)
         }
@@ -156,16 +168,28 @@ struct CardLiveFields: View {
       get: { (library.dueDate(of: id)?.date ?? library.today).startOfDay ?? Date() },
       set: { picked in
         guard let day = CalendarDate(dayOf: picked) else { return }
-        library.setDue(id, to: day, isHard: dueIsHard.wrappedValue)
+        library.setDue(id, to: day, isHard: false)
       })
   }
 
-  private var dueIsHard: Binding<Bool> {
+  private var isScheduled: Binding<Bool> {
     Binding(
-      get: { library.dueDate(of: id)?.isHard ?? true },
-      set: { isHard in
-        guard let due = library.dueDate(of: id) else { return }
-        library.setDue(id, to: due.date, isHard: isHard)
+      get: { library.scheduledDate(of: id) != nil },
+      set: {
+        if $0 {
+          library.schedule(id, on: library.today)
+        } else {
+          library.removeFromPlan(id)
+        }
+      })
+  }
+
+  private var scheduledDay: Binding<Date> {
+    Binding(
+      get: { (library.scheduledDate(of: id) ?? library.today).startOfDay ?? Date() },
+      set: { picked in
+        guard let day = CalendarDate(dayOf: picked) else { return }
+        library.schedule(id, on: day)
       })
   }
 }

@@ -1105,3 +1105,34 @@ its list with no card until a task is picked or the pencil is pressed. State
 is `projectCardOpen` in the view model, closed by picking a task, opening
 another project, starting a new item or leaving the Projects place. No event
 changes.
+
+## Decisions (2026-10-24, Today as a day calendar)
+
+Today's order is by urgency: the priority's weight (A 0 days, B 10, C 20,
+none 30) plus the days to the due date, hard or target (none counts as 30,
+more than 90 days off as 90, overdue below zero), so a critical task due in
+months no longer tops the list. The day is laid out as a calendar: the
+planned tasks end to end from the day's start, as tall as their estimates;
+`DayHoursSet(view, date, start?, end?)`, a new optional-field event with a
+golden-log line, sets one day's hours, over the per-weekday
+`dayStart…`/`dayEnd…` settings (09:00 to 17:00 built in). Waiting for is a
+toggle on the candidates column, the candidate Filter button is gone until
+app-wide search and filtering, and the capture field shows in the Inbox only.
+
+One due date, one scheduled date, repeat: the hard/target choice is gone from
+the app. `TaskDueSet` keeps its `isHard` field (the format is frozen) but nothing
+reads it. A due date only ranks: urgency is the priority's weight plus the days
+to it (equal to the priority's own on the due day, none counting as 30, far-off
+capped at 90). The scheduled date is the day a task is in the plan; on any other
+day it ranks after all the other candidates. The card always shows the Due and
+Scheduled rows.
+
+Untracked time: `DayBlockSet(block, view, date, title, start, end)` and
+`DayBlockRemoved(block)` put a block such as lunch on a day; tasks flow round it
+and it is not counted in the capacity. The Default button for a day's hours is gone.
+
+A planned task can stand at a time of its own: `TaskStartSet(task, date,
+minute?)` (another optional-field event with a golden-log line), valid only
+while the task stays planned for that date. The others follow in plan order
+from the day's start, or from now on today, round the fixed ones. Candidates
+and blocks drag onto the grid and back; the grid zooms.

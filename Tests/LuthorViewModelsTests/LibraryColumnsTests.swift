@@ -153,6 +153,15 @@ struct CardColumnViewModelTests {
     #expect(library.projectCardOpen == false)
   }
 
+  @Test("a project lists its sub-projects before its tasks, whatever the order they were added in")
+  func subProjectsComeBeforeTasks() {
+    let (library, _) = makeInbox(gardenLog)
+
+    library.open(.project(TaskID("p1")))
+
+    #expect(library.columns.last?.entries.map(\.id) == ["project-p2", "task-t1"])
+  }
+
   @Test("a task that is picked shows its card instead")
   func pickedTaskShowsItsCard() {
     let (library, _) = makeInbox(gardenLog)

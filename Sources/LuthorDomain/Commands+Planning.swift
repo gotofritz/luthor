@@ -61,6 +61,40 @@ extension Commands {
     return [envelope(EventID(ids.next()), .dayCapacitySet(event), log: log)]
   }
 
+  /// Plans the task for `date` if it is not yet, and sets the minute after midnight it starts at there, or with
+  /// `nil` clears it. Setting the start it has writes nothing.
+  public func setStart(
+    taskID: TaskID,
+    on date: CalendarDate,
+    minute: Int?,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    if let minute, !(0..<DayHours.latest).contains(minute) { throw .invalidHours }
+    if minute == nil, LibraryState.replay(log).scheduledDate(of: taskID) != date { return [] }
+    var events = try schedule(taskID: taskID, on: date, log: log)
+    let state = LibraryState.replay(log + events)
+    guard state.startMinute(of: taskID, on: date) != minute else { return events }
+    let event = TaskStartSet(taskID: taskID, date: date, minute: minute)
+    events.append(envelope(EventID(ids.next()), .taskStartSet(event), log: log + events))
+    return events
+  }
+
+  /// Sets the hours the view works on `date` in place of its weekday's, or with `nil` clears them. Setting
+  /// the hours the day has writes nothing; hours that do not fit in a day are refused.
+  public func setHours(
+    _ hours: DayHours?,
+    for viewID: ViewID,
+    on date: CalendarDate,
+    log: [EventEnvelope]
+  ) throws(CommandError) -> [EventEnvelope] {
+    let state = LibraryState.replay(log)
+    try requireView(viewID, in: state)
+    if let hours, !hours.isValid { throw .invalidHours }
+    guard state.hoursOverride(in: viewID, on: date) != hours else { return [] }
+    let event = DayHoursSet(viewID: viewID, date: date, start: hours?.start, end: hours?.end)
+    return [envelope(EventID(ids.next()), .dayHoursSet(event), log: log)]
+  }
+
   /// Hands the open task `taskID` to `name` on the day `since`, to come back on `followUp` if there is one.
   /// Handing it over on the same terms again writes nothing.
   public func delegate(

@@ -10,11 +10,13 @@ private let monday = date("2026-10-19")
 private func makeLibrary(
   _ events: [EventEnvelope] = [],
   view: ViewID = .default,
-  today: CalendarDate = monday
+  today: CalendarDate = monday,
+  now: Int = 0
 ) -> (LibraryViewModel, InMemoryEventLog) {
   let log = InMemoryEventLog(events)
   let library = LibraryViewModel(
-    log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), view: view, today: { today })
+    log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), view: view, today: { today },
+    now: { now })
   library.reload()
   return (library, log)
 }
@@ -219,6 +221,39 @@ struct PlanActionViewModelTests {
     #expect(library.plan.capacity.availableMinutes == 120)
     library.setDayCapacity(minutes: nil)
     #expect(library.plan.capacity.availableMinutes == 480)
+  }
+
+  @Test("setting the hours of the day shown, and clearing them again")
+  func settingTheHoursOfTheDayShown() {
+    let (library, _) = makeLibrary()
+
+    library.setDayHours(DayHours(start: 480, end: 960))
+
+    #expect(library.plan.hours == DayHours(start: 480, end: 960))
+    library.setDayHours(nil)
+    #expect(library.plan.hours == .builtIn)
+  }
+
+  @Test("hours that do not fit a day change nothing")
+  func hoursThatDoNotFitADayChangeNothing() {
+    let (library, log) = makeLibrary()
+    let before = log.events.count
+
+    library.setDayHours(DayHours(start: 900, end: 600))
+
+    #expect(log.events.count == before)
+    #expect(library.plan.hours == .builtIn)
+  }
+
+  @Test("the default hours of a weekday come from the settings, and the day's own beat them")
+  func theDefaultHoursOfAWeekdayComeFromTheSettings() {
+    let (library, _) = makeLibrary()
+
+    library.changeGlobalDayHours(.monday, start: 480, end: 960)
+
+    #expect(library.plan.hours == DayHours(start: 480, end: 960))
+    library.setDayHours(DayHours(start: 600, end: 900))
+    #expect(library.plan.hours == DayHours(start: 600, end: 900))
   }
 }
 

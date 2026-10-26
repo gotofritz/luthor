@@ -51,7 +51,7 @@ struct InboxColumnsViewModelTests {
 @MainActor
 @Suite("When a sub-project is shown")
 struct NestedColumnsViewModelTests {
-  @Test("there is a column for each project on its path, listing its children in the order they were added")
+  @Test("there is a column for each project on its path, listing its sub-projects, then its tasks")
   func columnsFollowThePath() throws {
     let (library, _) = makeInbox(homeLog)
     let kitchen = try #require(library.projects.first { $0.title == "Kitchen" })
@@ -62,7 +62,7 @@ struct NestedColumnsViewModelTests {
     #expect(library.path == [TaskID("p1"), TaskID("p2")])
     try #require(library.columns.map(\.parentID) == [nil, TaskID("p1"), TaskID("p2")])
     #expect(library.columns[1].entries == [.project(kitchen), .task(item("t2", "clear the attic", in: "p1"))])
-    #expect(library.columns[2].entries == [.task(item("t1", "replace the tap", in: "p2")), .project(tap)])
+    #expect(library.columns[2].entries == [.project(tap), .task(item("t1", "replace the tap", in: "p2"))])
   }
 
   @Test("the list is its own tasks, without those of its sub-projects")
@@ -105,7 +105,7 @@ struct NestedColumnsViewModelTests {
     library.open(.project(TaskID("p2")))
 
     #expect(library.columns.map(\.id) == ["top", "project-p1", "project-p2"])
-    #expect(library.columns[2].entries.map(\.id) == ["task-t1", "project-p3"])
+    #expect(library.columns[2].entries.map(\.id) == ["project-p3", "task-t1"])
   }
 }
 

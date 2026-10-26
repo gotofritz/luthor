@@ -47,6 +47,38 @@ public struct DayCapacitySet: Equatable, Codable, Sendable {
   }
 }
 
+/// Sets the hours one view works on a day, in place of the weekday's from the settings: minutes after
+/// midnight. With both missing clears them.
+public struct DayHoursSet: Equatable, Codable, Sendable {
+  public let viewID: ViewID
+  public let date: CalendarDate
+  /// The minute the day starts at; `nil` with `end` falls back to the weekday's hours.
+  public let start: Int?
+  /// The minute the day ends at.
+  public let end: Int?
+
+  public init(viewID: ViewID, date: CalendarDate, start: Int?, end: Int?) {
+    self.viewID = viewID
+    self.date = date
+    self.start = start
+    self.end = end
+  }
+}
+
+/// Sets the minute after midnight a task planned for `date` starts at, in place of following the tasks
+/// before it; with none clears it. It only holds while the task is planned for that day.
+public struct TaskStartSet: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  public let date: CalendarDate
+  public let minute: Int?
+
+  public init(taskID: TaskID, date: CalendarDate, minute: Int?) {
+    self.taskID = taskID
+    self.date = date
+    self.minute = minute
+  }
+}
+
 /// Hands an open task to someone else. It leaves the day it was planned for and stays open: delegating
 /// never completes or drops it.
 public struct TaskDelegated: Equatable, Codable, Sendable {

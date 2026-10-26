@@ -234,11 +234,11 @@ struct DayCandidateTests {
     #expect(day.candidates.map(\.task.title) == ["call bank"])
   }
 
-  @Test("a task planned for another day is a candidate, to pull forward")
+  @Test("a task planned for another day is a candidate, at the bottom, to pull forward")
   func aTaskPlannedForAnotherDayIsACandidate() {
     let day = plan(Self.tasks + [scheduled("t1", on: "2026-10-20", lamport: 5)])
 
-    #expect(day.candidates.map(\.task.title) == ["write report", "call bank"])
+    #expect(day.candidates.map(\.task.title) == ["call bank", "write report"])
   }
 
   @Test("only the next actions of a sequential project are candidates")

@@ -37,3 +37,9 @@
 {"data":{"due":"2026-10-26","next":"r1","previous":"t1"},"device":"mac","id":"e37","lamport":37,"type":"TaskRecurred"}
 {"data":{"copy":"c1","createdOn":"2026-10-19","source":"t1"},"device":"phone","id":"e38","lamport":38,"type":"TaskDuplicated"}
 {"data":{"taskID":"c1"},"device":"phone","id":"e39","lamport":39,"type":"TaskDeleted"}
+{"data":{"date":"2026-10-19","end":1080,"start":480,"viewID":"default"},"device":"mac","id":"e40","lamport":40,"type":"DayHoursSet"}
+{"data":{"date":"2026-10-19","minute":600,"taskID":"t1"},"device":"mac","id":"e41","lamport":41,"type":"TaskStartSet"}
+{"data":{"blockID":"b1","date":"2026-10-19","end":810,"start":750,"title":"Lunch","viewID":"default"},"device":"mac","id":"e42","lamport":42,"type":"DayBlockSet"}
+{"data":{"blockID":"b1"},"device":"mac","id":"e43","lamport":43,"type":"DayBlockRemoved"}
+{"data":{"date":"2026-10-19","minutes":30,"sessionID":"s1","start":540,"taskID":"t1"},"device":"mac","id":"e44","lamport":44,"type":"TaskSessionSet"}
+{"data":{"sessionID":"s1"},"device":"mac","id":"e45","lamport":45,"type":"TaskSessionRemoved"}

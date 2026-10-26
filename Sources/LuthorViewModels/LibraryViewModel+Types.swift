@@ -80,6 +80,8 @@ public struct TaskCardDraft: Equatable, Sendable {
   public var priority: Priority?
   public var estimate: Int?
   public var due: DueDate?
+  /// The day a new task is planned for; `nil` plans it for none. Only a new task's card sets it.
+  public var scheduled: CalendarDate?
   public var notes: String
   /// The names of the tags the task is to have, no more and no fewer.
   public var tags: [String]
@@ -90,8 +92,9 @@ public struct TaskCardDraft: Equatable, Sendable {
 
   public init(
     title: String, priority: Priority?, estimate: Int?, due: DueDate?, notes: String, tags: [String] = [],
-    repeatRule: RepeatRule? = nil, review: ProjectReviewDraft? = nil
+    repeatRule: RepeatRule? = nil, review: ProjectReviewDraft? = nil, scheduled: CalendarDate? = nil
   ) {
+    self.scheduled = scheduled
     self.title = title
     self.priority = priority
     self.estimate = estimate

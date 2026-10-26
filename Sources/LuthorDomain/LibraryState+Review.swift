@@ -9,6 +9,12 @@ struct DayNote: Equatable, Sendable {
   let text: String?
 }
 
+/// The estimate a task had when it was first planned for a day: what the review counts it at, however the
+/// estimate changes later. `nil` minutes: it had none, so it counted at the default estimate.
+struct PlannedEstimate: Equatable, Sendable {
+  let minutes: Int?
+}
+
 /// What the daily review looks back on, kept apart from the rest of the state.
 struct ReviewRecords: Equatable, Sendable {
   /// Minutes logged for a task on a day, as last set.
@@ -20,13 +26,17 @@ struct ReviewRecords: Equatable, Sendable {
   /// The day each completed task was planned for, so the review of that day can list it as done. A task that
   /// was planned for no day is not here.
   var plannedDays: [TaskID: CalendarDate] = [:]
+  /// The estimate each task had when it was first planned for a day.
+  var plannedEstimates: [TaskID: PlannedEstimate] = [:]
 }
 
 /// A task as the review of a day lists it.
 public struct ReviewEntry: Equatable, Sendable {
   public let task: TaskItem
-  /// Minutes it was planned at: its estimate, or the default estimate while it has none.
+  /// Minutes it was planned at: the estimate it had when first planned, or the default estimate if it had none.
   public let minutes: Int
+  /// Minutes it is now: its estimate as it stands, which setting its times changes; the default while it has none.
+  public let currentMinutes: Int
   /// Whether `minutes` is the default estimate, not one the task was given.
   public let isUnestimated: Bool
   /// The minutes logged for the task on the day reviewed; `nil` while none are.
@@ -34,9 +44,13 @@ public struct ReviewEntry: Equatable, Sendable {
   /// What the task was estimated and how long it took over all days; `nil` until both are known.
   public let history: EstimateHistory?
 
-  public init(task: TaskItem, minutes: Int, isUnestimated: Bool, loggedMinutes: Int?, history: EstimateHistory?) {
+  public init(
+    task: TaskItem, minutes: Int, isUnestimated: Bool, loggedMinutes: Int?, history: EstimateHistory?,
+    currentMinutes: Int? = nil
+  ) {
     self.task = task
     self.minutes = minutes
+    self.currentMinutes = currentMinutes ?? minutes
     self.isUnestimated = isUnestimated
     self.loggedMinutes = loggedMinutes
     self.history = history
@@ -194,6 +208,18 @@ extension LibraryState {
     existingTask(taskID) != nil
   }
 
+  /// The estimate the task had when it was first planned for a day; its current one for a task never planned.
+  func plannedEstimate(of task: TaskItem) -> Int? {
+    guard let planned = reviewRecords.plannedEstimates[task.id] else { return task.estimate }
+    return planned.minutes
+  }
+
+  /// Remembers the estimate a task has as the one it was planned with, unless it was planned before.
+  mutating func notePlannedEstimate(of taskID: TaskID) {
+    guard reviewRecords.plannedEstimates[taskID] == nil, let task = existingTask(taskID) else { return }
+    reviewRecords.plannedEstimates[taskID] = PlannedEstimate(minutes: task.estimate)
+  }
+
   /// The view's day looked back on, as of `today`.
   ///
   /// Done are the tasks planned for the day and completed since; not done are the tasks still planned for
@@ -201,15 +227,17 @@ extension LibraryState {
   /// deciding on a task is what clears the day.
   public func dayReview(for viewID: ViewID, on date: CalendarDate, today: CalendarDate) -> DayReview {
     let defaultEstimate = settings(for: viewID).defaultEstimateMinutes
-    func entry(_ task: TaskItem, minutes: Int, isUnestimated: Bool) -> ReviewEntry {
-      ReviewEntry(
-        task: task, minutes: minutes, isUnestimated: isUnestimated,
-        loggedMinutes: loggedMinutes(of: task.id, on: date), history: estimateHistory(ofTask: task.id))
+    // The estimate the task had when it was first planned, not the one it has now.
+    func entry(_ task: TaskItem) -> ReviewEntry {
+      let estimate = plannedEstimate(of: task)
+      return ReviewEntry(
+        task: task, minutes: estimate ?? defaultEstimate, isUnestimated: estimate == nil,
+        loggedMinutes: loggedMinutes(of: task.id, on: date), history: estimateHistory(ofTask: task.id),
+        currentMinutes: task.estimate ?? defaultEstimate)
     }
     let done = view(viewID).completedTasks.map(\.item).filter { reviewRecords.plannedDays[$0.id] == date }
-      .map { entry($0, minutes: $0.estimate ?? defaultEstimate, isUnestimated: $0.estimate == nil) }
-    let notDone = plan(for: viewID, on: date, today: today).entries
-      .map { entry($0.task, minutes: $0.minutes, isUnestimated: $0.isUnestimated) }
+      .map(entry)
+    let notDone = plan(for: viewID, on: date, today: today).entries.map { entry($0.task) }
     return DayReview(
       viewID: viewID, date: date, done: done, notDone: notDone,
       unplannedMinutes: unplannedMinutes(in: viewID, on: date) ?? 0, note: reviewNote(in: viewID, on: date),
@@ -221,7 +249,7 @@ extension LibraryState {
   public func carryOver(in viewID: ViewID, today: CalendarDate) -> [CarryOverEntry] {
     let viewState = view(viewID)
     let defaultEstimate = settings(for: viewID).defaultEstimateMinutes
-    let ranking = PlanRanking(viewState, deadlines: [:])
+    let ranking = PlanRanking(viewState, dueDates: [:], on: today)
     let leftOver = viewState.openTasks.compactMap { task -> LeftOver? in
       guard let day = scheduledDates[task.id], day < today else { return nil }
       let manual = dayOrders[DayKey(viewID: viewID, date: day)]?.firstIndex(of: task.id)
@@ -238,7 +266,7 @@ extension LibraryState {
   /// What the task was estimated against the minutes logged for it over all days; `nil` unless it has an
   /// estimate and some logged time.
   public func estimateHistory(ofTask taskID: TaskID) -> EstimateHistory? {
-    guard let estimate = existingTask(taskID)?.estimate else { return nil }
+    guard let task = existingTask(taskID), let estimate = plannedEstimate(of: task) else { return nil }
     let logged = reviewRecords.taskMinutes.reduce(0) { $1.key.taskID == taskID ? $0 + $1.value : $0 }
     guard logged > 0 else { return nil }
     return EstimateHistory(estimatedMinutes: estimate, loggedMinutes: logged, taskCount: 1)

@@ -155,7 +155,7 @@ private struct CalendarEntryRow: View {
   private var reasons: [String] {
     var reasons: [String] = []
     if entry.isPlanned { reasons.append("Planned") }
-    if let due = entry.due { reasons.append(due.isHard ? "Deadline" : "Target date") }
+    if entry.due != nil { reasons.append("Due") }
     return reasons
   }
 }

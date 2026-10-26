@@ -8,10 +8,13 @@ struct Theme: Equatable {
   let fill: Color
   /// The accent as text or an icon on the window's own background; lighter in dark mode so it stays readable.
   let ink: Color
+  /// The accent as the body of a task block on the day grid: much lighter in dark mode, darker in light mode.
+  let block: Color
 
   init(accent: ThemeAccent, isDark: Bool) {
     fill = accent.fill
     ink = isDark ? accent.lightened : accent.fill
+    block = isDark ? accent.lightened : accent.fill
   }
 
   /// Section and column titles: bold, a little tight, as in a Swiss grotesque.
