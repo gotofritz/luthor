@@ -1248,3 +1248,135 @@ Fix: add a short `.github/pull_request_template.md` with a Summary section, the
 docs-check checklist and a "Event format / log migration" line.
 
 Done when: a new PR opens with the template and the docs-check boxes.
+
+---
+
+## Ecosystem and dependency health (E-)
+
+An independent look at what Luthor depends on: the one Swift package, the build and release toolchain, GitHub
+Actions, Terraform, and the Dropbox client that the sync relies on. Versions were checked against the upstream
+release pages on 2026-10-26. Nothing was built or run, since the session had no Swift toolchain.
+
+Overall the dependency surface is small and healthy: one runtime package (Yams), no unmaintained or archived
+dependencies found, and the build is a plain SwiftPM package plus a hand-written Xcode project. The problems are
+about drift (nothing tells anyone that a pin is stale), reproducibility (resolution is not recorded), and one
+external service whose behaviour changed under the app (Dropbox on macOS).
+
+### E-1 The default Dropbox folder may not be a Dropbox folder (P1)
+
+**Evidence.** `LogStorage.defaultDropboxFolder(home:)` is `~/Dropbox/backups/Luthor`, and `prepare()` calls
+`createDirectory(withIntermediateDirectories: true)` on it. Dropbox for macOS now runs on Apple's File Provider
+API, which puts the Dropbox folder at `~/Library/CloudStorage/Dropbox` and, per Dropbox's own help pages, no
+longer supports choosing another location ([Expected changes with Dropbox on File
+Provider](https://help.dropbox.com/en-us/installs/macos-faqs)). On a Mac set up that way `~/Dropbox` does not
+exist, so the app silently creates an ordinary local folder there. The setup succeeds, the log is written, and
+nothing ever syncs. The user finds out when the second Mac shows an empty library, or never, if the one Mac dies.
+That is data loss by silence, which the decision order puts first.
+
+The same change has a second effect: files can be online-only. `FileChangeMonitor` reads size and modification
+date, and `DeviceFilesEventLog` reads every device's file, so a not-yet-downloaded `events-<device>.jsonl` from
+another Mac may arrive late or make a read slow. Neither the README nor the guide mentions File Provider.
+
+**Proposal.**
+1. Measure first: on a Mac with File Provider Dropbox, check what `~/Dropbox` is (missing, a symlink, or a real
+   folder) and whether another device's file can be online-only.
+2. Make the default a lookup, not a constant: use `~/Dropbox` if it exists, else the `Dropbox*` folder under
+   `~/Library/CloudStorage`, else ask. Keep `backups/Luthor` below it.
+3. Do not create the Dropbox root: `prepare()` creates `backups/Luthor` below an existing Dropbox folder, but fails
+   with a clear message if the folder above it is missing, instead of making a local lookalike.
+4. Say in the guide how to keep `backups/Luthor` "available offline" if the check in step 1 shows it matters.
+
+**Done when.** A test with a fake home folder that has only `Library/CloudStorage/Dropbox` picks that folder; a test
+with neither folder fails with a message and creates nothing; the guide names the File Provider location.
+
+### E-2 Dependency resolution is not recorded (P2)
+
+**Evidence.** `git ls-files` has no `Package.resolved`, and `.gitignore` does not ignore one, so it was never
+committed. `Package.swift` asks for Yams `from: "5.1.3"`, so every clean checkout, CI run and release build picks
+whatever the newest 5.x is that day. The release build is the artifact that is installed on the user's Macs, and
+it cannot be reproduced from its tag. The Xcode project refers to the package by path (`relativePath = ..`) and
+writes its own `Package.resolved` next to the project, which is not tracked either.
+
+**Proposal.** Commit `Package.resolved` (and decide whether the one Xcode writes should be tracked or pointed at the
+root one). CI then builds exactly what was reviewed, and a version bump is a visible one-line diff. Add
+`swift package resolve --force-resolved-versions` (or `xcodebuild -disableAutomaticPackageResolution`) to the CI
+steps so a drifting pin fails the build instead of being silently updated.
+
+**Done when.** `Package.resolved` is in git, CI fails if it would change, and a short note in the README says how
+to update it.
+
+### E-3 Yams is held back on 5.x; 6.x is current (P2)
+
+**Evidence.** `from: "5.1.3"` allows up to, but not including, 6.0.0. Yams 6.0.0 is the release that "conforms to
+Swift 6 language mode with full concurrency checking", and the latest is 6.2.2 (May 2026), with releases since
+6.0.2 for Swift 6.x toolchain fixes (a Swift 6.3 Musl conflict was fixed in 6.2.2). Luthor builds in Swift 6 mode
+with strict concurrency, so the one dependency that is not built for it is the odd one out. Yams is only used by
+`LibraryText` (the YAML text export and import), which is small, so the change is cheap now and gets dearer if
+the export grows.
+
+**Proposal.** Move to `from: "6.2.2"` together with E-2 (so the resolved file records it), read the 6.0.0 notes for
+source-breaking changes, and run the `LibraryText` tests plus the round-trip export tests. Keep the YAML format the
+same: exported files from older builds must still import.
+
+**Done when.** `Package.swift` and `Package.resolved` are on 6.x, the existing `LibraryText` tests pass unchanged,
+and a test imports a YAML file written by the 5.x build (a fixture) to prove the text format did not move.
+
+### E-4 Nothing reports stale pins (P2)
+
+**Evidence.** There is no `.github/dependabot.yml` or Renovate config; `.github/` has only workflows. Drift has
+already happened without anyone being told:
+
+| Pin | Where | Pinned | Current upstream |
+|-----|-------|--------|------------------|
+| SwiftLint | `Makefile` `SWIFTLINT_VERSION` | 0.63.2 | 0.65.1 |
+| `actions/checkout` | `ci.yml`, `release.yml`, `pr-title.yml` | v4 | v7.0.1 |
+| `actions/upload-artifact` | `release.yml` | v4 | v7.0.2 |
+| Yams | `Package.swift` | 5.x | 6.2.2 (see E-3) |
+| `integrations/github` provider | `infra/versions.tf` | `~> 6.0` | 6.13.0 (fine) |
+
+The v4 actions run on the Node 20 runtime, which GitHub is retiring from its runners; the CI log annotations will
+say when this starts to bite. All actions are pinned to a moving tag, not a commit SHA, and the release job has
+`contents: write`.
+
+**Proposal.** Add a small `dependabot.yml` covering `swift`, `github-actions` and `terraform`, monthly, grouped so
+it makes one PR a month rather than one per package. SwiftLint lives in the `Makefile`, which Dependabot cannot
+read; either accept a hand-checked pin (put a dated reminder in the README's maintenance notes) or add a Renovate
+custom regex rule. When bumping SwiftLint, also record the SHA-256 of the portable zip in the `Makefile` and check
+it in `make tools` (today it is a bare `curl` of the zip). Pin the actions that run with write permission
+(`release.yml`) to commit SHAs; Dependabot keeps SHA pins current.
+
+**Done when.** Dependabot has opened its first PR, the three action pins are current, and `make tools` fails on a
+wrong checksum.
+
+### E-5 The built app always says version 0.2.0 (P3)
+
+**Evidence.** `App/Luthor.xcodeproj/project.pbxproj` hard-codes `MARKETING_VERSION = 0.2.0` and
+`CURRENT_PROJECT_VERSION = 1` in both configurations. The release workflow works out the version from the
+Conventional Commits and passes it only to `make dist`, which uses it for the zip's file name. `make app` never
+sets it. So `Luthor-v0.9.0.zip` contains an app whose `CFBundleShortVersionString` is 0.2.0. Nothing in the app
+or in macOS (About, Finder's Get Info, crash reports) can say which build is running, which matters when two Macs
+share one event log and one of them is older (the golden-log rule lets an older build open a newer log, so being
+able to tell them apart is useful).
+
+**Proposal.** Let `make app` take `VERSION` and pass `MARKETING_VERSION=<version without the v>` and
+`CURRENT_PROJECT_VERSION=<commit count>` to `xcodebuild`; when `VERSION` is not a clean `vX.Y.Z` (a local
+`git describe` such as `b3f3534-dirty`), leave the project values alone, since that string is not a valid bundle
+version. Show the version in Settings → This Mac.
+
+**Done when.** A `make dist VERSION=v0.9.0` app reports 0.9.0 in its Info.plist, checked by a script test next to
+the existing `scripts/test-*.sh` ones.
+
+### E-6 Terraform provider hashes and state are not kept (P3)
+
+**Evidence.** `.gitignore` excludes `infra/.terraform.lock.hcl` and `infra/*.tfstate*`, and `infra/versions.tf` has no
+backend, so state is local. HashiCorp's guidance is to commit the lock file, which records the provider version and
+its hashes. Without it `~> 6.0` floats on each `make infra`. Without state the next run on another machine, or
+after the checkout is lost, tries to create the repository and ruleset that already exist and fails, or worse,
+if the resources are imported by hand, silently differs from what the main-branch ruleset really enforces. The
+ruleset is what makes `make check-ci` a required check, so it is worth keeping right.
+
+**Proposal.** Stop ignoring `.terraform.lock.hcl` and commit it. For state, pick one: a small remote backend, or an
+`import` block per resource plus a README note that state is disposable and rebuilt by import. Whichever it is,
+write it in the README's "Repository settings" section.
+
+**Done when.** The lock file is in git and `make infra` on a fresh checkout shows an empty plan.
