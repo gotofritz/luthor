@@ -77,7 +77,11 @@ remote events → merge into log → deterministic replay → projection → UI
   type adds lines to that fixture; the tests fail if a type has none
 - A build skips an event type it does not know and leaves its line in the
   log, so an older build can open a newer log. An event that is broken in
-  other ways is still an error
+  other ways is reported with its file and line number and left out of the
+  state, not fatal; the app offers Repair Log, which moves this device's bad
+  lines into `<file>.rejected` (never another device's file). Appends start on
+  a fresh line if the file lacks a final newline, and are `fsync`ed (not
+  `F_FULLFSYNC`; a power cut may still lose the last write on a drive that lies)
 - A breaking change to the format (one that cannot be done additively) is
   allowed only with a one-off migration script that rewrites the log, a
   tested backup of the log before it runs, and a breaking (`!`) Conventional
@@ -191,7 +195,8 @@ Sources/
                              default view, as an extension (split out for file_length, not access)
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
-    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); lines of an unknown event
+    JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); damaged lines reported as
+                             LogProblem and quarantined to .rejected on repair; lines of an unknown event
                              type are skipped on read and stay in the file
     LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
     LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds

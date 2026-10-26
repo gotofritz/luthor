@@ -18,7 +18,9 @@ extension LibraryViewModel {
   func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
     let current: [EventEnvelope]
     do {
-      current = try log.readAll()
+      let reading = try log.readReportingProblems()
+      current = reading.events
+      logProblems = reading.problems
     } catch {
       errorMessage = Self.describe(error)
       return []
@@ -266,5 +268,28 @@ extension [ColumnEntry] {
   /// The sub-projects, then the tasks, each in the order they had.
   var projectsFirst: [ColumnEntry] {
     filter { if case .project = $0 { true } else { false } } + filter { if case .task = $0 { true } else { false } }
+  }
+}
+
+// Damaged lines in the log.
+extension LibraryViewModel {
+  /// A sentence for the window when some lines of the log are unreadable, naming the first; `nil` otherwise.
+  public var logProblemsMessage: String? {
+    guard let first = logProblems.first else { return nil }
+    let count = logProblems.count == 1 ? "1 line" : "\(logProblems.count) lines"
+    return "\(count) of the event log could not be read and were left out, "
+      + "starting with line \(first.line) of \(first.file)."
+  }
+
+  /// Moves this device's unreadable lines into a `.rejected` file beside the log, then reloads. Another
+  /// device's damaged file stays as it is, to be repaired there.
+  public func repairLog() {
+    do {
+      _ = try log.quarantineUnreadableLines()
+    } catch {
+      errorMessage = Self.describe(error)
+      return
+    }
+    reload()
   }
 }

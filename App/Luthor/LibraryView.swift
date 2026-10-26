@@ -31,6 +31,15 @@ struct LibraryView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding([.horizontal, .bottom], 12)
         }
+        if let message = library.logProblemsMessage {
+          HStack {
+            Text(message)
+            Spacer()
+            Button("Repair Log") { library.repairLog() }
+          }
+          .foregroundStyle(.orange)
+          .padding([.horizontal, .bottom], 12)
+        }
         Divider()
         ColumnBrowserView(library: library)
       }
