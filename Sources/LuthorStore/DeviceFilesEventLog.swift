@@ -38,19 +38,41 @@ public struct DeviceFilesEventLog: EventLog, Sendable {
   /// Every device's events, the files in name order. A missing folder is an empty log. Another device's
   /// half-synced last line is skipped; any other unreadable line is an error.
   public func readAll() throws(EventLogError) -> [EventEnvelope] {
-    let names: [String]
+    var events: [EventEnvelope] = []
+    for name in try deviceLogNames() {
+      events += try file(name).readAll(skippingIncompleteTail: name != ownFileName)
+    }
+    return events
+  }
+
+  /// Like `readAll`, but every damaged line is reported with its file and line instead of being an error.
+  public func readReportingProblems() throws(EventLogError) -> LogReading {
+    var reading = LogReading()
+    for name in try deviceLogNames() {
+      let part = try file(name).readReportingProblems(skippingIncompleteTail: name != ownFileName)
+      reading.events += part.events
+      reading.problems += part.problems
+    }
+    return reading
+  }
+
+  /// Repairs this device's own file only; another device's file is theirs to repair.
+  public func quarantineUnreadableLines() throws(EventLogError) -> Int {
+    try file(ownFileName).quarantineUnreadableLines()
+  }
+
+  private func file(_ name: String) -> JSONLinesEventLog {
+    JSONLinesEventLog(fileURL: directory.appendingPathComponent(name))
+  }
+
+  private func deviceLogNames() throws(EventLogError) -> [String] {
     do {
       guard FileManager.default.fileExists(atPath: directory.path) else { return [] }
-      names = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+      return try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        .filter(Self.isDeviceLog(named:)).sorted()
     } catch {
       throw .ioFailure("cannot list \(directory.path): \(error)")
     }
-    var events: [EventEnvelope] = []
-    for name in names.filter(Self.isDeviceLog(named:)).sorted() {
-      let file = JSONLinesEventLog(fileURL: directory.appendingPathComponent(name))
-      events += try file.readAll(skippingIncompleteTail: name != ownFileName)
-    }
-    return events
   }
 
   /// Appends to this device's own file only.

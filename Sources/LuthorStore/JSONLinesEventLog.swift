@@ -7,6 +7,28 @@ import LuthorDomain
   import Darwin
 #endif
 
+/// A line of a log that is not an event; `line` is 1-based.
+public struct LogProblem: Equatable, Sendable {
+  public let file: String
+  public let line: Int
+
+  public init(file: String, line: Int) {
+    self.file = file
+    self.line = line
+  }
+}
+
+/// What a log holds: the events that could be read, and the lines that could not.
+public struct LogReading: Sendable {
+  public var events: [EventEnvelope] = []
+  public var problems: [LogProblem] = []
+
+  public init(events: [EventEnvelope] = [], problems: [LogProblem] = []) {
+    self.events = events
+    self.problems = problems
+  }
+}
+
 public enum EventLogError: Error, Equatable {
   /// The 1-based line could not be decoded as an event.
   case unreadableLine(Int)
@@ -268,47 +290,96 @@ public struct JSONLinesEventLog: Sendable {
   /// With `skippingIncompleteTail`, a last line that has no newline yet and cannot be decoded is left out
   /// instead of being an error: another device's file whose sync is still in progress.
   public func readAll(skippingIncompleteTail: Bool) throws(EventLogError) -> [EventEnvelope] {
-    guard FileManager.default.fileExists(atPath: fileURL.path) else { return [] }
-    let contents: String
-    do {
-      contents = try String(contentsOf: fileURL, encoding: .utf8)
-    } catch {
-      throw .ioFailure("cannot read \(fileURL.path): \(error)")
-    }
-    let lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
-    var events: [EventEnvelope] = []
+    let reading = try readReportingProblems(skippingIncompleteTail: skippingIncompleteTail)
+    if let first = reading.problems.first { throw .unreadableLine(first.line) }
+    return reading.events
+  }
+
+  /// The readable events, and every line that is not one, instead of failing at the first. Bad lines stay in
+  /// the file. See `readAll(skippingIncompleteTail:)` for the option.
+  public func readReportingProblems(skippingIncompleteTail: Bool) throws(EventLogError) -> LogReading {
+    guard FileManager.default.fileExists(atPath: fileURL.path) else { return LogReading() }
+    let lines = try readLines()
+    var reading = LogReading()
     for (index, line) in lines.enumerated() where !line.allSatisfy(\.isWhitespace) {
       do {
-        if let event = try EventLine.decodeIfKnown(String(line)) { events.append(event) }
+        if let event = try EventLine.decodeIfKnown(String(line)) { reading.events.append(event) }
       } catch {
         // The last element has no newline after it; earlier ones always do.
         if skippingIncompleteTail && index == lines.count - 1 { break }
-        throw .unreadableLine(index + 1)
+        reading.problems.append(LogProblem(file: fileURL.lastPathComponent, line: index + 1))
       }
     }
-    return events
+    return reading
   }
 
-  /// Appends the events in one `write`, with `O_APPEND`, so existing bytes are never rewritten.
+  /// Moves every line that is not an event into `<file>.rejected` and rewrites the file without them. Lines of
+  /// an unknown event type are not damaged and stay. Returns how many lines moved; a clean file is untouched.
+  public func quarantineUnreadableLines() throws(EventLogError) -> Int {
+    guard FileManager.default.fileExists(atPath: fileURL.path) else { return 0 }
+    var kept: [Substring] = []
+    var rejected: [Substring] = []
+    for line in try readLines() where !line.allSatisfy(\.isWhitespace) {
+      do {
+        _ = try EventLine.decodeIfKnown(String(line))
+        kept.append(line)
+      } catch {
+        rejected.append(line)
+      }
+    }
+    guard !rejected.isEmpty else { return 0 }
+    let rejectedURL = fileURL.appendingPathExtension("rejected")
+    try JSONLinesEventLog.appendText(rejected.map { String($0) + "\n" }.joined(), to: rejectedURL)
+    do {
+      try kept.map { String($0) + "\n" }.joined().write(to: fileURL, atomically: true, encoding: .utf8)
+    } catch {
+      throw .ioFailure("cannot rewrite \(fileURL.path): \(error)")
+    }
+    return rejected.count
+  }
+
+  private func readLines() throws(EventLogError) -> [Substring] {
+    do {
+      return try String(contentsOf: fileURL, encoding: .utf8).split(separator: "\n", omittingEmptySubsequences: false)
+    } catch {
+      throw .ioFailure("cannot read \(fileURL.path): \(error)")
+    }
+  }
+
+  /// Appends the events in one `write`, with `O_APPEND`, so existing bytes are never rewritten. If the file
+  /// does not end in a newline (a write cut short), the first event starts on a fresh line, so a torn
+  /// fragment never swallows it. The write is flushed to disk before returning.
   public func append(_ events: [EventEnvelope]) throws(EventLogError) {
     guard !events.isEmpty else { return }
     var text = ""
     for event in events {
       text += try EventLine.encode(event) + "\n"
     }
+    try Self.appendText(text, to: fileURL, startingOnAFreshLine: true)
+  }
+
+  private static func appendText(
+    _ text: String, to url: URL, startingOnAFreshLine: Bool = false
+  ) throws(EventLogError) {
     do {
       try FileManager.default.createDirectory(
-        at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
     } catch {
-      throw .ioFailure("cannot create directory for \(fileURL.path): \(error)")
+      throw .ioFailure("cannot create directory for \(url.path): \(error)")
     }
-    let descriptor = open(fileURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
-    guard descriptor >= 0 else { throw .ioFailure("cannot open \(fileURL.path): errno \(errno)") }
+    let descriptor = open(url.path, O_RDWR | O_APPEND | O_CREAT, 0o600)
+    guard descriptor >= 0 else { throw .ioFailure("cannot open \(url.path): errno \(errno)") }
     defer { close(descriptor) }
-    let bytes = Array(text.utf8)
+    var bytes = Array(text.utf8)
+    if startingOnAFreshLine {
+      var last: UInt8 = 0x0A
+      let size = lseek(descriptor, 0, SEEK_END)
+      if size > 0, pread(descriptor, &last, 1, size - 1) == 1, last != 0x0A { bytes.insert(0x0A, at: 0) }
+    }
     let written = bytes.withUnsafeBytes { write(descriptor, $0.baseAddress, $0.count) }
     guard written == bytes.count else {
-      throw .ioFailure("short write to \(fileURL.path): \(written) of \(bytes.count) bytes, errno \(errno)")
+      throw .ioFailure("short write to \(url.path): \(written) of \(bytes.count) bytes, errno \(errno)")
     }
+    guard fsync(descriptor) == 0 else { throw .ioFailure("cannot flush \(url.path): errno \(errno)") }
   }
 }

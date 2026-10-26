@@ -421,6 +421,10 @@ migration, so the log is untouched. Any later breaking change needs a
 migration script, a tested backup and a `!` commit, so the release version
 moves with it.
 
+### 15b. The log survives a bad line ✅
+
+A damaged or half-written line no longer stops the app: it is reported (file, line), left out of the state and left in the file. `append` starts on a fresh line and `fsync`s. Repair Log quarantines this device's bad lines into `.rejected`. Compact still refuses a damaged log. Decisions: skip and report rather than a hard stop; plain `fsync`, not `F_FULLFSYNC`.
+
 ### 15a. Export and import as text ✅
 
 File → Export to Text… writes the views, tags, tasks and projects as one YAML

@@ -18,7 +18,9 @@ extension LibraryViewModel {
   func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
     let current: [EventEnvelope]
     do {
-      current = try log.readAll()
+      let reading = try log.readReportingProblems()
+      current = reading.events
+      logProblems = reading.problems
     } catch {
       errorMessage = Self.describe(error)
       return []

@@ -609,6 +609,17 @@ changes nothing, and a file from another Mac merges. A file from a newer
 version of the app, or one that is not an export, is refused and nothing is
 changed.
 
+### A damaged line in the log
+
+If a crash or a power cut leaves half a line at the end of the log, or a line
+in it is damaged some other way, the app still opens. It shows the readable
+tasks and an orange bar saying how many lines were left out and where the
+first one is. Nothing is deleted. **Repair Log** moves the damaged lines of
+this Mac's own log into a `.rejected` file next to it and reloads. A damaged
+line in another Mac's file is only reported; repair it on that Mac. Compact
+Log refuses to run while a line is damaged. The next event always starts on a
+fresh line, and every write is flushed to disk before the app carries on.
+
 ### Compacting the log
 
 The log only grows, because it keeps every change. Settings → This Mac →

@@ -111,6 +111,8 @@ public final class LibraryViewModel {
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
+  /// Lines of the log that could not be read, left out of what is shown; empty when the log is sound.
+  public internal(set) var logProblems: [LogProblem] = []
   /// While a task is dragged over the day, where it would land: the tasks around it show making room.
   /// The task being dragged on the day calendar, set when the drag starts.
   public var draggedTaskID: TaskID?
@@ -225,10 +227,31 @@ public final class LibraryViewModel {
 
   public func reload() {
     do {
-      show(try log.readAll())
+      let reading = try log.readReportingProblems()
+      logProblems = reading.problems
+      show(reading.events)
     } catch {
       errorMessage = Self.describe(error)
     }
+  }
+
+  /// A sentence for the window when some lines of the log are unreadable, naming the first; `nil` otherwise.
+  public var logProblemsMessage: String? {
+    guard let first = logProblems.first else { return nil }
+    let count = logProblems.count == 1 ? "1 line" : "\(logProblems.count) lines"
+    return "\(count) of the event log could not be read and were left out, starting with line \(first.line) of \(first.file)."
+  }
+
+  /// Moves this device's unreadable lines into a `.rejected` file beside the log, then reloads. Another
+  /// device's damaged file stays as it is, to be repaired there.
+  public func repairLog() {
+    do {
+      _ = try log.quarantineUnreadableLines()
+    } catch {
+      errorMessage = Self.describe(error)
+      return
+    }
+    reload()
   }
 
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
