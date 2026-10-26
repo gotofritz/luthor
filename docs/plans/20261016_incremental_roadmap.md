@@ -42,6 +42,13 @@ messages; one script decides what a Conventional Commit is for hooks and the
 PR title check. Branch protection on `main` via Terraform in `infra/`. CI also
 fails under 90% line coverage of `Sources/` (`make coverage`).
 
+### CI-Linux. Fast Linux job for the package ✅
+
+A `linux` job (`swift:6.2` container, `make test-linux`: `swift build` and
+`swift test`, no Xcode, lint or coverage gate) runs next to the macOS job, so
+agent sessions without a toolchain get quick feedback. The macOS job stays
+the full check. Issue #85.
+
 ### CI-2. Build the Mac app (slice 2) ✅
 
 `make app` builds the Mac app in `make check-ci`; view model tests run with the
@@ -420,6 +427,10 @@ duplicates, and fail when a type has no line. The audit found no wart worth a
 migration, so the log is untouched. Any later breaking change needs a
 migration script, a tested backup and a `!` commit, so the release version
 moves with it.
+
+### 15b. The log survives a bad line ✅
+
+A damaged or half-written line no longer stops the app: it is reported (file, line), left out of the state and left in the file. `append` starts on a fresh line and `fsync`s. Repair Log quarantines this device's bad lines into `.rejected`. Compact still refuses a damaged log. Decisions: skip and report rather than a hard stop; plain `fsync`, not `F_FULLFSYNC`.
 
 ### 15a. Export and import as text ✅
 

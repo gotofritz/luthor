@@ -203,6 +203,14 @@ public struct PausableEventLog: EventLog {
     try base.readAll()
   }
 
+  public func readReportingProblems() throws(EventLogError) -> LogReading {
+    try base.readReportingProblems()
+  }
+
+  public func quarantineUnreadableLines() throws(EventLogError) -> Int {
+    try base.quarantineUnreadableLines()
+  }
+
   public func append(_ events: [EventEnvelope]) throws(EventLogError) {
     if let request = try handshake.pausingRequest() {
       throw .ioFailure(
