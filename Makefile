@@ -18,7 +18,7 @@ DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
 TERRAFORM ?= terraform
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance app install dist check-ci hooks tools infra infra-token
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance test-linux app install dist check-ci hooks tools infra infra-token
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -67,6 +67,12 @@ test-unit:
 # End-to-end behaviour tests only.
 test-acceptance:
 	swift test --filter LuthorAcceptanceTests
+
+# What the Linux CI job runs, and what an agent session without Xcode can run: build and test the
+# package alone (no app, no lint, no coverage gate).
+test-linux:
+	swift build
+	swift test
 
 # Builds the Mac app, ad-hoc signed, into $(APP_BUILD).
 app:

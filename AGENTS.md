@@ -361,7 +361,8 @@ Speed of capture and interaction is a feature: do not regress it.
 - Remote agent sessions may have no Swift toolchain. Never ask the user
   about installing one. If a route works without asking, install it and run
   `make check-ci` locally; otherwise write the tests first, push, and use CI
-  (`make check-ci`) as the build, fixing what it reports
+  as the build: the fast `linux` job (`make test-linux`, package only) reports
+  in minutes, the macOS job (`make check-ci`) is the full check, fixing what it reports
 
 ### Commands
 
@@ -376,6 +377,7 @@ make test       # swift test + script tests
 make coverage   # make test with coverage; fails under 90% line coverage of Sources/
 make test-unit  # unit tests only (skips LuthorAcceptanceTests)
 make test-acceptance  # end-to-end acceptance tests only
+make test-linux # swift build + swift test of the package; the Linux CI job, no Xcode needed
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
 make install    # build and install the app (/Applications)
 make dist       # zip the app into .build/dist, as a release does
