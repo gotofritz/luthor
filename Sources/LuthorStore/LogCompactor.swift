@@ -1,6 +1,12 @@
 import Foundation
 import LuthorDomain
 
+#if canImport(Glibc)
+  import Glibc
+#elseif canImport(Darwin)
+  import Darwin
+#endif
+
 /// What a compaction did.
 public struct LogCompaction: Equatable, Sendable {
   public let eventsBefore: Int
@@ -91,7 +97,10 @@ public enum LogCompactor {
     try JSONLinesEventLog(fileURL: temporary).append(events)
     do {
       if FileManager.default.fileExists(atPath: own.path) {
-        _ = try FileManager.default.replaceItemAt(own, withItemAt: temporary)
+        // rename(2) replaces atomically on every platform; Foundation's replaceItemAt fails on Linux.
+        guard rename(temporary.path, own.path) == 0 else {
+          throw CocoaError(.fileWriteUnknown, userInfo: [NSLocalizedDescriptionKey: String(cString: strerror(errno))])
+        }
       } else {
         try FileManager.default.moveItem(at: temporary, to: own)
       }
