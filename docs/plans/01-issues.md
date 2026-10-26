@@ -581,3 +581,119 @@ security features in Terraform, add a short `SECURITY.md`.
 4. S-2 and S-6 are design decisions: write down the trust assumption now; change the format or the handshake
    only if the folder is ever shared with someone else or an older build can still be running.
 5. S-9 and the rest of S-11 when a signing identity is available.
+
+## Production readiness (SRE / platform review, 2026-10-26)
+
+Scope: can one person run this on their own Macs for years without losing data, and find out when something goes
+wrong? IDs use the prefix P- to stay apart from the security items. Duplicates with other findings to be merged
+later. Ranked by what would hurt most.
+
+### P-1 One bad line makes the whole library unopenable (high)
+
+`JSONLinesEventLog.readAll` throws `unreadableLine` for any undecodable line that is not the last line of another
+device's file. Reading is all-or-nothing, so one damaged line in any device file (a torn write, a sync conflict
+copy, a hand edit) means no device can show any task.
+
+- Add a recovery path: open with the readable events, report the bad lines (file, line number) in the UI, and
+  never rewrite the file.
+- Test first: a log with a garbage line in the middle still opens, the line is reported, the file is untouched.
+
+### P-2 A crash during an append can corrupt the next write (high)
+
+`append` writes with a single `write(2)` and never checks that the file ends in a newline. If the process dies or
+the disk fills mid-write, the file ends in a half line. The next append glues a valid event onto it, and that
+event is lost along with the half line, in the middle of the file where P-1 turns it into a fatal error. There is
+also no `fsync`, so a power cut right after a user action can lose the event the UI already showed.
+
+- Before appending, check the last byte; if it is not `\n`, write a newline first so the damage stays one line.
+- Call `fsync` (or `F_FULLFSYNC`) after the write.
+- Test first: a log ending in a partial line takes a new event, and only the partial line is lost.
+
+### P-3 No backup of the log outside compaction (high)
+
+The log is the only copy of the data on a single Mac with the Home Folder option, and Dropbox history is not a
+backup (a bad compaction or a sync bug is replicated). The only backup today is the one taken by Compact Log.
+
+- Keep a rolling local snapshot (for example a daily copy of the log files and the YAML export under `backups/`,
+  last N kept), taken on launch.
+- Add a "Restore from backup" description to `docs/guide.md`, tested by restoring into a temporary folder.
+
+### P-4 No diagnostics: nothing is logged (medium)
+
+There is no `Logger`/`os_log` use anywhere in `Sources` or `App`. When a user-visible error, a skipped unknown
+event type, a failed handshake or a slow replay happens, there is nothing to look at afterwards.
+
+- Add `os.Logger` with subsystem and categories (store, sync, compaction) and log: log opened (event count, time to
+  replay), skipped unknown events, compaction steps, append failures. No task titles or notes in log lines.
+- Show the last storage error in Settings → This Mac with a "Reveal log folder" button.
+
+### P-5 Startup and replay time grow without bound (medium)
+
+Every read loads each device file whole into a `String`, decodes all of it, and replays it from the start, and the
+file monitor polls and re-reads. Fine today; a few years of use on several devices will make launch and every
+external change slower. The plan already says SQLite/snapshots only "once replay is slow", but nothing measures
+"slow".
+
+- Add a performance test that replays a synthetic log of, say, 200k events and fails above a budget, so the
+  decision is made on a number.
+- Make the monitor compare size and modification date before re-reading, and read only the appended tail when
+  the file grew.
+
+### P-6 Releases are unsigned, not notarised, and the version is not tied to the tag (medium)
+
+`CODE_SIGN_IDENTITY = "-"` and the zip is not notarised, so a downloaded release is blocked by Gatekeeper and
+cannot auto-update. `MARKETING_VERSION` is a hard-coded `0.2.0` in the Xcode project while the tags are `v0.9.0`,
+`v1.0.0`; the app reports the wrong version, which makes bug reports and the "which build wrote this event"
+question hard.
+
+- Pass the release version into the build (`MARKETING_VERSION=$VERSION`, build number from the commit count) in
+  `make dist`, and show it in the About box and in Settings → This Mac.
+- Signing and notarisation need an Apple Developer identity; track as a decision, and until then document the
+  right-click-open step in the README.
+
+### P-7 Build and CI are not reproducible (medium)
+
+- No `Package.resolved` is committed (and Yams is `from: "5.1.3"`), so a CI run can pick up a different Yams than
+  the one a release was built with. Commit `Package.resolved` and build with `--force-resolved-package-versions`.
+- GitHub Actions use floating tags (`actions/checkout@v4`, `upload-artifact@v4`) and `macos-26`; pin by SHA, and
+  let Dependabot update them (also covers `swift` packages).
+- `make tools` downloads SwiftLint without a checksum check; verify a pinned SHA-256.
+- The CI job has no `timeout-minutes`, and failed runs upload nothing (coverage report, test log) to debug with.
+  Add a timeout and `upload-artifact` of `.build/coverage.txt` with `if: always()`.
+
+### P-8 Release workflow can publish a broken or half-made release (low)
+
+- The release job runs on `main` pushes independently of the CI job, so a commit whose CI is red can still be
+  published. Make release depend on a green `make check-ci` (reuse the CI workflow, or run `check-ci` in release).
+- Attach a SHA-256 file next to the zip, so a downloaded build can be verified.
+- Document how to roll back: a bad release is deleted and the tag re-pointed by hand today.
+
+### P-9 No LICENSE, SECURITY.md or support information (low)
+
+The repo has no `LICENSE`, so the legal status of the code is "all rights reserved" by default, whichever is
+intended. Add the intended licence, and a short `SECURITY.md` (where to report, supported versions).
+
+### P-10 Stray files in the repository root (low)
+
+About 17 Python `.whl` files sit in the repo root and are not ignored. They are unrelated to the app, bloat every
+clone, and could be committed with a `git add .`. Remove them and add `*.whl` to `.gitignore`. (The security
+review lists the same files as S-1; this is the same fix.)
+
+### P-11 Operations documentation is missing (low)
+
+`docs/guide.md` describes features, but there is no runbook for the cases that matter: log damaged, device lost
+or replaced, Dropbox conflict copies appearing in the shared folder, a stuck compaction handshake (what files to
+delete, and when it is safe), and migrating from Home Folder to Dropbox. Add `docs/runbook.md` and link it from
+the README. The stuck-handshake case in particular needs a timeout or a "cancel compaction" button, since a
+device that is switched off blocks compaction for everyone.
+
+### Not raised on purpose
+
+No server, metrics, alerting, on-call or SLOs: this is a single-user local-first app, so those would be
+ceremony. No telemetry or crash-reporting service: privacy of the user's tasks matters more; local logs (P-4) and
+macOS crash reports are enough.
+
+### Suggested order
+
+P-2, then P-1 (small and test-first, protect the data), P-3, P-10, P-7 and P-9 (minutes of work), then P-4,
+P-6, P-11, with P-5 and P-8 when they start to matter.
