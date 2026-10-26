@@ -97,7 +97,8 @@ struct FolderChangeMonitorTests {
     defer { dir.remove() }
     var monitor = FileChangeMonitor(directoryURL: dir.url)
 
-    _ = try CompactionHandshake(directory: dir.url, deviceID: DeviceID("mac")).request(id: "r1", at: "t")
+    let now = ISO8601DateFormatter().string(from: Date())
+    _ = try CompactionHandshake(directory: dir.url, deviceID: DeviceID("mac")).request(id: "r1", at: now)
 
     #expect(monitor.poll() == true)
   }

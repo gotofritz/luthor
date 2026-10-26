@@ -46,9 +46,10 @@ struct CompactionHandshakeTests {
   func onlyOneRequestAtATime() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
-    _ = try handshake("mac", in: dir).request(id: "r1", at: "t")
+    _ = try handshake("mac", in: dir).request(id: "r1", at: "2026-10-19T16:00:00Z")
 
-    #expect(throws: EventLogError.self) { try handshake("laptop", in: dir).request(id: "r2", at: "t") }
+    let laptop = handshake("laptop", in: dir)
+    #expect(throws: EventLogError.self) { try laptop.request(id: "r2", at: "2026-10-19T16:00:00Z") }
   }
 
   @Test("the asker waits for a device that has not answered")
@@ -58,7 +59,7 @@ struct CompactionHandshakeTests {
     try writeEvents(2, as: "mac", in: dir)
     try writeEvents(3, as: "laptop", in: dir)
     let mac = handshake("mac", in: dir)
-    let request = try mac.request(id: "r1", at: "t")
+    let request = try mac.request(id: "r1", at: "2026-10-19T16:00:00Z")
 
     #expect(try mac.waitingFor(request) == ["laptop"])
   }
@@ -71,10 +72,10 @@ struct CompactionHandshakeTests {
     try writeEvents(1, as: "laptop", in: dir)
     let mac = handshake("mac", in: dir)
     let laptop = handshake("laptop", in: dir)
-    let request = try mac.request(id: "r1", at: "t")
+    let request = try mac.request(id: "r1", at: "2026-10-19T16:00:00Z")
 
     // The laptop has 3 events by now, but only 1 has reached this folder.
-    try laptop.acknowledge(request, events: 3, at: "t")
+    try laptop.acknowledge(request, events: 3, at: "2026-10-19T16:00:00Z")
     #expect(try laptop.isPaused())
     #expect(try mac.waitingFor(request) == ["laptop"])
 
@@ -87,7 +88,7 @@ struct CompactionHandshakeTests {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let mac = handshake("mac", in: dir)
-    let request = try mac.request(id: "r1", at: "t")
+    let request = try mac.request(id: "r1", at: "2026-10-19T16:00:00Z")
 
     try mac.finish(request, at: "t2")
 
@@ -100,10 +101,10 @@ struct CompactionHandshakeTests {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let mac = handshake("mac", in: dir)
-    try mac.cancel(mac.request(id: "r1", at: "t"))
+    try mac.cancel(mac.request(id: "r1", at: "2026-10-19T16:00:00Z"))
 
     #expect(try mac.openRequest() == nil)
-    #expect(try mac.request(id: "r2", at: "t").id == "r2")
+    #expect(try mac.request(id: "r2", at: "2026-10-19T16:00:00Z").id == "r2")
   }
 
   @Test("a paused device cannot append, and can again afterwards")
@@ -113,7 +114,7 @@ struct CompactionHandshakeTests {
     let mac = handshake("mac", in: dir)
     let log = PausableEventLog(DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID("mac")), handshake: mac)
     try log.append([captured("t1", "before", id: "e1", device: "mac", lamport: 1)])
-    let request = try mac.request(id: "r1", at: "t")
+    let request = try mac.request(id: "r1", at: "2026-10-19T16:00:00Z")
 
     #expect(throws: EventLogError.self) { try log.append([captured("t2", "during", id: "e2", lamport: 2)]) }
     try mac.finish(request, at: "t2")
@@ -162,7 +163,7 @@ struct CompactionHandshakeTests {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let mac = handshake("mac", in: dir)
-    _ = try mac.request(id: "r1", at: "t")
+    _ = try mac.request(id: "r1", at: "2026-10-19T16:00:00Z")
     let log = PausableEventLog(DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID("mac")), handshake: mac)
 
     do {
@@ -171,5 +172,57 @@ struct CompactionHandshakeTests {
     } catch {
       #expect("\(error)".contains(mac.token))
     }
+  }
+
+  /// Writes a request file by hand, as another Mac, an older build or a stranger in the folder might.
+  private func plant(_ json: String, named name: String, in dir: TemporaryDirectory) throws {
+    try json.write(to: dir.file(name), atomically: true, encoding: .utf8)
+  }
+
+  @Test("a request whose time cannot be read is given up at once")
+  func anUnreadableTimeExpires() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    try plant(
+      #"{"device":"laptop","id":"r1","requestedAt":"soon"}"#, named: "compaction-r1-request.json", in: dir)
+
+    #expect(try handshake("mac", in: dir).openRequest() == nil)
+  }
+
+  @Test("a request dated far in the future is given up, so it cannot pause the Macs for good")
+  func aFutureTimeExpires() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    try plant(
+      #"{"device":"laptop","id":"r1","requestedAt":"2999-01-01T00:00:00Z"}"#,
+      named: "compaction-r1-request.json", in: dir)
+
+    #expect(try handshake("mac", in: dir).openRequest() == nil)
+  }
+
+  @Test("a request whose id could reach outside the folder is ignored")
+  func aTraversingIdIsIgnored() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    try plant(
+      #"{"device":"laptop","id":"../evil","requestedAt":"2026-10-19T16:00:00Z"}"#,
+      named: "compaction-x-request.json", in: dir)
+
+    #expect(try handshake("mac", in: dir).openRequest() == nil)
+  }
+
+  @Test("a request that is made with an id that is not plain is refused")
+  func aBadIdIsRefused() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let mac = handshake("mac", in: dir)
+
+    #expect(throws: EventLogError.self) { try mac.request(id: "../evil", at: "2026-10-19T16:00:00Z") }
+    #expect(throws: EventLogError.self) { try mac.request(id: "", at: "2026-10-19T16:00:00Z") }
+    #expect(throws: EventLogError.self) {
+      try mac.request(id: String(repeating: "a", count: 65), at: "2026-10-19T16:00:00Z")
+    }
+    #expect(CompactionHandshake.isValid(id: String(repeating: "a", count: 64)))
+    #expect(CompactionHandshake.isValid(id: "0A-b9"))
   }
 }

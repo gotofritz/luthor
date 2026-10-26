@@ -147,7 +147,7 @@ struct CompactLogTests {
       controller.handshake = CompactionHandshake(directory: home.url, deviceID: DeviceID(device))
     }
     controller.makeID = { "r1" }
-    controller.now = { "t" }
+    controller.now = { ISO8601DateFormatter().string(from: Date()) }
     controller.compaction = {
       runs.count += 1
       return LogCompaction(eventsBefore: 900, eventsAfter: 40, backupFolder: home.file("backups/compact-s"))
@@ -271,7 +271,7 @@ struct CompactLogTests {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let mac = CompactionHandshake(directory: home.url, deviceID: DeviceID("mac"))
-    _ = try mac.request(id: "r0", at: "t")
+    _ = try mac.request(id: "r0", at: ISO8601DateFormatter().string(from: Date()))
     let laptop = controller(home, shared: "laptop")
     laptop.refreshCompaction()
     #expect(laptop.compactionProgress == .pausedForOther(mac.token))

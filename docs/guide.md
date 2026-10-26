@@ -627,8 +627,12 @@ The log only grows, because it keeps every change. Settings → This Mac →
 your tasks into a `backups/compact-<date>` folder next to the log, writes a
 new log with one short run of events for each task and project, checks that it
 holds the same library, and swaps it in. Tasks, projects, settings and the
-weekly project reviews stay; time logged and the days you reviewed are
-dropped. Delete the `backups` folder when you no longer need it.
+weekly project reviews stay, and so do the plan of your days, the time you
+logged and the days you reviewed. Only the history of how each change came
+about is dropped. Compact Log refuses, and changes nothing, if the log holds
+events written by a newer version of Luthor (update Luthor first) or if a log
+file changed while it worked. Delete the `backups` folder when you no longer
+need it.
 
 With Dropbox the Macs do not have to be together. Compact Log first asks the
 others, through small `compaction-…` files in the shared folder, to stop
@@ -640,7 +644,7 @@ log then outranks anything older, but changes that Mac made offline may be
 partly overridden when it comes back.
 
 A request that is not finished within ten minutes (the app was quit, or a Mac
-never came back) is given up on its own, so it cannot hold the Macs back for
+never came back), or whose time cannot be read, is given up on its own, so it cannot hold the Macs back for
 good. While another Mac's request is open, Settings shows **Cancel Their
 Compaction…**, which ends it at once.
 
