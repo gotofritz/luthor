@@ -1380,3 +1380,256 @@ ruleset is what makes `make check-ci` a required check, so it is worth keeping r
 write it in the README's "Repository settings" section.
 
 **Done when.** The lock file is in git and `make infra` on a fresh checkout shows an empty plan.
+
+---
+
+# Technical debt and sustainability audit (T-1 to T-10)
+
+An independent audit of how well the repo can keep being built and maintained by one person plus agents,
+over years. Read from the code at `fix/assessment-2026-10-25`, base `main` at `b3f3534`. Nothing was run:
+the session had no Swift toolchain, so every performance claim is reasoned from the code and each item that
+touches speed starts with a measurement. Items overlap with other assessments by design; merge duplicates
+later. Only items that fix a real shortcoming or improve the app are listed. Things that are sound and left
+alone: the frozen-format rules, the per-device log files, the 90% coverage gate, the Conventional Commit
+release flow, the ruleset in `infra/`.
+
+## T-1 A torn last line in this device's own log locks the app for good
+
+**Priority:** High (can make the whole log unreadable; the only recovery is hand-editing)
+
+**Evidence**
+- `JSONLinesEventLog.append` opens with `O_APPEND` and writes the new lines. It never checks that the file
+  already ends in `\n`, never `fsync`s, and on a short write throws and leaves the partial bytes in the file.
+- The reader forgives an unterminated last line only for other devices' files
+  (`DeviceFilesEventLog.readAll`: `skippingIncompleteTail: name != ownFileName`). The single-file log
+  (`LUTHOR_LOG`, Home Folder) never forgives one. A damaged line that ends in a newline is never skipped
+  (`IncompleteTailTests`).
+- So after a crash, power cut or full disk in the middle of an append, the file ends in a partial line. The
+  next append glues a complete, valid event onto it: one newline-terminated line that does not decode.
+  From then on `readAll` throws `unreadableLine(n)`, `perform` returns without writing, and `reload` shows
+  an error. Every action fails; the app has no repair path.
+
+**Proposal**
+1. Test first: write a log, cut it mid-line, append, read. It must keep every complete event before the cut
+   and the new one.
+2. `append` checks the last byte of the file; if it is not `\n`, it writes a `\n` first, so the torn
+   fragment becomes its own line and the new events stay readable.
+3. Decide, and write in AGENTS.md, how the reader treats one undecodable line in the middle of a log: today
+   it is a hard stop for the whole app. Options: skip it, report it in the UI and leave it in the file (the
+   treatment unknown event types already get), or keep the hard stop but add a "Log problems" screen that
+   names the line and offers to move it aside. The first two keep "code never edits a written event".
+4. Decide on durability (`F_FULLFSYNC` on macOS after each append, or accept the loss window), and say so.
+
+**Done when:** the torn-tail test is green for both the single file and the shared folder, and the guide
+says what the app does when the log has a damaged line.
+
+## T-2 Compact Log can permanently drop events another build wrote
+
+**Priority:** High (data loss, though it needs two builds of the app or a restore to hit)
+
+**Evidence**
+- `LogCompactor.compact` reads with `readAll()`, which skips event types this build does not know, rebuilds
+  the log from `LibraryState.export()`, replaces this device's file and then deletes every other device's
+  file (`replace`). The AGENTS.md rule says an unknown line stays in the log; compaction removes it.
+- Concrete case: Mac A is updated and writes a new event type; Mac B still runs the old build and presses
+  Compact Log. B's rebuilt log has none of A's new-type events, and A's file is deleted. The backup folder
+  holds them, but nothing restores from it.
+- The YAML copy in the backup is not a restore format: it has no settings, time logged, reviews or plan
+  order (`LibraryText`), and there is no restore command or test that a backup brings back the library.
+- Liveness: `CompactionHandshake.waitingFor` lists every `events-*.jsonl` file whose device has not
+  acknowledged. A retired Mac's file blocks compaction until its request expires, then forever, and there is
+  no way to retire a device. Expiry also uses each Mac's wall clock (`requestedAt` against `Date()`).
+- `backups/compact-<stamp>` folders are never pruned and live inside the synced folder.
+
+**Proposal**
+1. Test first: a log with an unknown-type line, then compact. The compaction must refuse, naming the lines,
+   or carry them over untouched.
+2. A tested restore: from a `compact-<stamp>` folder back to the pre-compaction logs, checked by replaying
+   to the same state as before.
+3. Let the user retire a device (ignore its file in `waitingFor`), and say in the guide that the backups
+   grow.
+
+**Done when:** compaction cannot lose a line it does not understand, a restore test passes, and a retired
+Mac no longer blocks compaction.
+
+## T-3 The frozen event format is guarded by convention, not by a check
+
+**Priority:** Medium
+
+**Evidence**
+- `EventLine.knownTypes` is `EventType.allCases`, and `GoldenLogTests.everyTypeHasALine` compares the golden
+  log against it. Rename a `rawValue` (or a payload field) in the encoder and decoder and edit the golden
+  line to match, and every test stays green while every existing log on every device stops replaying.
+- The golden log comment says "fix the change, never the file", but nothing enforces it. So far it has only
+  been added to (#77 added 6 lines, removed none), which is discipline, not a guard.
+- The golden log checks that today's encoder round-trips today's decoder. It does not hold a line written
+  by an older build for each type after an optional field was added, so "old logs always replay" is only
+  checked for the lines someone remembered to keep.
+
+**Proposal**
+- A manifest next to the fixture, `frozen-format.txt`: every type name, and a hash per golden line. A test
+  fails when a name disappears or a line's hash changes; adding is allowed. Changing the manifest on a
+  non-`!` commit is a CI failure (a small script, tested in `scripts/` like the others).
+- When an optional field is added to a payload, keep the old line and add a new one, so both shapes stay in
+  the fixture. Say so in AGENTS.md.
+
+**Done when:** renaming a type or editing an existing golden line fails CI, and adding a type or a line
+passes.
+
+## T-4 Adding an event type means editing about eight places, one of which fails only at runtime
+
+**Priority:** Medium (each event added so far worked; cost and risk grow with every one of 41 types)
+
+**Evidence**
+- A new event touches: `EventPayload`, the DTO `EventType` enum, the decode switch, the encode switch,
+  `LibraryState.apply`, the golden log, test builders, and the Code map.
+- The decode switch sends the last eleven types to `laterPayload`, a second switch that exists only to stay
+  under SwiftLint's `function_body_length` ("split rather than suppressed"). `laterPayload` ends in a
+  `default: throw`. Add a type to the first switch's group but forget `laterPayload`, and it compiles, then
+  throws at decode: the log becomes unreadable on that line. Only the golden-log test catches it, and only
+  if the author added the fixture line.
+- The cyclomatic-complexity config was already loosened for these switches.
+
+**Proposal:** one registration per event: a small protocol (`static let typeName`, `Codable`) adopted by each
+payload struct, and a registry of `(name, decode, encode)` entries in one list. Delete `laterPayload`, its
+`default`, and the second switch. The exhaustive `apply` switch stays, so the compiler still forces a reducer
+decision. Do it with the golden log green throughout; no format change.
+
+**Done when:** adding an event type means one payload struct, one registry line, one reducer case and one
+golden-log line, and there is no `default` branch in the codec.
+
+## T-5 No measurement of launch or capture time, and every action does several full decodes and replays
+
+**Priority:** Medium (the user will notice at some log size; nobody knows which). Measure first.
+
+**Evidence**
+- `LibraryViewModel.perform` calls `log.readAll()` (decodes the whole log on the main actor), then the
+  command replays the log again inside (`LibraryState.replay(log)`, sometimes more than once per command; each
+  `envelope` also scans the log for the max Lamport), then appends, then `show(current + events)` replays a
+  third time and `present()` recomputes every place (see T-6).
+- `watchLog` polls every second and calls `reload()` (decode and replay everything) whenever the file
+  signature changes, which includes this app's own append, so each action decodes the log twice.
+- `JSONLinesEventLog.readAll` reads the whole file into one `String`, splits it into `Substring`s and builds
+  a `JSONDecoder` per line (`EventLine.decodeIfKnown` makes two: a type probe and the real decode).
+- The repo has no benchmark or synthetic large log (the only "synthetic" log is the golden fixture). The
+  roadmap's "stress test" and slice 16 "measure launch replay time and capture latency" are not marked done,
+  although the format was frozen after them in the plan.
+- Compaction (T-2) is the only tool against growth, and it throws away history.
+
+**Proposal**
+1. A generator for a synthetic log (10k, 100k, 500k events, realistic mix) and `make bench` printing launch
+   time, capture latency and memory. Run it once and write the numbers into the roadmap's slice 16 with a
+   budget (for example capture under 50 ms at 100k events).
+2. Only if over budget, cheapest first: skip the reload for this app's own write; keep decoded events and
+   apply new ones to `LibraryState` incrementally instead of replaying; decode off the main actor; one
+   decoder per read, one pass per line. Projections or a snapshot only after those, and any snapshot must be
+   disposable and rebuilt from the log (AGENTS.md rules).
+
+**Done when:** the numbers are in the repo, and a budget is stated and tested or benchmarked in CI-less
+form (`make bench`).
+
+## T-6 One view model builds every place on every change
+
+**Priority:** Medium (the main maintainability hotspot in the package)
+
+**Evidence**
+- `LibraryViewModel` has about 55 published properties in its class body and 16 extension files. `present()` is
+  one function that rebuilds all of them (views, settings of every view, projects, columns, plan, waiting,
+  day review, carry-over, calendar, tags, project review, tasks, completed sets) on every navigation click,
+  selection of a priority, toggle of "show completed", and every log reload, even when the Inbox is shown.
+- `state` is `@ObservationIgnored`, so views that read it directly get a hand-made `revision` counter to
+  refresh (used in a handful of places). This is an invalidation scheme that a new view can silently get wrong.
+- A second client (the iOS plan) would have to take all of this or fork it; the SwiftUI views in `App/` are
+  not in a shared target either.
+
+**Proposal:** after T-5's numbers, not before. Split along the places that already exist: Today and Review,
+Calendar, Tags, Project Review and the columns each get their own small observable that is filled only while
+that place is shown, over a shared read of the log. The container keeps navigation and selection. Start by
+making the Today, Review, Calendar and carry-over parts of `present()` lazy: that alone removes the most
+work and touches no behaviour. Acceptance tests stay as they are; they are the safety net.
+
+**Done when:** opening the Inbox computes nothing for Today, Calendar or Review (a view-model test counts
+the reducer calls), and the `revision` counter is gone or confined to one place.
+
+## T-7 The toolchain and dependencies are not pinned, so CI can break without a change in the repo
+
+**Priority:** Medium
+
+**Evidence**
+- No `Package.resolved` is committed (none in `git ls-files`), so Yams (`from: "5.1.3"`) floats within 5.x
+  on every CI run, and the Xcode build resolves it separately.
+- Both workflows choose "the newest stable Xcode" at run time on `macos-26`. `swift-format` has no pin in the
+  Makefile ("its version follows the toolchain") although `make lint` runs it `--strict`, so a runner update
+  can fail lint on code nobody touched. SwiftLint is pinned, but `make tools` downloads it with `curl` and
+  checks no checksum.
+- Actions are pinned to major tags (`actions/checkout@v4`, `upload-artifact@v4`), not commit SHAs, and the
+  release job has `contents: write` on the same workflow that runs on PRs touching the Makefile.
+- No Dependabot or similar, so the pins that do exist will go stale unnoticed. There is no build cache, so
+  every run resolves and builds from scratch.
+
+**Proposal:** commit `Package.resolved` (and the Xcode project's); a `.xcode-version` (or a workflow
+variable) that the workflow selects, bumped on purpose; check the SwiftLint zip against a SHA-256 in the
+Makefile; pin actions by SHA with comments; add `.github/dependabot.yml` for `github-actions` and
+`swift`; cache `.build` keyed on `Package.resolved`. Say in AGENTS.md how to bump each.
+
+**Done when:** a fresh CI run on an unchanged commit a month later is the same run, and a bump is one PR.
+
+## T-8 No fast Linux CI for the package, though the code is written for Linux and agents need it
+
+**Priority:** Medium (cost and feedback loop; it also makes the agent workflow honest)
+
+**Evidence**
+- The package sources already branch on `canImport(Glibc)`, `coverage-report.sh` handles a Linux
+  `llvm-cov`, and the target Swift modules need only Foundation, Observation and Yams.
+- AGENTS.md says remote agent sessions "may have no Swift toolchain" and to "use CI as the build". That
+  makes the macOS runner (the slowest, dearest one) the only compiler for agent work, with a full
+  `make check-ci` round trip per fix.
+- The single job runs lint, build, coverage and the app build in sequence, so a lint failure and a failing
+  test cost the same wait.
+
+**Proposal:** add an `ubuntu-latest` job (Swift container image of the pinned version) that runs
+`swift build` and `swift test` (the whole package suite); keep macOS for lint, the app and
+the release. Fix whatever Linux turns up (not yet tried; the file-attribute code in `FileChangeMonitor` and
+the `Bundle.module` fixture are the likeliest spots). Make it a required check in `infra/repository.tf`
+once it is green.
+
+**Done when:** package tests run on Linux on every PR and agents can reproduce a failure without macOS.
+
+## T-9 The "read first" set costs about 65k tokens before any work starts
+
+**Priority:** Medium (it taxes every agent session, and it grows with every PR)
+
+**Evidence** (bytes on disk): `AGENTS.md` 31.7 KB, `README.md` 16.7 KB, `docs/guide.md` 39.2 KB,
+`docs/plans/01-issues.md` 91.1 KB, the roadmap 66.7 KB, the other three plans 14 KB. AGENTS.md "Read First"
+lists `docs/plans/*.md`, which takes in the issues backlog and the roadmap.
+- About 13 KB of AGENTS.md is a prose Code map that repeats file names and doc comments already in the
+  tree, and the file demands it be kept current in every PR. It is the likeliest thing to drift.
+- The roadmap is mostly dated "Decisions" sections (from line 457 on, about 60% of the file): history, not
+  plan, but read as plan.
+- The issues backlog sits in `docs/plans/`, so by the Read First glob every new assessment makes every later
+  session more expensive.
+
+**Proposal:** AGENTS.md keeps the rules and a module-level map (a paragraph per module, no per-file list;
+`ls` and grep do the rest). Move the roadmap's Decisions to `docs/decisions/` and link it. Move the issue
+backlog out of `docs/plans/` (GitHub issues are the better home; or `docs/backlog/`), and change Read First
+to name files, not a glob. Keep the "Docs check" in the PR checklist, minus the code map line.
+
+**Done when:** the Read First set is under about 40 KB and no checklist item asks a PR to hand-maintain a
+per-file list.
+
+## T-10 The session-start hook in `.claude/settings.json` blocks unattended sessions
+
+**Priority:** Low
+
+**Evidence:** the `SessionStart` hook prints "Before any work, ask the user which git branch to work on. Do
+not use the session-start branch. Wait for the answer." Remote and project sessions have no one at the
+keyboard and are told the branch by the task, and AGENTS.md already says "Work on the branch the user
+specifies. If their prompt names one, use it without asking." The two instructions contradict each other
+and the hook wins by arriving later. The same file wires two "caveman" shell hooks (four scripts sit in `.claude/hooks/`) and `.claude/skills/`
+holds four caveman skills (about 11 KB) that have nothing to do with the app.
+
+**Proposal:** drop the branch hook (the AGENTS.md rule is enough and handles the prompt that names a
+branch). Decide whether the caveman tooling is wanted in this repo; if it is a personal preference, move it
+to user-level settings so it does not load for every contributor and agent.
+
+**Done when:** a session started with a task and a branch begins work without a question.
