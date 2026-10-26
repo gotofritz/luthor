@@ -971,3 +971,153 @@ an estimate; that is the price of the syntax and only worth a line in the guide.
 `swift-2.38.2-py3-none-any.whl` (OpenStack Swift, not the language), `eventlet`, `cryptography` and others were
 added by `c23826a feat(store)!: freeze event format (#63)`. They have nothing to do with the app, bloat every
 clone and can raise supply-chain alarms. `git rm` them and add `*.whl` to `.gitignore`.
+
+
+## Architecture and design quality (D-)
+
+Independent staff-engineer pass over the layering, the event-sourcing core, the store and sync design, and the
+view-model layer. The layering itself is sound and held to: the domain imports nothing, reducers are pure, the
+event format has a frozen golden log, and the Store and ViewModels depend only inwards. Only findings that would
+change what the app does, or how long it stays maintainable, are listed. The performance findings are read from
+the code, not measured: the remote session had no Swift toolchain.
+
+### D-1 Every action replays the whole log four or more times, on the main actor
+
+**Severity:** high (grows with every event the user ever writes). **Where:** `LibraryViewModel+Presenting.swift`
+`perform`/`show`, `Commands.swift` (`envelope`, and the `LibraryState.replay(log)` at the top of nearly every
+command), `App/Luthor/LibraryView.swift` `watchLog`.
+
+One user action does this: `log.readAll()` parses every line of every device file; the command calls
+`LibraryState.replay(log)` (sort plus apply of every event) once, and often more (`completeProject` replays twice,
+`capture` with `!a 15m` replays once per extra event with `log + events` array copies); `envelope()` scans the whole
+log for `max(lamport)` per event written; then `show()` replays everything again. All of it runs synchronously on
+`@MainActor`. Then the 1 s poll in `watchLog` sees the app's own append as an outside change and runs
+`reload()` (a fifth read and replay), then `present()` again.
+
+The view model already holds `state`, and `LibraryState.apply` already exists, so none of this is needed:
+commands only take `log:` because that was the signature in the first slice.
+
+Fix:
+1. Commands take `(state: LibraryState, nextLamport: UInt64)` instead of `log:`. One replay of the log at load
+   and on a real outside change.
+2. After a local append, `state.apply` the new events. This is correct without a replay because a local event
+   always carries the highest Lamport counter, so it sorts last. Only events that arrive from other devices
+   force a full replay, since they can sort anywhere.
+3. Re-baseline `FileChangeMonitor` after the app's own append so it does not reload on its own write.
+4. Later: read device files incrementally (remember a byte offset per file).
+5. Add a benchmark test over a synthetic log (for example 200k events) with a budget for one action. Today the
+   plan says "SQLite only once replay is slow" but nothing says what slow is, so nobody will notice the day it is.
+
+### D-2 `present()` rebuilds every place on every change; `view()` and `project()` copy and rescan
+
+**Severity:** medium. **Where:** `LibraryViewModel+Presenting.swift` `present()`, `LibraryState.view(_:)`,
+`ViewState.project(_:)`/`nextActions(of:)`, `LibraryState+Calendar.swift`, `Commands+Structure.swift` `demote`.
+
+`present()` recomputes the plan, the day review, carry-over, the calendar (426 `CalendarDay` values, each from a
+fresh `view()`), tags, the weekly review, and the per-view settings maps, whichever place the rail has open and
+whatever kind of change happened. `LibraryState.view(_:)` filters the whole library and rebuilds every `Project`
+with copies of its children for each call, and it is called from several places per refresh and from commands for
+a single lookup (`demote` builds a whole view to find one project). `ViewState.project(_:)` is a linear scan and
+`nextActions(of:)` calls it recursively, so next actions are quadratic in the number of projects.
+
+Fix: present only the place that is showing (compute the others when the rail switches to them), index projects
+by ID in `ViewState`, and give `LibraryState` a cheap `project(id)` for commands. Do this after D-1, which removes
+the larger cost.
+
+### D-3 One 80-property view model, with an `_ = revision` convention keeping it honest
+
+**Severity:** medium (maintainability, stale-UI risk). **Where:** `LibraryViewModel` and its 18 extension files.
+
+`LibraryViewModel` publishes about 80 properties and is split across files only to stay under SwiftLint's
+`type_body_length`/`file_length`, not along any seam: the calendar, the weekly review, tags, the day plan, cards,
+settings and storage are separate features sharing one class. `state` is `@ObservationIgnored`, so any view that
+reads domain data through a method (`dueDate(of:)`, repeat, tags, review) must remember to touch `revision`, and
+six places do so by hand. A new accessor that forgets it compiles, tests green in the view-model tests (which read
+fresh), and shows stale data in the app. The `revision` bump also invalidates every view that read it, on every
+event.
+
+Fix: split into one small `@Observable` presenter per place (Today, Calendar, Weekly Review, Tags, Settings, Cards)
+that each take the shared `LibraryState` and publish only their own output; make `LibraryState` observed through
+one `@Observable` box instead of a counter; keep `LibraryViewModel` for navigation and selection. Mechanical, can
+be done one place per PR, with the acceptance tests as the safety net. It also makes D-2's lazy presentation
+natural.
+
+### D-4 Compaction rewrites history on a protocol that can neither finish safely nor refuse safely
+
+**Severity:** medium to high (the only operation that deletes other devices' files). **Where:**
+`CompactionHandshake.swift` `waitingFor`, `StorageController.swift` `refreshCompaction`/`finishCompaction(force:)`,
+`LogCompactor.swift` `replace`.
+
+1. The handshake waits for every `events-*.jsonl` that exists in the folder. A device file never goes away on its
+   own, and a Mac gets a new file name when its host name changes or the app is reinstalled (the machine ID lives
+   in `UserDefaults`). Such a retired file never answers, so the compaction can never become ready.
+2. A Mac answers only from `refreshCompaction()`, which runs from the window's `watchLog` task. A Mac that is off,
+   asleep, or has the app closed does not answer either.
+3. The only exit from both is "Compact Anyway" (`force: true`), which skips the one safeguard. After it, the
+   snapshot's events are re-stamped above every older Lamport counter, so anything a stale Mac writes later with a
+   lower counter sorts before the snapshot and is ignored (an edit to a task whose capture now comes later) or
+   revives what the snapshot dropped (a deleted item, from an old file or a sync conflict copy, which
+   `isDeviceLog` deliberately reads). Dropbox will also delete the other devices' files on the Macs that did not
+   take part.
+4. This contradicts the event-sourcing rule "code never edits or deletes a written event"; compaction is a
+   breaking rewrite offered as an ordinary button.
+
+Fix, in order of preference:
+- Make compaction additive: a `LogCheckpoint` event (state as a snapshot, at a Lamport counter) that replay may
+  start from, ignoring events at or below it. Nothing is deleted, there is no handshake, and a stale Mac's events
+  still merge. Old files can be archived later by hand. It needs a new event type, so it has to be designed
+  before more devices exist.
+- If the rewrite stays: write an epoch marker in the folder and in each device file's first line; refuse to
+  append when the folder's epoch is newer than the file's; add a "forget device" action to drop retired files
+  from the wait list; and remove or hide "Compact Anyway".
+
+### D-5 A half-written line in the log is neither repaired nor survivable
+
+**Severity:** medium (data stays safe, the app does not). **Where:** `JSONLinesEventLog.swift` `append`
+(about line 293) and `readAll(skippingIncompleteTail:)`; `DeviceFilesEventLog.readAll`.
+
+`append` opens with `O_APPEND` and writes the batch, but never checks that the file ends in a newline. A crash,
+power loss or full disk mid-write leaves an unterminated last line in this Mac's own file (the reader only
+tolerates that for other devices' files, `name != ownFileName`). The next append then glues its first event onto
+the broken line, and the file has an unreadable line in the middle. `readAll` is all-or-nothing, so from then on
+nothing loads: `perform` fails at `readAll`, so the user cannot even capture a task, and the only message is
+"Line N of the event log is not a readable event". No test covers append after a torn tail
+(`IncompleteTailTests` covers reading only).
+
+Fix: in `append`, if the file is non-empty and its last byte is not `\n`, write `\n` first, so a torn line stays on
+its own line; and let `readAll` return the readable events together with a list of damaged lines (never silently
+drop them: show a banner with the line numbers and the file) for every file, own included, keeping the strict
+error for a damaged line only in tests and for the compactor. Start with a test that appends after a torn tail.
+
+### D-6 A new event type can compile and still make the whole log unreadable
+
+**Severity:** low. **Where:** `JSONLinesEventLog.swift` (`EventLineDTO.EventType`, `init(from:)`, `laterPayload`
+with its `default: throw`, `encode`) and `Events.swift` `EventPayload`, `LibraryState.apply`.
+
+Adding one event type means editing six places: the payload enum, the `EventType` enum, the decode switch, the
+`laterPayload` list, the encode switch, and `apply`. `laterPayload` was split off to dodge SwiftLint's
+`function_body_length`, and its `default: throw` removes the compiler's exhaustiveness check for the events in
+it. A type added to `EventType` and to the `init` list but forgotten in `laterPayload` builds, and a log
+containing it fails to decode entirely (see D-5 for what that costs the user). The golden-log test would catch it
+only if the fixture line was added, which the rules require but nothing enforces at compile time.
+
+Fix: one `EventPayloadCodable` protocol per payload with a static type name, and a single registry table built
+from the cases (`[String: (KeyedDecodingContainer) throws -> EventPayload]`), so decode, encode and
+`knownTypes` come from one list, with a test that every `EventPayload` case is in it. Low urgency; do it before the
+next batch of event types, not for its own sake.
+
+### D-7 Architecture docs do not describe the sync design that shipped
+
+**Severity:** low. **Where:** `AGENTS.md` (Architecture, boundaries table, Tooling), `docs/plans/20260512_initial_plan.md`.
+
+`AGENTS.md` still says the app "syncs through the Dropbox API", lists a "Sync: transport adapter" layer and
+SQLite/GRDB projections in the layers and boundaries table, and names GRDB under Tooling, although none of those
+exist (the code map says so a few lines below). What exists is a different design: one `events-<device>.jsonl` per
+device in a folder the Dropbox app syncs, a file-based compaction handshake, a chosen `LogStorage`, and a YAML
+text export. None of that is in the architecture plan, which `AGENTS.md` requires to be updated before such
+changes merge. An agent or a new contributor following the boundaries table would add a `Sync` module and a
+GRDB dependency that nobody intends.
+
+Fix: rewrite the layer diagram and boundaries table to the shipped design (Store holds the log, device files and
+compaction; sync is the folder), move "Dropbox API adapter" and "SQLite projections" to a clearly marked "if
+needed" section with the trigger from D-1's benchmark, and add a short "Sync and compaction" section to the plan.
