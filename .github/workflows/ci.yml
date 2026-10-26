@@ -13,6 +13,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  linux:
+    name: make test-linux
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test the package
+        run: make test-linux
+
   check:
     name: make check-ci
     runs-on: macos-26
