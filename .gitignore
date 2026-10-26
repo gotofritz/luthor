@@ -28,3 +28,6 @@ infra/.terraform.lock.hcl
 !Tests/LuthorStoreTests/Fixtures/golden-log.jsonl
 .tools/
 .env
+
+# Python wheels (not part of this project; 16 were committed by mistake in #63)
+*.whl
