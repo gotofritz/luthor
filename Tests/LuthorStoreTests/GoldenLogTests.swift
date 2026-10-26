@@ -58,6 +58,8 @@ struct GoldenLogTests {
     let lines = try GoldenLogFixture.lines + [future]
     let read = try lines.compactMap { try EventLine.decodeIfKnown($0) }
 
-    #expect(LibraryState.replay(read) == LibraryState.replay(try events()))
+    let known = try events()
+
+    #expect(LibraryState.replay(read) == LibraryState.replay(known))
   }
 }
