@@ -46,7 +46,12 @@ public struct CompactionHandshake: Sendable {
     let names = try fileNames()
     var requests: [CompactionRequest] = []
     for name in names where name.hasPrefix("compaction-") && name.hasSuffix("-request.json") {
-      if let request = try read(CompactionRequest.self, named: name) { requests.append(request) }
+      // The id goes into the names of the files that answer it, so only a plain one, matching its own file, counts.
+      if let request = try read(CompactionRequest.self, named: name), Self.isValid(id: request.id),
+        name == Self.name(request.id, "request")
+      {
+        requests.append(request)
+      }
     }
     for request in requests.sorted(by: { $0.id < $1.id }) {
       let closed = names.contains(Self.name(request.id, "done")) || names.contains(Self.name(request.id, "cancel"))
@@ -55,14 +60,21 @@ public struct CompactionHandshake: Sendable {
     return nil
   }
 
-  /// A request whose time cannot be read never runs out, as it cannot be told how old it is.
+  /// A request whose time cannot be read, or lies further ahead than a clock may be out, is given up at once:
+  /// it cannot be told how old it is, and must not pause the Macs for good.
   private func isExpired(_ request: CompactionRequest) -> Bool {
-    guard let asked = ISO8601DateFormatter().date(from: request.requestedAt) else { return false }
-    return now().timeIntervalSince(asked) > Self.lifetime
+    guard let asked = ISO8601DateFormatter().date(from: request.requestedAt) else { return true }
+    return abs(now().timeIntervalSince(asked)) > Self.lifetime
+  }
+
+  /// Whether `id` is safe to put in a file name: 1 to 64 letters, digits or hyphens.
+  public static func isValid(id: String) -> Bool {
+    (1...64).contains(id.utf8.count) && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
   }
 
   /// Asks every device to stop writing; this device has stopped. Refused while a request is open.
   public func request(id: String, at time: String) throws(EventLogError) -> CompactionRequest {
+    guard Self.isValid(id: id) else { throw .ioFailure("\"\(id)\" is not a valid compaction id.") }
     if try openRequest() != nil { throw .ioFailure("Another compaction is already under way.") }
     let request = CompactionRequest(id: id, device: token, requestedAt: time)
     try write(request, named: Self.name(id, "request"))

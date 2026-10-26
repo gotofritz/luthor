@@ -164,6 +164,8 @@ Sources/
     LibraryState+Calendar.swift  pure functions calendar(for:from:days:) → CalendarDay (planned and due
                              counts per day, the item that carries a date being the one marked) and calendarEntries(for:on:today:) →
                              CalendarEntry (a day's tasks and projects)
+    LibraryState+History.swift  EventPayload.isBeyondExport (plan and review events an export cannot hold, carried
+                             over by Compact Log) and the check that a rewritten log kept them
     LibraryState+Review.swift  daily review: logged time, reviewed days; pure functions dayReview(for:on:today:) →
                              DayReview (done, not done, minutes), carryOver(in:today:) (leftovers of earlier
                              days), estimateHistory(ofTask:/ofProject:)
@@ -195,9 +197,10 @@ Sources/
                              type are skipped on read and stay in the file
     LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
     LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds
-                             the log from the library (export, then import), checks it, swaps it in
+                             the log from the library (export, then import) and carries over the plan and review events, checks it, refuses
+                             a log with events of a newer build or a file that changed meanwhile, swaps it in
     CompactionHandshake.swift  request/answer/done files in the shared folder so every Mac stops writing before a
-                             compaction; PausableEventLog refuses appends while this Mac has stopped
+                             compaction (ids checked, unreadable or far-off times expire); PausableEventLog refuses appends while this Mac has stopped
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),

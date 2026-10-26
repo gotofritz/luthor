@@ -97,4 +97,71 @@ struct LogCompactorTests {
     #expect(try String(contentsOf: dir.file("events.jsonl"), encoding: .utf8) == "garbage\n")
     #expect(!FileManager.default.fileExists(atPath: dir.file("backups").path))
   }
+
+  @Test("the plan of the days and the daily review are kept")
+  func thePlanAndTheReviewAreKept() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let config = configuration(logAt: dir.file("events.jsonl"))
+    try config.makeEventLog().append(
+      manyEdits + [
+        planOrdered(["t1"], on: "2026-10-20", id: "e6", lamport: 6),
+        dayCapacitySet(120, on: "2026-10-20", id: "e7", lamport: 7),
+        dayHoursSet(540, 1020, on: "2026-10-20", id: "e8", lamport: 8),
+        timeLogged("t1", on: "2026-10-19", minutes: 30, id: "e9", lamport: 9),
+        dayReviewed(on: "2026-10-19", note: "good day", id: "e10", lamport: 10),
+      ])
+    let before = LibraryState.replay(try config.makeEventLog().readAll())
+
+    try LogCompactor.compact(configuration: config, ids: SequentialIDs(), stamp: "s")
+
+    let after = LibraryState.replay(try config.makeEventLog().readAll())
+    #expect(before.firstDifferenceInPlanAndReview(from: after) == nil)
+    #expect(before.export() == after.export())
+    let kept = try config.makeEventLog().readAll().filter(\.payload.isBeyondExport)
+    #expect(kept.count == 5)
+  }
+
+  @Test("a log with events of a type this build does not know is refused and left as it is")
+  func aNewerBuildsEventsAreNotDeleted() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let config = configuration(logAt: dir.file("events.jsonl"))
+    try config.makeEventLog().append(manyEdits)
+    let newer = #"{"data":{},"device":"mac","id":"n1","lamport":9,"type":"TaskTeleported"}"# + "\n"
+    let handle = try FileHandle(forWritingTo: dir.file("events.jsonl"))
+    try handle.seekToEnd()
+    try handle.write(contentsOf: Data(newer.utf8))
+    try handle.close()
+    let original = try String(contentsOf: dir.file("events.jsonl"), encoding: .utf8)
+
+    #expect(throws: EventLogError.self) {
+      try LogCompactor.compact(configuration: config, ids: SequentialIDs(), stamp: "s")
+    }
+    #expect(try String(contentsOf: dir.file("events.jsonl"), encoding: .utf8) == original)
+    #expect(!FileManager.default.fileExists(atPath: dir.file("backups").path))
+  }
+
+  @Test("a device's file that grew since it was read is not deleted")
+  func aFileThatGrewIsKept() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let config = LuthorConfiguration(
+      environment: ["LUTHOR_SYNC_DIR": dir.url.path, "LUTHOR_DEVICE_ID": "mac"], home: dir.url)
+    let other = DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID("phone"))
+    try other.append([captured("t2", "call mum", id: "p1", device: "phone", lamport: 1)])
+    try config.makeEventLog().append(manyEdits)
+
+    #expect(throws: EventLogError.self) {
+      try LogCompactor.compact(configuration: config, ids: SequentialIDs(), stamp: "s") {
+        try other.append([captured("t3", "late", id: "p2", device: "phone", lamport: 2)])
+      }
+    }
+
+    let phone = try String(contentsOf: dir.file("events-phone.jsonl"), encoding: .utf8)
+    #expect(phone.contains("late"))
+    let mac = try config.makeEventLog().readAll()
+    #expect(mac.count >= 5)
+  }
 }
+

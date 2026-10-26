@@ -271,7 +271,7 @@ struct CompactLogTests {
     let home = try TemporaryDirectory()
     defer { home.remove() }
     let mac = CompactionHandshake(directory: home.url, deviceID: DeviceID("mac"))
-    _ = try mac.request(id: "r0", at: "t")
+    _ = try mac.request(id: "r0", at: ISO8601DateFormatter().string(from: Date()))
     let laptop = controller(home, shared: "laptop")
     laptop.refreshCompaction()
     #expect(laptop.compactionProgress == .pausedForOther(mac.token))
