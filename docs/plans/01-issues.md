@@ -2078,3 +2078,33 @@ prefix. Overlap with other assessments is expected and will be merged later.
   a `pull_request_template.md` with the docs-check items as a checklist. Wrap prose at about 80 columns, as
   `AGENTS.md` does, so diffs are line-based.
 - **Impact:** medium. It lowers the cost of every future feature PR and the first-hour cost for a newcomer.
+
+### X-6: No LICENSE file
+
+- **Where:** repo root (none), `README.md`
+- **Problem:** Without a licence, the code is all rights reserved by default. The repo is private and has one user,
+  so this costs nothing today. It becomes a blocker if the repo is ever made public, shared with a collaborator, or
+  built on by a fork or a future iOS contributor, because nobody else may legally use or change the code. The
+  author's intent (personal project, open source, or source-available) is not written down anywhere.
+- **Suggested fix:** decide the intent, then add a `LICENSE` (for example MIT or Apache-2.0 for open source) or a
+  one-line "all rights reserved, private project" note in the README. Check that Yams (MIT) and the vendored
+  `.claude/` tooling (see X-4) are compatible with the choice.
+- **Impact:** low now, high if the repo is ever shared. Cheap to do, and the decision is the author's.
+
+### X-7: No CONTRIBUTING guide for people (as opposed to agents)
+
+- **Where:** repo root (none), `AGENTS.md`, `README.md` "Development"
+- **Problem:** Everything a contributor needs is in `AGENTS.md`, which is written for agents. It runs to about 525
+  lines, opens with architecture rules, and its code map is long. It holds the rules that decide whether a PR is
+  accepted: mandatory TDD with a failing test first, acceptance tests per slice, the frozen event format and
+  golden log, 90% coverage, Conventional Commit PR titles of 50 characters or fewer, one PR per area, rebase and
+  `--force-with-lease` rather than merge, the docs check, archiving plans. A human newcomer has no short route in
+  ("clone, `make tools hooks`, pick a roadmap slice, write the acceptance test, open a PR") and no list of what
+  CI will check or how to fix each failure. The README's Development section does not point to any of it, and
+  GitHub shows no contributing link.
+- **Suggested fix:** add a short `CONTRIBUTING.md` (about 40 lines) that gives the first-hour path, links to
+  `AGENTS.md` for the rules instead of copying them, lists the CI checks and what to run locally for each, and says
+  how to find a good first slice in the roadmap. Link it from the README. Keep rules in one place to avoid the
+  duplication described in X-5.
+- **Impact:** low-medium. It matters mostly if other people ever contribute, and it also helps the author's own
+  fresh start after a long break.
