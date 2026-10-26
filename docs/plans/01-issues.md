@@ -1121,3 +1121,130 @@ GRDB dependency that nobody intends.
 Fix: rewrite the layer diagram and boundaries table to the shipped design (Store holds the log, device files and
 compaction; sync is the folder), move "Dropbox API adapter" and "SQLite projections" to a clearly marked "if
 needed" section with the trigger from D-1's benchmark, and add a short "Sync and compaction" section to the plan.
+
+## Agent-readiness assessment (independent evaluator, 2026-10-26)
+
+Scope: how well can an AI coding agent, in a fresh remote session, understand
+this repo, change it test-first and get a green PR without a human in the loop?
+Read: `AGENTS.md`, `CLAUDE.md`, `.claude/` (settings, hooks, skills), the
+`Makefile`, `.githooks/`, `.github/workflows/`, `scripts/`, `Package.swift`,
+the code map against the tree, and the last 20 CI runs. No Swift toolchain was
+available in the session, so nothing was built or run.
+
+Already good, leave alone: `AGENTS.md` is specific and its code map matches the
+tree exactly (every file named in the map exists and every `Sources/` file is
+in the map); one entry point (`make check-ci`) is the same locally and in CI;
+TDD, the acceptance-test rule and the event-format freeze are written as
+checkable rules, and the golden log and the 90% coverage gate enforce part of
+them; Conventional Commit and PR-title checks run in CI; the domain and store
+sources import only `Foundation` (plus `Glibc` guards) and the domain has no
+`Date()`, `UUID()` or `SwiftUI`.
+
+### G-1. Agents cannot run the build, tests or formatter, so CI is their compiler (High)
+
+Evidence: `AGENTS.md` says remote sessions "may have no Swift toolchain" and
+tells them to push and use CI as the build. This session confirms it: no
+`swift`, `swiftlint` or `xcodebuild`. CI is a single `macos-26` job of about
+three to five minutes. Of the 20 most recent runs, 5 on
+`feature/today-urgency-rank` failed (runs 309, 314, 315, 317, 322), among them
+commits titled "style(domain): wrap long lines" and "style(domain): lay out
+the sessions of a day in two steps", and run 317 failed after three seconds,
+which is a format or lint failure an agent would have caught in one second with
+`swift format lint`. `make tools` downloads SwiftLint's macOS portable build,
+so it fails on Linux. `.githooks/` only work after `make hooks`, which a fresh
+clone has not run, and the hooks would fail on a machine without SwiftLint, so
+an agent's commits skip the format check and the Conventional Commit check
+until CI.
+
+Fix: (1) measure first whether `LuthorDomain`, `LuthorStore`,
+`LuthorViewModels` and the four test targets build and pass under `swift test`
+on Linux (the `Glibc` guards suggest they nearly do; check `Observation` and
+Yams); (2) if they do, add an `ubuntu-latest` job that runs `swift test` and
+`swift format lint --strict`, as a fast second signal, with macOS staying the
+gate for the app; (3) make `make tools` pick the SwiftLint build by `uname`;
+(4) give agents a way to get the toolchain in a cloud session (a SessionStart
+hook or setup script that installs a pinned Swift toolchain, with the network
+allowance this needs documented in `AGENTS.md`), and have it run `make hooks`.
+Overlaps A-7; this item is the agent side of it.
+
+Done when: in a fresh remote session, `make test-unit`, `make lint` and
+`make hooks` work with no manual steps, a style error is rejected at commit
+time, and the same checks run on Linux in CI.
+
+### G-2. The SessionStart hook contradicts the branch rules and stalls unattended agents (High)
+
+Evidence: `.claude/settings.json` runs, on every session start, `echo 'IMPORTANT:
+Before any work, ask the user which git branch to work on. Do not use the
+session-start branch. Wait for the answer, then checkout that branch.'`.
+`AGENTS.md` says the opposite: "Work on the branch the user specifies. If their
+prompt names one, use it without asking", and checking for an open PR first.
+The project instructions for this project say to cut a `feature/<name>` branch
+without asking. An agent that follows the hook stops and waits in a session
+nobody is watching; an agent that follows `AGENTS.md` breaks the "IMPORTANT"
+instruction it was handed. Both outcomes are bad, and the order of precedence
+is a guess.
+
+Fix: delete the echo, or replace it with one line that restates the
+`AGENTS.md` rule (branch named in the prompt, else `feature/<name>` or
+`fix/<name>` from `main`, reuse the branch of an open PR on the same area).
+One source of truth: the rule lives in `AGENTS.md`, the hook may only point to
+it.
+
+Done when: `.claude/settings.json` contains no instruction that conflicts with
+`AGENTS.md`, and a session started with a prompt that names a branch begins
+work without asking.
+
+### G-3. The architecture rules that agents break silently have no automated check (Medium)
+
+Evidence: `AGENTS.md` states hard boundaries ("the domain never imports GRDB,
+SwiftUI or Dropbox", "reducers are pure: no `Date()`, `UUID()`, randomness",
+"no `try?` in the store or sync layers"). Today the sources obey them, but
+nothing checks it. SwiftPM target dependencies do not stop `import SwiftUI` or
+`import AppKit` in `LuthorDomain`, because system frameworks need no
+declaration, so it compiles on macOS. A reviewer-less agent that takes the
+shortest path (`Date()` in a reducer, `UUID()` in a command) gets a green CI.
+The lint config covers force unwraps but not these.
+
+Fix: a small `scripts/check-boundaries.sh`, run from `make test` and
+`make check-ci` and tested like the other scripts in `scripts/` with a
+`test-check-boundaries.sh` table test. It fails on: any import in
+`Sources/LuthorDomain` other than `Foundation`; `Date()`, `UUID()`,
+`Calendar.current`, `TimeZone.current` or `.random` in `Sources/LuthorDomain`;
+`try?` in `Sources/LuthorStore`; any import of `SwiftUI` or `AppKit` in
+`Sources/`. Each failure message names the rule in `AGENTS.md`. Start with the
+rules that hold today so the check is green on day one.
+
+Done when: adding any of the above to the named folders fails `make test`
+with a message that points at the rule.
+
+### G-4. "Read First" sends every agent through about 200 KB of documents (Low)
+
+Evidence: `AGENTS.md` (32 KB, imported by `CLAUDE.md`) lists five documents
+under "Read First". `docs/plans/20261016_incremental_roadmap.md` alone is 67 KB
+and 1,138 lines; the 24 finished slices and roughly 700 lines of dated
+"Decisions" sections are history, not instructions. `docs/guide.md` is 655
+lines. An agent with a bounded context either reads all of it before its first
+test or skips the list and misses a decision that is binding.
+
+Fix: replace the flat list with "read when" lines (README always; roadmap only
+the slice being built and the Decisions section for the area touched; guide
+only when behaviour a user sees changes; the alpen and initial plans only for
+product or architecture questions). Move the dated Decisions sections of
+finished slices into `docs/archive/` or a `docs/decisions.md` that `AGENTS.md`
+links, so the roadmap shows only what is open.
+
+Done when: `AGENTS.md` says which document to open for which kind of task, and
+the roadmap is under about 300 lines of open work.
+
+### G-5. No pull request template for the checks `AGENTS.md` demands (Low)
+
+Evidence: `AGENTS.md` requires every PR to state that the docs check was done
+(README, guide, roadmap, code map, commands), to reference issues with
+`Closes #N`, and, for a log migration, to note it in the body. There is no
+`.github/pull_request_template.md`, so the list exists only in `AGENTS.md`
+prose, and agents and tools that look for a template find none.
+
+Fix: add a short `.github/pull_request_template.md` with a Summary section, the
+docs-check checklist and a "Event format / log migration" line.
+
+Done when: a new PR opens with the template and the docs-check boxes.
