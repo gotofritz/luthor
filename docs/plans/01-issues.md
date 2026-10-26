@@ -796,3 +796,178 @@ is not mentioned in it. No generation, just a guard; the prose stays hand-writte
   protocol; revisit only if Dropbox API sync (slice 17) proves painful.
 - Splitting `LibraryState` into more types: the extension-per-concern layout is working; the file-length
   pressure is cosmetic.
+
+
+## Day-to-day correctness review (C-)
+
+Independent code review, 2026-10-26, of what the user meets in daily use: capture, planning, repeats, the day
+rolling over, the event log on disk, sync and compaction. Read-only review: no Swift toolchain in the session,
+so nothing below was run; each item cites the code it rests on and says how a test would show it. Severity is
+about harm to the user's data or plan, not effort. Items are ordered by severity.
+
+### C-1 Compact Log silently drops the plan for today and the days ahead (High)
+
+`LogCompactor` rebuilds the log from `LibraryState.export()` and `importLibrary`, and "checks it holds the same
+library" by comparing two exports (`LogCompactor.swift:37`). The export has no place for task start times
+(`TaskStartSet`), sessions, blocks of untracked time (lunch), per-day hours or capacity, or the manual plan
+order (`LibraryExport.swift`, `Commands+Import.swift`). So after a compaction tomorrow's carefully laid-out day
+is a flat list again, and the check cannot notice, because it only compares what the export can hold.
+`docs/guide.md:612-619` says only "time logged and the days you reviewed are dropped"; the loss of future
+plan state is not mentioned anywhere. The backup folder keeps the old files, but nothing tells the user to go
+back to it.
+
+Fix: export and import the forward-looking plan (days from today on: starts, sessions, blocks, day hours,
+day capacity, manual order), or at minimum say what is lost in the guide and in the confirmation text, and make
+the post-compaction check compare the replayed plan of the next N days too. Test first: a log with a block, a
+session, a start time and a day-hours override on tomorrow; compact; assert `plan(for:on:)` for tomorrow is
+unchanged.
+
+### C-2 A torn write can leave the log permanently unreadable (High)
+
+`JSONLinesEventLog.append` (`JSONLinesEventLog.swift:293-313`) does one `write` and throws on a short write, but
+the bytes already written stay in the file, and it never checks that the file ends in a newline before
+appending. After a crash, power loss or full disk mid-write, the file ends in a partial line; the next append
+glues a good line onto it, producing a bad line in the middle. `readAll` then throws `unreadableLine(n)` for the
+own file (`skippingIncompleteTail` is false for it, line 51 of `DeviceFilesEventLog.swift`), and other Macs
+that read this file hit the same error once the glued line is no longer the tail. Every action starts with
+`readAll` (`LibraryViewModel+Presenting.swift:21`), so the app is stuck on an error banner with no repair path.
+This is the one case where "never losing user data" is at real risk, because nothing offers a way back.
+
+Fix: in `append`, loop until all bytes are written; before appending, look at the last byte of the file and, if
+it is not a newline, start the batch with one (or truncate the torn tail on open for the own file); `fsync`
+before returning. Consider a "quarantine unreadable lines and carry on" mode for the own file that keeps the
+line in the file and reports it, since the alternative today is an unusable app. Test first: a log whose last
+line is cut in half; append; read; assert the earlier events are all still there and the new one too.
+
+### C-3 "Day changes at" is a setting that nothing reads for "today" (Medium)
+
+`Settings.dayChangesAt` (default 04:00, up to 06:00) is documented as "when one day turns into the next"
+(`docs/guide.md:62`) and lets a day run past midnight (`DayHours.latest`, `dayLimit`). But "today" is plain
+calendar midnight (`CalendarDate.systemToday()`, `LibraryViewModel+Today.swift:6-13`) and `minutesSinceMidnight()`
+(`ClockText.swift:4`) is 0-1439. Effects, with the default setting, between 00:00 and 04:00:
+- tasks planned for the evening before become Left over, because `carryOver` compares with the new calendar
+  date, and Today shows the new, empty day;
+- a task started at 23:00 can no longer be stopped: `runningStart` needs `planDate == today`
+  (`LibraryViewModel+Running.swift:13`), and `startNow` does nothing for the same reason (line 20);
+- the "now" line and `notBefore` use minutes 0-1439, so they can never reach the 24:00-28:00 part of the grid
+  that `dayLimit` allows.
+
+Fix: make the default clock `today = date(of: now - dayChangesAt)` and `minuteOfDay` the minutes since that
+day's midnight (so 01:30 is 25:30). The inputs are already injected (`today:`, `now:` in
+`LibraryViewModel.init`), so this is testable with fixed clocks. Test first: view model with `dayChangesAt` 04:00
+and a clock at 01:30 on the 12th; assert `today` is the 11th and `minuteOfDay` is 1530.
+
+### C-4 An app left open overnight shows yesterday until something is clicked (Medium)
+
+`LibraryViewModel` sets `planDate` once in `init` (`LibraryViewModel.swift:149-155`) and `today = clock()` only
+inside `present()` (`LibraryViewModel+Presenting.swift:79`). `present()` runs on user actions and when the log
+file changes; nothing runs at midnight. The 30-second `TimelineView` in `DayCalendarView.swift:266` redraws the
+now line but does not refresh the model. So after a night with the Mac asleep or the window open, Today still
+shows yesterday's date as the day being planned, Left over is missing until the first action, and even after
+the first action `planDate` stays on yesterday (it is never moved forward, so the header shows a past day with
+"back to today").
+
+Fix: refresh on a day change (a periodic tick that compares `clock()` with `today`, plus the system day-change
+and wake notifications), and when `planDate == oldToday` move `planDate` to the new today. Test first: fixed
+clock moved past midnight, call the refresh, assert `today`, `planDate` and `carryOver`.
+
+### C-5 The device ID is built from the host name, which is not stable on a Mac (Medium)
+
+In a shared folder the device ID is `<gethostname()>-<first 8 of machine ID>` (`LuthorConfiguration.swift:37-46,
+81-86`). On macOS `gethostname()` follows the network (DHCP, `.local` suffixes, "-2" suffixes) unless the user
+fixed the HostName, so one Mac can write `events-<name-a>-<id>.jsonl` at home and `events-<name-b>-<id>.jsonl`
+at the office. Nothing is lost (all device files are read), but: every old name stays behind as a device file
+forever, and `CompactionHandshake.waitingFor` (`CompactionHandshake.swift:86-97`) waits for an answer from each
+one, so after a few host-name changes Compact Log waits on devices that no longer exist until the user forces it,
+and forcing carries the "may be partly overridden" warning. Likely, not confirmed on hardware.
+
+Fix: make the device ID depend only on the saved machine ID (keep the host name only as a label), and keep the
+ID already in use on machines that have written files (store the first computed ID next to `machineID`). Also let
+the handshake ignore device files that have not been written to for a long time, or let the user dismiss a
+retired device. Test first: two configurations with the same machine ID and different host names give the same
+device ID.
+
+### C-6 Compaction by an older build deletes events it cannot read (Medium)
+
+The rule in `AGENTS.md` is that a build skips an event type it does not know and leaves its line in the log.
+`LogCompactor.compact` reads with `readAll()`, which skips those lines (`JSONLinesEventLog.swift:282`), rebuilds
+the log from the reduced state, and then replaces this device's file and deletes every other device's file
+(`LogCompactor.swift:27, 98-100`). With an iOS build or a second Mac on a newer version, an older Mac compacting
+destroys the newer events from the log (only the backup keeps them). Mixed versions are exactly the situation the
+skip rule exists for.
+
+Fix: have the reader report how many lines it skipped and make `compact` refuse (with a message that says to
+update this Mac) when it is not zero. Test first: a log with one line of an unknown type; compact throws and the
+files are unchanged.
+
+### C-7 A failed command makes the card close and throws the user's edits away without a word (Medium-low)
+
+`perform` swallows every `CommandError` on purpose ("nothing the user needs to fix",
+`LibraryViewModel+Presenting.swift:28-34`) and clears `errorMessage`. `saveCard` then closes the card when
+`errorMessage == nil` (`LibraryViewModel+Cards.swift:28-32, 53-67`). The card's save is one chain of commands,
+the first of which throws if the item is no longer open. So if the task was completed or deleted on another Mac
+(or from the weekly review) while its card was open, OK closes the card and every typed field is lost with no
+message. Same for the project card.
+
+Fix: have `perform` report whether a command threw (return a result, not `[]`), and keep the card open with a
+message ("This task changed on another Mac") when it did. Test first: open a card, complete the task from
+another log writer, save; assert `editingCard` is still set and `errorMessage` is non-nil.
+
+### C-8 Every action re-reads and re-replays the whole log several times (Medium, measure first)
+
+One action does: `readAll` of every device file and a JSON decode of every line; the command, which calls
+`LibraryState.replay(log)` once or more (sort plus apply of every event; `complete`, `capture` with tags and
+`keepPushed` do several, each on `log + events`); `show(current + events)`, which replays again; and `present()`,
+which builds the plan, calendar, tags, review and project review. `envelope()` also scans the whole log for the
+maximum Lamport counter per event (`Commands.swift:329`). Writing then changes the file, so the 1-second monitor
+(`LibraryView.swift:160-170`) reloads and does all the read, decode and replay a second time. The log only
+grows, and speed of capture is a stated goal. Nothing is known to be slow yet; this is about knowing when.
+
+Fix, in order: add a benchmark test with a synthetic log (for example 100k events) and a budget for "capture a
+task"; skip the monitor reload for our own write (remember the file signature after `append`); let `perform`
+hand the replayed state to the command instead of replaying again; keep the highest Lamport counter in the view
+model. Only then think about the projection.
+
+### C-9 Splitting a repeating task and deferring the rest creates a second series (Low)
+
+`splitTask(... deferring: true)` copies the task with `duplicate` (`LibraryViewModel+Split.swift:40-48`), and
+`copyTask`/`makeCopy` copies the repeat rule (`LibraryState+Structure.swift:43`). The deferred rest then repeats
+too, so completing both makes two `TaskRecurred` chains (different IDs, `TaskID.recurring(after:)`). Plain
+Duplicate may want that; the deferred remainder of a split does not.
+
+Fix: stop the repeat on the copy in the split path (a `TaskRepeatSet` with `nil` after the duplicate, in the same
+`perform`). Test first: split a repeating task with defer, complete both, count open tasks.
+
+### C-10 Closed enums in event payloads can make a newer log unreadable to an older build (Low, decide before the freeze)
+
+The rule is that an older build opens a newer log by skipping unknown event types. That works for a new event
+type, but not for a new value inside an existing event: `ProjectKind`, `Priority`, `RepeatRule.Unit` and
+`Weekday` are closed enums decoded strictly, so a newer build that adds a case makes an older build fail the
+whole line with `unreadableLine`, and the app is stuck (see C-2). `SettingChanged` is the good example: it
+carries its key as a string and ignores unknown ones.
+
+Fix: decode these leniently, so that an event with a value the build does not know is skipped like an unknown
+type (leaving the line in the file), and add the case to the golden-log tests. Test first: a line with
+`"kind":"someFutureKind"`.
+
+### C-11 "Today" is read from the user's calendar, which need not be Gregorian (Low)
+
+`CalendarDate.systemToday()` uses `Calendar.current` (`LibraryViewModel+Today.swift:6-13`). With a Buddhist or
+Japanese calendar in System Settings → Region, `dateComponents` returns that calendar's year (2569, or 8), and
+the domain, which is Gregorian, reads it as a date in year 2569 or year 8. Plans, due dates and leftovers then
+compare against a date far from the real one. The same goes for `minutesSinceMidnight()`. One-line fix:
+`Calendar(identifier: .gregorian)` with the current time zone. Test first: not possible without an injectable
+calendar; pass the calendar into the function and test with a Buddhist one.
+
+### C-12 Quick capture: `15M` is not an estimate, as documented (Low)
+
+`QuickCapture.parse` is documented as "in any order and case", and priorities are, but `minutes` needs a lower
+case `m` (`QuickCapture.swift:54`), so `call bank 15M` keeps `15M` in the title. Fix: compare case-insensitively.
+Test first: `"call bank 15M"` gives estimate 15. (The word `5m` in a title such as "buy 5m cable" is also taken as
+an estimate; that is the price of the syntax and only worth a line in the guide.)
+
+### C-13 Housekeeping: 16 Python wheels (13 MB) are committed in the repository root (Low)
+
+`swift-2.38.2-py3-none-any.whl` (OpenStack Swift, not the language), `eventlet`, `cryptography` and others were
+added by `c23826a feat(store)!: freeze event format (#63)`. They have nothing to do with the app, bloat every
+clone and can raise supply-chain alarms. `git rm` them and add `*.whl` to `.gitignore`.
