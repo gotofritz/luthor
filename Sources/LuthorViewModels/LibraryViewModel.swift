@@ -235,26 +235,6 @@ public final class LibraryViewModel {
     }
   }
 
-  /// A sentence for the window when some lines of the log are unreadable, naming the first; `nil` otherwise.
-  public var logProblemsMessage: String? {
-    guard let first = logProblems.first else { return nil }
-    let count = logProblems.count == 1 ? "1 line" : "\(logProblems.count) lines"
-    return "\(count) of the event log could not be read and were left out, "
-      + "starting with line \(first.line) of \(first.file)."
-  }
-
-  /// Moves this device's unreadable lines into a `.rejected` file beside the log, then reloads. Another
-  /// device's damaged file stays as it is, to be repaired there.
-  public func repairLog() {
-    do {
-      _ = try log.quarantineUnreadableLines()
-    } catch {
-      errorMessage = Self.describe(error)
-      return
-    }
-    reload()
-  }
-
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
   public func submit() {
     addTask(titled: draft, to: captureProjectID)
