@@ -326,6 +326,6 @@ public struct Commands {
   }
 
   func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
-    EventEnvelope(id: id, deviceID: deviceID, lamport: (log.map(\.lamport).max() ?? 0) + 1, payload: payload)
+    EventEnvelope(id: id, deviceID: deviceID, lamport: log.reduce(0) { max($0, $1.lamport) } + 1, payload: payload)
   }
 }

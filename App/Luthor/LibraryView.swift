@@ -14,6 +14,7 @@ struct LibraryView: View {
   @FocusState private var captureFocused: Bool
   @Environment(\.theme) private var theme
   @Environment(StorageController.self) private var storage
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     HStack(spacing: 0) {
@@ -62,7 +63,9 @@ struct LibraryView: View {
     .onChange(of: library.tasks) { captureFocused = true }
     .onChange(of: library.sidebarSelection) { captureFocused = true }
     .onChange(of: library.section) { captureFocused = true }
-    .task(id: configuration.location) { await watchLog() }
+    .task(id: "\(configuration.location) \(scenePhase == .active)") {
+      await watchLog(every: scenePhase == .active ? .seconds(1) : .seconds(10))
+    }
   }
 
   /// The view's name in small spaced capitals, the place shown in large heavy type and a rule in the
@@ -165,11 +168,14 @@ struct LibraryView: View {
     }
   }
 
-  /// Reloads when another process or the sync service changes the log.
-  private func watchLog() async {
+  /// Reloads when another process or the sync service changes the log, polling slowly while the window is not
+  /// the active one. A new watch starts with a reload, as changes made before it started were not seen; an
+  /// unchanged log shows nothing new.
+  private func watchLog(every interval: Duration) async {
     var monitor = configuration.makeChangeMonitor()
+    library.reload()
     while !Task.isCancelled {
-      try? await Task.sleep(for: .seconds(1))
+      try? await Task.sleep(for: interval)
       if monitor.poll() {
         library.reload()
         storage.refreshCompaction()

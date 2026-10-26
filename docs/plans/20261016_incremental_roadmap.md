@@ -446,6 +446,12 @@ dependency is Yams (the YAML codec).
 
 - Measure launch replay time and capture latency on the real log
 - Only if needed: GRDB projections, snapshotting
+- Started with #86 (an action costs O(change)): a reload of an unchanged log
+  shows nothing (so the app's own write is not shown twice), one decoder per
+  line, no array copy for the next Lamport counter, a 10 s poll while the app
+  is not active. Still open from #86: commands taking the held state,
+  incremental reads of other devices' files, work off the main actor, and the
+  benchmark that sets the budget
 - The global capture hotkey (#34) and the command palette (#35) were cut on
   2026-10-18: not core, so they wait in issues, to be done if at all later
 
