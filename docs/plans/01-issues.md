@@ -1633,3 +1633,88 @@ branch). Decide whether the caveman tooling is wanted in this repo; if it is a p
 to user-level settings so it does not load for every contributor and agent.
 
 **Done when:** a session started with a task and a branch begins work without a question.
+
+## Project health assessment (H-)
+
+An independent look at the repository as an open source maintainer would see it: licence and public face, release and versioning, documentation of what must outlive the app, dependency upkeep and the issue tracker. Evidence is from the repository files, `infra/repository.tf`, the GitHub repo settings and the releases list (v0.19.0 is the latest). Nothing was built or run; no Swift toolchain was available. Code, CI, sync and architecture questions are left to the other assessments. Where an item touches one of them, it says so.
+
+What is healthy and needs no issue: a protected `main` (PR only, two required checks, squash merge) kept in Terraform; Conventional Commits enforced locally and in CI; releases cut automatically from them (19 minor versions in five months); a 90% coverage gate; a written event-sourcing contract with a golden log; guide, README and roadmap kept current in the same PRs; a pinned SwiftLint.
+
+### H-1 Decide the licence and the public face of a public repository
+
+Priority: P1 (cheap, and the longer it waits the more awkward it is to change)
+
+Evidence:
+- `infra/repository.tf` and the GitHub API both say the repository is `public`. There is no `LICENSE` file, so by default nobody but the owner may copy, run beyond viewing, or modify the code. Every release zip is downloadable by anyone.
+- `README.md` ("On another Mac, without compiling") says "the repo is private, so a browser would need a login too". That is no longer true, and the install steps are built around it (they require `gh auth login`).
+- There is no statement of how the project is run: that it is one person's tool, whether pull requests or issues from others are wanted, and that there is no support promise. The only audience the docs address is the owner and agents (`AGENTS.md`).
+
+Proposal:
+- Pick one of: a licence (MIT or Apache-2.0 if sharing is fine; the one dependency, Yams, is MIT) with a `LICENSE` file, or make the repository private again if it was never meant to be shared. Record the choice in the README.
+- Correct the private-repo sentence and give the install section a plain download link from the Releases page, keeping the `gh` route as the second way.
+- Add a short "Status" paragraph to the README: personal project, built for one user, issues and PRs welcome or not, no promised support. A `CONTRIBUTING.md` is not needed; point to `AGENTS.md` for the rules.
+
+Done when: `LICENSE` exists (or the repo is private), the README no longer contradicts the repo settings, and the README says in two or three lines what kind of project this is.
+
+### H-2 The app reports version 0.2.0, whatever release it came from
+
+Priority: P2
+
+Evidence:
+- `App/Luthor.xcodeproj/project.pbxproj` hard-codes `MARKETING_VERSION = 0.2.0` and `CURRENT_PROJECT_VERSION = 1` (Debug and Release). The Info.plist is generated (`GENERATE_INFOPLIST_FILE = YES`), so the bundle carries these values.
+- The release workflow works out `v0.19.0` and passes it to `make dist`, but the `Makefile` uses `VERSION` only to name the zip (`Luthor-$(VERSION).zip`); `make app` does not hand it to `xcodebuild`.
+- The result: the About panel, Finder's Get Info and any crash report show 0.2.0 for every build since then. With the app unnotarised and updated by hand (`rm -rf` and `mv`, as the README says), the version in the app is the only way to tell which build is installed on which Mac. It also matters for the log: a bug report or an "older build skips an unknown event" case cannot be tied to a build.
+
+Proposal:
+- Add a test first: a script test (like `scripts/test-next-version.sh`) that builds nothing but checks that `make app` and `make dist` pass the version, for example by printing the `xcodebuild` command with `make -n`.
+- In the `Makefile`, pass `MARKETING_VERSION=$(VERSION:v%=%)` (and `CURRENT_PROJECT_VERSION` from the commit count, `git rev-list --count HEAD`) to `xcodebuild` when `VERSION` is a release version; fall back to the `git describe` value for local builds.
+- Show the version and short commit in Settings → This Mac, next to the log place, so it is visible without the About panel.
+
+Done when: an app built from the `v0.19.0` tag reports 0.19.0 in its About panel and in `defaults read /Applications/Luthor.app/Contents/Info CFBundleShortVersionString`, and a local build reports its `git describe`.
+
+### H-3 Write down the event-log format outside the code
+
+Priority: P2
+
+Evidence:
+- `AGENTS.md` calls the event format "a public, persisted format on every device" and freezes it. The only specification is the Swift code and `Tests/LuthorStoreTests/Fixtures/golden-log.jsonl`. Neither `README.md`, `docs/guide.md` nor `docs/plans/20260512_initial_plan.md` describes a line: the envelope (`id`, `device`, `lamport`, `type`, `data`), the replay order, how an unknown `type` is skipped, or the files in the shared folder (`events-<device>.jsonl`, `compaction-…`, `backups/`).
+- The project's premise is "built to last" and "events are the source of truth". If the app stops building (a new macOS, a lapsed Xcode, the owner away for a year), the data is only as recoverable as the format is documented. Today the way out is to read Swift. The YAML export needs the app too.
+- The docs for the frozen format are also what the planned iOS app and any CloudKit transport (issue #47) will be built against.
+
+Proposal:
+- Add `docs/event-format.md` (reference, not a plan): the line format, the envelope fields and their meaning, ordering and idempotence rules, the unknown-type rule, every event type with its fields and which are optional, and the shared-folder layout. Generate the per-type table from the golden log or check it against it in a script test, so it cannot drift (a type with no entry fails, as a type with no golden line already does).
+- Add a note on recovering the data without the app: the log is plain JSON lines; a ten-line `jq` or Python example that lists the open tasks.
+- Link it from `README.md` and from the "Event-sourcing rules" in `AGENTS.md`, and add it to the PR docs check for any PR that adds an event type.
+
+Done when: someone with only the repo's `docs/` and no Swift toolchain could write a reader for the log, and a test fails if an event type in the golden log is missing from the document.
+
+### H-4 Automate dependency and action updates
+
+Priority: P3
+
+Evidence:
+- There is no `.github/dependabot.yml` or Renovate config. Three things go stale silently: the GitHub Actions (`actions/checkout@v4`, `actions/upload-artifact@v4`, by major tag), the Swift dependency (`Yams` from 5.1.3, floating within 5.x) and the SwiftLint pin (`SWIFTLINT_VERSION` in the `Makefile`, a hand-edited number that is also the download URL).
+- The CI runner is `macos-26` and the Xcode is "the newest stable", so the toolchain moves on its own while everything above stays put. A break shows up as a red build on an unrelated PR.
+- This is the update half of the reproducible-build item A-12 and the dependency items in the ecosystem assessment; it adds only the automation.
+
+Proposal:
+- Add `dependabot.yml` for `github-actions` and `swift` (weekly, grouped, one PR per week at most), with PR titles `chore(deps): …` so the title check and `next-version.sh` treat them as no release. Dependabot cannot bump the `Makefile` pin, so add a small scheduled workflow (or a line in the monthly routine) that compares `SWIFTLINT_VERSION` with the latest SwiftLint release and opens an issue.
+- Commit `Package.resolved` (see A-12) so a Dependabot PR is a visible change.
+
+Done when: a new Yams or `actions/checkout` release produces a PR that passes or fails `make check-ci` by itself, and a new SwiftLint release produces an issue.
+
+### H-5 Triage the issue tracker and settle where work is tracked
+
+Priority: P3
+
+Evidence:
+- The tracker holds 31 issues (21 open), none with a label or milestone, among them an open bug: #65 "bug: repeating task" (ticking a repeating task done moves its due date with no sign that this round was done, mostly in the Prios view), open since 21 Oct, while releases kept shipping.
+- Open work lives in four places: GitHub issues (#16 to #79), the roadmap's slices, `docs/plans/*.md` and now this file. Nothing says which wins. Some issues are large feature requests that the roadmap or the ALPEN plan may already cover or have ruled out (command palette, global capture hotkey, month view, CloudKit transport, perspectives), others are small fixes.
+- `AGENTS.md` says "Reference issues when relevant" but does not say how an issue becomes a slice or a PR.
+
+Proposal:
+- Add four labels (`bug`, `feature`, `docs`, `roadmap`) and apply them once; add a `bug` priority rule in `AGENTS.md`: an open `bug` issue is fixed before the next `feat` PR, starting with a failing test (the existing rule for bug fixes).
+- Put one line in the roadmap against each open feature issue: slice number, or "not planned". Close the ones that are neither, with the reason, so the open list is the real backlog.
+- Reproduce #65 as a failing acceptance test and decide whether the fix is a display change (show "done for now" on a recurring task) or a domain change; the second needs a new optional field or event, not a change to an existing one.
+
+Done when: every open issue has a label and a roadmap line or a closing comment, and #65 is either fixed with a test or has a plan.
