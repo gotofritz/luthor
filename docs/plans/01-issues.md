@@ -2259,3 +2259,61 @@ per selection change. None matters for tens of items; all three grow with a libr
 
 Fix: build `[TaskID: Project]` once in `ViewState.init`; sort `descendants` only for callers that need
 capture order (or derive order from `captureOrder` on the way out of a single pass).
+
+## Q — Confidence & correctness (test engineer / QA lead)
+
+Independent assessment, 2026-10-26. Static review only: the session had no Swift toolchain, so nothing was built or run, and every finding below is read from the code and the tests. Severity is about the risk to the user's data or to trust in the test suite. Each item names where the evidence is and what would close it. Items were left out when the existing tests already cover them well (the domain reducers, the repeat rule date maths, the delete/reopen semantics, the commit and coverage scripts).
+
+### Q-1 (high) Compact Log silently drops plan state, and its safety check cannot see it
+
+`LogCompactor.compact` rebuilds the log from `LibraryState.export()` and then verifies by comparing `export()` of the old state with `export()` of the new one. Whatever the export does not hold is lost and the check cannot notice, because both sides are blind to it. `LibraryExport` has no home for `dayHours` (a day's own start and end), `taskStarts` (the minute a planned task starts at), `dayBlocks` (lunch and other untracked time), `taskSessions`, `dayCapacities` or `dayOrders` (`LibraryState.swift`, properties after `projectReviews`). The same hole is in the YAML export/import. `docs/guide.md` ("Compacting the log") promises that only "time logged and the days you reviewed are dropped", so a compaction of a library with a planned future week quietly empties that week's times, blocks and sessions, and the guide is wrong.
+
+Fix: decide per field whether it is history or state. Future-dated blocks, sessions, starts, hours and capacities are state and belong in the export (additive optional fields, `formatVersion` untouched or bumped with a reader for 1). Past days may be dropped on purpose. Test first: a library with a block, a session, a start time, day hours and a capacity on a future day compacts to a library whose `dayPlan` for that day is equal. Make the verification compare something wider than `export()`, for example `plan(for:on:)` of every scheduled day, so a new piece of state that the export forgets fails the check. Correct the guide either way.
+
+### Q-2 (high) Compact Log deletes events a newer build wrote
+
+The event-sourcing rules say a build skips an event type it does not know and leaves its line in the log. `LogCompactor` reads with `makeEventLog().readAll()`, which skips those lines, rebuilds the log from known state only, and then removes every other device's file. In a shared folder where a newer Mac has written a new event type, compacting on an older Mac destroys those events from the live log; only the backup folder holds them. `LogCompactorTests` has no case with an unknown line.
+
+Fix: have the reader report how many lines it skipped, and refuse to compact (with a message telling the user to update this Mac) when it is not zero; or carry the unknown lines over untouched. Test first: a log with a `TaskSnoozed` line from the future makes `compact` throw and leaves every file unchanged.
+
+### Q-3 (medium) An unknown value inside a known event makes an older build unable to open the log
+
+`decodeIfKnown` protects only against unknown event types. A new case of `Priority`, `ProjectKind`, `RepeatRule.Unit`, `Weekday`, `ThemeAccent` or similar inside a known event makes `JSONDecoder` throw, which becomes `unreadableLine`, and the whole log is unreadable on the older build (every `perform` and `reload` fails, so the user cannot even capture). `SettingChanged.key` was deliberately made a raw string for exactly this reason; nothing else was. Adding an enum case looks "additive" under the freeze rules, so someone will do it, and the golden log cannot catch it.
+
+Fix: a test that decodes a known event carrying an unknown enum raw value and expects either a tolerated result or, at least, the same skip-and-keep treatment as an unknown event type (`decodeIfKnown` returning `nil` for a payload that fails on an unrecognised raw value, not for genuine damage). Add the rule to AGENTS.md: a new enum case in an existing event is a breaking change unless the decoder tolerates it.
+
+### Q-4 (medium) One damaged or half-written line is a total outage, with no way back inside the app
+
+`JSONLinesEventLog.readAll` throws on any undecodable line, with one exception: the last line of another device's file. A power loss or a crash in the middle of `append` (one `write` of several lines is not atomic on disk) leaves this device's own file with a half line, and from then on every `reload`, every command and Compact Log fail with `unreadableLine(n)`. The same happens for a damaged line in the middle of any file. `IncompleteTailTests` pins the strict behaviour on purpose; there is no test or code for the recovery. The user is told a line number and must edit a JSON file by hand.
+
+Fix: a repair step offered by the app. For this device's own file, where only this device ever writes, truncate a trailing partial line (back up first, test that the backup is byte-identical). For anything else, report the file and line, and let the user quarantine that one line into the backups folder. Also make `append` check that the file ends in a newline before writing, so a stray partial line can never swallow the next event. Tests: a half-written own tail repairs to the events before it; the app opens afterwards.
+
+### Q-5 (medium) The "Day changes at" setting does not change what "today" is
+
+`docs/guide.md` says the setting is "when one day turns into the next (04:00 …)". In the code `dayChangesAt` is read only to extend `dayLimit` (`Settings.dayLimit`), the limit for a block's end. "Today" comes from `CalendarDate.systemToday()` (calendar midnight) and "now" from `minutesSinceMidnight()`. At 00:30 on a night session the app already shows tomorrow as today, carry-over and the overdue list roll over at midnight, and a task started "now" is placed at minute 30 of the new day instead of minute 1470 of the old one. No test exercises the clock around midnight.
+
+Fix: confirm the intended behaviour with the owner, then make `today` and `now` subtract `dayChangesAt` (the view model already takes both as injected closures, so this is a small change in `systemToday`/the default `now`, or better a pure function of an instant, a calendar and the setting). Tests first, with injected instants: 00:30 with the default 04:00 is still yesterday, 04:00 is today, and a task started at 00:30 gets minute 24×60+30.
+
+### Q-6 (low) The view model swallows every command failure
+
+`LibraryViewModel.perform` catches `CommandError` and just re-renders ("nothing the user needs to fix"). That is right for a race such as a task completed on another Mac, but it also hides a genuine defect: a view-model method that builds a command wrongly does nothing, shows nothing, and most tests that assert "state unchanged" still pass. The UI gives no hint that the click was refused.
+
+Fix: keep silent for the known benign errors (stale task, blank title) but surface the rest through `errorMessage`, and add a test-only hook or a counter so view-model tests can assert "no command error" in the happy path (one assertion in the shared test fixture covers the whole suite).
+
+### Q-7 (medium) The golden log proves old lines decode, not that they still mean the same
+
+`GoldenLogTests` checks decoding, round-trip, and that two named views exist after replay. A reducer change that gives an old event a different meaning (the exact thing the freeze rule forbids) passes, as long as the line still decodes. The "reversed order" and "twice" tests also cannot fail by themselves: `LibraryState.replay` sorts and de-duplicates its input, so any permutation of the same events gives the same result by construction (the same holds for the per-feature `reversed()` tests). What those tests do not exercise is the order key itself, for example equal Lamport counters from two devices, which `SyncFlowTests` covers once.
+
+Fix: check in the expected result of replaying the golden log (the `LibraryExport` YAML plus the `plan(for:on:)` output for the days it touches, and the project review list) as `golden-state.yml`, and compare in the test. Changing that file then needs a deliberate, reviewed edit, the same way the log is protected. Keep a small table-driven test for ties (same Lamport, different device, same device different id).
+
+### Q-8 (low) Values from the log can trap the app, and nothing fuzzes the replay
+
+The log is an input from other devices, but a few reducers do unchecked arithmetic on its values: `Commands.nextEnvelope` computes `(max lamport) + 1` on a `UInt64` (a line with lamport `18446744073709551615` crashes every later command), and `RepeatRule.nextDue` multiplies `every * 7` and `steps * span` on an `Int` that decodes from any JSON integer. A trap here is a crash loop on launch, since the log is replayed at start. The suite has no test that feeds the reducers odd but decodable values.
+
+Fix: clamp on decode (`every` to a sane range, lamport saturating with `&+`/`addingReportingOverflow`), and add one seeded, randomised test: generate a few hundred random command sequences with the injected ID and clock fakes, replay them in several orders, and assert the invariants (no panic, every parent exists, `export()` then `importLibrary` then `export()` is a fixed point, and `LogCompactor` keeps the library). One such model-based test would have found Q-1 mechanically.
+
+### Q-9 (low) Behaviour that lives only in the app layer has no test and no coverage
+
+`make coverage` measures `Sources/` only, and the 4,800 lines of `App/Luthor` have no tests. Most of it is thin layout, which is fine, but some real logic sits there: `DayDropDelegate.minute(at:)` (pointer position → minute, snapped to 15, clamped) and the clamping at its call sites, `blockHeight`, and the text-drop path that accepts any dropped string and passes it to `library.place(TaskID(dropped), …)`. `dropExited` also leaves `draggedTaskID`/`draggedBlockID` set. A drag-and-drop planner is the part of the app most likely to regress unseen.
+
+Fix: move the position-to-minute and clamping rule into `LuthorViewModels` as a pure function (`minute(forY:hourHeight:firstHour:)`), cover it with a table test (top of the grid, scrolled grid, past `dayLimit`, negative y), and clear the dragged IDs when the drag exits. No UI test framework needed.
