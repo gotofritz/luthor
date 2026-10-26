@@ -2108,3 +2108,154 @@ prefix. Overlap with other assessments is expected and will be merged later.
   duplication described in X-5.
 - **Impact:** low-medium. It matters mostly if other people ever contribute, and it also helps the author's own
   fresh start after a long break.
+
+## Efficiency assessment (F-)
+
+Static review of the read, write, replay and presentation paths. No Swift toolchain was available, so nothing
+here was profiled: costs are stated as complexity and call counts, and the first item to do is F-9 so the
+rest can be sized. The app is single-user, so "slow" means the log growing over years (every `TaskTimeLogged`,
+`DayPlanOrdered` and `TaskStartSet` is kept forever) not concurrency. All figures: n = events in the log.
+
+### F-1 (high): every user action reads, decodes and replays the whole log, then replays it again
+
+`LibraryViewModel.perform` (`LibraryViewModel+Presenting.swift`) calls `log.readAll()` (all device files, all
+lines), hands the array to the command, appends, then `show(current + events)` runs `LibraryState.replay`
+over all n events again. The command itself usually replays the log first: `Commands.swift`, `Commands+*.swift`
+call `LibraryState.replay(log)` once to many times per command (`setStart` does three; `stopNow` three commands
+in a row; `keepPushed` runs `setStart` or `updateBlock` per pushed item, each replaying `log + events`). One
+click is therefore about 3 to 10 full passes of decode + sort + apply, all on the main actor.
+
+Fix: keep the `LibraryState` the view model already holds and hand it to commands (`command(state, lamport)`),
+then `state.apply(event.payload)` for the events just written. A local append always carries the highest
+Lamport counter, so applying it incrementally gives the same state as a replay; only events arriving from
+another device need a replay. Keep `replay` for load, reload and the determinism tests.
+
+### F-2 (high): the app reloads itself after every write it makes
+
+`watchLog` (`LibraryView.swift`) polls the file signature every second. The app's own `append` changes that
+signature, so the next poll calls `library.reload()`: `readAll` + `replay` + `present()` again, for a change
+the view model already shows. With F-1 this makes one edit cost about twice as much again, 0 to 1 s later,
+which can also re-render over what the user typed next.
+
+Fix: after an own append, refresh the monitor's signature (e.g. `monitor.acknowledge()` or compare the size to
+the size just written), so only outside writes reload. Related: skip `show` when the reloaded state `==` the
+old one (`LibraryState` is `Equatable`); a sync client that only touches the modification date of
+`events-<device>.jsonl` currently causes a full re-present.
+
+### F-3 (medium): log decoding does twice the work it needs, and re-reads unchanged files
+
+`JSONLinesEventLog.readAll`: reads the file into one `String`, splits it into `Substring`s, copies each into a
+`String`, and `EventLine.decodeIfKnown` allocates a `JSONDecoder` and decodes the line twice (once into
+`EventTypeProbe`, once into the DTO), then `decode` makes another decoder. `DeviceFilesEventLog.readAll`
+re-reads every other device's file in full on every reload although those files only grow.
+
+Fix: one `JSONDecoder` per read; decode once into a DTO whose payload is optional/unknown-tolerant (the type
+check already exists as the `EventType` enum); split `Data` on `0x0A` without `String` copies. For the
+shared folder, remember per file the byte offset and last complete newline already parsed and read only the
+tail (files are append-only by rule), keeping the incomplete-tail rule for other devices' files. Keep the
+golden-log and unknown-type tests as the safety net.
+
+### F-4 (medium): every new event scans the entire log for the next Lamport counter
+
+`Commands.envelope(_:_:log:)` is `(log.map(\.lamport).max() ?? 0) + 1`: it allocates an n-element array and
+scans it for every envelope, and the callers build `log + events` (another n-element copy) to get the next
+counter in loops (`setStart`, `keepPushed`, `stopNow`, `Commands+Cards`). A command writing k events costs
+O(k·n). `importLibrary` already does it right with a running counter.
+
+Fix: take the starting counter once per command (the view model can cache the highest Lamport it has seen) and
+count up as `ImportWriter` does; at least use `log.lazy.map(\.lamport).max()` / `reduce` to stop allocating.
+
+### F-5 (medium): `present()` rebuilds every pane on every change, and `view(_:)` is rebuilt many times inside it
+
+`present()` fills the plan, waiting list, day review, carry-over, calendar (30+ days), tags, weekly review,
+settings of every view (`settingsByView`, `overriddenKeysByView`: views × keys) and the task list on each
+event, whichever section is on screen. Inside it `LibraryState.view(_:)` is called from `plan`, `waitingFor`,
+`dayReview` (and its `plan`), `carryOver`, `calendar`, `calendarEntries` (which calls `plan` again), the tag
+functions and the weekly review: about 10 times per present. Each call runs `openTasks`, `projects`,
+`completedTasks` and `completedProjects` over all items of all views and builds a `Project` (children array)
+for every open project of every view before filtering by view.
+
+Fix, in order of effort: memoise `ViewState` per view for one state value (a lazy dictionary on the state, or
+build it once in `present()` and pass it in); compute the section-specific data (`review`, `carryOver`,
+`calendarDays`, `tags`, `projectReview`) only when its section is shown or its badge is visible; index items
+by view at `apply` time so `view(_:)` does not filter every item of every view.
+
+### F-6 (medium): all log I/O, decoding, replay and polling run on the main actor
+
+`LibraryViewModel` is `@MainActor`, `watchLog` is a method of a SwiftUI `View`, and `reload`, `perform`,
+`FileChangeMonitor.poll` (a directory listing plus `attributesOfItem` per file, every second) all run
+synchronously on it. On a Dropbox folder the directory listing and file reads can block (File Provider
+materialisation), and a large replay freezes typing and scrolling while it runs.
+
+Fix: do `poll`, `readAll` and `replay` in a background task and publish the finished `LibraryState` on the
+main actor; `LibraryState` is already a `Sendable` value type, so this is mostly moving the call and
+dropping stale results (generation counter).
+
+### F-7 (medium): estimate history is a scan of all logged time per task, and is asked for per task per render
+
+`estimateHistory(ofTask:)` (`LibraryState+Review.swift`) reduces over the whole `reviewRecords.taskMinutes`
+dictionary to total one task. `dayReview` calls it per done and not-done entry; `estimateHistory(ofProject:)`
+calls it for every task of the subtree after concatenating `openTasks + completedTasks`; the view model
+exposes both (`LibraryViewModel+Review.swift`) and cards read them while rendering. That is O(tasks ×
+logged entries) and grows with every day of history, which only a manual compaction (that also deletes the
+history) resets.
+
+Fix: keep `loggedByTask: [TaskID: Int]` in `ReviewRecords`, updated where `taskMinutes` is set, removed and
+filtered (`LibraryState+Review.swift` and `+Structure.swift` lines that touch it); both lookups become O(1)
+and O(subtree).
+
+### F-8 (low to medium): the day calendar computes its layout several times per render and per drag step
+
+`LibraryViewModel.shownLayout` is a computed property: `planSlots`, `planBlocks`, `planSessions` and
+`planDone` each call `dayLayout(...)`, which builds a `DayPlan` copy and runs `layout` (overlap resolution
+over tasks, blocks and sessions). `DayCalendarView` reads all four in one body and again in drop and hover
+handlers (`planSlots.first`, `planSessions.first`), so one render does the layout at least 4 times, and
+`previewBlock` / drag previews trigger renders on every pointer move.
+
+Fix: compute one `DayLayout` per (plan, previews) change, store it, and let the four accessors read it
+(or return the `DayLayout` once). A cached value also makes the drag path testable for cost.
+
+### F-9 (medium): no performance baseline exists, so none of the above can be sized or guarded
+
+There are no measurements anywhere in `Tests/`, the `Makefile`, CI or the docs, and the roadmap defers
+SQLite/projections to "once replay is slow" without a definition of slow. Nothing would catch a change that
+turns an O(n) path into O(n²).
+
+Fix: add a test helper that builds a synthetic log (e.g. 2,000 open tasks, 200 projects, 50,000 events over
+three years of logged time and plans) and a small perf suite in `Tests/LuthorStoreTests` /
+`LuthorViewModelsTests` that times `readAll`, `replay`, one `perform(capture)` and one `present()`, with a
+generous budget asserted in CI (not a snapshot). Write the budgets into the roadmap as the definition of
+"replay is slow" that triggers the projection work. Add `OSSignposter` intervals around reload and present
+for Instruments.
+
+### F-10 (low to medium): log growth is unbounded and the only remedy is manual and lossy
+
+Cost of F-1, F-3 and F-5 is proportional to history, and history only grows. Compact Log
+(Settings → This Mac) rebuilds from the library and drops time logged, reviewed days and manual plan order,
+so a user who values the review history cannot use it. Nothing tells the user how big the log is or when it
+is getting slow.
+
+Fix (needs a decision, not a rewrite): show event count and file size in Settings → This Mac so the problem is
+visible; then decide whether to add a snapshot event/file (state at Lamport L, replay only after L) as an
+additive, frozen-format-safe step, or keep compaction and make it keep the review history. Revisit after F-9
+has real numbers.
+
+### F-11 (low): the 1 s poll runs for the whole life of the app
+
+`watchLog` keeps polling when the app is in the background or hidden, which wakes the disk and the Dropbox
+folder every second (energy, and it lengthens battery-sensitive iOS work later, see the iOS plan).
+
+Fix: poll while the scene is active and re-check on becoming active; or use a directory-level
+`DispatchSource`/FSEvents watch (watching the folder, not the file, also covers files created late, which is
+why polling was chosen) with a slow poll as a fallback for network volumes.
+
+### F-12 (low): recursive and per-lookup linear scans in `ViewState` and `LibraryState`
+
+`ViewState.project(_:)` is `projects.first { $0.id == projectID }`, called inside the recursive
+`nextActions(of:)` for every child project, so computing next actions is O(projects²) and it is recomputed
+by `plan`, `presentTasks` and `waitingFor`. `LibraryState.descendants(of:)` sorts its result on every call
+(also from `subtree`, `rolledUpEstimate` per project) and `LibraryViewModel.index(of:)` is a linear search
+per selection change. None matters for tens of items; all three grow with a library that is meant to last.
+
+Fix: build `[TaskID: Project]` once in `ViewState.init`; sort `descendants` only for callers that need
+capture order (or derive order from `captureOrder` on the way out of a single pass).
