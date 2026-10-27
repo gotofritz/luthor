@@ -242,8 +242,6 @@ Sources/
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
     LogCatchUp.swift         LogSnapshot (state, held events, log cursor, damaged lines) and LogCatchUp.run, which brings a snapshot
-                             up to the log; no actor, so `reloadInBackground()` runs it off the main actor and swaps the result in
-    LogCatchUp.swift         LogSnapshot (state, held events, log cursor, damaged lines) and LogCatchUp.run, which brings a snapshot
                              up to the log; no actor, so `reloadInBackground()` (LibraryViewModel+Reload.swift, with `reload()`) runs
                              it off the main actor and swaps the result in
     ClockText.swift          clockText(_:), minutes after midnight as 09:00
