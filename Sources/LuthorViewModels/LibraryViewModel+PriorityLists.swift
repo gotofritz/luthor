@@ -29,3 +29,10 @@ extension LibraryViewModel {
     newItem = item
   }
 }
+
+extension LibraryViewModel {
+  /// The date a list shows beside a task: the day it is scheduled for, else its due date.
+  public func listedDate(of taskID: TaskID) -> CalendarDate? {
+    scheduledDate(of: taskID) ?? dueDate(of: taskID)?.date
+  }
+}

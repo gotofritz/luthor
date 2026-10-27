@@ -37,7 +37,7 @@ shown, so you can tell views apart (and the app from other windows) at a glance.
 Prios lists the priorities Critical, Important, Optional and One day, and No
 priority. It picks like any Mac list: click one, shift-click for a range,
 ⌘-click to add or drop one; each picked priority has a list of its tasks
-with their due dates, the most urgent first, ended by a plus button that adds a
+with their scheduled or due dates, the most urgent first, ended by a plus button that adds a
 task with that priority. Give a task a
 priority from its context menu or Task → Priority, and an estimate in
 minutes from Estimate. Either clarifies a task out of the Inbox, same as

@@ -222,10 +222,11 @@ struct ProjectRow: View {
 struct TaskRow: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
-  /// Whether the priority shows as an icon, and the due date as text; the priorities place lists by priority
-  /// and shows when each task is due.
+  /// Whether the priority shows as an icon, and the date (scheduled, else due) as text; the priorities place
+  /// lists by priority and shows when each task is wanted.
   var showsPriority = true
-  var showsDue = false
+  var showsDate = false
+  @Environment(\.theme) private var theme
   @State private var confirmingDelete = false
 
   private var isCompleted: Bool {
@@ -254,10 +255,10 @@ struct TaskRow: View {
           .foregroundStyle(.secondary)
           .help("Estimate")
       }
-      if showsDue, let due = library.dueDate(of: task.id) {
-        Text(due.date.isoString)
-          .foregroundStyle(.secondary)
-          .help("Due")
+      if showsDate, let day = library.listedDate(of: task.id) {
+        Text(day.isoString)
+          .foregroundStyle(theme.ink)
+          .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
       }
       if showsPriority, let priority = task.priority {
         Image(systemName: priority.symbol)

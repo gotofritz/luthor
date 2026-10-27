@@ -1182,7 +1182,8 @@ what a new item starts with.
    a project (`capture(title:into:)`) inherits too; the Inbox does not. Priority
    and estimate are only defaults at creation: a change to a project later
    moves nothing already in it
-3. **Prios lists each picked priority apart**, with the tasks' due dates and no
-   priority icon (the heading says it). A plus button ends each list and starts
+3. **Prios lists each picked priority apart**, with each task's scheduled date,
+   else its due date, in the accent colour and no priority icon (the heading
+   says it). A plus button ends each list and starts
    a task with that priority (`addTask(withPriority:)`), in no project, so with
    no estimate. A picked priority with no task still shows its list

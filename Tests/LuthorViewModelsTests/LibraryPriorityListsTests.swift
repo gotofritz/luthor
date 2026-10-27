@@ -166,3 +166,29 @@ struct AddTaskWithPriorityViewModelTests {
     #expect(library.newItem == nil)
   }
 }
+
+@MainActor
+@Suite("When a task is listed in Prios")
+struct PriorityListDateViewModelTests {
+  @Test("its scheduled date is the date shown")
+  func theScheduledDateIsShown() {
+    let (library, _) = makeInbox(
+      priorityLog + [scheduled("t1", on: "2026-10-21", lamport: 8), dueSet("t1", on: "2026-10-30", lamport: 9)])
+
+    #expect(library.listedDate(of: TaskID("t1")) == date("2026-10-21"))
+  }
+
+  @Test("without a scheduled date, its due date is")
+  func theDueDateIsShownInstead() {
+    let (library, _) = makeInbox(priorityLog + [dueSet("t1", on: "2026-10-30", lamport: 8)])
+
+    #expect(library.listedDate(of: TaskID("t1")) == date("2026-10-30"))
+  }
+
+  @Test("with neither, no date is shown")
+  func noDateIsShown() {
+    let (library, _) = makeInbox(priorityLog)
+
+    #expect(library.listedDate(of: TaskID("t1")) == nil)
+  }
+}

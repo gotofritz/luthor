@@ -33,7 +33,7 @@ struct PriorityListsColumn: View {
       ForEach(library.priorityGroups) { group in
         Section(group.priority?.title ?? "No priority") {
           ForEach(group.tasks, id: \.id) { task in
-            TaskRow(library: library, task: task, showsPriority: false, showsDue: true)
+            TaskRow(library: library, task: task, showsPriority: false, showsDate: true)
               .tag(task.id)
           }
           if let item = library.newItem, item.parentID == nil, item.card.priority == group.priority {

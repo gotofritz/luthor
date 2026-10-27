@@ -83,8 +83,8 @@ struct PriorityListAddTasksFlowTests {
     #expect(relaunched.priorityGroups.map { $0.tasks.map(\.title) } == [["pay rent"]])
   }
 
-  @Test("the list shows the due date of its tasks")
-  func theListShowsDueDates() throws {
+  @Test("the list shows the scheduled date of its tasks, else the due date")
+  func theListShowsDates() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -95,6 +95,8 @@ struct PriorityListAddTasksFlowTests {
     library.setDue(bank, to: date("2026-10-30"), isHard: false)
 
     let listed = try #require(library.priorityGroups.first?.tasks.first)
-    #expect(library.dueDate(of: listed.id)?.date == date("2026-10-30"))
+    #expect(library.listedDate(of: listed.id) == date("2026-10-30"))
+    library.schedule(listed.id, on: date("2026-10-21"))
+    #expect(library.listedDate(of: listed.id) == date("2026-10-21"))
   }
 }

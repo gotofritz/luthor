@@ -534,8 +534,9 @@ Prios lists Critical, Important, Optional, One day and No priority. It
 behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
 Each picked priority has a list of its own, headed by its name, the most
-urgent first and No priority last; a task shows its estimate and its due
-date, not its priority, which the heading says. At the bottom of each list a
+urgent first and No priority last; a task shows its estimate and, in the
+accent colour, the day it is scheduled for or else its due date, not its
+priority, which the heading says. At the bottom of each list a
 plus button adds a task with that priority: the card opens in the next column
 as it does in a project, and the task has no project, so no estimate, until
 you set one. With none picked, there is nothing to list. You can complete a
