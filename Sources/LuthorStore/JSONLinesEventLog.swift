@@ -68,13 +68,18 @@ public enum EventLine {
   /// throws `unreadableLine(0)`.
   public static func decodeIfKnown(_ line: String) throws(EventLogError) -> EventEnvelope? {
     let probe: EventTypeProbe
+    let decoder = JSONDecoder()
     do {
-      probe = try JSONDecoder().decode(EventTypeProbe.self, from: Data(line.utf8))
+      probe = try decoder.decode(EventTypeProbe.self, from: Data(line.utf8))
     } catch {
       throw .unreadableLine(0)
     }
     guard EventLineDTO.EventType(rawValue: probe.type) != nil else { return nil }
-    return try decode(line)
+    do {
+      return try decoder.decode(EventLineDTO.self, from: Data(line.utf8)).event
+    } catch {
+      throw .unreadableLine(0)
+    }
   }
 }
 

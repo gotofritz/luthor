@@ -228,8 +228,14 @@ public final class LibraryViewModel {
   public func reload() {
     do {
       let reading = try log.readReportingProblems()
+      let replayed = LibraryState.replay(reading.events)
+      // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
+      if revision > 0, replayed == state, reading.problems == logProblems, clock() == today {
+        if errorMessage != nil { errorMessage = nil }
+        return
+      }
       logProblems = reading.problems
-      show(reading.events)
+      show(replayed)
     } catch {
       errorMessage = Self.describe(error)
     }
