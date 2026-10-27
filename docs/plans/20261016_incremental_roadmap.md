@@ -451,7 +451,8 @@ dependency is Yams (the YAML codec).
   line, no array copy for the next Lamport counter, a 10 s poll while the app
   is not active. Then commands bound to the state the view model holds, which
   applies the events it writes and reads the log before an action only if its
-  change token (file sizes and dates) moved. Still open from #86: incremental reads of other devices' files, work off the main actor, and the
+  change token (file sizes and dates) moved. Then `present()` works out the plan, the day review, the
+  calendar and the tag counts only for the place shown, going to a place presenting it. Still open from #86: incremental reads of other devices' files, work off the main actor, and the
   benchmark that sets the budget
 - The global capture hotkey (#34) and the command palette (#35) were cut on
   2026-10-18: not core, so they wait in issues, to be done if at all later

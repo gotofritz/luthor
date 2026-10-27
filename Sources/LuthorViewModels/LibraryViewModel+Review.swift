@@ -27,7 +27,9 @@ extension LibraryViewModel {
   public func reviewDay(note: String) {
     let viewID = currentView
     let day = planDate
-    let unlogged = review.done.filter { $0.loggedMinutes == nil && $0.task.estimate != nil }
+    let unlogged = state.dayReview(for: viewID, on: day, today: today).done.filter {
+      $0.loggedMinutes == nil && $0.task.estimate != nil
+    }
     perform { (log) throws(CommandError) in
       var events: [EventEnvelope] = []
       for entry in unlogged {

@@ -12,6 +12,7 @@ private func makeLibrary(_ events: [EventEnvelope], now: Int) -> LibraryViewMode
     log: InMemoryEventLog(events), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()),
     today: { monday }, now: { now })
   library.reload()
+  library.show(.today)
   return library
 }
 

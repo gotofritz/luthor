@@ -12,6 +12,7 @@ private func makeLibrary(_ events: [EventEnvelope] = [], now: @escaping @Sendabl
     log: InMemoryEventLog(events), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()),
     today: { monday }, now: now)
   library.reload()
+  library.show(.today)
   return library
 }
 
@@ -48,6 +49,7 @@ struct RunningViewModelTests {
     #expect(library.plan.entries.first?.minutes == 60)
     #expect(library.planSlots.first?.entry.minutes == 15)
     #expect(!library.isRunning(TaskID("t1")))
+    library.show(.review)
     #expect(library.review.notDone.first?.loggedMinutes == 45)
   }
 
@@ -64,6 +66,7 @@ struct RunningViewModelTests {
 
     library.stopNow(TaskID("t1"))
 
+    library.show(.review)
     #expect(library.review.notDone.first?.loggedMinutes == 40)
   }
 
@@ -101,6 +104,7 @@ struct ReviewPrefillViewModelTests {
 
     library.reviewDay(note: "")
 
+    library.show(.review)
     #expect(library.review.done.first?.loggedMinutes == 60)
   }
 
@@ -111,6 +115,7 @@ struct ReviewPrefillViewModelTests {
 
     library.reviewDay(note: "")
 
+    library.show(.review)
     #expect(library.review.done.first?.loggedMinutes == 45)
   }
 }

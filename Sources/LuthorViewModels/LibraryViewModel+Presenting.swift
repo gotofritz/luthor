@@ -133,11 +133,15 @@ extension LibraryViewModel {
     shownProject = path.last.flatMap { id in known.first { $0.id == id } }
     columns = projectColumns(of: view, completed: completed)
     today = clock()
-    plan = state.plan(for: currentView, on: planDate, today: today, matching: candidateFilter)
-    waiting = state.waitingFor(in: currentView, today: today)
-    review = state.dayReview(for: currentView, on: planDate, today: today)
-    carryOver = state.carryOver(in: currentView, today: today)
-    presentCalendar()
+    // Each place is worked out only while it is shown, so an action elsewhere does not pay for it; going to a
+    // place presents again.
+    if section == .today || section == .review {
+      plan = state.plan(for: currentView, on: planDate, today: today, matching: candidateFilter)
+      waiting = state.waitingFor(in: currentView, today: today)
+      carryOver = state.carryOver(in: currentView, today: today)
+    }
+    if section == .review { review = state.dayReview(for: currentView, on: planDate, today: today) }
+    if section == .calendar { presentCalendar() }
     presentTags()
     presentProjectReview()
     presentTasks(of: view, completed: completed)
