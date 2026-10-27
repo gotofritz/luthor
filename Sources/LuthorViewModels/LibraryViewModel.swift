@@ -132,9 +132,6 @@ public final class LibraryViewModel {
   /// The minutes since midnight by the clock.
   let minuteClock: () -> Int
   let unboundCommands: Commands
-  /// The commands, bound to the state held: a command is given no log, only the state it acts on, and costs what it
-  /// changes. Anything that is handed a whole log uses `unboundCommands`.
-  var commands: Commands { unboundCommands.after(state, lamport: lastLamport) }
   @ObservationIgnored var state = LibraryState.replay([])
   /// The highest Lamport counter of the log as last read or written here.
   @ObservationIgnored var lastLamport: UInt64 = 0
@@ -368,11 +365,6 @@ public final class LibraryViewModel {
   /// Sets the notes of a project, or with blank text clears them.
   public func setNotes(ofProject projectID: TaskID, to notes: String) {
     perform { (log) throws(CommandError) in try commands.setNotes(ofProject: projectID, to: notes, log: log) }
-  }
-
-  /// The selected task, whose card is shown.
-  public var selectedTask: TaskItem? {
-    selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
   /// Completes a task. If it repeats, the next one is made, due by its rule as of today.

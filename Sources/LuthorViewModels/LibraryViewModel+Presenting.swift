@@ -13,6 +13,15 @@ extension LibraryViewModel {
     selection = tasks.isEmpty ? nil : tasks[min(position, tasks.count - 1)].id
   }
 
+  /// The commands, bound to the state held: a command is given no log, only the state it acts on, and costs what it
+  /// changes. Anything that is handed a whole log uses `unboundCommands`.
+  var commands: Commands { unboundCommands.after(state, lamport: lastLamport) }
+
+  /// The selected task, whose card is shown.
+  public var selectedTask: TaskItem? {
+    selection.flatMap { selected in tasks.first { $0.id == selected } }
+  }
+
   /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
   /// events written. The command is given no log: `commands` knows the state.
   @discardableResult
