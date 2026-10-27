@@ -96,12 +96,20 @@ check-ci: lint build coverage app
 hooks:
 	git config core.hooksPath .githooks
 
-# Installs the pinned SwiftLint (macOS portable build) into .tools/.
+# Installs the pinned SwiftLint into .tools/: the macOS portable build, or the static Linux one.
+# The Linux build has no SourceKit, so it skips the few rules that need it.
 tools:
 	mkdir -p .tools
-	curl -fsSL -o .tools/swiftlint.zip \
-	  https://github.com/realm/SwiftLint/releases/download/$(SWIFTLINT_VERSION)/portable_swiftlint.zip
-	unzip -o -q .tools/swiftlint.zip swiftlint -d .tools
+	if [ "$$(uname -s)" = Linux ]; then \
+	  curl -fsSL -o .tools/swiftlint.zip \
+	    https://github.com/realm/SwiftLint/releases/download/$(SWIFTLINT_VERSION)/swiftlint_linux_amd64.zip; \
+	  unzip -o -q .tools/swiftlint.zip swiftlint-static -d .tools; \
+	  mv .tools/swiftlint-static .tools/swiftlint; \
+	else \
+	  curl -fsSL -o .tools/swiftlint.zip \
+	    https://github.com/realm/SwiftLint/releases/download/$(SWIFTLINT_VERSION)/portable_swiftlint.zip; \
+	  unzip -o -q .tools/swiftlint.zip swiftlint -d .tools; \
+	fi
 	rm .tools/swiftlint.zip
 	.tools/swiftlint version
 
