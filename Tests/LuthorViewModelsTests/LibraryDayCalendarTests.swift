@@ -16,6 +16,7 @@ private func makeLibrary(
     log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), today: { monday },
     now: { now })
   library.reload()
+  library.show(.today)
   return (library, log)
 }
 

@@ -50,6 +50,6 @@ extension LibraryViewModel {
   func presentTags() {
     tags = state.tags(in: currentView)
     if let picked = selectedTagID, !tags.contains(where: { $0.id == picked }) { selectedTagID = nil }
-    tagTaskCounts = state.taskCounts(ofTagsIn: currentView)
+    if section == .tags { tagTaskCounts = state.taskCounts(ofTagsIn: currentView) }
   }
 }

@@ -15,6 +15,7 @@ private func makeLibrary(
   let library = LibraryViewModel(
     log: log, commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()), view: .default, today: { today })
   library.reload()
+  library.show(.review)
   return (library, log)
 }
 
