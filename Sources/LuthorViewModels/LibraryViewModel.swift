@@ -135,6 +135,8 @@ public final class LibraryViewModel {
   @ObservationIgnored var state = LibraryState.replay([])
   /// The highest Lamport counter of the log as last read or written here.
   @ObservationIgnored var lastLamport: UInt64 = 0
+  /// The log's change token as of the state held, so an action reads the log only when it has changed since.
+  @ObservationIgnored var loggedToken: String?
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
@@ -230,7 +232,9 @@ public final class LibraryViewModel {
 
   public func reload() {
     do {
+      let token = log.changeToken()
       let reading = try log.readReportingProblems()
+      loggedToken = token
       let replayed = LibraryState.replay(reading.events)
       // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
       if revision > 0, replayed == state, reading.problems == logProblems, clock() == today {

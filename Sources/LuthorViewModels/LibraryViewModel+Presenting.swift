@@ -23,9 +23,15 @@ extension LibraryViewModel {
   }
 
   /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
-  /// events written. The command is given no log: `commands` knows the state.
+  /// events written. The command is given no log: `commands` knows the state. The log is read first only if its
+  /// files changed since the state held was read, so events another process appended are never missed.
   @discardableResult
   func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
+    if let token = log.changeToken(), token == loggedToken {
+      // Nothing outside has written since.
+    } else if !catchUpWithLog() {
+      return []
+    }
     let events: [EventEnvelope]
     do {
       events = try command([])
@@ -43,8 +49,25 @@ extension LibraryViewModel {
     }
     state.append(events)
     lastLamport = events.reduce(lastLamport) { max($0, $1.lamport) }
+    loggedToken = log.changeToken()
     showState()
     return events
+  }
+
+  /// Replaces the state held with the log as it is now; `false`, with `errorMessage` set, if it cannot be read.
+  private func catchUpWithLog() -> Bool {
+    do {
+      let token = log.changeToken()
+      let reading = try log.readReportingProblems()
+      loggedToken = token
+      logProblems = reading.problems
+      state = LibraryState.replay(reading.events)
+      lastLamport = reading.events.reduce(0) { max($0, $1.lamport) }
+      return true
+    } catch {
+      errorMessage = Self.describe(error)
+      return false
+    }
   }
 
   func show(_ events: [EventEnvelope]) {

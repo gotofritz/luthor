@@ -59,15 +59,29 @@ struct ReloadViewModelTests {
 @MainActor
 @Suite("When an action is taken")
 struct ActionViewModelTests {
-  @Test("it does not read the log, whose state is already held")
-  func actionDoesNotReadTheLog() {
+  @Test("it does not read the log while nothing outside has written to it")
+  func actionDoesNotReadAnUnchangedLog() {
     let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 1)])
-    log.readFailure = .ioFailure("disk gone")
+    let reads = log.reads
 
     library.prioritize(TaskID("t1"), as: .critical)
+    library.estimate(TaskID("t1"), as: 15)
 
-    #expect(library.errorMessage == nil)
+    #expect(log.reads == reads)
     #expect(library.tasks.first?.priority == .critical)
+    #expect(library.tasks.first?.estimate == 15)
+  }
+
+  @Test("it reads the log first once something outside has written to it")
+  func actionReadsAChangedLog() {
+    let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 1)])
+    let reads = log.reads
+    log.events.append(captured("t2", "book flights", device: "phone", lamport: 2))
+
+    library.prioritize(TaskID("t2"), as: .critical)
+
+    #expect(log.reads == reads + 1)
+    #expect(log.events.last?.lamport == 3)
   }
 
   @Test("its events follow the highest Lamport counter seen at the last reload")

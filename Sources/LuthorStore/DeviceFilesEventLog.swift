@@ -56,6 +56,17 @@ public struct DeviceFilesEventLog: EventLog, Sendable {
     return reading
   }
 
+  /// The names, sizes and dates of every device's file; `nil` if any cannot be told.
+  public func changeToken() -> String? {
+    guard let names = try? deviceLogNames() else { return nil }
+    var parts: [String] = []
+    for name in names {
+      guard let token = file(name).changeToken() else { return nil }
+      parts.append("\(name):\(token)")
+    }
+    return parts.joined(separator: ",")
+  }
+
   /// Repairs this device's own file only; another device's file is theirs to repair.
   public func quarantineUnreadableLines() throws(EventLogError) -> Int {
     try file(ownFileName).quarantineUnreadableLines()
