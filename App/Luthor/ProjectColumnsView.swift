@@ -111,7 +111,7 @@ private struct AddItemRow: View {
 
 /// The item being added, in the column it will land in: a box that shows the title as it is typed on the
 /// card, and cannot be typed in.
-private struct NewItemRow: View {
+struct NewItemRow: View {
   let item: NewItemDraft
 
   var body: some View {

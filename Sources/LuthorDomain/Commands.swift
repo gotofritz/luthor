@@ -104,8 +104,12 @@ public struct Commands {
     today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let project = try activeProject(projectID, in: libraryState(from: log))
-    return try captureEvents(title: title, viewID: project.viewID, parentID: projectID, today: today, log: log).events
+    let state = libraryState(from: log)
+    let project = try activeProject(projectID, in: state)
+    return try captureEvents(
+      title: title, viewID: project.viewID, parentID: projectID, defaults: state.defaults(forNewTaskUnder: projectID),
+      today: today, log: log
+    ).events
   }
 
   /// Completes the open task with exactly this ID. If it repeats, the next task follows in the same command,
@@ -119,7 +123,8 @@ public struct Commands {
     return completion + recurrence(of: taskID, on: today, state: state, log: log + completion)
   }
 
-  /// Creates a project in the view `viewID`; `today` is recorded as the day it was created.
+  /// Creates a top-level project in the view `viewID`, with the priority and estimate settings give new ones;
+  /// `today` is recorded as the day it was created.
   public func createProject(
     title: String,
     kind: ProjectKind,
@@ -128,10 +133,14 @@ public struct Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
-    try requireView(viewID, in: libraryState(from: log))
+    let state = libraryState(from: log)
+    try requireView(viewID, in: state)
     let eventID = EventID(ids.next())
-    let created = TaskCaptured(taskID: TaskID(ids.next()), title: title, viewID: viewID, createdOn: today, kind: kind)
-    return [envelope(eventID, .taskCaptured(created), log: log)]
+    let taskID = TaskID(ids.next())
+    let created = TaskCaptured(taskID: taskID, title: title, viewID: viewID, createdOn: today, kind: kind)
+    let events = [envelope(eventID, .taskCaptured(created), log: log)]
+    return try events
+      + defaultEvents(of: taskID, state.defaults(forNewProjectUnder: nil, in: viewID), log: log + events)
   }
 
   /// Creates a project inside the active project `parentID`, in the parent's view.
@@ -319,11 +328,12 @@ public struct Commands {
   }
 
   /// Captures `raw` (parsed for its quick-capture tags) into `viewID`, filed in `parentID` if there is one, with
-  /// a `TaskPrioritized` and/or a `TaskEstimated` event appended when the tags carry one.
+  /// a `TaskPrioritized` and/or a `TaskEstimated` event appended: the tags' where they carry one, else `defaults`.
   private func captureEvents(
     title raw: String,
     viewID: ViewID,
     parentID: TaskID? = nil,
+    defaults: ItemDefaults = .none,
     today: CalendarDate?,
     log: [EventEnvelope]
   ) throws(CommandError) -> (events: [EventEnvelope], taskID: TaskID) {
@@ -333,12 +343,9 @@ public struct Commands {
     let taskID = TaskID(ids.next())
     let captured = TaskCaptured(taskID: taskID, title: title, viewID: viewID, createdOn: today, parentID: parentID)
     var events = [envelope(eventID, .taskCaptured(captured), log: log)]
-    if let priority = parsed.priority {
-      events += try prioritize(taskID: taskID, as: priority, log: log + events)
-    }
-    if let minutes = parsed.estimateMinutes {
-      events += try estimate(taskID: taskID, as: minutes, log: log + events)
-    }
+    let given = ItemDefaults(
+      priority: parsed.priority ?? defaults.priority, estimate: parsed.estimateMinutes ?? defaults.estimate)
+    events += try defaultEvents(of: taskID, given, log: log + events)
     return (events, taskID)
   }
 

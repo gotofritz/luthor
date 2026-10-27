@@ -122,6 +122,8 @@ column (see [Projects](#projects)).
 Add `!a`, `!b`, `!c` or `!someday` for a priority and `<n>m` for an estimate
 in minutes, anywhere in what you type: `call bank !a 15m` captures "call
 bank" with priority Critical and a 15-minute estimate, already clarified.
+Typed in a project's column, a task takes the project's priority and estimate
+unless you add your own.
 
 ## Completing a task
 
@@ -422,9 +424,12 @@ appears to its right, and so on down the tree.
   parallel project or a sequential project (the first column offers only the
   two projects, which are top-level there), and the fields of any card,
   including the Due and Scheduled rows (a project has no Scheduled row). A new
-  task starts with priority optional and an estimate of 5 minutes, a project
-  with neither; switching the kind on the card swaps these defaults, unless
-  you have changed that field yourself. Nothing is written until OK (or
+  task starts with the priority and the estimate of the project it is in, or
+  if that has none, of the nearest project above it, up to the top-level one
+  (a task in no project starts with neither); a top-level project starts with
+  the ones set under Settings → Global → New projects (none to begin with), a
+  sub-project with neither. Switching the kind on the card swaps these
+  defaults, unless you have changed that field yourself. Nothing is written until OK (or
   Return in the title); Cancel, Escape, or clicking anywhere else drops the item
 - Clicking the empty part of a column closes every column to its right: in the
   first column no project is open any more, in a later one its project is
@@ -528,9 +533,13 @@ taken to another view.
 Prios lists Critical, Important, Optional, One day and No priority. It
 behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
-The list shows the tasks of all the picked priorities, the most urgent first
-and those with no priority last. With none picked, the list is empty. You can
-complete a task from the list like anywhere else.
+Each picked priority has a list of its own, headed by its name, the most
+urgent first and No priority last; a task shows its estimate and its due
+date, not its priority, which the heading says. At the bottom of each list a
+plus button adds a task with that priority: the card opens in the next column
+as it does in a project, and the task has no project, so no estimate, until
+you set one. With none picked, there is nothing to list. You can complete a
+task from the list like anywhere else.
 
 A task given One day (someday) is kept out of next actions, wherever it is
 filed, until you give it another priority.
@@ -562,7 +571,9 @@ Today.
 Settings shows three families in its first column: Global, Views and This Mac.
 
 - **Global** sets the numbers every view falls back to: the default estimate
-  for a task given no estimate (5 minutes), the buffer percentage held back
+  for a task given no estimate (5 minutes), the priority and estimate a new
+  top-level project starts with (New projects; none to begin with, and the
+  tasks added to it start with the same), the buffer percentage held back
   from each day's capacity (40%), and the capacity of each weekday in
   minutes (8 hours on weekdays, none at the weekend), and when each weekday
 starts and ends (09:00 to 17:00; a day's own fields in Today beat them). Day

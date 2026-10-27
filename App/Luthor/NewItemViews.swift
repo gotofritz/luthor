@@ -19,9 +19,12 @@ struct NewItemCardColumn: View {
     _fields = State(initialValue: CardFields(priority: item.card.priority, estimate: item.card.estimate))
   }
 
-  /// A task only where a project is being added to; the first column holds projects.
+  /// A task only where a project is being added to, or where a task was begun outside a project, as from a
+  /// priority's list; the first column holds projects.
   private var kinds: [NewItemKind] {
-    (item.parentID == nil ? [] : [NewItemKind.task]) + [.project(.parallel), .project(.sequential)]
+    (item.parentID == nil && item.kind != .task ? [] : [NewItemKind.task]) + [
+      .project(.parallel), .project(.sequential),
+    ]
   }
 
   private var title: Binding<String> {
@@ -63,7 +66,7 @@ struct NewItemCardColumn: View {
       .padding(12)
     }
     .frame(width: 300)
-    .id(item.parentID?.rawValue ?? "top")
+    .id("\(item.parentID?.rawValue ?? "top")-\(item.number)")
   }
 
   private func save() {

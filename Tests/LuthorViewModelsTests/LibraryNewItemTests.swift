@@ -4,12 +4,15 @@ import LuthorTestSupport
 import LuthorViewModels
 import Testing
 
-/// Garden holds "mow the lawn" and the sub-project Roses; "buy milk" is loose in the inbox.
+/// Garden (priority optional, 5 minutes) holds "mow the lawn" and the sub-project Roses; "buy milk" is loose in
+/// the inbox.
 private let gardenLog = [
   projectCreated("p1", "Garden", lamport: 1),
   captured("t1", "mow the lawn", under: "p1", lamport: 2),
   projectCreated("p2", "Roses", under: "p1", lamport: 3),
   captured("t2", "buy milk", lamport: 4),
+  prioritized("p1", as: .optional, lamport: 5),
+  estimated("p1", as: 5, lamport: 6),
 ]
 
 @MainActor
@@ -25,7 +28,7 @@ struct NewItemStartViewModelTests {
     #expect(library.newItem?.card.estimate == nil)
   }
 
-  @Test("a new task is being edited, seeded with priority optional and an estimate of 5 minutes")
+  @Test("a new task is being edited, seeded with the priority and the estimate of its project")
   func aNewTaskIsSeededWithDefaults() {
     let (library, log) = makeInbox(gardenLog)
 
@@ -347,8 +350,8 @@ struct AddTasksStartsNewItemViewModelTests {
     #expect(library.shownProject?.id == TaskID("t2"))
     #expect(library.newItem?.parentID == TaskID("t2"))
     #expect(library.newItem?.kind == .task)
-    #expect(library.newItem?.card.priority == .optional)
-    #expect(library.newItem?.card.estimate == 5)
+    #expect(library.newItem?.card.priority == nil)
+    #expect(library.newItem?.card.estimate == nil)
   }
 
   @Test("OK files the new task in it")
@@ -365,7 +368,7 @@ struct AddTasksStartsNewItemViewModelTests {
 
   @Test("a task that is no longer open starts no new item")
   func aClosedTaskStartsNothing() {
-    let (library, _) = makeInbox(gardenLog + [completed("t2", lamport: 5)])
+    let (library, _) = makeInbox(gardenLog + [completed("t2", lamport: 7)])
 
     library.addTasks(to: TaskID("t2"))
 

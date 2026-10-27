@@ -1,0 +1,31 @@
+import LuthorDomain
+
+/// The list of one picked priority in the priorities place; `nil` is the list of the tasks with no priority.
+public struct PriorityGroup: Equatable, Sendable, Identifiable {
+  public let priority: Priority?
+  public let tasks: [TaskItem]
+
+  public var id: String { priority?.rawValue ?? "none" }
+}
+
+extension LibraryViewModel {
+  /// The lists the priorities place shows, one for each priority picked, the most urgent first and no priority
+  /// last. A priority with no task still has its list, which takes new ones.
+  public var priorityGroups: [PriorityGroup] {
+    Self.priorityRows.filter { selectedPriorities.contains($0) }.map { priority in
+      PriorityGroup(priority: priority, tasks: tasks.filter { $0.priority == priority })
+    }
+  }
+
+  /// Starts a new task with `priority` (or none) from the bottom of that priority's list. The task goes to no
+  /// project, so it starts with no estimate; a task begun before is dropped. Nothing is written before OK.
+  public func addTask(withPriority priority: Priority?) {
+    selection = nil
+    editingCard = nil
+    projectCardOpen = false
+    var item = makeNewItem(under: nil, kind: .task)
+    item.card.priority = priority
+    item.priorityEdited = true
+    newItem = item
+  }
+}
