@@ -29,7 +29,7 @@ extension LibraryViewModel {
     let day = planDate
     let elapsed = min(max(1, minuteOfDay - start), dayLimit - start)
     perform { (log) throws(CommandError) in
-      let logged = LibraryState.replay(log).loggedMinutes(of: taskID, on: day) ?? 0
+      let logged = state.loggedMinutes(of: taskID, on: day) ?? 0
       var events = try commands.logTime(taskID: taskID, on: day, minutes: logged + elapsed, log: log)
       events += try commands.setStart(taskID: taskID, on: day, minute: nil, log: log + events)
       events += try commands.setSession(of: taskID, on: day, start: start, minutes: elapsed, log: log + events)

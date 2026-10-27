@@ -131,7 +131,8 @@ Sources/
                              review), TaskReviewed
     Identifiers.swift        EventID, DeviceID, TaskID (one ID for tasks and projects; derived IDs for the next
                              of a repeat and for copies in a copied subtree), TagID, ViewID (+ ViewID.default)
-    Commands.swift           command → new events; IDGenerator protocol, CommandError
+    Commands.swift           command → new events; IDGenerator protocol, CommandError; `after(_:lamport:)` binds
+                             the held state, so a command is given only the events since and replays nothing
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
     Commands+Completion.swift  reopen a completed or dropped task or project
     Commands+Blocks.swift    add, change and remove a block of untracked time on a day

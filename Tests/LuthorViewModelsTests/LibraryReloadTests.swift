@@ -55,3 +55,52 @@ struct ReloadViewModelTests {
     #expect(library.views == [ViewItem(id: .default, name: "Default")])
   }
 }
+
+@MainActor
+@Suite("When an action is taken")
+struct ActionViewModelTests {
+  @Test("it does not read the log while nothing outside has written to it")
+  func actionDoesNotReadAnUnchangedLog() {
+    let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 1)])
+    let reads = log.reads
+
+    library.prioritize(TaskID("t1"), as: .critical)
+    library.estimate(TaskID("t1"), as: 15)
+
+    #expect(log.reads == reads)
+    #expect(log.events.count == 3)
+    #expect(log.events.map(\.lamport) == [1, 2, 3])
+  }
+
+  @Test("it reads the log first once something outside has written to it")
+  func actionReadsAChangedLog() {
+    let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 1)])
+    let reads = log.reads
+    log.events.append(captured("t2", "book flights", device: "phone", lamport: 2))
+
+    library.prioritize(TaskID("t2"), as: .critical)
+
+    #expect(log.reads == reads + 1)
+    #expect(log.events.last?.lamport == 3)
+  }
+
+  @Test("its events follow the highest Lamport counter seen at the last reload")
+  func eventsFollowTheCounter() {
+    let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 41)])
+
+    library.prioritize(TaskID("t1"), as: .critical)
+
+    #expect(log.events.last?.lamport == 42)
+  }
+
+  @Test("an event written outside is seen after the next reload, and the counter follows it")
+  func outsideEventMovesTheCounter() {
+    let (library, log) = makeLibrary([captured("t1", "buy milk", lamport: 1)])
+    log.events.append(captured("t2", "book flights", device: "phone", lamport: 9))
+    library.reload()
+
+    library.prioritize(TaskID("t2"), as: .critical)
+
+    #expect(log.events.last?.lamport == 10)
+  }
+}

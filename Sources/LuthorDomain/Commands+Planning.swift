@@ -6,7 +6,7 @@ extension Commands {
   public func schedule(taskID: TaskID, on date: CalendarDate, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let task = state.openTasks.first(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
     guard task.priority != .someday else { throw .someday(taskID) }
     guard state.scheduledDate(of: taskID) != date else { return [] }
@@ -21,7 +21,7 @@ extension Commands {
 
   /// Takes the open task `taskID` off its day. A task planned for no day writes nothing.
   public func unschedule(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
     guard state.scheduledDate(of: taskID) != nil else { return [] }
     return [envelope(EventID(ids.next()), .taskUnscheduled(TaskUnscheduled(taskID: taskID)), log: log)]
@@ -35,7 +35,7 @@ extension Commands {
     as taskIDs: [TaskID],
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     let open = Set(state.view(viewID).openTasks.map(\.id))
     if let missing = taskIDs.first(where: { !open.contains($0) }) { throw .noOpenTask(missing.rawValue) }
@@ -54,7 +54,7 @@ extension Commands {
     on date: CalendarDate,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     guard state.capacityOverride(in: viewID, on: date) != minutes else { return [] }
     let event = DayCapacitySet(viewID: viewID, date: date, minutes: minutes)
@@ -70,9 +70,9 @@ extension Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     if let minute, !(0..<DayHours.latest).contains(minute) { throw .invalidHours }
-    if minute == nil, LibraryState.replay(log).scheduledDate(of: taskID) != date { return [] }
+    if minute == nil, libraryState(from: log).scheduledDate(of: taskID) != date { return [] }
     var events = try schedule(taskID: taskID, on: date, log: log)
-    let state = LibraryState.replay(log + events)
+    let state = libraryState(from: log + events)
     guard state.startMinute(of: taskID, on: date) != minute else { return events }
     let event = TaskStartSet(taskID: taskID, date: date, minute: minute)
     events.append(envelope(EventID(ids.next()), .taskStartSet(event), log: log + events))
@@ -87,7 +87,7 @@ extension Commands {
     on date: CalendarDate,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     if let hours, !hours.isValid { throw .invalidHours }
     guard state.hoursOverride(in: viewID, on: date) != hours else { return [] }
@@ -105,7 +105,7 @@ extension Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let name = try Self.named(name)
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
     let delegation = Delegation(to: name, since: since, followUpDate: followUp)
     guard state.delegation(of: taskID) != delegation else { return [] }
@@ -115,7 +115,7 @@ extension Commands {
 
   /// Takes the delegated task `taskID` back. A task that is not delegated writes nothing.
   public func reclaim(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.openTasks.contains(where: { $0.id == taskID }) else { throw .noOpenTask(taskID.rawValue) }
     guard state.delegation(of: taskID) != nil else { return [] }
     return [envelope(EventID(ids.next()), .taskReclaimed(TaskReclaimed(taskID: taskID)), log: log)]
@@ -123,7 +123,7 @@ extension Commands {
 
   /// Gives up the open task `taskID`: it leaves every list without being completed.
   public func drop(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).openTasks.contains(where: { $0.id == taskID }) else {
+    guard libraryState(from: log).openTasks.contains(where: { $0.id == taskID }) else {
       throw .noOpenTask(taskID.rawValue)
     }
     return [envelope(EventID(ids.next()), .taskDropped(TaskDropped(taskID: taskID)), log: log)]
@@ -134,7 +134,7 @@ extension Commands {
   public func sendToSomeday(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     var events = try unschedule(taskID: taskID, log: log)
     events += try prioritize(taskID: taskID, as: .someday, log: log + events)
-    if LibraryState.replay(log).repeatRule(of: taskID) != nil {
+    if libraryState(from: log).repeatRule(of: taskID) != nil {
       let stopped = TaskRepeatSet(taskID: taskID, rule: nil)
       events.append(envelope(EventID(ids.next()), .taskRepeatSet(stopped), log: log + events))
     }

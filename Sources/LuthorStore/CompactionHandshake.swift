@@ -211,6 +211,10 @@ public struct PausableEventLog: EventLog {
     try base.quarantineUnreadableLines()
   }
 
+  public func changeToken() -> String? {
+    base.changeToken()
+  }
+
   public func append(_ events: [EventEnvelope]) throws(EventLogError) {
     if let request = try handshake.pausingRequest() {
       throw .ioFailure(

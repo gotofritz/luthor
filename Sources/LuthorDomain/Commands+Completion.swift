@@ -2,7 +2,7 @@ extension Commands {
   /// Opens the completed or dropped task `taskID` again. A task that is open, or that its project's completion
   /// or drop took along, is refused: reopen the project instead.
   public func reopen(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard
       state.completedTasks.contains(where: { $0.item.id == taskID && $0.isReopenable })
         || state.completedProjects.contains(where: { $0.item.id == taskID && $0.isReopenable })
@@ -16,7 +16,7 @@ extension Commands {
   /// project that is open, or that another project's completion or drop took along, is refused.
   public func reopenProject(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     guard
-      LibraryState.replay(log).completedProjects.contains(where: { $0.item.id == projectID && $0.isReopenable })
+      libraryState(from: log).completedProjects.contains(where: { $0.item.id == projectID && $0.isReopenable })
     else {
       throw .noCompletedProject(projectID)
     }

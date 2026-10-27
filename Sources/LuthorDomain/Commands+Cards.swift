@@ -3,7 +3,7 @@ extension Commands {
   /// Gives the open task `taskID` another title. A blank title is refused; the title it has writes nothing.
   public func rename(taskID: TaskID, to title: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
-    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let task = try openTask(taskID, in: libraryState(from: log))
     guard task.title != title else { return [] }
     return [envelope(EventID(ids.next()), .taskRenamed(TaskRenamed(taskID: taskID, title: title)), log: log)]
   }
@@ -12,7 +12,7 @@ extension Commands {
   public func setNotes(taskID: TaskID, to notes: String, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let task = try openTask(taskID, in: libraryState(from: log))
     let notes = Self.noteText(notes)
     guard task.notes != notes else { return [] }
     return [envelope(EventID(ids.next()), .taskNoted(TaskNoted(taskID: taskID, notes: notes)), log: log)]
@@ -23,7 +23,7 @@ extension Commands {
   public func appendNote(taskID: TaskID, _ text: String, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let task = try openTask(taskID, in: libraryState(from: log))
     let added = NoteBullets.bullets(in: text)
     guard !added.isEmpty else { return [] }
     let notes = NoteBullets.notes(from: NoteBullets.bullets(in: task.notes) + added)
@@ -35,7 +35,7 @@ extension Commands {
   public func deleteNote(taskID: TaskID, at position: Int, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let task = try openTask(taskID, in: libraryState(from: log))
     var bullets = NoteBullets.bullets(in: task.notes)
     guard bullets.indices.contains(position) else { return [] }
     bullets.remove(at: position)
@@ -48,7 +48,7 @@ extension Commands {
   public func editNote(taskID: TaskID, at position: Int, to text: String, log: [EventEnvelope])
     throws(CommandError) -> [EventEnvelope]
   {
-    let task = try openTask(taskID, in: LibraryState.replay(log))
+    let task = try openTask(taskID, in: libraryState(from: log))
     var bullets = NoteBullets.bullets(in: task.notes)
     guard bullets.indices.contains(position) else { return [] }
     bullets.replaceSubrange(position...position, with: NoteBullets.bullets(in: text))
@@ -61,7 +61,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let title = try Self.named(title)
-    let project = try activeProject(projectID, in: LibraryState.replay(log))
+    let project = try activeProject(projectID, in: libraryState(from: log))
     guard project.title != title else { return [] }
     let renamed = TaskRenamed(taskID: projectID, title: title)
     return [envelope(EventID(ids.next()), .taskRenamed(renamed), log: log)]
@@ -72,7 +72,7 @@ extension Commands {
   public func setKind(of projectID: TaskID, to kind: ProjectKind, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let item = state.openItem(projectID) else { throw .noActiveProject(projectID) }
     guard item.kind != kind else { return [] }
     let changed = TaskKindChanged(taskID: projectID, kind: kind)
@@ -84,7 +84,7 @@ extension Commands {
   public func setNotes(ofProject projectID: TaskID, to notes: String, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let project = try activeProject(projectID, in: LibraryState.replay(log))
+    let project = try activeProject(projectID, in: libraryState(from: log))
     let notes = Self.noteText(notes)
     guard project.notes != notes else { return [] }
     let noted = TaskNoted(taskID: projectID, notes: notes)

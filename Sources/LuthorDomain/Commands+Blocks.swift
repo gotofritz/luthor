@@ -8,7 +8,7 @@ extension Commands {
     on date: CalendarDate,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    try requireView(viewID, in: LibraryState.replay(log))
+    try requireView(viewID, in: libraryState(from: log))
     guard hours.isValid else { throw .invalidHours }
     let event = DayBlockSet(
       blockID: BlockID(ids.next()), viewID: viewID, date: date, title: Self.blockTitle(title), start: hours.start,
@@ -24,7 +24,7 @@ extension Commands {
     end: Int,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    guard let placed = LibraryState.replay(log).dayBlocks[blockID] else { throw .noBlock(blockID) }
+    guard let placed = libraryState(from: log).dayBlocks[blockID] else { throw .noBlock(blockID) }
     guard DayHours(start: start, end: end).isValid else { throw .invalidHours }
     let title = Self.blockTitle(title)
     let block = placed.block
@@ -36,7 +36,7 @@ extension Commands {
 
   /// Takes a block off its day.
   public func removeBlock(_ blockID: BlockID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).dayBlocks[blockID] != nil else { throw .noBlock(blockID) }
+    guard libraryState(from: log).dayBlocks[blockID] != nil else { throw .noBlock(blockID) }
     return [envelope(EventID(ids.next()), .dayBlockRemoved(DayBlockRemoved(blockID: blockID)), log: log)]
   }
 

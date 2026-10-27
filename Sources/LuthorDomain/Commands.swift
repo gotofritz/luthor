@@ -45,13 +45,42 @@ public enum CommandError: Error, Equatable {
 }
 
 /// Turns user intentions into new events, given the current log.
+///
+/// A caller that holds the state of the log already (the view model) binds it with `after(_:lamport:)` and passes
+/// only the events written since as `log`, usually none; the commands then neither re-read nor replay the log.
 public struct Commands {
+  /// The state and highest Lamport counter of the log as of the events a command is given.
+  struct Base {
+    let state: LibraryState
+    let lamport: UInt64
+  }
+
   let deviceID: DeviceID
   let ids: any IDGenerator
+  private(set) var base: Base?
 
   public init(deviceID: DeviceID, ids: any IDGenerator) {
     self.deviceID = deviceID
     self.ids = ids
+  }
+
+  /// These commands, taking `state` (whose highest Lamport counter is `lamport`) as the log before any `log`
+  /// argument: that argument holds only the events after it, so a command costs what it changes, not the log's size.
+  public func after(_ state: LibraryState, lamport: UInt64) -> Commands {
+    var bound = self
+    bound.base = Base(state: state, lamport: lamport)
+    return bound
+  }
+
+  /// The state of the log: replayed whole, or the bound state with the events of `log` applied after it.
+  func libraryState(from log: [EventEnvelope]) -> LibraryState {
+    guard var state = base?.state else { return LibraryState.replay(log) }
+    state.append(log)
+    return state
+  }
+
+  func lastLamport(of log: [EventEnvelope]) -> UInt64 {
+    log.reduce(base?.lamport ?? 0) { max($0, $1.lamport) }
   }
 
   /// Captures a task into the inbox of the view `viewID`. `title` may carry the quick-capture syntax
@@ -63,7 +92,7 @@ public struct Commands {
     today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    try requireView(viewID, in: LibraryState.replay(log))
+    try requireView(viewID, in: libraryState(from: log))
     return try captureEvents(title: title, viewID: viewID, today: today, log: log).events
   }
 
@@ -75,7 +104,7 @@ public struct Commands {
     today: CalendarDate? = nil,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let project = try activeProject(projectID, in: LibraryState.replay(log))
+    let project = try activeProject(projectID, in: libraryState(from: log))
     return try captureEvents(title: title, viewID: project.viewID, parentID: projectID, today: today, log: log).events
   }
 
@@ -84,7 +113,7 @@ public struct Commands {
   public func complete(taskID: TaskID, today: CalendarDate? = nil, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let completion = [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
     return completion + recurrence(of: taskID, on: today, state: state, log: log + completion)
@@ -99,7 +128,7 @@ public struct Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
-    try requireView(viewID, in: LibraryState.replay(log))
+    try requireView(viewID, in: libraryState(from: log))
     let eventID = EventID(ids.next())
     let created = TaskCaptured(taskID: TaskID(ids.next()), title: title, viewID: viewID, createdOn: today, kind: kind)
     return [envelope(eventID, .taskCaptured(created), log: log)]
@@ -114,7 +143,7 @@ public struct Commands {
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
     let title = try Self.named(title)
-    let parent = try activeProject(parentID, in: LibraryState.replay(log))
+    let parent = try activeProject(parentID, in: libraryState(from: log))
     let eventID = EventID(ids.next())
     let created = TaskCaptured(
       taskID: TaskID(ids.next()), title: title, viewID: parent.viewID, createdOn: today, parentID: parentID,
@@ -129,7 +158,7 @@ public struct Commands {
     under parentID: TaskID?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     let project = try activeProject(projectID, in: state)
     if let parentID {
       let parent = try activeProject(parentID, in: state)
@@ -143,7 +172,7 @@ public struct Commands {
 
   public func createView(name: String, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
     let name = try Self.named(name)
-    try requireUnique(name, in: LibraryState.replay(log))
+    try requireUnique(name, in: libraryState(from: log))
     let eventID = EventID(ids.next())
     return [envelope(eventID, .viewCreated(ViewCreated(viewID: ViewID(ids.next()), name: name)), log: log)]
   }
@@ -152,7 +181,7 @@ public struct Commands {
     -> [EventEnvelope]
   {
     let name = try Self.named(name)
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     try requireUnique(name, except: viewID, in: state)
     return [envelope(EventID(ids.next()), .viewRenamed(ViewRenamed(viewID: viewID, name: name)), log: log)]
@@ -162,7 +191,7 @@ public struct Commands {
   /// view it is in writes nothing.
   public func move(taskID: TaskID, toView viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     try requireView(viewID, in: state)
     guard task.viewID != viewID else { return [] }
@@ -176,7 +205,7 @@ public struct Commands {
     toView viewID: ViewID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     let project = try activeProject(projectID, in: state)
     try requireView(viewID, in: state)
     guard project.viewID != viewID else { return [] }
@@ -191,7 +220,7 @@ public struct Commands {
     to projectID: TaskID?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     if let projectID {
       let project = try activeProject(projectID, in: state)
@@ -207,7 +236,7 @@ public struct Commands {
   public func prioritize(taskID: TaskID, as priority: Priority?, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard let task = LibraryState.replay(log).openItem(taskID) else {
+    guard let task = libraryState(from: log).openItem(taskID) else {
       throw .noOpenTask(taskID.rawValue)
     }
     guard task.priority != priority else { return [] }
@@ -220,7 +249,7 @@ public struct Commands {
   public func estimate(taskID: TaskID, as minutes: Int?, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard let task = LibraryState.replay(log).openItem(taskID) else {
+    guard let task = libraryState(from: log).openItem(taskID) else {
       throw .noOpenTask(taskID.rawValue)
     }
     guard task.estimate != minutes else { return [] }
@@ -233,7 +262,7 @@ public struct Commands {
   public func changeSetting(_ key: SettingKey, to value: String?, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard LibraryState.replay(log).globalSettingValue(key) != value else { return [] }
+    guard libraryState(from: log).globalSettingValue(key) != value else { return [] }
     let changed = SettingChanged(key: key, value: value)
     return [envelope(EventID(ids.next()), .settingChanged(changed), log: log)]
   }
@@ -246,7 +275,7 @@ public struct Commands {
     for viewID: ViewID,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     guard state.overrideValue(key, in: viewID) != value else { return [] }
     let changed = SettingChanged(key: key, value: value, viewID: viewID)
@@ -255,7 +284,7 @@ public struct Commands {
 
   /// Sets the default view; nothing reads it since the CLI was removed. The view must exist.
   public func setDefaultView(_ viewID: ViewID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    try requireView(viewID, in: LibraryState.replay(log))
+    try requireView(viewID, in: libraryState(from: log))
     return try changeSetting(.defaultViewID, to: viewID.rawValue, log: log)
   }
 
@@ -271,7 +300,7 @@ public struct Commands {
   }
 
   private func requireActive(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) {
-    _ = try activeProject(projectID, in: LibraryState.replay(log))
+    _ = try activeProject(projectID, in: libraryState(from: log))
   }
 
   func activeProject(_ projectID: TaskID, in state: LibraryState) throws(CommandError) -> Project {
@@ -326,6 +355,6 @@ public struct Commands {
   }
 
   func envelope(_ id: EventID, _ payload: EventPayload, log: [EventEnvelope]) -> EventEnvelope {
-    EventEnvelope(id: id, deviceID: deviceID, lamport: log.reduce(0) { max($0, $1.lamport) } + 1, payload: payload)
+    EventEnvelope(id: id, deviceID: deviceID, lamport: lastLamport(of: log) + 1, payload: payload)
   }
 }

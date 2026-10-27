@@ -31,7 +31,7 @@ extension LibraryViewModel {
   /// Puts a tag on a task, or takes it off if the task carries it.
   public func toggleTag(_ tagID: TagID, on taskID: TaskID) {
     perform { (log) throws(CommandError) in
-      let carried = LibraryState.replay(log).tags(of: taskID).contains { $0.id == tagID }
+      let carried = state.tags(of: taskID).contains { $0.id == tagID }
       if carried {
         return try commands.untag(taskID: taskID, from: tagID, log: log)
       }

@@ -6,7 +6,7 @@ extension Commands {
   public func duplicate(taskID: TaskID, today: CalendarDate? = nil, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    guard LibraryState.replay(log).isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
+    guard libraryState(from: log).isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let eventID = EventID(ids.next())
     let duplicated = TaskDuplicated(source: taskID, copy: TaskID(ids.next()), createdOn: today)
     return [envelope(eventID, .taskDuplicated(duplicated), log: log)]
@@ -14,21 +14,21 @@ extension Commands {
 
   /// Deletes the task `taskID` for good, open or completed, with everything set on it.
   public func delete(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).hasTask(taskID) else { throw .unknownTask(taskID) }
+    guard libraryState(from: log).hasTask(taskID) else { throw .unknownTask(taskID) }
     return [envelope(EventID(ids.next()), .taskDeleted(TaskDeleted(taskID: taskID)), log: log)]
   }
 
   /// Deletes the project `projectID` for good, active, dropped or completed, with its sub-projects and every
   /// task in them.
   public func delete(projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).hasProject(projectID) else { throw .unknownProject(projectID) }
+    guard libraryState(from: log).hasProject(projectID) else { throw .unknownProject(projectID) }
     return [envelope(EventID(ids.next()), .taskDeleted(TaskDeleted(taskID: projectID)), log: log)]
   }
 
   /// Turns the open task `taskID` into a parallel project, to which tasks can then be added. It stays the same
   /// item, with its title, notes, fields and place. An item that is a project already writes nothing.
   public func promote(taskID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard let item = LibraryState.replay(log).openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
+    guard let item = libraryState(from: log).openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard item.kind == nil else { return [] }
     let changed = TaskKindChanged(taskID: taskID, kind: .parallel)
     return [envelope(EventID(ids.next()), .taskKindChanged(changed), log: log)]
@@ -38,7 +38,7 @@ extension Commands {
   /// fields and place. A project with an open task or sub-project in it is refused; an item that is a task
   /// already writes nothing.
   public func demote(projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let item = state.openItem(projectID) else { throw .noOpenTask(projectID.rawValue) }
     guard item.kind != nil else { return [] }
     let project = state.view(item.viewID).projects.first { $0.id == projectID }

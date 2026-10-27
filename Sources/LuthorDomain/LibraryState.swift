@@ -162,6 +162,14 @@ public struct LibraryState: Equatable, Sendable {
     return state
   }
 
+  /// Applies events that come after everything applied so far, as the commands' own new events do (they carry
+  /// the highest Lamport counter), in replay order. Events from elsewhere that may sort earlier need `replay`.
+  public mutating func append(_ events: [EventEnvelope]) {
+    for event in events.sorted(by: EventEnvelope.replayOrder) {
+      apply(event.payload)
+    }
+  }
+
   mutating func apply(_ payload: EventPayload) {
     switch payload {
     case .taskCaptured(let captured):

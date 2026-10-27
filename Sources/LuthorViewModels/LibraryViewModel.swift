@@ -6,8 +6,9 @@ import Observation
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
 ///
-/// Every action re-reads the log first, so events another process appended are never missed
-/// and new events follow the highest Lamport counter on disk.
+/// An action runs on the state held and applies the events it writes to it, so it does not read the log. Events
+/// another process appended are seen by `reload`, which the window calls when the log file changes, and new events
+/// follow the highest Lamport counter seen.
 @MainActor
 @Observable
 public final class LibraryViewModel {
@@ -130,8 +131,12 @@ public final class LibraryViewModel {
   let clock: () -> CalendarDate
   /// The minutes since midnight by the clock.
   let minuteClock: () -> Int
-  let commands: Commands
+  let unboundCommands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
+  /// The highest Lamport counter of the log as last read or written here.
+  @ObservationIgnored var lastLamport: UInt64 = 0
+  /// The log's change token as of the state held, so an action reads the log only when it has changed since.
+  @ObservationIgnored var loggedToken: String?
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
@@ -145,7 +150,7 @@ public final class LibraryViewModel {
     now: @escaping () -> Int = { minutesSinceMidnight() }
   ) {
     self.log = log
-    self.commands = commands
+    unboundCommands = commands
     clock = today
     minuteClock = now
     currentView = view
@@ -223,22 +228,6 @@ public final class LibraryViewModel {
   /// its own sub-projects changes nothing.
   public func nest(_ projectID: TaskID, under parentID: TaskID?) {
     perform { (log) throws(CommandError) in try commands.move(projectID: projectID, under: parentID, log: log) }
-  }
-
-  public func reload() {
-    do {
-      let reading = try log.readReportingProblems()
-      let replayed = LibraryState.replay(reading.events)
-      // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
-      if revision > 0, replayed == state, reading.problems == logProblems, clock() == today {
-        if errorMessage != nil { errorMessage = nil }
-        return
-      }
-      logProblems = reading.problems
-      show(replayed)
-    } catch {
-      errorMessage = Self.describe(error)
-    }
   }
 
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
@@ -362,11 +351,6 @@ public final class LibraryViewModel {
   /// Sets the notes of a project, or with blank text clears them.
   public func setNotes(ofProject projectID: TaskID, to notes: String) {
     perform { (log) throws(CommandError) in try commands.setNotes(ofProject: projectID, to: notes, log: log) }
-  }
-
-  /// The selected task, whose card is shown.
-  public var selectedTask: TaskItem? {
-    selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
   /// Completes a task. If it repeats, the next one is made, due by its rule as of today.
