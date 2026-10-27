@@ -254,6 +254,7 @@ Then:
 ```bash
 make check-ci   # lint, build, tests with a 90% coverage gate, and the Mac app: exactly what CI runs on the Mac
 make test-linux # build and test the package only, no Xcode: runs on Linux too (CI's fast `linux` job)
+make bench      # launch and action timings on synthetic 1, 3 and 5 year logs; prints BENCH lines
 ```
 
 Agent sessions and other machines without Xcode use `make test-linux` for quick

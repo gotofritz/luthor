@@ -456,8 +456,10 @@ dependency is Yams (the YAML codec).
   view model keeps the events it replayed and a cursor (byte offset, line count and a checksum of the last bytes,
   per file), reads only what was appended, and applies it on top of the state when it sorts after everything
   applied, else replays; a file that shrank or was replaced is read whole. Still open from #86: work off the main
-  actor, and the
-  benchmark that sets the budget
+  actor. The benchmark that sets the budget is `make bench` (`LuthorPerformanceTests`): it
+  times launch, a capture and a reload on synthetic 1, 3 and 5 year logs and prints the
+  numbers, with budgets of a few times what a debug build takes (launch 10 s, capture 250 ms, an unchanged reload
+  100 ms)
 - The global capture hotkey (#34) and the command palette (#35) were cut on
   2026-10-18: not core, so they wait in issues, to be done if at all later
 

@@ -32,6 +32,11 @@ let package = Package(
       name: "LuthorViewModelsTests",
       dependencies: ["LuthorViewModels", "LuthorDomain", "LuthorStore", "LuthorTestSupport"]
     ),
+    // Launch and action timings on synthetic logs of years of use; `make bench` runs them alone.
+    .testTarget(
+      name: "LuthorPerformanceTests",
+      dependencies: ["LuthorDomain", "LuthorStore", "LuthorViewModels", "LuthorTestSupport"]
+    ),
     // End-to-end flows through the view models; `make test-acceptance` runs them alone.
     .testTarget(
       name: "LuthorAcceptanceTests",
