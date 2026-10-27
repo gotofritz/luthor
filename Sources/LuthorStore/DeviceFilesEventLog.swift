@@ -47,11 +47,29 @@ public struct DeviceFilesEventLog: EventLog, Sendable {
 
   /// Like `readAll`, but every damaged line is reported with its file and line instead of being an error.
   public func readReportingProblems() throws(EventLogError) -> LogReading {
-    var reading = LogReading()
+    var reading = LogReading(cursor: LogCursor())
     for name in try deviceLogNames() {
       let part = try file(name).readReportingProblems(skippingIncompleteTail: name != ownFileName)
       reading.events += part.events
       reading.problems += part.problems
+      reading.cursor?.files[name] = part.cursor?.files[name]
+    }
+    return reading
+  }
+
+  /// What the files gained since `cursor`, a new device's file whole; `nil` if a file the cursor knows has gone,
+  /// shrunk or been replaced.
+  public func readIncrement(since cursor: LogCursor) throws(EventLogError) -> LogReading? {
+    let names = try deviceLogNames()
+    guard cursor.files.keys.allSatisfy(names.contains) else { return nil }
+    var reading = LogReading(cursor: LogCursor())
+    for name in names {
+      guard let (part, next) = try file(name).readIncrement(from: cursor.files[name] ?? FileCursor()) else {
+        return nil
+      }
+      reading.events += part.events
+      reading.problems += part.problems
+      reading.cursor?.files[name] = next
     }
     return reading
   }

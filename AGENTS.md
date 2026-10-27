@@ -201,6 +201,9 @@ Sources/
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); damaged lines reported as
                              LogProblem and quarantined to .rejected on repair; lines of an unknown event
                              type are skipped on read and stay in the file
+    JSONLinesEventLog+Increment.swift  LogCursor (how far a reading got: bytes and lines per file, and a checksum of the
+                             last bytes) and the scan that reads a file whole or from a cursor; `readIncrement(since:)` of the
+                             logs gives only what was appended, `nil` if a file shrank, went or was replaced
     LibraryText.swift        a LibraryExport (tasks and projects, no history) as YAML text and back (uses Yams)
     LogCompactor.swift       Settings → This Mac → Compact Log: backs up the log files and a YAML copy, rebuilds
                              the log from the library (export, then import) and carries over the plan and review events, checks it, refuses
