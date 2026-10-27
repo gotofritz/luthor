@@ -215,6 +215,10 @@ public struct PausableEventLog: EventLog {
     base.changeToken()
   }
 
+  public func readIncrement(since cursor: LogCursor) throws(EventLogError) -> LogReading? {
+    try base.readIncrement(since: cursor)
+  }
+
   public func append(_ events: [EventEnvelope]) throws(EventLogError) {
     if let request = try handshake.pausingRequest() {
       throw .ioFailure(

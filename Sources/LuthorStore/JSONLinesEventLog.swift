@@ -22,10 +22,13 @@ public struct LogProblem: Equatable, Sendable {
 public struct LogReading: Sendable {
   public var events: [EventEnvelope] = []
   public var problems: [LogProblem] = []
+  /// Where this reading ended, for `EventLog.readIncrement(since:)`; `nil` for a log that cannot read on from it.
+  public var cursor: LogCursor?
 
-  public init(events: [EventEnvelope] = [], problems: [LogProblem] = []) {
+  public init(events: [EventEnvelope] = [], problems: [LogProblem] = [], cursor: LogCursor? = nil) {
     self.events = events
     self.problems = problems
+    self.cursor = cursor
   }
 }
 
@@ -302,22 +305,6 @@ public struct JSONLinesEventLog: Sendable {
 
   /// The readable events, and every line that is not one, instead of failing at the first. Bad lines stay in
   /// the file. See `readAll(skippingIncompleteTail:)` for the option.
-  public func readReportingProblems(skippingIncompleteTail: Bool) throws(EventLogError) -> LogReading {
-    guard FileManager.default.fileExists(atPath: fileURL.path) else { return LogReading() }
-    let lines = try readLines()
-    var reading = LogReading()
-    for (index, line) in lines.enumerated() where !line.allSatisfy(\.isWhitespace) {
-      do {
-        if let event = try EventLine.decodeIfKnown(String(line)) { reading.events.append(event) }
-      } catch {
-        // The last element has no newline after it; earlier ones always do.
-        if skippingIncompleteTail && index == lines.count - 1 { break }
-        reading.problems.append(LogProblem(file: fileURL.lastPathComponent, line: index + 1))
-      }
-    }
-    return reading
-  }
-
   /// Moves every line that is not an event into `<file>.rejected` and rewrites the file without them. Lines of
   /// an unknown event type are not damaged and stay. Returns how many lines moved; a clean file is untouched.
   public func quarantineUnreadableLines() throws(EventLogError) -> Int {
