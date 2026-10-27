@@ -17,8 +17,8 @@ private func median(_ values: [Double]) -> Double {
 }
 
 /// Prints a line `make bench` and the CI log show, so the numbers are on record before a budget is set from them.
-private func report(_ name: String, _ ms: Double) {
-  print("BENCH \(name): \(String(format: "%.1f", ms)) ms")
+private func report(_ name: String, _ millis: Double) {
+  print("BENCH \(name): \(String(format: "%.1f", millis)) ms")
 }
 
 @MainActor
