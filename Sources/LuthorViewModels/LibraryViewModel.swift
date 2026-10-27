@@ -230,24 +230,6 @@ public final class LibraryViewModel {
     perform { (log) throws(CommandError) in try commands.move(projectID: projectID, under: parentID, log: log) }
   }
 
-  public func reload() {
-    do {
-      let token = log.changeToken()
-      let reading = try log.readReportingProblems()
-      loggedToken = token
-      let replayed = LibraryState.replay(reading.events)
-      // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
-      if revision > 0, replayed == state, reading.problems == logProblems, clock() == today {
-        if errorMessage != nil { errorMessage = nil }
-        return
-      }
-      logProblems = reading.problems
-      show(replayed, lamport: reading.events.reduce(0) { max($0, $1.lamport) })
-    } catch {
-      errorMessage = Self.describe(error)
-    }
-  }
-
   /// Captures the draft as a new task. A blank draft captures nothing; a failed write keeps the draft.
   public func submit() {
     addTask(titled: draft, to: captureProjectID)

@@ -22,6 +22,24 @@ extension LibraryViewModel {
     selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
+  public func reload() {
+    do {
+      let token = log.changeToken()
+      let reading = try log.readReportingProblems()
+      loggedToken = token
+      let replayed = LibraryState.replay(reading.events)
+      // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
+      if revision > 0, replayed == state, reading.problems == logProblems, clock() == today {
+        if errorMessage != nil { errorMessage = nil }
+        return
+      }
+      logProblems = reading.problems
+      show(replayed, lamport: reading.events.reduce(0) { max($0, $1.lamport) })
+    } catch {
+      errorMessage = Self.describe(error)
+    }
+  }
+
   /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
   /// events written. The command is given no log: `commands` knows the state. The log is read first only if its
   /// files changed since the state held was read, so events another process appended are never missed.
