@@ -70,7 +70,7 @@ public enum LogCompactor {
       throw .ioFailure("compaction stopped, nothing was changed: \(error)")
     }
     try requireUnchanged(oldFiles, sizes: sizesBefore)
-    try replace(oldFiles, ownName: ownName, in: folder, with: rebuilt)
+    try replace(oldFiles, ownName: ownName, in: folder, with: rebuilt, stamp: stamp)
     return LogCompaction(eventsBefore: before.count, eventsAfter: rebuilt.count, backupFolder: backup)
   }
 
@@ -164,9 +164,10 @@ public enum LogCompactor {
   }
 
   /// Writes the new log beside the old one and swaps it in for this device's file, then removes the other
-  /// devices' files, which the backup holds.
+  /// devices' files aside as `<name>.compacted-<stamp>`, which no reader takes for a device's log. They are not
+  /// deleted: a device that missed the handshake may have written to its file after the checks.
   private static func replace(
-    _ oldFiles: [URL], ownName: String, in folder: URL, with events: [EventEnvelope]
+    _ oldFiles: [URL], ownName: String, in folder: URL, with events: [EventEnvelope], stamp: String
   ) throws(EventLogError) {
     let own = folder.appendingPathComponent(ownName)
     let temporary = folder.appendingPathComponent(ownName + ".new")
@@ -189,7 +190,10 @@ public enum LogCompactor {
         try FileManager.default.moveItem(at: temporary, to: own)
       }
       for file in oldFiles where file.lastPathComponent != ownName {
-        try FileManager.default.removeItem(at: file)
+        let aside = file.deletingLastPathComponent().appendingPathComponent(
+          file.lastPathComponent + ".compacted-" + stamp)
+        if FileManager.default.fileExists(atPath: aside.path) { try FileManager.default.removeItem(at: aside) }
+        try FileManager.default.moveItem(at: file, to: aside)
       }
     } catch {
       throw .ioFailure("cannot replace the log; the backup is in \(folder.path)/backups: \(error)")

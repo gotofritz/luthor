@@ -72,6 +72,22 @@ struct LogCompactorTests {
     #expect(kept.contains("events-phone.jsonl") && kept.contains("events-mac.jsonl"))
   }
 
+  @Test("another device's file is set aside, not deleted, so events it gained late are not lost")
+  func anotherDevicesFileIsKept() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let config = LuthorConfiguration(
+      environment: ["LUTHOR_SYNC_DIR": dir.url.path, "LUTHOR_DEVICE_ID": "mac"], home: dir.url)
+    let other = DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID("phone"))
+    try other.append([captured("t2", "call mum", id: "p1", device: "phone", lamport: 1)])
+    try config.makeEventLog().append(manyEdits)
+
+    try LogCompactor.compact(configuration: config, ids: SequentialIDs(), stamp: "s")
+
+    let setAside = dir.url.appendingPathComponent("events-phone.jsonl.compacted-s")
+    #expect(try String(contentsOf: setAside, encoding: .utf8).contains("call mum"))
+  }
+
   @Test("an empty library leaves an empty log")
   func anEmptyLibraryLeavesAnEmptyLog() throws {
     let dir = try TemporaryDirectory()

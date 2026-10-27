@@ -1118,9 +1118,11 @@ write when OK is pressed.
    file has one writer): the asker requests, every other Mac answers and stops
    writing, the asker waits until their last events have arrived, then
    compacts; a Mac that stays away can be skipped by force, and the new events
-   outrank the old ones. History (time
-   logged, reviewed days) is dropped; tasks, projects, settings and project
-   reviews stay. Events are never deleted in place
+   outrank the old ones. Other Macs' files are set aside as
+   `events-<mac>.jsonl.compacted-<stamp>`, never deleted. Compaction forgets
+   only the edit history of items; the plan, time logged and reviewed days,
+   tasks, projects, settings and project reviews stay (A2-2). Events are never
+   deleted in place
 
 ## Decisions (2026-10-23, editing a project in the columns)
 
