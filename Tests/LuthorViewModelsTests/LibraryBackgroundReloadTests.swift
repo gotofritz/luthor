@@ -21,6 +21,9 @@ private final class WatchedLog: EventLog, @unchecked Sendable {
   var wasReadOnMainThread: Bool { lock.withLock { readOnMain } }
   var isHoldingARead: Bool { lock.withLock { held } }
 
+  /// Forgets where the log was read so far, such as by the first read of a window.
+  func forgetReads() { lock.withLock { readOnMain = false } }
+
   /// The next full read waits in `readReportingProblems`, with what it read, until `release()`.
   func holdNextRead() { lock.withLock { holding = true } }
   func release() { gate.signal() }
@@ -77,6 +80,7 @@ struct BackgroundReloadViewModelTests {
     defer { dir.remove() }
     let setup = try makeLibrary(dir)
     try setup.air.append([captured("t2", "call mum", device: "air", lamport: 2)])
+    setup.log.forgetReads()
 
     await setup.library.reloadInBackground()
 
