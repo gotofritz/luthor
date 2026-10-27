@@ -18,7 +18,7 @@ DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
 TERRAFORM ?= terraform
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance test-linux app install dist check-ci hooks tools infra infra-token
+.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance bench test-linux app install dist check-ci hooks tools infra infra-token
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -62,11 +62,15 @@ coverage:
 
 # Fast unit tests only: every test target except the acceptance tests.
 test-unit:
-	swift test --skip LuthorAcceptanceTests
+	swift test --skip LuthorAcceptanceTests --skip LuthorPerformanceTests
 
 # End-to-end behaviour tests only.
 test-acceptance:
 	swift test --filter LuthorAcceptanceTests
+
+# Launch and action timings on synthetic logs of 1, 3 and 5 years; prints the numbers (BENCH lines).
+bench:
+	swift test --filter LuthorPerformanceTests
 
 # What the Linux CI job runs, and what an agent session without Xcode can run: build and test the
 # package alone (no app, no lint, no coverage gate).

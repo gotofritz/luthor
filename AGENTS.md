@@ -272,7 +272,8 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              Assets.xcassets: the app icon)
 Tests/
   LuthorTestSupport/         shared fixtures: event builders, InMemoryEventLog,
-                             SequentialIDs, TemporaryDirectory
+                             SequentialIDs, TemporaryDirectory, syntheticLog(years:) (years of heavy use)
+  LuthorPerformanceTests/    launch and action timings on synthetic logs (`make bench`); loose budgets, numbers printed
   Luthor<Module>Tests/       unit tests, one target per module; LuthorStoreTests holds the golden log
                              (Fixtures/golden-log.jsonl): a line for every event type, must always replay
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
@@ -382,8 +383,9 @@ make format     # apply swift-format
 make lint       # swift-format lint --strict + SwiftLint
 make test       # swift test + script tests
 make coverage   # make test with coverage; fails under 90% line coverage of Sources/
-make test-unit  # unit tests only (skips LuthorAcceptanceTests)
+make test-unit  # unit tests only (skips LuthorAcceptanceTests and LuthorPerformanceTests)
 make test-acceptance  # end-to-end acceptance tests only
+make bench      # launch and action timings on synthetic 1, 3 and 5 year logs (LuthorPerformanceTests)
 make test-linux # swift build + swift test of the package; the Linux CI job, no Xcode needed
 make app        # xcodebuild the Mac app (App/Luthor.xcodeproj)
 make install    # build and install the app (/Applications)
