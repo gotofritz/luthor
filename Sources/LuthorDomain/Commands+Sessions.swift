@@ -9,7 +9,7 @@ extension Commands {
     minutes: Int,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .unknownTask(taskID) }
     guard minutes > 0, (0..<DayHours.latest).contains(start), start + minutes <= DayHours.latest else {
       throw .invalidSession
@@ -25,7 +25,7 @@ extension Commands {
 
   /// Gives a session's minutes back to its task.
   public func removeSession(_ sessionID: SessionID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    guard LibraryState.replay(log).taskSessions[sessionID] != nil else { throw .noSession(sessionID) }
+    guard libraryState(from: log).taskSessions[sessionID] != nil else { throw .noSession(sessionID) }
     return [envelope(EventID(ids.next()), .taskSessionRemoved(TaskSessionRemoved(sessionID: sessionID)), log: log)]
   }
 }

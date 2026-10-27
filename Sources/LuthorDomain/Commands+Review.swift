@@ -9,7 +9,7 @@ extension Commands {
     minutes: Int?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.hasTask(taskID) else { throw .unknownTask(taskID) }
     let minutes = Self.positive(minutes)
     guard state.loggedMinutes(of: taskID, on: date) != minutes else { return [] }
@@ -25,7 +25,7 @@ extension Commands {
     on date: CalendarDate,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     let minutes = Self.positive(minutes)
     guard state.unplannedMinutes(in: viewID, on: date) != minutes else { return [] }
@@ -41,7 +41,7 @@ extension Commands {
     note: String?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     let note = Self.oneLine(note)
     guard !state.isReviewed(viewID, on: date) || state.reviewNote(in: viewID, on: date) != note else { return [] }

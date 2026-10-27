@@ -13,7 +13,7 @@ extension LibraryViewModel {
   /// with no due date is counted from the day the task is done.
   public func setRepeat(_ taskID: TaskID, to rule: RepeatRule?) {
     perform { (log) throws(CommandError) in
-      let hasDue = LibraryState.replay(log).dueDate(of: taskID) != nil
+      let hasDue = state.dueDate(of: taskID) != nil
       let rule = hasDue ? rule : rule?.countingFromCompletion
       return try commands.setRepeat(taskID: taskID, to: rule, dueIfNone: nil, log: log)
     }
@@ -23,7 +23,7 @@ extension LibraryViewModel {
   public func clearDue(_ taskID: TaskID) {
     perform { (log) throws(CommandError) in
       var events: [EventEnvelope] = []
-      if let rule = LibraryState.replay(log).repeatRule(of: taskID) {
+      if let rule = state.repeatRule(of: taskID) {
         events += try commands.setRepeat(taskID: taskID, to: rule.countingFromCompletion, dueIfNone: nil, log: log)
       }
       events += try commands.setDue(taskID: taskID, to: nil, isHard: false, log: log + events)

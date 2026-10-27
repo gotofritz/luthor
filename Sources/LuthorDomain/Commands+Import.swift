@@ -7,8 +7,8 @@ extension Commands {
   public func importLibrary(
     _ export: LibraryExport, log: [EventEnvelope], startingAfter lamport: UInt64 = 0
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
-    var writer = ImportWriter(commands: self, after: max(lamport, log.map(\.lamport).max() ?? 0))
+    let state = libraryState(from: log)
+    var writer = ImportWriter(commands: self, after: max(lamport, lastLamport(of: log)))
     writer.addViews(of: export, to: state, renaming: log.isEmpty)
     let knownTags = Set(state.tagItems.map(\.id))
     for tag in export.tags where !knownTags.contains(tag.id) {

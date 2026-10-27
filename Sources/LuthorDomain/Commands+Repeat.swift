@@ -9,7 +9,7 @@ extension Commands {
     dueIfNone day: CalendarDate?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     var events: [EventEnvelope] = []
     if rule != nil, let day, state.dueDate(of: taskID) == nil {
@@ -28,7 +28,7 @@ extension Commands {
   public func skip(taskID: TaskID, today: CalendarDate, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard state.repeatRule(of: taskID) != nil else { throw .notRepeating(taskID) }
     var events = recurrence(of: taskID, on: today, state: state, log: log)

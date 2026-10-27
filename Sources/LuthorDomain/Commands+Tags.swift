@@ -6,7 +6,7 @@ extension Commands {
   public func createTag(named name: String, in viewID: ViewID, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     try requireView(viewID, in: state)
     let name = try Self.tagName(name)
     guard state.tag(named: name, in: viewID) == nil else { throw .duplicateTagName(name) }
@@ -16,7 +16,7 @@ extension Commands {
   /// Puts the tag `tagID` on the open task `taskID`, which must be in the tag's view. Tagging a task with a
   /// tag it has writes nothing.
   public func tag(taskID: TaskID, with tagID: TagID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard let found = state.tagItems.first(where: { $0.id == tagID }) else { throw .noTag(tagID) }
     guard found.viewID == task.viewID else { throw .tagInOtherView(taskID, tagID) }
@@ -29,7 +29,7 @@ extension Commands {
   public func untag(taskID: TaskID, from tagID: TagID, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     guard state.tags(of: taskID).contains(where: { $0.id == tagID }) else { return [] }
     return [envelope(EventID(ids.next()), .taskUntagged(TaskUntagged(taskID: taskID, tagID: tagID)), log: log)]
@@ -40,7 +40,7 @@ extension Commands {
   public func tag(taskID: TaskID, named name: String, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard let task = state.openItem(taskID) else { throw .noOpenTask(taskID.rawValue) }
     let name = try Self.tagName(name)
     var events: [EventEnvelope] = []
@@ -61,7 +61,7 @@ extension Commands {
   public func setTags(taskID: TaskID, to names: [String], log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
     var wanted: [String] = []
     for name in names.map(Self.cleanTagName) where !name.isEmpty {

@@ -7,7 +7,7 @@ extension Commands {
     -> [EventEnvelope]
   {
     let interval = ReviewInterval(days: interval.days)
-    guard LibraryState.replay(log).defaultReviewInterval != interval else { return [] }
+    guard libraryState(from: log).defaultReviewInterval != interval else { return [] }
     return [envelope(EventID(ids.next()), .reviewDefaultSet(ReviewDefaultSet(interval: interval)), log: log)]
   }
 
@@ -19,7 +19,7 @@ extension Commands {
     to interval: ReviewInterval?,
     log: [EventEnvelope]
   ) throws(CommandError) -> [EventEnvelope] {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     _ = try activeProject(projectID, in: state)
     let interval = interval.map { ReviewInterval(days: $0.days) }
     guard state.reviewOverride(of: projectID) != interval else { return [] }
@@ -32,7 +32,7 @@ extension Commands {
   public func setNextReview(of projectID: TaskID, to date: CalendarDate, log: [EventEnvelope])
     throws(CommandError) -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     _ = try activeProject(projectID, in: state)
     guard state.nextReviewDate(of: projectID) != date else { return [] }
     let set = ReviewDateSet(taskID: projectID, date: date)
@@ -45,7 +45,7 @@ extension Commands {
   public func reviewProject(_ projectID: TaskID, on date: CalendarDate, log: [EventEnvelope]) throws(CommandError)
     -> [EventEnvelope]
   {
-    let state = LibraryState.replay(log)
+    let state = libraryState(from: log)
     _ = try activeProject(projectID, in: state)
     guard state.lastReviewDate(of: projectID) != date || state.chosenReviewDate(of: projectID) != nil else {
       return []
@@ -57,7 +57,7 @@ extension Commands {
   /// Gives up the open project `projectID` with every task and project open in it. Reopening it brings them
   /// all back.
   public func dropProject(_ projectID: TaskID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
-    _ = try activeProject(projectID, in: LibraryState.replay(log))
+    _ = try activeProject(projectID, in: libraryState(from: log))
     return [envelope(EventID(ids.next()), .taskDropped(TaskDropped(taskID: projectID)), log: log)]
   }
 }

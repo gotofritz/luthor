@@ -6,8 +6,9 @@ import Observation
 /// the one shown, the capture fields and the keyboard selection. Everything listed comes from the
 /// current view's state, so nothing of another view is ever shown.
 ///
-/// Every action re-reads the log first, so events another process appended are never missed
-/// and new events follow the highest Lamport counter on disk.
+/// An action runs on the state held and applies the events it writes to it, so it does not read the log. Events
+/// another process appended are seen by `reload`, which the window calls when the log file changes, and new events
+/// follow the highest Lamport counter seen.
 @MainActor
 @Observable
 public final class LibraryViewModel {
@@ -130,8 +131,13 @@ public final class LibraryViewModel {
   let clock: () -> CalendarDate
   /// The minutes since midnight by the clock.
   let minuteClock: () -> Int
-  let commands: Commands
+  let unboundCommands: Commands
+  /// The commands, bound to the state held: a command is given no log, only the state it acts on, and costs what it
+  /// changes. Anything that is handed a whole log uses `unboundCommands`.
+  var commands: Commands { unboundCommands.after(state, lamport: lastLamport) }
   @ObservationIgnored var state = LibraryState.replay([])
+  /// The highest Lamport counter of the log as last read or written here.
+  @ObservationIgnored var lastLamport: UInt64 = 0
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
@@ -145,7 +151,7 @@ public final class LibraryViewModel {
     now: @escaping () -> Int = { minutesSinceMidnight() }
   ) {
     self.log = log
-    self.commands = commands
+    unboundCommands = commands
     clock = today
     minuteClock = now
     currentView = view
@@ -235,7 +241,7 @@ public final class LibraryViewModel {
         return
       }
       logProblems = reading.problems
-      show(replayed)
+      show(replayed, lamport: reading.events.reduce(0) { max($0, $1.lamport) })
     } catch {
       errorMessage = Self.describe(error)
     }

@@ -13,25 +13,17 @@ extension LibraryViewModel {
     selection = tasks.isEmpty ? nil : tasks[min(position, tasks.count - 1)].id
   }
 
-  /// Runs a command on the log as it is now and appends what it returns; returns the events written.
+  /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
+  /// events written. The command is given no log: `commands` knows the state.
   @discardableResult
   func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
-    let current: [EventEnvelope]
-    do {
-      let reading = try log.readReportingProblems()
-      current = reading.events
-      logProblems = reading.problems
-    } catch {
-      errorMessage = Self.describe(error)
-      return []
-    }
     let events: [EventEnvelope]
     do {
-      events = try command(current)
+      events = try command([])
     } catch {
       // A blank title, a view name already taken, or a task completed elsewhere since the last reload:
       // nothing to write, and nothing the user needs to fix.
-      show(current)
+      showState()
       return []
     }
     do {
@@ -40,16 +32,24 @@ extension LibraryViewModel {
       errorMessage = Self.describe(error)
       return []
     }
-    show(current + events)
+    state.append(events)
+    lastLamport = events.reduce(lastLamport) { max($0, $1.lamport) }
+    showState()
     return events
   }
 
   func show(_ events: [EventEnvelope]) {
-    show(LibraryState.replay(events))
+    show(LibraryState.replay(events), lamport: events.reduce(0) { max($0, $1.lamport) })
   }
 
-  func show(_ replayed: LibraryState) {
+  func show(_ replayed: LibraryState, lamport: UInt64) {
     state = replayed
+    lastLamport = lamport
+    showState()
+  }
+
+  /// Presents `state` as it is.
+  private func showState() {
     revision += 1
     errorMessage = nil
     present()
@@ -255,7 +255,7 @@ extension LibraryViewModel {
       let current = try log.readAll()
       let fresh: [EventEnvelope]
       do {
-        fresh = try commands.importLibrary(library, log: current)
+        fresh = try unboundCommands.importLibrary(library, log: current)
       } catch {
         errorMessage = "The export refers to a view it does not list."
         return
