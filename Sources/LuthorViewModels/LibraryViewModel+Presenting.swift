@@ -22,68 +22,6 @@ extension LibraryViewModel {
     selection.flatMap { selected in tasks.first { $0.id == selected } }
   }
 
-  public func reload() {
-    do {
-      // A log that has not changed since it was read has nothing to read again.
-      if revision > 0, let token = log.changeToken(), token == loggedToken, clock() == today {
-        if errorMessage != nil { errorMessage = nil }
-        return
-      }
-      let problems = logProblems
-      let changed = try readLog()
-      // A sync client that only touched the file, or the app's own write seen again, changes nothing shown.
-      if revision > 0, !changed, problems == logProblems, clock() == today {
-        if errorMessage != nil { errorMessage = nil }
-        return
-      }
-      showState()
-    } catch {
-      errorMessage = Self.describe(error)
-    }
-  }
-
-  /// Brings `state` up to the log: reads only what was appended since the last read if the log can tell, else
-  /// all of it. `true` if that changed `state`.
-  private func readLog() throws(EventLogError) -> Bool {
-    let token = log.changeToken()
-    if let cursor = held.cursor, let reading = try log.readIncrement(since: cursor) {
-      loggedToken = token
-      held.cursor = reading.cursor
-      for problem in reading.problems where !logProblems.contains(problem) { logProblems.append(problem) }
-      let fresh = reading.events.filter { held.ids.insert($0.id).inserted }
-      guard !fresh.isEmpty else { return false }
-      let inOrder = fresh.min(by: EventEnvelope.replayOrder).map { first in
-        held.last.map { EventEnvelope.replayOrder($0, first) } ?? true
-      }
-      held.events += fresh
-      held.last = ([held.last].compactMap { $0 } + fresh).max(by: EventEnvelope.replayOrder)
-      if inOrder == true {
-        state.append(fresh)
-      } else {
-        // Another device wrote what sorts before something already applied: only a replay puts it in place.
-        state = LibraryState.replay(held.events)
-      }
-      lastLamport = fresh.reduce(lastLamport) { max($0, $1.lamport) }
-      return true
-    }
-    let reading = try log.readReportingProblems()
-    loggedToken = token
-    logProblems = reading.problems
-    let replayed = LibraryState.replay(reading.events)
-    let changed = replayed != state
-    state = replayed
-    hold(reading.events, cursor: reading.cursor)
-    lastLamport = reading.events.reduce(0) { max($0, $1.lamport) }
-    return changed
-  }
-
-  /// Keeps the events `state` holds, once each, in place of those held before.
-  func hold(_ events: [EventEnvelope], cursor: LogCursor?) {
-    held = HeldLog(cursor: cursor)
-    for event in events where held.ids.insert(event.id).inserted { held.events.append(event) }
-    held.last = held.events.max(by: EventEnvelope.replayOrder)
-  }
-
   /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
   /// events written. The command is given no log: `commands` knows the state. The log is read first only if its
   /// files changed since the state held was read, so events another process appended are never missed.
@@ -110,8 +48,7 @@ extension LibraryViewModel {
       return []
     }
     state.append(events)
-    for event in events where held.ids.insert(event.id).inserted { held.events.append(event) }
-    held.last = events.max(by: EventEnvelope.replayOrder) ?? held.last
+    _ = held.add(events)
     lastLamport = events.reduce(lastLamport) { max($0, $1.lamport) }
     loggedToken = log.changeToken()
     showState()
@@ -131,13 +68,14 @@ extension LibraryViewModel {
 
   func show(_ events: [EventEnvelope]) {
     state = LibraryState.replay(events)
-    hold(events, cursor: nil)
+    held = HeldLog(events)
     lastLamport = events.reduce(0) { max($0, $1.lamport) }
     showState()
   }
 
   /// Presents `state` as it is.
-  private func showState() {
+  func showState() {
+    generation += 1
     revision += 1
     errorMessage = nil
     present()
@@ -388,13 +326,4 @@ extension LibraryViewModel {
     }
     reload()
   }
-}
-
-/// The events a view model's state was replayed from, with the cursor to read on from.
-struct HeldLog {
-  var events: [EventEnvelope] = []
-  var ids: Set<EventID> = []
-  /// The event that sorts last in replay order: events after it can be applied on top of the state.
-  var last: EventEnvelope?
-  var cursor: LogCursor?
 }
