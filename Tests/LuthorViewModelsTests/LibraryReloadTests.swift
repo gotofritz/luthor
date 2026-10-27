@@ -68,8 +68,8 @@ struct ActionViewModelTests {
     library.estimate(TaskID("t1"), as: 15)
 
     #expect(log.reads == reads)
-    #expect(library.tasks.first?.priority == .critical)
-    #expect(library.tasks.first?.estimate == 15)
+    #expect(log.events.count == 3)
+    #expect(log.events.map(\.lamport) == [1, 2, 3])
   }
 
   @Test("it reads the log first once something outside has written to it")
