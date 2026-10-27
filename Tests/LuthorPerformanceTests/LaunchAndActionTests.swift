@@ -31,13 +31,14 @@ private func launch(on url: URL) -> LibraryViewModel {
   return library
 }
 
-/// The budgets are loose, to catch an order of magnitude and not noise on a debug build in CI; they are tightened
-/// from the numbers the first runs print.
+/// The budgets leave a few times the numbers a debug build prints (5 years: launch 3.2 s, capture 47 ms, an unchanged
+/// reload 0 ms), to catch a slowdown and not noise on a CI runner.
 @MainActor
 @Suite("When the log holds years of heavy use")
 struct LaunchAndActionTests {
-  static let launchBudgetMilliseconds = 20_000.0
-  static let actionBudgetMilliseconds = 2_000.0
+  static let launchBudgetMilliseconds = 10_000.0
+  static let actionBudgetMilliseconds = 250.0
+  static let reloadBudgetMilliseconds = 100.0
 
   @Test("launch and actions cost what the budget allows", arguments: [1, 3, 5])
   func launchAndActions(years: Int) throws {
@@ -66,7 +67,7 @@ struct LaunchAndActionTests {
 
     let reloads = (0..<5).map { _ in milliseconds { window.reload() } }
     report("\(years)y reload of an unchanged log, median of 5", median(reloads))
-    #expect(median(reloads) < Self.launchBudgetMilliseconds)
+    #expect(median(reloads) < Self.reloadBudgetMilliseconds)
   }
 }
 
