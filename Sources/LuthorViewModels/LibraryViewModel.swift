@@ -140,6 +140,9 @@ public final class LibraryViewModel {
   /// The events `state` was replayed from, and how far the log was read, so what is appended later is folded in
   /// without reading the log again from its start.
   @ObservationIgnored var held = HeldLog()
+  /// Counts the changes of `state` and `held`, so a read made away from the main actor knows if they moved on
+  /// while it ran.
+  @ObservationIgnored var generation = 0
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0

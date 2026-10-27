@@ -4,15 +4,15 @@ import Foundation
 /// log in its folder.
 ///
 /// Polling, unlike a file-descriptor watch, also sees a file that is created late, deleted or replaced.
-public struct FileChangeMonitor {
-  private struct Signature: Equatable {
+public struct FileChangeMonitor: Sendable {
+  private struct Signature: Equatable, Sendable {
     let name: String
     let size: UInt64
     let modified: Date
   }
 
   /// What was watched, so a new, removed or changed file is told apart from an untouched one.
-  private enum Target {
+  private enum Target: Sendable {
     case file(URL)
     case deviceLogs(folder: URL)
   }

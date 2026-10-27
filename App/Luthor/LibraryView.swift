@@ -173,11 +173,18 @@ struct LibraryView: View {
   /// unchanged log shows nothing new.
   private func watchLog(every interval: Duration) async {
     var monitor = configuration.makeChangeMonitor()
-    library.reload()
+    await library.reloadInBackground()
     while !Task.isCancelled {
       try? await Task.sleep(for: interval)
-      if monitor.poll() {
-        library.reload()
+      // Listing the folder can wait on the sync service, so the polling and the reading are off the main actor.
+      let polled = await Task.detached { [monitor] () -> (FileChangeMonitor, Bool) in
+        var polling = monitor
+        let changed = polling.poll()
+        return (polling, changed)
+      }.value
+      monitor = polled.0
+      if polled.1 {
+        await library.reloadInBackground()
         storage.refreshCompaction()
       }
     }
