@@ -68,7 +68,7 @@ public struct LogStorage: Equatable, Sendable {
     var candidate = dropboxFolder.standardizedFileURL
     while true {
       if files.fileExists(atPath: candidate.appendingPathComponent(".dropbox").path) {
-        return .inDropbox(root: candidate)
+        return .inDropbox(root: URL(fileURLWithPath: candidate.path, isDirectory: true))
       }
       let parent = candidate.deletingLastPathComponent()
       if parent.path == candidate.path { return .notInDropbox }

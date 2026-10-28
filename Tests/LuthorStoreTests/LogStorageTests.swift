@@ -147,7 +147,7 @@ struct LogStorageFolderStatusTests {
     let folder = root.appendingPathComponent("backups/Luthor")
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
-    #expect(storage(folder).folderStatus() == .inDropbox(root: root.standardizedFileURL))
+    #expect(storage(folder).folderStatus() == .inDropbox(root: URL(fileURLWithPath: root.path, isDirectory: true)))
   }
 
   @Test("a folder with no Dropbox above it is only a local folder")

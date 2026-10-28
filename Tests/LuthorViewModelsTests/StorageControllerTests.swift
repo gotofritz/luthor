@@ -165,7 +165,7 @@ struct FolderStatusTests {
 
     controller.confirm()
 
-    #expect(controller.folderStatus == .inDropbox(root: home.file("Dropbox").standardizedFileURL))
+    #expect(controller.folderStatus == .inDropbox(root: URL(fileURLWithPath: home.file("Dropbox").path, isDirectory: true)))
     #expect(controller.folderWarning == nil)
   }
 
