@@ -473,7 +473,7 @@ action, so its order is its meaning.
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
-  contents of a project, each priority's list in Prios, the candidates of Today
+  contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the
   daily review, the projects due and the tasks of the one picked in the weekly
   review) has a cell above each column of the rows, set apart by dotted
@@ -583,11 +583,11 @@ taken to another view.
 Prios lists Critical, Important, Optional, One day and No priority. It
 behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
-Each picked priority has a list of its own, headed by its name, the most
-urgent first and No priority last; a task shows its estimate and, in the
-accent colour, the day it is scheduled for or else its due date, not its
-priority, which the heading says. At the bottom of each list a
-plus button adds a task with that priority: the card opens in the next column
+The tasks of all the picked priorities are one list under one header, the
+most urgent first and No priority last until you sort it; the header sorts
+across all of them. A task shows its estimate, the day it is scheduled for or
+else its due date, and its priority. At the bottom, a plus button for each
+picked priority adds a task with that priority with that priority: the card opens in the next column
 as it does in a project, and the task has no project, so no estimate, until
 you set one. With none picked, there is nothing to list. You can complete a
 task from the list like anywhere else.

@@ -23,41 +23,37 @@ struct PriorityColumn: View {
   }
 }
 
-/// The tasks of the priorities picked, a list for each, with its due dates in place of the priority and ended by
-/// a plus button that adds a task with that priority.
+/// The tasks of the priorities picked as one list under one header, its due dates in place of the priority,
+/// ended by a row of plus buttons, one for each priority picked, that add a task with that priority.
 struct PriorityListsColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
     List(selection: $library.selection) {
       // The priorities are named in the column to the left, where the ones listed are picked.
-      ForEach(library.priorityGroups) { group in
-        Section { rows(of: group) }
+      ListSortHeader(library: library, listID: LibraryViewModel.prioritiesListID, isRow: true)
+        .listRowSeparator(.hidden)
+      ForEach(library.priorityList, id: \.id) { task in
+        TaskRow(library: library, task: task, showsDate: true)
+          .tag(task.id)
+      }
+      if let item = library.newItem, item.parentID == nil {
+        NewItemRow(item: item)
+      }
+      HStack {
+        ForEach(library.priorityGroups) { group in
+          Button {
+            library.addTask(withPriority: group.priority)
+          } label: {
+            Label("Add", systemImage: group.priority?.symbol ?? "plus")
+              .labelStyle(.iconOnly)
+          }
+          .buttonStyle(.borderless)
+          .help("Add a task with priority \(group.priority?.title ?? "none")")
+          .accessibilityLabel("Add \(group.priority?.title ?? "no priority")")
+        }
       }
     }
     .frame(width: 440)
-  }
-
-  /// The header, the tasks and the plus button of one priority's list.
-  @ViewBuilder
-  private func rows(of group: PriorityGroup) -> some View {
-    ListSortHeader(library: library, listID: "priority-\(group.id)", isRow: true)
-      .listRowSeparator(.hidden)
-    ForEach(group.tasks, id: \.id) { task in
-      TaskRow(library: library, task: task, showsDate: true)
-        .tag(task.id)
-    }
-    if let item = library.newItem, item.parentID == nil, item.card.priority == group.priority {
-      NewItemRow(item: item)
-    }
-    Button {
-      library.addTask(withPriority: group.priority)
-    } label: {
-      Image(systemName: "plus")
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .buttonStyle(.borderless)
-    .help("Add a task with this priority")
-    .accessibilityLabel("Add")
   }
 }

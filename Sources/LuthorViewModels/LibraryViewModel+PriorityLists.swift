@@ -14,9 +14,17 @@ extension LibraryViewModel {
   public var priorityGroups: [PriorityGroup] {
     Self.priorityRows.filter { selectedPriorities.contains($0) }.map { priority in
       let listed = tasks.filter { $0.priority == priority }
-      let id = priority?.rawValue ?? "none"
-      return PriorityGroup(priority: priority, tasks: sorted(listed, inList: "priority-\(id)"))
+      return PriorityGroup(priority: priority, tasks: listed)
     }
+  }
+
+  /// The id of the one list the priorities place shows, whatever priorities are picked.
+  public static let prioritiesListID = "priorities"
+
+  /// The tasks of every priority picked as one list: by priority, the most urgent first, until a header sorts
+  /// them all together.
+  public var priorityList: [TaskItem] {
+    sorted(priorityGroups.flatMap(\.tasks), inList: Self.prioritiesListID)
   }
 
   /// Starts a new task with `priority` (or none) from the bottom of that priority's list. The task goes to no

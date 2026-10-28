@@ -27,8 +27,8 @@ private let tasks = [
 @MainActor
 @Suite("When the lists of the priorities are sorted by their headers")
 struct PriorityListSortTests {
-  @Test("each priority's list is sorted on its own")
-  func eachListIsSortedApart() {
+  @Test("the picked priorities are one list, sorted across all of them")
+  func oneListSortedAcross() {
     let library = makeLibrary(
       tasks + [
         captured("t4", "zebra", lamport: 10), prioritized("t4", as: .critical, lamport: 11),
@@ -37,11 +37,20 @@ struct PriorityListSortTests {
       show: .priorities)
     library.selectPriorities([.critical, .important])
 
-    library.sortBy(.duration, ofList: "priority-B")
+    library.sortBy(.duration, ofList: LibraryViewModel.prioritiesListID)
 
-    let groups = library.priorityGroups
-    #expect(groups.first { $0.priority == .important }?.tasks.map(\.title) == ["Fig", "apple", "pear"])
-    #expect(groups.first { $0.priority == .critical }?.tasks.map(\.title) == ["zebra", "ant"])
+    #expect(library.priorityList.map(\.title) == ["Fig", "apple", "pear", "zebra", "ant"])
+  }
+
+  @Test("until sorted, the list is grouped by priority, the most urgent first")
+  func groupedByPriority() {
+    let library = makeLibrary(
+      tasks + [captured("t4", "zebra", lamport: 10), prioritized("t4", as: .critical, lamport: 11)],
+      show: .priorities)
+    library.selectPriorities([.important, .critical])
+
+    #expect(library.priorityList.first?.title == "zebra")
+    #expect(library.priorityList.count == 4)
   }
 }
 
@@ -84,10 +93,10 @@ struct FirstCellLabelTests {
   func priorityListCycle() {
     let library = makeLibrary(tasks, show: .priorities)
 
-    let seen = steps(library, "priority-B", count: 3)
+    let seen = steps(library, LibraryViewModel.prioritiesListID, count: 3)
 
     #expect(seen == [ListSort(key: .title, ascending: true), ListSort(key: .title, ascending: false), .manual])
-    #expect(library.firstCellLabel(ofList: "priority-B") == "Title")
+    #expect(library.firstCellLabel(ofList: LibraryViewModel.prioritiesListID) == "Title")
   }
 
   @Test("a project's list steps through Title, Created and Due, as before")
@@ -115,9 +124,9 @@ struct WhenColumnSortTests {
     let library = makeLibrary(Self.log, show: .priorities)
     library.selectPriorities([.important])
 
-    library.sortBy(.due, ofList: "priority-B")
+    library.sortBy(.due, ofList: LibraryViewModel.prioritiesListID)
 
-    #expect(library.priorityGroups.first?.tasks.map(\.title) == ["fig", "pear", "apple"])
+    #expect(library.priorityList.map(\.title) == ["fig", "pear", "apple"])
   }
 }
 

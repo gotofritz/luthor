@@ -30,14 +30,14 @@ extension LibraryViewModel {
   /// The keys the first cell of the header steps through. A list with a date column of its own, the lists of
   /// a priority and Today's candidates, leaves Due to that column, and a priority's list has no Created.
   private func textKeys(ofList listID: String) -> [ListSortKey] {
-    if listID.hasPrefix("priority-") { return [.title] }
+    if listID == Self.prioritiesListID { return [.title] }
     if listID == Self.candidatesListID { return [.title, .created] }
     return [.title, .created, .due]
   }
 
   /// Whether the rows of the list show a column of dates, the day scheduled for else the due date.
   public func showsWhenColumn(ofList listID: String) -> Bool {
-    listID.hasPrefix("priority-") || listID == Self.candidatesListID
+    listID == Self.prioritiesListID || listID == Self.candidatesListID
   }
 
   /// The key the first cell shows: the one the list is sorted by if it is among its own, else title.
