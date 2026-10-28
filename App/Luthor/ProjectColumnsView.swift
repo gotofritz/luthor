@@ -18,6 +18,14 @@ struct ColumnView: View {
   let reveal: () -> Void
 
   var body: some View {
+    VStack(spacing: 0) {
+      ListSortHeader(library: library, listID: column.id)
+      list
+    }
+    .frame(width: 260)
+  }
+
+  private var list: some View {
     List(selection: selection) {
       ForEach(column.entries) { entry in
         switch entry {
@@ -38,7 +46,6 @@ struct ColumnView: View {
       }
       AddItemRow(library: library, parentID: column.parentID)
     }
-    .frame(width: 260)
     .dropDestination(for: String.self) { payloads, _ in
       library.drop(payloads, on: column.parentID)
     }

@@ -62,9 +62,4 @@ extension LibraryViewModel {
   public func moveDown(_ taskID: TaskID) {
     perform { (log) throws(CommandError) in try commands.moveChild(taskID, by: 1, log: log) }
   }
-
-  /// Puts what is filed in a project in order: by title, or by priority.
-  public func sortChildren(of projectID: TaskID, by sort: ChildSort) {
-    perform { (log) throws(CommandError) in try commands.sortChildren(of: projectID, by: sort, log: log) }
-  }
 }

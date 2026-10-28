@@ -31,9 +31,13 @@ struct ChildOrderFlowTests {
     relaunched.open(.project(move))
     #expect(relaunched.tasks.map(\.title) == ["sign the lease", "book a van", "find a flat"])
   }
+}
 
-  @Test("sorting by title and then by priority lists them in that order, and undo puts the list back")
-  func sortingAndUndoing() throws {
+@MainActor
+@Suite("Given a project with tasks, when its header bar is clicked")
+struct ListSortFlowTests {
+  @Test("a click on a cell sorts by it, a second turns the order round, and nothing is written to the log")
+  func headerSortsTheList() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
@@ -43,17 +47,29 @@ struct ChildOrderFlowTests {
     library.capture("Apples")
     library.capture("eggs")
     library.prioritize(try library.task("eggs"), as: .critical)
+    library.estimate(try library.task("milk"), as: 5)
+    let column = "project-\(shop.rawValue)"
+    let titles = {
+      library.columns.last?.entries.compactMap { entry -> String? in
+        guard case .task(let task) = entry else { return nil }
+        return task.title
+      } ?? []
+    }
 
-    library.sortChildren(of: shop, by: .title(ascending: true))
-    #expect(library.tasks.map(\.title) == ["Apples", "eggs", "milk"])
+    library.sortBy(.title, ofList: column)
+    #expect(titles() == ["Apples", "eggs", "milk"])
 
-    library.sortChildren(of: shop, by: .title(ascending: false))
-    #expect(library.tasks.map(\.title) == ["milk", "eggs", "Apples"])
+    library.sortBy(.title, ofList: column)
+    #expect(titles() == ["milk", "eggs", "Apples"])
 
-    library.sortChildren(of: shop, by: .priority)
-    #expect(library.tasks.map(\.title) == ["eggs", "milk", "Apples"])
+    library.sortBy(.priority, ofList: column)
+    #expect(titles() == ["eggs", "milk", "Apples"])
 
-    library.undo()
-    #expect(library.tasks.map(\.title) == ["milk", "eggs", "Apples"])
+    library.sortBy(.duration, ofList: column)
+    #expect(titles() == ["milk", "Apples", "eggs"])
+
+    let relaunched = launchApp(on: dir.file("events.jsonl"))
+    relaunched.open(.project(shop))
+    #expect(relaunched.tasks.map(\.title) == ["milk", "Apples", "eggs"])
   }
 }

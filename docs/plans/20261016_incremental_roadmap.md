@@ -1197,7 +1197,10 @@ what a new item starts with.
    children are ignored. This is the shape of `DayPlanOrdered`, not the per-sibling `TaskReordered` the
    assessment (U-4) proposed: one event is one undo step, and a sort is one event. Replay applies events in
    their deterministic order, so two Macs converge.
-2. **Sorting is a command, not a state.** Sort Contents (title A to Z, Z to A, priority) and Move Up / Move Down
-   compute the order and write it; nothing remembers "sorted by title", so an item added later goes to the end.
-3. **Scope**: the items filed in a project, which a sequential project follows. The order of top-level projects
-   and of the Inbox stays the order of capture.
+2. **Sorting is how a list is shown, not a command.** A table header above each list (Title, Duration, Priority)
+   sorts it on a click, reverses it on a second and goes back to the list's own order on a third. Nothing is
+   written to the log and the choice is kept only while the window is open. Move Up and Move Down (the context
+   menu) are the only things that write an order. An item with no value sorts last either way. Created and due
+   sorts exist in `ListSortKey` but have no header cell yet, as the rows do not show those fields.
+3. **Scope**: the manual order is that of the items filed in a project, which a sequential project follows. The
+   order of top-level projects and of the Inbox stays the order of capture.

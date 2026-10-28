@@ -17,52 +17,6 @@ private let log = [
   prioritized("t3", as: .someday, lamport: 8),
 ]
 
-private func ordered(_ sort: ChildSort, _ log: [EventEnvelope] = log) throws -> [String]? {
-  let events = try makeCommands().sortChildren(of: TaskID("p1"), by: sort, log: log)
-  guard case .childrenOrdered(let event)? = events.first?.payload else { return nil }
-  return event.taskIDs.map(\.rawValue)
-}
-
-@Suite("When the children of a project are sorted by command")
-struct SortChildrenCommandTests {
-  @Test("by title, ignoring case, A to Z")
-  func byTitleAscending() throws {
-    #expect(try ordered(.title(ascending: true)) == ["t3", "t1", "t2", "t4"])
-  }
-
-  @Test("by title, Z to A")
-  func byTitleDescending() throws {
-    #expect(try ordered(.title(ascending: false)) == ["t4", "t2", "t1", "t3"])
-  }
-
-  @Test("by priority, A first, someday last, with no priority between, ties in the order they had")
-  func byPriority() throws {
-    #expect(try ordered(.priority) == ["t2", "t1", "t4", "t3"])
-  }
-
-  @Test("it writes one ChildrenOrdered after the highest Lamport in the log")
-  func writesOneEvent() throws {
-    let events = try makeCommands().sortChildren(of: TaskID("p1"), by: .priority, log: log)
-
-    #expect(events.count == 1)
-    #expect(events.first?.lamport == 9)
-  }
-
-  @Test("sorting what is in that order already writes nothing")
-  func alreadySortedWritesNothing() throws {
-    let sorted = log + [childrenOrdered("p1", ["t3", "t1", "t2", "t4"], lamport: 9)]
-
-    #expect(try makeCommands().sortChildren(of: TaskID("p1"), by: .title(ascending: true), log: sorted) == [])
-  }
-
-  @Test("a project that does not exist is refused")
-  func unknownProjectIsRefused() {
-    #expect(throws: CommandError.unknownProject(TaskID("nope"))) {
-      try makeCommands().sortChildren(of: TaskID("nope"), by: .priority, log: log)
-    }
-  }
-}
-
 @Suite("When a child of a project is moved up or down by command")
 struct MoveChildCommandTests {
   @Test("down swaps it with the one after")

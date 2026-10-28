@@ -168,3 +168,69 @@ struct ChildOrderViewModelTests {
     #expect(log.events.count == holidayLog.count)
   }
 }
+
+@MainActor
+@Suite("When the header of a list is clicked in the window")
+struct ListSortViewModelTests {
+  private static let log = [
+    projectCreated("p1", "Errands", lamport: 1),
+    captured("t1", "banana", under: "p1", lamport: 2),
+    captured("t2", "Cherry", under: "p1", lamport: 3),
+    captured("t3", "apple", under: "p1", lamport: 4),
+  ]
+
+  private func titles(_ library: LibraryViewModel) -> [String] {
+    library.columns.last?.entries.compactMap { entry in
+      guard case .task(let task) = entry else { return nil }
+      return task.title
+    } ?? []
+  }
+
+  @Test("a list starts in its own order, and a click on a cell sorts by it, ascending")
+  func clickSortsAscending() {
+    let (library, _) = makeInbox(Self.log)
+    library.open(.project(TaskID("p1")))
+    let column = "project-p1"
+    #expect(library.sort(ofList: column) == .manual)
+
+    library.sortBy(.title, ofList: column)
+
+    #expect(library.sort(ofList: column) == ListSort(key: .title, ascending: true))
+    #expect(titles(library) == ["apple", "banana", "Cherry"])
+  }
+
+  @Test("a second click on the same cell turns the order round, a third goes back to the list's own")
+  func secondClickReverses() {
+    let (library, _) = makeInbox(Self.log)
+    library.open(.project(TaskID("p1")))
+    library.sortBy(.title, ofList: "project-p1")
+
+    library.sortBy(.title, ofList: "project-p1")
+    #expect(titles(library) == ["Cherry", "banana", "apple"])
+
+    library.sortBy(.title, ofList: "project-p1")
+    #expect(titles(library) == ["banana", "Cherry", "apple"])
+  }
+
+  @Test("each list keeps its own sort, and sorting writes nothing to the log")
+  func listsAreSortedApart() {
+    let (library, log) = makeInbox(Self.log + [captured("i1", "zebra", lamport: 5), captured("i2", "ant", lamport: 6)])
+
+    library.sortBy(.title, ofList: LibraryViewModel.taskListID)
+
+    #expect(library.tasks.map(\.title) == ["ant", "zebra"])
+    #expect(library.sort(ofList: "top") == .manual)
+    #expect(log.events.count == Self.log.count + 2)
+  }
+
+  @Test("by due date, the soonest comes first and a task with none last")
+  func byDueDate() {
+    let (library, _) = makeInbox(
+      Self.log + [dueSet("t2", on: "2026-11-05", lamport: 5), dueSet("t1", on: "2026-11-01", lamport: 6)])
+    library.open(.project(TaskID("p1")))
+
+    library.setSort(ListSort(key: .due, ascending: true), ofList: "project-p1")
+
+    #expect(titles(library) == ["banana", "Cherry", "apple"])
+  }
+}

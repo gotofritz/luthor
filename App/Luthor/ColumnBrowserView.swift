@@ -119,10 +119,15 @@ struct TaskListColumn: View {
     if library.section == .priorities {
       PriorityListsColumn(library: library)
     } else {
-      List(selection: $library.selection) {
-        ForEach(library.tasks, id: \.id) { task in
-          TaskRow(library: library, task: task)
-            .tag(task.id)
+      VStack(spacing: 0) {
+        if library.section == .inbox || library.section == .tags {
+          ListSortHeader(library: library, listID: LibraryViewModel.taskListID)
+        }
+        List(selection: $library.selection) {
+          ForEach(library.tasks, id: \.id) { task in
+            TaskRow(library: library, task: task)
+              .tag(task.id)
+          }
         }
       }
       .frame(width: 320)
@@ -193,12 +198,6 @@ struct ProjectRow: View {
           }
           .disabled(project.kind == .sequential)
         }
-        Menu("Sort Contents") {
-          Button("By Title, A to Z") { library.sortChildren(of: project.id, by: .title(ascending: true)) }
-          Button("By Title, Z to A") { library.sortChildren(of: project.id, by: .title(ascending: false)) }
-          Button("By Priority") { library.sortChildren(of: project.id, by: .priority) }
-        }
-        .disabled(project.children.count < 2)
         if project.children.isEmpty {
           Button("Turn into Task") { library.turnIntoTask(project.id) }
             .help("Turn this empty project back into a task")
@@ -266,20 +265,28 @@ struct TaskRow: View {
           .lineLimit(1)
       }
       Spacer()
-      if let estimate = task.estimate {
-        Text("\(estimate)m")
-          .foregroundStyle(.secondary)
-          .help("Estimate")
+      Group {
+        if let estimate = task.estimate {
+          Text("\(estimate)m")
+            .foregroundStyle(.secondary)
+            .help("Estimate")
+        }
       }
+      .frame(width: TaskColumns.duration, alignment: .trailing)
       if showsDate, let day = library.listedDate(of: task.id) {
         Text(day.isoString)
           .foregroundStyle(theme.ink)
           .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
       }
-      if showsPriority, let priority = task.priority {
-        Image(systemName: priority.symbol)
-          .foregroundStyle(.secondary)
-          .help(priority.title)
+      if showsPriority {
+        Group {
+          if let priority = task.priority {
+            Image(systemName: priority.symbol)
+              .foregroundStyle(.secondary)
+              .help(priority.title)
+          }
+        }
+        .frame(width: TaskColumns.priority)
       }
     }
     .draggable(task.id.rawValue)
