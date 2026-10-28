@@ -237,12 +237,22 @@ struct TaskRow: View {
     library.nextActions.contains(task.id)
   }
 
+  /// A completed occurrence of a repeating task is in a lighter accent, so it reads as done for now.
+  private var isDoneOccurrence: Bool {
+    isCompleted && library.repeatRule(of: task.id) != nil
+  }
+
+  private var titleStyle: AnyShapeStyle {
+    if isDoneOccurrence { return AnyShapeStyle(theme.ink.opacity(0.55)) }
+    return isNextAction && !isCompleted ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)
+  }
+
   var body: some View {
     HStack(spacing: 8) {
       checkbox
       Text(task.title)
         .strikethrough(isCompleted)
-        .foregroundStyle(isNextAction && !isCompleted ? .primary : .secondary)
+        .foregroundStyle(titleStyle)
       if let tags = tagLine(of: library.tagItems(of: task.id)) {
         Text(tags)
           .font(.caption)
@@ -283,6 +293,7 @@ struct TaskRow: View {
         library.reopen(task.id)
       } label: {
         Image(systemName: library.droppedTaskIDs.contains(task.id) ? "xmark.circle.fill" : "checkmark.circle.fill")
+          .foregroundStyle(isDoneOccurrence ? AnyShapeStyle(theme.ink.opacity(0.55)) : AnyShapeStyle(.primary))
       }
       .buttonStyle(.plain)
       .disabled(!library.reopenableTaskIDs.contains(task.id))

@@ -32,6 +32,14 @@ extension LibraryState {
     repeatRules[taskID]
   }
 
+  /// The tasks of the view that repeat and were completed, whose next occurrence is open: each series' latest
+  /// occurrence done, to show that it was done while the next one waits.
+  public func doneOccurrences(in viewID: ViewID) -> [Completed<TaskItem>] {
+    view(viewID).completedTasks.filter {
+      !$0.isDropped && repeatRules[$0.item.id] != nil && isOpen(TaskID.recurring(after: $0.item.id))
+    }
+  }
+
   /// Whether an item with this ID was ever captured or made by a repeat, open, completed or dropped.
   func wasEverTask(_ taskID: TaskID) -> Bool {
     captureOrder[taskID] != nil

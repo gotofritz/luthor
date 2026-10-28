@@ -219,7 +219,8 @@ Split Off a Session… in its block's context menu. The window gives the part th
 task keeps (A, from and to) and the part cut off (B, from and to), each with a
 Now button. Under way, A ends now and B takes the rest from now. B becomes a
 block of its own, drawn with a dashed edge. Tick Defer and B is not put on the
-day: it becomes a new task of its length, among the candidates.
+day: it becomes a new task of its length, among the candidates. If the task repeats, only
+the task keeps the repeat: the new one does not, so the split starts no second series.
 The task's own block shrinks by those minutes (and goes when the sessions take
 all of them), so the estimate stays the total. Drag a session, or choose Set
 Times… on it, to move it; Remove Session takes it off the day with its minutes, and the
@@ -502,7 +503,9 @@ Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and
 the next due date. A project can repeat too: completing it makes the next
 project, holding fresh copies of its tasks, which have no due dates. The day it was planned for, a delegation and the time
-logged are not copied. The completed one stays in Completed. Nothing is
+logged are not copied. The completed one stays in Completed. In the Priorities place the occurrence just done stays
+listed, ticked and in a lighter accent colour, beside the next one, until that one is done too, even with
+Completed and dropped off. Nothing is
 planned by itself: the next task shows in the lists straight away (there is
 no start date), and as a candidate under the usual due-date rules. Editing
 the task that is open changes what the next ones copy.

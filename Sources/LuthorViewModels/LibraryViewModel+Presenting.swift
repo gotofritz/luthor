@@ -120,8 +120,11 @@ extension LibraryViewModel {
     if section == .calendar { presentCalendar() }
     presentTags()
     presentProjectReview()
-    presentTasks(of: view, completed: completed)
-    presentCompletion(completed)
+    // The priorities show a repeating task done for this occurrence even with completed tasks hidden.
+    var listedDone = completed
+    if section == .priorities, !showCompleted { listedDone.tasks = state.doneOccurrences(in: currentView) }
+    presentTasks(of: view, completed: listedDone)
+    presentCompletion(listedDone)
     if let selected = selection, index(of: selected) == nil { selection = nil }
   }
 
