@@ -286,8 +286,8 @@ Tests/
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)
-scripts/                     commit-message and coverage checks, and next-version.sh (release tag
-                             from Conventional Commits), with their shell tests
+scripts/                     commit-message and coverage checks, next-version.sh (release tag
+                             from Conventional Commits, app-version.sh: the version About Luthor shows), with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
 .github/workflows/           CI (make check-ci), PR title check, release (on main pushes, and v* tags)
 ```

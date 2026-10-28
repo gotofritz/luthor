@@ -212,7 +212,7 @@ is a choice of yours. `docs`, `test`, `ci`, `chore`, `style`, `build` and
 `refactor` merges make no release. The first release is `v0.1.0`. Pushing a
 version tag by hand (`git tag v0.1.0 && git push origin v0.1.0`) still
 publishes that version instead. `make dist` builds the same zip locally into
-`.build/dist/`.
+`.build/dist/`. The app's About Luthor shows the release version (x.y.z of the tag) and the commit count as its build.
 
 ### On another Mac, without compiling
 
