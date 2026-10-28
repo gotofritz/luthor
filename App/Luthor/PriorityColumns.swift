@@ -30,14 +30,9 @@ struct PriorityListsColumn: View {
 
   var body: some View {
     List(selection: $library.selection) {
-      let groups = library.priorityGroups
-      ForEach(groups) { group in
-        // The title is in the column to the left, unless several priorities are listed one under another.
-        if groups.count > 1 {
-          Section(group.priority?.title ?? "No priority") { rows(of: group) }
-        } else {
-          Section { rows(of: group) }
-        }
+      // The priorities are named in the column to the left, where the ones listed are picked.
+      ForEach(library.priorityGroups) { group in
+        Section { rows(of: group) }
       }
     }
     .frame(width: 320)
