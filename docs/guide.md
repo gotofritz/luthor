@@ -479,9 +479,11 @@ action, so its order is its meaning.
   review) has a cell above each column of the rows, set apart by dotted
   lines, and every column has a label. Click the triangle above the done
   circles to put the open items before the done ones (the triangle points
-  down), and again for the other way round (up). Click the *Duration*, *When*
+  down), and again for the other way round (up). Click the stopwatch (duration), *When*
   or *Prio* cell to sort the list by it, ascending (the arrow points down);
-  click it again for descending (the arrow points up); a third click goes back
+  click it again for descending (the arrow points up); the sorted column is in
+  the accent colour, its arrow after the word, or for the stopwatch and *Prio*
+  below it (down) or above it (up); a third click goes back
   to the list's own order. The first cell, over the titles, is a label that
   cycles: *Title*, then descending, then *Created* ascending and descending,
   then *Due* the same way, then back to the list's own order. Where the rows

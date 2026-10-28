@@ -27,7 +27,7 @@ struct ListSortHeader: View {
       if showsStatus { statusCell }
       if !priorityFirst { titleCell }
       if showsDuration {
-        cell(.duration, label: "Duration", width: TaskColumns.duration, alignment: .trailing)
+        cell(.duration, label: "Duration", symbol: "stopwatch", width: TaskColumns.duration, alignment: .trailing)
       }
       if priorityFirst { priorityCell(separated: true) }
       if library.showsWhenColumn(ofList: listID) {
@@ -76,23 +76,39 @@ struct ListSortHeader: View {
     .accessibilityLabel("Sort by status")
   }
 
-  /// A cell of the header; the arrow shows on the one the list is sorted by, pointing down for ascending.
+  /// A small triangle, to go above or below a word.
+  private func arrow(pointingUp: Bool) -> some View {
+    Image(systemName: pointingUp ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill").font(.system(size: 6))
+  }
+
+  /// A cell of the header, its text or, with `symbol`, its icon. The one the list is sorted by is in the accent
+  /// colour with an arrow: after the word, or, in a `stacked` narrow cell, above it when pointing up and below
+  /// it when pointing down. Ascending points down.
   private func cell(
-    _ key: ListSortKey, label: String, width: CGFloat?, alignment: Alignment, firstCell: Bool = false,
-    separated: Bool = true
+    _ key: ListSortKey, label: String, symbol: String? = nil, width: CGFloat?, alignment: Alignment,
+    firstCell: Bool = false, separated: Bool = true
   ) -> some View {
     let sort = library.sort(ofList: listID)
+    let isSorted = sort.key == key
+    let stacked = symbol != nil || width == TaskColumns.priority
     return Button {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
-      VStack(spacing: 1) {
-        // A triangle above the label of the column the list is sorted by, pointing down for ascending.
-        Image(systemName: sort.ascending ? "arrowtriangle.down.fill" : "arrowtriangle.up.fill")
-          .font(.system(size: 6))
-          .opacity(sort.key == key ? 1 : 0)
-        Text(label)
+      Group {
+        if stacked {
+          VStack(spacing: 1) {
+            arrow(pointingUp: true).opacity(isSorted && !sort.ascending ? 1 : 0)
+            if let symbol { Image(systemName: symbol) } else { Text(label) }
+            arrow(pointingUp: false).opacity(isSorted && sort.ascending ? 1 : 0)
+          }
+        } else {
+          HStack(spacing: 2) {
+            Text(label)
+            if isSorted { Image(systemName: sort.ascending ? "chevron.down" : "chevron.up") }
+          }
+        }
       }
-      .foregroundStyle(sort.key == key ? AnyShapeStyle(theme.ink) : AnyShapeStyle(.secondary))
+      .foregroundStyle(isSorted ? AnyShapeStyle(theme.ink) : AnyShapeStyle(.secondary))
       .frame(maxWidth: width == nil ? .infinity : width, alignment: alignment)
       .contentShape(Rectangle())
     }
@@ -123,7 +139,7 @@ private struct DottedSeparator: View {
 enum TaskColumns {
   /// The done circle at the start of a row.
   static let checkbox: CGFloat = 20
-  static let duration: CGFloat = 50
+  static let duration: CGFloat = 34
   static let priority: CGFloat = 28
   /// The date a row shows in Prios and Today, the day scheduled for else the due date.
   static let date: CGFloat = 70
