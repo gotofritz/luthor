@@ -11,7 +11,7 @@ import SwiftUI
 /// the list of its children for its card. The
 /// last column is the card of the item being added, else of the task picked or, while its pencil is pressed, of the project shown. The priorities are the four
 /// priorities and no priority, picked like the rows of any
-/// list, then the tasks that have one of the picked. The tags are the view's tags, then the tasks that carry the
+/// list, then a list of the tasks for each one picked, ended by a plus button that adds a task with that priority. The tags are the view's tags, then the tasks that carry the
 /// one picked. Tasks that are not next actions are dimmed. Drag a task onto a
 /// project to file it, a project onto another to nest it, or onto a column to move it into that column's
 /// project; the first column makes it top-level.
@@ -110,40 +110,23 @@ struct ColumnBrowserView: View {
   }
 }
 
-/// The priorities and, last, no priority. A plain list selection: a click picks one, a shift-click a range
-/// and a command-click adds a priority to the picked ones or drops it.
-private struct PriorityColumn: View {
-  @Bindable var library: LibraryViewModel
-
-  var body: some View {
-    List(
-      selection: Binding(
-        get: { library.selectedPriorities },
-        set: { library.selectPriorities($0) }
-      )
-    ) {
-      ForEach(LibraryViewModel.priorityRows, id: \.self) { priority in
-        Label(priority?.title ?? "No priority", systemImage: priority?.symbol ?? "circle.dashed")
-          .tag(priority)
-      }
-    }
-    .frame(width: 200)
-  }
-}
-
-/// The tasks of the inbox, of the priorities picked, of the tag picked, or of the project the weekly review
-/// picked.
+/// The tasks of the inbox, of the tag picked, or of the project the weekly review picked; for the priorities
+/// picked, a list for each (`PriorityListsColumn`).
 struct TaskListColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
-    List(selection: $library.selection) {
-      ForEach(library.tasks, id: \.id) { task in
-        TaskRow(library: library, task: task)
-          .tag(task.id)
+    if library.section == .priorities {
+      PriorityListsColumn(library: library)
+    } else {
+      List(selection: $library.selection) {
+        ForEach(library.tasks, id: \.id) { task in
+          TaskRow(library: library, task: task)
+            .tag(task.id)
+        }
       }
+      .frame(width: 320)
     }
-    .frame(width: 320)
   }
 }
 
@@ -239,6 +222,11 @@ struct ProjectRow: View {
 struct TaskRow: View {
   @Bindable var library: LibraryViewModel
   let task: TaskItem
+  /// Whether the priority shows as an icon, and the date (scheduled, else due) as text; the priorities place
+  /// lists by priority and shows when each task is wanted.
+  var showsPriority = true
+  var showsDate = false
+  @Environment(\.theme) private var theme
   @State private var confirmingDelete = false
 
   private var isCompleted: Bool {
@@ -267,7 +255,12 @@ struct TaskRow: View {
           .foregroundStyle(.secondary)
           .help("Estimate")
       }
-      if let priority = task.priority {
+      if showsDate, let day = library.listedDate(of: task.id) {
+        Text(day.isoString)
+          .foregroundStyle(theme.ink)
+          .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
+      }
+      if showsPriority, let priority = task.priority {
         Image(systemName: priority.symbol)
           .foregroundStyle(.secondary)
           .help(priority.title)

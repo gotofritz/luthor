@@ -86,6 +86,20 @@ private struct GlobalSettingsColumn: View {
           value: estimateBinding, in: 0...240, step: 5)
         Stepper("Buffer: \(library.globalSettings.bufferPercentage)%", value: bufferBinding, in: 0...100, step: 5)
       }
+      Section("New projects") {
+        Picker("Priority", selection: projectPriorityBinding) {
+          Text("None").tag(Priority?.none)
+          ForEach(Priority.allCases, id: \.self) { priority in
+            Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
+          }
+        }
+        Picker("Estimate", selection: projectEstimateBinding) {
+          Text("None").tag(Int?.none)
+          ForEach(projectEstimateChoices, id: \.self) { minutes in
+            Text(EstimateScale.label(minutes)).tag(Int?.some(minutes))
+          }
+        }
+      }
       Section("Weekdays") {
         Stepper(
           "Day changes at: \(clockText(library.globalSettings.dayChangesAt))",
@@ -123,6 +137,25 @@ private struct GlobalSettingsColumn: View {
     Binding(
       get: { library.globalSettings.bufferPercentage },
       set: { library.changeGlobalSetting(.bufferPercentage, to: String($0)) })
+  }
+
+  /// The priority and estimate a new top-level project starts with; the tasks in it start with the same.
+  private var projectPriorityBinding: Binding<Priority?> {
+    Binding(
+      get: { library.globalSettings.defaultProjectPriority },
+      set: { library.changeGlobalSetting(.defaultProjectPriority, to: $0?.rawValue) })
+  }
+
+  private var projectEstimateBinding: Binding<Int?> {
+    Binding(
+      get: { library.globalSettings.defaultProjectEstimate },
+      set: { library.changeGlobalSetting(.defaultProjectEstimateMinutes, to: $0.map(String.init)) })
+  }
+
+  /// The estimates the picker offers, in minutes, and the one set if it is none of them.
+  private var projectEstimateChoices: [Int] {
+    let chosen = library.globalSettings.defaultProjectEstimate.map { [$0] } ?? []
+    return Set([5, 15, 30, 60, 120, 240] + chosen).sorted()
   }
 
   private var dayChangesBinding: Binding<Int> {

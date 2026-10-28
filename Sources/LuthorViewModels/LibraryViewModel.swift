@@ -109,6 +109,8 @@ public final class LibraryViewModel {
   /// The item the plus button of a column started, edited on the card in the column after it until OK
   /// makes it; Cancel, or going anywhere else, drops it.
   public internal(set) var newItem: NewItemDraft?
+  /// How many items `newItem` has held since launch; the number of the last one.
+  var newItemsStarted = 0
   /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
   public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?

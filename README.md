@@ -36,8 +36,9 @@ shown, so you can tell views apart (and the app from other windows) at a glance.
 
 Prios lists the priorities Critical, Important, Optional and One day, and No
 priority. It picks like any Mac list: click one, shift-click for a range,
-⌘-click to add or drop one; the tasks of all picked are listed, the most
-urgent first. Give a task a
+⌘-click to add or drop one; each picked priority has a list of its tasks
+with their scheduled or due dates, the most urgent first, ended by a plus button that adds a
+task with that priority. Give a task a
 priority from its context menu or Task → Priority, and an estimate in
 minutes from Estimate. Either clarifies a task out of the Inbox, same as
 filing it into a project; a task given One day is kept out of next actions
@@ -47,8 +48,9 @@ until promoted. The quick-capture syntax does both at once:
 Projects nest to any depth and show in Miller columns: the first column lists
 the top-level projects, and each project you open adds a column
 of its sub-projects and tasks, headed by the project's name. The plus button
-at the end of a column starts a task or a project in it, edited on a card in the next column (a task begins with priority optional
-and 5 minutes) and kept with OK; a project is parallel
+at the end of a column starts a task or a project in it, edited on a card in the next column (a task begins with the priority and
+estimate of the project it is in, or of the nearest one above it; a top-level project
+with the ones set in Settings, none to begin with) and kept with OK; a project is parallel
 (every child is active) or sequential (only the first open child is; the rest
 are dimmed). The last column is always a card: the task picked or, with none,
 the project shown. Drag a project onto another to nest it, or onto the first
@@ -135,7 +137,8 @@ the lists and the review; the Completed and dropped toggle lists them, and Reope
 Settings has three families, Global, Views (a list of views, with overrides
 for the one picked; Edit View… in the view switcher opens it on the view
 shown) and This Mac: Global sets the numbers every view falls back to
-(default estimate for an unestimated task, buffer percentage, capacity and
+(default estimate for an unestimated task, the priority and estimate a new
+project starts with, buffer percentage, capacity and
 start and end of day per weekday), how often projects are reviewed and a default view;
 Views overrides the buffer and capacity for the view picked only, and
 follows the global value until switched on. Both also pick the accent colour

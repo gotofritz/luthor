@@ -18,8 +18,8 @@ public struct Project: Equatable, Sendable {
   public internal(set) var notes: String?
   /// The day the project was created; `nil` for one created before cards showed it.
   public let createdOn: CalendarDate?
-  /// Its own priority and estimate in minutes, as for a task; they are shown and not planned, and do not flow
-  /// down to what it holds.
+  /// Its own priority and estimate in minutes, as for a task; they are shown and not planned. A new task in it
+  /// starts with them (`LibraryState.defaults(forNewTaskUnder:)`); the tasks it holds do not otherwise take them.
   public internal(set) var priority: Priority?
   public internal(set) var estimate: Int?
 

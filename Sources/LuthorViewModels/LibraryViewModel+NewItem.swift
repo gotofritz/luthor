@@ -16,8 +16,18 @@ extension LibraryViewModel {
     if let kept, kept.parentID == parentID {
       newItem = kept
     } else {
-      newItem = NewItemDraft(parentID: parentID, kind: kind)
+      newItem = makeNewItem(under: parentID, kind: kind)
     }
+  }
+
+  /// A draft of an item to add under `parentID`, with the defaults its place gives a task and a project.
+  func makeNewItem(under parentID: TaskID?, kind: NewItemKind) -> NewItemDraft {
+    var item = NewItemDraft(
+      parentID: parentID, kind: kind, taskDefaults: state.defaults(forNewTaskUnder: parentID),
+      projectDefaults: state.defaults(forNewProjectUnder: parentID, in: currentView))
+    newItemsStarted += 1
+    item.number = newItemsStarted
+    return item
   }
 
   /// Sets the title typed on the card of the new item, which the column shows as it goes.

@@ -143,6 +143,9 @@ Sources/
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, choose the next review,
                              review a project, drop it
+    ItemDefaults.swift       ItemDefaults (priority and estimate) and what a new task (its parent's, from the nearest
+                             project above that has them) or a new top-level project (the settings') starts with
+    Commands+Defaults.swift  the events that give a new item those defaults
     Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
@@ -192,7 +195,7 @@ Sources/
                              deadlines rank after priority; only tasks, never projects; DayPlan.slots(notBefore:) lays the entries on the day's
                              hours, set starts first; DayPlan.layout(...) lays tasks, blocks and sessions so none overlaps, the one moved winning), hours(in:on:), waitingFor(in:today:)
     Settings.swift           SettingKey, ThemeAccent (the eight accent names; the app colours them), Weekday,
-                             Settings (typed planning numbers, DayHours per weekday and the view's accent); SettingChanged
+                             Settings (typed planning numbers, DayHours per weekday, the view's accent and the priority and estimate of a new top-level project); SettingChanged
                              event lives in Events.swift; resolves Settings from LibraryState's raw
                              values (global, then per-view override, then built-in default) and the
                              default view, as an extension (split out for file_length, not access)
@@ -236,7 +239,7 @@ Sources/
                              candidate filter in LibraryViewModel+Tags.swift, repeating tasks (set, stop,
                              skip) in LibraryViewModel+Repeat.swift, duplicating, deleting for good and
                              Add Tasks in LibraryViewModel+Structure.swift, a new item started from a column's plus button (a draft in
-                             `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, notes
+                             `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, the priorities place's lists (`priorityGroups`, a task added from the bottom of one) in LibraryViewModel+PriorityLists.swift, notes
                              on a card, deselecting a column, the project card that replaces a list (`projectCardOpen`, `toggleProjectCard`) and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
                              filling the published state (columns, lists, completed items) and text export/import in
@@ -251,7 +254,7 @@ Sources/
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
   Luthor/                    LuthorApp (wiring, menus, ⌘,) + thin views (LibraryView: window, top bar
                              with search and view switcher, capture; NavigationRailView: icon
-                             rail, Settings pinned to the bottom; ColumnBrowserView: the columns of
+                             rail, Settings pinned to the bottom; PriorityColumns: the priorities place's picker and its list for each priority, with an add button; ColumnBrowserView: the columns of
                              the place picked and the card at their end; ProjectColumnsView: a project's column, ended by a plus button and, while an item is being added, a box with its title; NewItemViews: the card
                              of an item being added, in edit mode; CardViews: the task card column, the project card in the
                              last column while the pencil on the project's row is pressed, replacing its list (the fields of an open item are CardLiveFields, changed by clicking and kept at once, with no edit mode; CardProjectPicker: the project tree pulldown at the top of a card; CardFieldsForm is the form of a new item's card); NotesViews: notes

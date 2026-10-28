@@ -1165,3 +1165,27 @@ minute?)` (another optional-field event with a golden-log line), valid only
 while the task stays planned for that date. The others follow in plan order
 from the day's start, or from now on today, round the fixed ones. Candidates
 and blocks drag onto the grid and back; the grid zooms.
+
+## Decisions (2026-10-27, priorities, issue #79)
+
+No new event and no change to the format: two optional settings and a change in
+what a new item starts with.
+
+1. **Two new settings, `defaultProjectPriority` and `defaultProjectEstimateMinutes`**,
+   global or per view like any other, none by default. Only a new top-level
+   project is given them (`createProject(in:)` writes the usual
+   `TaskPrioritized` and `TaskEstimated`); a sub-project starts with neither. An
+   older build ignores the keys (it skips a setting it does not know)
+2. **A new task takes its parent's priority and estimate**, each from the
+   nearest project above it that has one, up to the root project
+   (`LibraryState.defaults(forNewTaskUnder:)`). This replaces the fixed
+   priority optional and 5 minutes of issue #60 decision 2. A task in no
+   project starts with neither. The capture syntax still wins, and capture into
+   a project (`capture(title:into:)`) inherits too; the Inbox does not. Priority
+   and estimate are only defaults at creation: a change to a project later
+   moves nothing already in it
+3. **Prios lists each picked priority apart**, with each task's scheduled date,
+   else its due date, in the accent colour and no priority icon (the heading
+   says it). A plus button ends each list and starts
+   a task with that priority (`addTask(withPriority:)`), in no project, so with
+   no estimate. A picked priority with no task still shows its list

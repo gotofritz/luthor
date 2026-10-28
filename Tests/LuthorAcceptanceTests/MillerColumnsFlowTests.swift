@@ -31,12 +31,14 @@ struct ColumnPlusButtonFlowTests {
 @MainActor
 @Suite("Given Miller columns, when an item is added with one press of the plus button and its card")
 struct NewItemCardFlowTests {
-  @Test("the title shows in the column as it is typed, and OK makes the task with priority optional and 5 minutes")
+  @Test("the title shows in the column as it is typed, and OK makes the task with its project's priority and estimate")
   func aTaskIsMadeFromItsCard() throws {
     let dir = try TemporaryDirectory()
     defer { dir.remove() }
     let library = launchApp(on: dir.file("events.jsonl"))
     let europe = try library.createProject("Europe", kind: .parallel)
+    library.prioritize(europe, as: .optional)
+    library.estimate(europe, as: 5)
     library.open(.project(europe))
 
     library.beginNewItem(under: europe, kind: .task)

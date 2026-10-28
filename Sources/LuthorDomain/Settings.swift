@@ -101,6 +101,9 @@ public enum SettingKey: String, Codable, Sendable, CaseIterable, Hashable {
   case themeAccent
   /// The time after midnight at which one day changes into the next, in minutes after midnight; global.
   case dayChangesAt
+  /// The priority (`A`, `B`, `C` or `someday`) and the estimate in minutes a new top-level project starts with;
+  /// without them, none.
+  case defaultProjectPriority, defaultProjectEstimateMinutes
 }
 
 /// The colours a view can take as its accent. Names only: which colour each one is lives in the app.
@@ -129,6 +132,9 @@ public struct Settings: Equatable, Sendable {
   public let themeAccent: ThemeAccent
   /// When the day changes, in minutes after midnight.
   public let dayChangesAt: Int
+  /// What a new top-level project starts with: its priority and its estimate in minutes; `nil` for none.
+  public let defaultProjectPriority: Priority?
+  public let defaultProjectEstimate: Int?
 
   /// The last minute a day reaches, counted from its own midnight: the next midnight and the time the day
   /// changes.
@@ -137,8 +143,11 @@ public struct Settings: Equatable, Sendable {
   public init(
     defaultEstimateMinutes: Int, bufferPercentage: Int, capacity: [Weekday: Int],
     dayHours: [Weekday: DayHours] = [:], themeAccent: ThemeAccent = .navy,
-    dayChangesAt: Int = Settings.defaultDayChangesAt
+    dayChangesAt: Int = Settings.defaultDayChangesAt, defaultProjectPriority: Priority? = nil,
+    defaultProjectEstimate: Int? = nil
   ) {
+    self.defaultProjectPriority = defaultProjectPriority
+    self.defaultProjectEstimate = defaultProjectEstimate
     self.dayChangesAt = dayChangesAt
     self.defaultEstimateMinutes = defaultEstimateMinutes
     self.bufferPercentage = bufferPercentage
@@ -222,7 +231,9 @@ extension LibraryState {
       capacity: capacity,
       dayHours: dayHours,
       themeAccent: value(.themeAccent).flatMap(ThemeAccent.init) ?? .navy,
-      dayChangesAt: dayChangesAt
+      dayChangesAt: dayChangesAt,
+      defaultProjectPriority: value(.defaultProjectPriority).flatMap(Priority.init),
+      defaultProjectEstimate: value(.defaultProjectEstimateMinutes).flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil }
     )
   }
 }
