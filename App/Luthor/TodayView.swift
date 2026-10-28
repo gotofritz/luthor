@@ -224,7 +224,7 @@ struct PlanRow: View {
   let kind: Kind
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       Button {
         library.complete(entry.task.id)
       } label: {
@@ -241,12 +241,14 @@ struct PlanRow: View {
       }
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
+        .font(.caption)
         .foregroundStyle(.secondary)
         .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
       Group {
         if let day = library.listedDate(of: entry.task.id) {
           Text(day.isoString)
+            .font(.caption)
             .foregroundStyle(.secondary)
             .help(library.scheduledDate(of: entry.task.id) == nil ? "Due" : "Scheduled")
         }

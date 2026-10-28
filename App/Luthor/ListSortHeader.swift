@@ -7,6 +7,7 @@ import SwiftUI
 /// widths of the cells are those of the cells in `TaskRow`, so each sits over its column.
 struct ListSortHeader: View {
   @Bindable var library: LibraryViewModel
+  @Environment(\.theme) private var theme
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
   let listID: String
   /// Whether the rows have a duration and a priority cell at their end, for the header to sit over.
@@ -18,17 +19,17 @@ struct ListSortHeader: View {
   /// Whether the header is a row of the list it sorts, as in a section: it then takes the insets of the rows,
   /// and has no bar, divider or padding of its own.
   var isRow = false
-  /// The order of the Prios place: done, priority, duration, date, title.
+  /// The order of the Prios place: done, duration, priority, date, title.
   var priorityFirst = false
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       if showsStatus { statusCell }
-      if priorityFirst { priorityCell(separated: showsStatus) }
       if !priorityFirst { titleCell }
       if showsDuration {
         cell(.duration, label: "Duration", width: TaskColumns.duration, alignment: .trailing)
       }
+      if priorityFirst { priorityCell(separated: true) }
       if library.showsWhenColumn(ofList: listID) {
         cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
       }
@@ -42,7 +43,7 @@ struct ListSortHeader: View {
     .padding(.vertical, 4)
     .frame(maxWidth: .infinity)
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
-    .overlay(alignment: .bottom) { if !isRow { Divider() } }
+    .overlay(alignment: .bottom) { Divider() }
   }
 
   private var titleCell: some View {
@@ -84,10 +85,14 @@ struct ListSortHeader: View {
     return Button {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
-      HStack(spacing: 2) {
+      VStack(spacing: 1) {
+        // A triangle above the label of the column the list is sorted by, pointing down for ascending.
+        Image(systemName: sort.ascending ? "arrowtriangle.down.fill" : "arrowtriangle.up.fill")
+          .font(.system(size: 6))
+          .opacity(sort.key == key ? 1 : 0)
         Text(label)
-        if sort.key == key { Image(systemName: sort.ascending ? "chevron.down" : "chevron.up") }
       }
+      .foregroundStyle(sort.key == key ? AnyShapeStyle(theme.ink) : AnyShapeStyle(.secondary))
       .frame(maxWidth: width == nil ? .infinity : width, alignment: alignment)
       .contentShape(Rectangle())
     }
@@ -95,7 +100,7 @@ struct ListSortHeader: View {
     .frame(width: width)
     .overlay(alignment: .leading) {
       // Half the gap between the cells, so the dots sit between them without moving them.
-      if separated { DottedSeparator().offset(x: -4) }
+      if separated { DottedSeparator().offset(x: -TaskColumns.spacing / 2) }
     }
     .help("Sort by \(label.lowercased())")
   }
@@ -118,8 +123,10 @@ private struct DottedSeparator: View {
 enum TaskColumns {
   /// The done circle at the start of a row.
   static let checkbox: CGFloat = 20
-  static let duration: CGFloat = 44
-  static let priority: CGFloat = 44
+  static let duration: CGFloat = 50
+  static let priority: CGFloat = 28
   /// The date a row shows in Prios and Today, the day scheduled for else the due date.
-  static let date: CGFloat = 92
+  static let date: CGFloat = 70
+  /// The gap between the cells of a row.
+  static let spacing: CGFloat = 4
 }

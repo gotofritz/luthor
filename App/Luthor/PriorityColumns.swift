@@ -45,8 +45,7 @@ struct PriorityListsColumn: View {
           Button {
             library.addTask(withPriority: group.priority)
           } label: {
-            Label("Add", systemImage: group.priority?.symbol ?? "plus")
-              .labelStyle(.iconOnly)
+            Image(systemName: "plus")
           }
           .buttonStyle(.borderless)
           .help("Add a task with priority \(group.priority?.title ?? "none")")

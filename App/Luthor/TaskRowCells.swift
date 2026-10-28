@@ -24,6 +24,7 @@ extension TaskRow {
       Color.clear.frame(height: 1)
       if let estimate = task.estimate {
         Text("\(estimate)m")
+          .font(.caption)
           .foregroundStyle(.secondary)
           .help("Estimate")
       }

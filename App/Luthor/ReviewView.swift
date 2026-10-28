@@ -127,7 +127,7 @@ private struct ReviewRow: View {
   let isDone: Bool
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       Group {
         if isDone {
           Image(systemName: "checkmark.circle.fill")
@@ -153,6 +153,7 @@ private struct ReviewRow: View {
       }
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
+        .font(.caption)
         .foregroundStyle(.secondary)
         .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counted at the default estimate" : "Estimate when first planned")
