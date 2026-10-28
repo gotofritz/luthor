@@ -35,6 +35,11 @@ struct NewItemCardColumn: View {
     Binding(get: { library.newItem?.kind ?? item.kind }, set: { library.setNewItemKind($0) })
   }
 
+  private var project: Binding<TaskID?> {
+    Binding(
+      get: { library.newItem?.parentID ?? item.parentID }, set: { library.setNewItemProject($0) })
+  }
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 12) {
@@ -51,6 +56,14 @@ struct NewItemCardColumn: View {
           }
         }
         .pickerStyle(.segmented)
+        if kind.wrappedValue == .task {
+          Picker("Project", selection: project) {
+            Text("No project").tag(TaskID?.none)
+            ForEach(library.projectOutline()) { entry in
+              Text(String(repeating: "    ", count: entry.depth) + entry.title).tag(TaskID?.some(entry.id))
+            }
+          }
+        }
         CardFieldsForm(library: library, fields: $fields, submit: save, canSchedule: kind.wrappedValue == .task)
           .onChange(of: fields.priority) { library.setNewItemPriority(fields.priority) }
           .onChange(of: fields.estimate) { library.setNewItemEstimate(fields.estimate) }
@@ -66,7 +79,7 @@ struct NewItemCardColumn: View {
       .padding(12)
     }
     .frame(width: 300)
-    .id("\(item.parentID?.rawValue ?? "top")-\(item.number)")
+    .id(item.number)
   }
 
   private func save() {

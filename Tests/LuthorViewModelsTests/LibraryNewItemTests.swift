@@ -375,3 +375,46 @@ struct AddTasksStartsNewItemViewModelTests {
     #expect(library.newItem == nil)
   }
 }
+
+@MainActor
+@Suite("When a task begun outside a project is given one on its card")
+struct NewItemProjectViewModelTests {
+  @Test("it is filed in that project when kept")
+  func itIsFiledInTheProject() throws {
+    let (library, _) = makeInbox(gardenLog)
+    library.addTask(withPriority: .important)
+    library.setNewItemProject(TaskID("p1"))
+    library.setNewItemTitle("prune")
+    let card = try #require(library.newItem?.card)
+
+    library.saveNewItem(card)
+
+    let prune = try #require(library.tasks.first { $0.title == "prune" })
+    #expect(prune.parentID == TaskID("p1"))
+    #expect(prune.priority == .important)
+  }
+
+  @Test("the estimate follows the project, the priority picked stays")
+  func theEstimateFollowsTheProject() {
+    let (library, _) = makeInbox(gardenLog)
+    library.addTask(withPriority: .important)
+
+    library.setNewItemProject(TaskID("p1"))
+
+    #expect(library.newItem?.parentID == TaskID("p1"))
+    #expect(library.newItem?.card.priority == .important)
+    #expect(library.newItem?.card.estimate == 5)
+  }
+
+  @Test("choosing no project again files it nowhere")
+  func noProjectAgain() {
+    let (library, _) = makeInbox(gardenLog)
+    library.addTask(withPriority: nil)
+    library.setNewItemProject(TaskID("p1"))
+
+    library.setNewItemProject(nil)
+
+    #expect(library.newItem?.parentID == nil)
+    #expect(library.newItem?.card.estimate == nil)
+  }
+}

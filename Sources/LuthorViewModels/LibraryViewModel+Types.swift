@@ -126,7 +126,7 @@ public enum NewItemKind: Hashable, Sendable {
 /// edits it; nothing is written before OK.
 public struct NewItemDraft: Equatable, Sendable {
   /// The project the item is added to; `nil` for a top-level project.
-  public let parentID: TaskID?
+  public internal(set) var parentID: TaskID?
   public internal(set) var kind: NewItemKind
   /// What the card holds so far, the title as typed.
   public internal(set) var card: TaskCardDraft
@@ -134,7 +134,7 @@ public struct NewItemDraft: Equatable, Sendable {
   /// project it is in, a top-level project those set in settings.
   /// Which item this is among those begun since launch, so a card can tell a new draft from the one it edits.
   public internal(set) var number = 0
-  let taskDefaults: ItemDefaults
+  var taskDefaults: ItemDefaults
   let projectDefaults: ItemDefaults
   /// Whether the user, and not the kind, last set the priority and the estimate: changing the kind leaves
   /// those alone.

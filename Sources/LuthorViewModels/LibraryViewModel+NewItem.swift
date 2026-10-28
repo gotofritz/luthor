@@ -42,6 +42,16 @@ extension LibraryViewModel {
     newItem?.applyKindDefaults()
   }
 
+  /// Files the new item under `projectID` (`nil` for no project), as picked on its card. The estimate follows
+  /// the project unless the user set it; the priority stays as set.
+  public func setNewItemProject(_ projectID: TaskID?) {
+    guard var item = newItem, item.parentID != projectID else { return }
+    item.parentID = projectID
+    item.taskDefaults = state.defaults(forNewTaskUnder: projectID)
+    item.applyKindDefaults()
+    newItem = item
+  }
+
   /// Sets the priority on the card of the new item, which then stays as set when the kind changes. Setting
   /// what the card holds already is not an edit.
   public func setNewItemPriority(_ priority: Priority?) {
