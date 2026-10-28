@@ -16,6 +16,9 @@ APP_INSTALL_DIR ?= /Applications
 # Release zips; named after the tag on a tagged commit.
 DIST := .build/dist
 VERSION ?= $(shell git describe --tags --always --dirty)
+# What About Luthor shows: the version's x.y.z (empty if untagged) and the commit count as the build.
+APP_VERSION := $(shell scripts/app-version.sh '$(VERSION)')
+APP_BUILD_NUMBER := $(shell git rev-list --count HEAD 2>/dev/null)
 TERRAFORM ?= terraform
 
 .PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance bench test-linux app install dist check-ci hooks tools infra infra-token
@@ -52,6 +55,7 @@ test:
 	scripts/test-check-conventional-commit.sh
 	scripts/test-check-coverage.sh
 	scripts/test-next-version.sh
+	scripts/test-app-version.sh
 
 # Runs the tests with coverage on and fails below COVERAGE_MIN percent line coverage of Sources/.
 coverage:
@@ -78,10 +82,12 @@ test-linux:
 	swift build
 	swift test
 
-# Builds the Mac app, ad-hoc signed, into $(APP_BUILD).
+# Builds the Mac app, ad-hoc signed, into $(APP_BUILD), with the version of the tag it is built from.
 app:
 	xcodebuild -project App/Luthor.xcodeproj -scheme Luthor -configuration Release \
-	  -destination 'generic/platform=macOS' -derivedDataPath $(APP_DERIVED_DATA) -quiet build
+	  -destination 'generic/platform=macOS' -derivedDataPath $(APP_DERIVED_DATA) -quiet \
+	  $(if $(APP_VERSION),MARKETING_VERSION=$(APP_VERSION)) \
+	  $(if $(APP_BUILD_NUMBER),CURRENT_PROJECT_VERSION=$(APP_BUILD_NUMBER)) build
 
 # Builds the app and installs it into $(APP_INSTALL_DIR).
 install: app
