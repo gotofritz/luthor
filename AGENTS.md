@@ -471,6 +471,10 @@ Keep these instructions in sync.
 Work on the branch the user specifies. If their prompt names one, use it
 without asking.
 
+**IMPORTANT: always cut a new branch from the latest `origin/main`, never
+from a local `main`, which may be stale.** Run `git fetch origin main` first,
+then `git checkout -b <branch> origin/main`.
+
 **Before creating a branch**, check for an existing open PR (`gh pr list
 --state open`, or the GitHub MCP tools). If an open PR covers the same area,
 commit to its branch instead of creating a new one.
