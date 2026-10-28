@@ -267,6 +267,7 @@ struct PlanRow: View {
       }
       Spacer(minLength: 0)
     }
+    .padding(.horizontal, -5)
     .draggable(entry.task.id.rawValue)
     .contextMenu {
       switch kind {

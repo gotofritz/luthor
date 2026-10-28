@@ -265,6 +265,8 @@ struct TaskRow: View {
       if showsPriority && !priorityFirst { priorityCell }
       if priorityFirst { titleCells }
     }
+    // Five points less room either side of the row than the list gives it.
+    .padding(.horizontal, -5)
     .draggable(task.id.rawValue)
     .contextMenu { menu }
     .confirmationDialog("Delete “\(task.title)” permanently?", isPresented: $confirmingDelete) {

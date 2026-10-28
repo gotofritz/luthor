@@ -39,7 +39,7 @@ struct ListSortHeader: View {
     }
     .font(.caption)
     .foregroundStyle(.secondary)
-    .padding(.horizontal, isRow ? 0 : 16)
+    .padding(.horizontal, isRow ? 0 : 11)
     .padding(.vertical, 4)
     .frame(maxWidth: .infinity)
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
@@ -138,7 +138,7 @@ private struct DottedSeparator: View {
 /// The widths of the columns a row of a task shows, shared with the header above them.
 enum TaskColumns {
   /// The done circle at the start of a row.
-  static let checkbox: CGFloat = 20
+  static let checkbox: CGFloat = 14
   static let duration: CGFloat = 28
   static let priority: CGFloat = 28
   /// The date a row shows in Prios and Today, the day scheduled for else the due date.
