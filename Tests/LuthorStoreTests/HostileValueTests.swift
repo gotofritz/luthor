@@ -104,3 +104,20 @@ struct HostileValueTests {
     #expect(throws: EventLogError.self) { try log.quarantineUnreadableLines() }
   }
 }
+
+@Suite("When a Home Folder log was moved into the shared folder")
+struct MovedHomeLogTests {
+  @Test("its events, written by the device named local, are still read")
+  func localDeviceEventsAreRead() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let moved = captured("t1", "buy milk", device: "local")
+    try (try EventLine.encode(moved) + "\n").write(
+      to: dir.file("events-desk.jsonl"), atomically: true, encoding: .utf8)
+
+    let reading = try DeviceFilesEventLog(directory: dir.url, deviceID: DeviceID("desk")).readReportingProblems()
+
+    #expect(reading.events == [moved])
+    #expect(reading.problems.isEmpty)
+  }
+}
