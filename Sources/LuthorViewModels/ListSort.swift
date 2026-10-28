@@ -4,6 +4,8 @@ import LuthorDomain
 public enum ListSortKey: CaseIterable, Sendable {
   /// The order the list has: the order of a project's items, or of capture.
   case manual
+  /// Open before done.
+  case status
   case title
   case created
   case due
@@ -13,6 +15,7 @@ public enum ListSortKey: CaseIterable, Sendable {
   public var label: String {
     switch self {
     case .manual: "Manual"
+    case .status: "Status"
     case .title: "Title"
     case .created: "Created"
     case .due: "Due"
@@ -29,13 +32,18 @@ public struct SortFields: Equatable, Sendable {
   public let due: CalendarDate?
   public let estimate: Int?
   public let priority: Priority?
+  public let isDone: Bool
 
-  public init(title: String, created: CalendarDate?, due: CalendarDate?, estimate: Int?, priority: Priority?) {
+  public init(
+    title: String, created: CalendarDate?, due: CalendarDate?, estimate: Int?, priority: Priority?,
+    isDone: Bool = false
+  ) {
     self.title = title
     self.created = created
     self.due = due
     self.estimate = estimate
     self.priority = priority
+    self.isDone = isDone
   }
 }
 
@@ -71,6 +79,7 @@ public struct ListSort: Equatable, Sendable {
   private func compare(_ lhs: SortFields, _ rhs: SortFields) -> Order {
     switch key {
     case .manual: .same
+    case .status: order(lhs.isDone ? 1 : 0, rhs.isDone ? 1 : 0)
     case .title: order(lhs.title.lowercased(), rhs.title.lowercased())
     case .created: order(lhs.created, rhs.created)
     case .due: order(lhs.due, rhs.due)

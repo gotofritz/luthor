@@ -255,6 +255,7 @@ struct TaskRow: View {
   var body: some View {
     HStack(spacing: 8) {
       checkbox
+        .frame(width: TaskColumns.checkbox)
       Text(task.title)
         .strikethrough(isCompleted)
         .foregroundStyle(titleStyle)

@@ -121,12 +121,12 @@ extension LibraryViewModel {
   private func sortFields(_ task: TaskItem) -> SortFields {
     SortFields(
       title: task.title, created: task.createdOn, due: state.dueDate(of: task.id)?.date,
-      estimate: task.estimate, priority: task.priority)
+      estimate: task.estimate, priority: task.priority, isDone: completedTaskIDs.contains(task.id))
   }
 
   private func sortFields(_ project: Project) -> SortFields {
     SortFields(
       title: project.title, created: project.createdOn, due: state.dueDate(of: project.id)?.date,
-      estimate: project.estimate, priority: project.priority)
+      estimate: project.estimate, priority: project.priority, isDone: completedProjectIDs.contains(project.id))
   }
 }

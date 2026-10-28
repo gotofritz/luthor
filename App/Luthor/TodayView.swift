@@ -231,6 +231,7 @@ struct PlanRow: View {
         Image(systemName: "circle")
       }
       .buttonStyle(.plain)
+      .frame(width: TaskColumns.checkbox)
       .help("Complete")
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.task.title)

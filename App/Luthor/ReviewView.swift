@@ -128,18 +128,21 @@ private struct ReviewRow: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      if isDone {
-        Image(systemName: "checkmark.circle.fill")
-          .foregroundStyle(.secondary)
-      } else {
-        Button {
-          library.complete(entry.task.id)
-        } label: {
-          Image(systemName: "circle")
+      Group {
+        if isDone {
+          Image(systemName: "checkmark.circle.fill")
+            .foregroundStyle(.secondary)
+        } else {
+          Button {
+            library.complete(entry.task.id)
+          } label: {
+            Image(systemName: "circle")
+          }
+          .buttonStyle(.plain)
+          .help("Complete")
         }
-        .buttonStyle(.plain)
-        .help("Complete")
       }
+      .frame(width: TaskColumns.checkbox)
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.task.title)
         if let history = entry.history {

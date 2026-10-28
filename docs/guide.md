@@ -477,8 +477,10 @@ action, so its order is its meaning.
   contents of a project, each priority's list in Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the
   daily review, the projects due and the tasks of the one picked in the weekly
-  review) has a cell above each column of the rows. Click the
-  *Duration* cell or the *Priority* flag to sort the list by it, ascending
+  review) has a cell above each column of the rows, set apart by dotted
+  lines. Click the triangle above the done circles to put the open items before
+  the done ones (the triangle points down), and again for the other way round
+  (up). Click the *Duration* cell or the *Priority* flag to sort the list by it, ascending
   (the arrow points down); click it again for descending (the arrow points up);
   a third click goes back to the list's own order. The first cell is a label
   that cycles: click it to sort by *Title*, again for descending, again for

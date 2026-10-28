@@ -244,6 +244,17 @@ struct ListSortViewModelTests {
     #expect(library.sortLabelKey(ofList: "project-p1") == .title)
   }
 
+  @Test("by status, the open tasks come before the ones done")
+  func byStatus() {
+    let (library, _) = makeInbox(Self.log + [completed("t1", lamport: 5)])
+    library.showCompleted = true
+    library.open(.project(TaskID("p1")))
+
+    library.sortBy(.status, ofList: "project-p1")
+
+    #expect(titles(library) == ["Cherry", "apple", "banana"])
+  }
+
   @Test("each list keeps its own sort, and sorting writes nothing to the log")
   func listsAreSortedApart() {
     let (library, log) = makeInbox(Self.log + [captured("i1", "zebra", lamport: 5), captured("i2", "ant", lamport: 6)])

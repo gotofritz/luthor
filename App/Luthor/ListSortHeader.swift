@@ -9,6 +9,7 @@ struct ListSortHeader: View {
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
   let listID: String
   /// Whether the rows have a duration and a priority cell at their end, for the header to sit over.
+  var showsStatus = true
   var showsDuration = true
   var showsPriority = true
   /// Room at the end of the rows past the cells above, such as the field of minutes in a review.
@@ -16,7 +17,10 @@ struct ListSortHeader: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      cell(library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true)
+      if showsStatus { statusCell }
+      cell(
+        library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true,
+        separated: showsStatus)
       if showsDuration { cell(.duration, width: TaskColumns.duration, alignment: .trailing) }
       if showsPriority { cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag") }
       if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
@@ -30,9 +34,30 @@ struct ListSortHeader: View {
     .overlay(alignment: .bottom) { Divider() }
   }
 
+  /// The cell over the circles of the rows: a triangle, which is the arrow too once the list is sorted by it,
+  /// pointing down for open before done and up for the other way round.
+  private var statusCell: some View {
+    let sort = library.sort(ofList: listID)
+    let symbol =
+      sort.key == .status
+      ? (sort.ascending ? "arrowtriangle.down.fill" : "arrowtriangle.up.fill") : "arrowtriangle.down"
+    return Button {
+      library.sortBy(.status, ofList: listID)
+    } label: {
+      Image(systemName: symbol)
+        .font(.system(size: 8))
+        .frame(width: TaskColumns.checkbox)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .help("Sort by open and done")
+    .accessibilityLabel("Sort by status")
+  }
+
   /// A cell of the header; the arrow shows on the one the list is sorted by, pointing down for ascending.
   private func cell(
-    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil, firstCell: Bool = false
+    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil, firstCell: Bool = false,
+    separated: Bool = true
   ) -> some View {
     let sort = library.sort(ofList: listID)
     return Button {
@@ -47,12 +72,31 @@ struct ListSortHeader: View {
     }
     .buttonStyle(.plain)
     .frame(width: width)
+    .overlay(alignment: .leading) {
+      // Half the gap between the cells, so the dots sit between them without moving them.
+      if separated { DottedSeparator().offset(x: -4) }
+    }
     .help("Sort by \(key.label.lowercased())")
   }
 }
 
-/// The widths of the columns a row of a task shows at its end, shared with the header above them.
+/// A short vertical line of dots, between two cells of the header.
+private struct DottedSeparator: View {
+  var body: some View {
+    Path { path in
+      path.move(to: CGPoint(x: 0, y: 0))
+      path.addLine(to: CGPoint(x: 0, y: 14))
+    }
+    .stroke(style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [0.5, 3]))
+    .frame(width: 1, height: 14)
+    .foregroundStyle(.tertiary)
+  }
+}
+
+/// The widths of the columns a row of a task shows, shared with the header above them.
 enum TaskColumns {
+  /// The done circle at the start of a row.
+  static let checkbox: CGFloat = 20
   static let duration: CGFloat = 44
   static let priority: CGFloat = 24
 }

@@ -5,10 +5,11 @@ import Testing
 
 private func fields(
   _ title: String, created: String? = nil, due: String? = nil, estimate: Int? = nil,
-  priority: Priority? = nil
+  priority: Priority? = nil, isDone: Bool = false
 ) -> SortFields {
   SortFields(
-    title: title, created: created.map(date), due: due.map(date), estimate: estimate, priority: priority)
+    title: title, created: created.map(date), due: due.map(date), estimate: estimate, priority: priority,
+    isDone: isDone)
 }
 
 private let rows = [
@@ -60,8 +61,17 @@ struct ListSortTests {
     #expect(titles(.priority, ascending: false) == ["apple", "date", "banana", "Cherry"])
   }
 
+  @Test("by status, open before done ascending, done before open descending, equal ones keeping their order")
+  func byStatus() {
+    let mixed = [fields("a", isDone: true), fields("b"), fields("c", isDone: true), fields("d")]
+
+    #expect(ListSort(key: .status, ascending: true).sorted(mixed, by: { $0 }).map(\.title) == ["b", "d", "a", "c"])
+    #expect(ListSort(key: .status, ascending: false).sorted(mixed, by: { $0 }).map(\.title) == ["a", "c", "b", "d"])
+  }
+
   @Test("each key has the label of its header cell")
   func labels() {
-    #expect(ListSortKey.allCases.map(\.label) == ["Manual", "Title", "Created", "Due", "Duration", "Priority"])
+    #expect(
+      ListSortKey.allCases.map(\.label) == ["Manual", "Status", "Title", "Created", "Due", "Duration", "Priority"])
   }
 }

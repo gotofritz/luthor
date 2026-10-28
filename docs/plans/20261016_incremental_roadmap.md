@@ -1197,7 +1197,7 @@ what a new item starts with.
    children are ignored. This is the shape of `DayPlanOrdered`, not the per-sibling `TaskReordered` the
    assessment (U-4) proposed: one event is one undo step, and a sort is one event. Replay applies events in
    their deterministic order, so two Macs converge.
-2. **Sorting is how a list is shown, not a command.** A table header above each list sorts it: Duration and
+2. **Sorting is how a list is shown, not a command.** A table header above each list sorts it: a triangle cell over the done circles (open before done), Duration and
    Priority cells sort on a click, reverse on a second and go back to the list's own order on a third; the first
    cell is a cycling label (Title, Created, Due, each ascending then descending), as the rows do not show
    created and due. Nothing is
