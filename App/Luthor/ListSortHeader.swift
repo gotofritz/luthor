@@ -18,18 +18,22 @@ struct ListSortHeader: View {
   /// Whether the header is a row of the list it sorts, as in a section: it then takes the insets of the rows,
   /// and has no bar, divider or padding of its own.
   var isRow = false
+  /// The order of the Prios place: done, priority, duration, date, title.
+  var priorityFirst = false
 
   var body: some View {
     HStack(spacing: 8) {
       if showsStatus { statusCell }
-      cell(
-        library.sortLabelKey(ofList: listID), label: library.firstCellLabel(ofList: listID), width: nil,
-        alignment: .leading, firstCell: true, separated: showsStatus)
-      if showsDuration { cell(.duration, label: "Duration", width: TaskColumns.duration, alignment: .trailing) }
+      if priorityFirst { priorityCell(separated: showsStatus) }
+      if !priorityFirst { titleCell }
+      if showsDuration {
+        cell(.duration, label: "Duration", width: TaskColumns.duration, alignment: .trailing)
+      }
       if library.showsWhenColumn(ofList: listID) {
         cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
       }
-      if showsPriority { cell(.priority, label: "Prio", width: TaskColumns.priority, alignment: .center) }
+      if showsPriority && !priorityFirst { priorityCell(separated: true) }
+      if priorityFirst { titleCell }
       if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
     }
     .font(.caption)
@@ -39,6 +43,16 @@ struct ListSortHeader: View {
     .frame(maxWidth: .infinity)
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
     .overlay(alignment: .bottom) { if !isRow { Divider() } }
+  }
+
+  private var titleCell: some View {
+    cell(
+      library.sortLabelKey(ofList: listID), label: library.firstCellLabel(ofList: listID), width: nil,
+      alignment: .leading, firstCell: true, separated: showsStatus || priorityFirst)
+  }
+
+  private func priorityCell(separated: Bool) -> some View {
+    cell(.priority, label: "Prio", width: TaskColumns.priority, alignment: .center, separated: separated)
   }
 
   /// The cell over the circles of the rows: a triangle, which is the arrow too once the list is sorted by it,

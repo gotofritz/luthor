@@ -585,8 +585,8 @@ behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
 The tasks of all the picked priorities are one list under one header, the
 most urgent first and No priority last until you sort it; the header sorts
-across all of them. A task shows its estimate, the day it is scheduled for or
-else its due date, and its priority. At the bottom, a plus button for each
+across all of them. A task shows, in this order, its done circle, priority, estimate, the day
+it is scheduled for or else its due date (in a smaller font), and its title. At the bottom, a plus button for each
 picked priority adds a task with that priority with that priority: the card opens in the next column
 as it does in a project, and the task has no project, so no estimate, until
 you set one. With none picked, there is nothing to list. You can complete a

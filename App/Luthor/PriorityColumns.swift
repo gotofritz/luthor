@@ -31,10 +31,10 @@ struct PriorityListsColumn: View {
   var body: some View {
     List(selection: $library.selection) {
       // The priorities are named in the column to the left, where the ones listed are picked.
-      ListSortHeader(library: library, listID: LibraryViewModel.prioritiesListID, isRow: true)
+      ListSortHeader(library: library, listID: LibraryViewModel.prioritiesListID, isRow: true, priorityFirst: true)
         .listRowSeparator(.hidden)
       ForEach(library.priorityList, id: \.id) { task in
-        TaskRow(library: library, task: task, showsDate: true)
+        TaskRow(library: library, task: task, showsDate: true, priorityFirst: true)
           .tag(task.id)
       }
       if let item = library.newItem, item.parentID == nil {

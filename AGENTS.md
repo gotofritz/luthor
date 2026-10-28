@@ -281,7 +281,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
-                             ListSortHeader: the sticky table header above a list, a cell for each column;
+                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column;
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;
