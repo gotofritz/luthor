@@ -74,6 +74,8 @@ extension LibraryState {
       let before = dueDates[due.taskID]
       let restored = TaskDueSet(taskID: due.taskID, date: before?.date, isHard: before?.isHard ?? false)
       return .events([.taskDueSet(restored)])
+    case .tagDeleted(let deleted):
+      return tagDeletedInverse(deleted.tagID)
     case .taskTagged(let tagged):
       let had = taskTags[tagged.taskID]?.contains(tagged.tagID) ?? false
       return .events(had ? [] : [.taskUntagged(TaskUntagged(taskID: tagged.taskID, tagID: tagged.tagID))])
@@ -83,6 +85,16 @@ extension LibraryState {
     default:
       return planningInverse(of: event)
     }
+  }
+
+  /// The tag made again and put back on the open tasks that carried it; none if a completed task carried it too,
+  /// as a completed task cannot be tagged.
+  private func tagDeletedInverse(_ tagID: TagID) -> Inverse {
+    guard let tag = tagItems.first(where: { $0.id == tagID }) else { return .irreversible }
+    let carriers = order.filter { taskTags[$0]?.contains(tagID) ?? false }
+    guard carriers.allSatisfy(isOpen) else { return .irreversible }
+    let created = EventPayload.tagCreated(TagCreated(tagID: tag.id, name: tag.name, viewID: tag.viewID))
+    return .events([created] + carriers.map { .taskTagged(TaskTagged(taskID: $0, tagID: tagID)) })
   }
 
   /// `inverse(of:)` for the events about the day and who has a task, and its repeat.

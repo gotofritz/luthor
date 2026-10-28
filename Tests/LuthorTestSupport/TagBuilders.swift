@@ -48,3 +48,18 @@ public func untagged(
     payload: .taskUntagged(TaskUntagged(taskID: TaskID(task), tagID: TagID(tag)))
   )
 }
+
+/// Builds a `TagDeleted` envelope with short, readable defaults.
+public func tagDeleted(
+  _ tag: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 9
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "delete-tag-\(tag)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .tagDeleted(TagDeleted(tagID: TagID(tag)))
+  )
+}

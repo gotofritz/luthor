@@ -23,10 +23,13 @@ struct ListSortHeader: View {
     HStack(spacing: 8) {
       if showsStatus { statusCell }
       cell(
-        library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true,
-        separated: showsStatus)
-      if showsDuration { cell(.duration, width: TaskColumns.duration, alignment: .trailing) }
-      if showsPriority { cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag") }
+        library.sortLabelKey(ofList: listID), label: library.firstCellLabel(ofList: listID), width: nil,
+        alignment: .leading, firstCell: true, separated: showsStatus)
+      if showsDuration { cell(.duration, label: "Duration", width: TaskColumns.duration, alignment: .trailing) }
+      if library.showsWhenColumn(ofList: listID) {
+        cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
+      }
+      if showsPriority { cell(.priority, label: "Prio", width: TaskColumns.priority, alignment: .center) }
       if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
     }
     .font(.caption)
@@ -60,7 +63,7 @@ struct ListSortHeader: View {
 
   /// A cell of the header; the arrow shows on the one the list is sorted by, pointing down for ascending.
   private func cell(
-    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil, firstCell: Bool = false,
+    _ key: ListSortKey, label: String, width: CGFloat?, alignment: Alignment, firstCell: Bool = false,
     separated: Bool = true
   ) -> some View {
     let sort = library.sort(ofList: listID)
@@ -68,7 +71,7 @@ struct ListSortHeader: View {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
       HStack(spacing: 2) {
-        if let symbol { Image(systemName: symbol) } else { Text(key.label) }
+        Text(label)
         if sort.key == key { Image(systemName: sort.ascending ? "chevron.down" : "chevron.up") }
       }
       .frame(maxWidth: width == nil ? .infinity : width, alignment: alignment)
@@ -80,7 +83,7 @@ struct ListSortHeader: View {
       // Half the gap between the cells, so the dots sit between them without moving them.
       if separated { DottedSeparator().offset(x: -4) }
     }
-    .help("Sort by \(key.label.lowercased())")
+    .help("Sort by \(label.lowercased())")
   }
 }
 
@@ -102,5 +105,7 @@ enum TaskColumns {
   /// The done circle at the start of a row.
   static let checkbox: CGFloat = 20
   static let duration: CGFloat = 44
-  static let priority: CGFloat = 24
+  static let priority: CGFloat = 44
+  /// The date a row shows in Prios and Today, the day scheduled for else the due date.
+  static let date: CGFloat = 92
 }

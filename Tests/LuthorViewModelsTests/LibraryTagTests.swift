@@ -235,3 +235,50 @@ struct LibraryCandidateFilterTests {
     #expect(library.candidateFilter.isEmpty)
   }
 }
+
+@MainActor
+@Suite("When a tag is removed in the window")
+struct LibraryRemoveTagTests {
+  @Test("it leaves the list, the tasks that carried it and a pick of it, and one TagDeleted is written")
+  func theTagIsGone() {
+    let (library, log) = makeLibrary(tagged3)
+    library.show(.tags)
+    library.showTag(TagID("calls"))
+
+    library.removeTag(TagID("calls"))
+
+    #expect(library.tags.map(\.id) == [TagID("home")])
+    #expect(library.selectedTagID == nil)
+    #expect(library.tagItems(of: TaskID("t1")).isEmpty)
+    #expect(log.events.last == tagDeleted("calls", id: "id-1", lamport: 4))
+  }
+
+  @Test("how many tasks use a tag is known before it is removed")
+  func useCount() {
+    let (library, _) = makeLibrary(tagged3)
+
+    #expect(library.tagUseCount(TagID("calls")) == 2)
+    #expect(library.tagUseCount(TagID("home")) == 1)
+  }
+
+  @Test("a candidate filter on the tag is dropped with it")
+  func filterIsDropped() {
+    let (library, _) = makeLibrary(tagged3)
+    library.toggleCandidateTag(TagID("calls"))
+
+    library.removeTag(TagID("calls"))
+
+    #expect(library.candidateFilter.tags.isEmpty)
+  }
+
+  @Test("removing it can be undone")
+  func undo() {
+    let (library, _) = makeLibrary(tagged3)
+
+    library.removeTag(TagID("home"))
+    library.undo()
+
+    #expect(library.tags.map(\.id) == [TagID("calls"), TagID("home")])
+    #expect(library.tagItems(of: TaskID("t2")).map(\.id) == [TagID("calls"), TagID("home")])
+  }
+}

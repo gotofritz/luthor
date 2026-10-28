@@ -27,26 +27,44 @@ extension LibraryViewModel {
     setSort(current.ascending ? ListSort(key: key, ascending: false) : .manual, ofList: listID)
   }
 
-  /// The keys the first cell of the header steps through.
-  private static let textKeys: [ListSortKey] = [.title, .created, .due]
+  /// The keys the first cell of the header steps through. A list with a date column of its own, the lists of
+  /// a priority and Today's candidates, leaves Due to that column, and a priority's list has no Created.
+  private func textKeys(ofList listID: String) -> [ListSortKey] {
+    if listID.hasPrefix("priority-") { return [.title] }
+    if listID == Self.candidatesListID { return [.title, .created] }
+    return [.title, .created, .due]
+  }
+
+  /// Whether the rows of the list show a column of dates, the day scheduled for else the due date.
+  public func showsWhenColumn(ofList listID: String) -> Bool {
+    listID.hasPrefix("priority-") || listID == Self.candidatesListID
+  }
 
   /// The key the first cell shows: the one the list is sorted by if it is among its own, else title.
   public func sortLabelKey(ofList listID: String) -> ListSortKey {
     let key = sort(ofList: listID).key
-    return Self.textKeys.contains(key) ? key : .title
+    return textKeys(ofList: listID).contains(key) ? key : .title
+  }
+
+  /// What the first cell says: the key the list is sorted by, or, in its own order, Suggested for Today's
+  /// candidates and Title elsewhere.
+  public func firstCellLabel(ofList listID: String) -> String {
+    if listID == Self.candidatesListID, sort(ofList: listID).key == .manual { return "Suggested" }
+    return sortLabelKey(ofList: listID).label
   }
 
   /// A click on the first cell: sorts by the key it shows, ascending, then descending, and goes on to the next
   /// key; after the last, back to the list's own order. From a sort by another cell it starts at title.
   public func sortByFirstCell(ofList listID: String) {
     let current = sort(ofList: listID)
-    guard let position = Self.textKeys.firstIndex(of: current.key) else {
+    let keys = textKeys(ofList: listID)
+    guard let position = keys.firstIndex(of: current.key) else {
       return setSort(ListSort(key: .title, ascending: true), ofList: listID)
     }
     if current.ascending { return setSort(ListSort(key: current.key, ascending: false), ofList: listID) }
     let next =
-      Self.textKeys.indices.contains(position + 1)
-      ? ListSort(key: Self.textKeys[position + 1], ascending: true) : .manual
+      keys.indices.contains(position + 1)
+      ? ListSort(key: keys[position + 1], ascending: true) : .manual
     setSort(next, ofList: listID)
   }
 
@@ -72,7 +90,7 @@ extension LibraryViewModel {
 
   /// The tasks in the sort of the list.
   func sorted(_ tasks: [TaskItem], inList listID: String) -> [TaskItem] {
-    sorted(tasks, inList: listID, fields: sortFields)
+    sorted(tasks, inList: listID, fields: sortFields(showingWhen: showsWhenColumn(ofList: listID)))
   }
 
   /// The items in the sort of the list.
@@ -108,7 +126,7 @@ extension LibraryViewModel {
 
   private func sortFields(_ entry: PlanEntry) -> SortFields {
     SortFields(
-      title: entry.task.title, created: entry.task.createdOn, due: state.dueDate(of: entry.task.id)?.date,
+      title: entry.task.title, created: entry.task.createdOn, due: listedDate(of: entry.task.id),
       estimate: entry.minutes, priority: entry.task.priority)
   }
 
@@ -116,6 +134,16 @@ extension LibraryViewModel {
     SortFields(
       title: entry.task.title, created: entry.task.createdOn, due: state.dueDate(of: entry.task.id)?.date,
       estimate: entry.minutes, priority: entry.task.priority)
+  }
+
+  /// The fields of a task; its date is the day it is scheduled for else its due date where the list shows both
+  /// in one column.
+  private func sortFields(showingWhen: Bool) -> (TaskItem) -> SortFields {
+    { [self] task in
+      var fields = sortFields(task)
+      if showingWhen { fields = fields.withDue(listedDate(of: task.id)) }
+      return fields
+    }
   }
 
   private func sortFields(_ task: TaskItem) -> SortFields {

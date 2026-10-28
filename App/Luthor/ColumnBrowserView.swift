@@ -274,10 +274,15 @@ struct TaskRow: View {
         }
       }
       .frame(width: TaskColumns.duration, alignment: .trailing)
-      if showsDate, let day = library.listedDate(of: task.id) {
-        Text(day.isoString)
-          .foregroundStyle(theme.ink)
-          .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
+      if showsDate {
+        Group {
+          if let day = library.listedDate(of: task.id) {
+            Text(day.isoString)
+              .foregroundStyle(theme.ink)
+              .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
+          }
+        }
+        .frame(width: TaskColumns.date, alignment: .leading)
       }
       if showsPriority {
         Group {

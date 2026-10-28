@@ -203,7 +203,7 @@ public struct LibraryState: Equatable, Sendable {
     case .dayPlanOrdered, .dayCapacitySet, .dayHoursSet, .taskStartSet, .dayBlockSet, .dayBlockRemoved, .taskDueSet,
       .taskUnscheduled, .taskReclaimed, .taskSessionSet, .taskSessionRemoved:
       applyPlanning(payload)
-    case .tagCreated, .taskTagged, .taskUntagged:
+    case .tagCreated, .taskTagged, .taskUntagged, .tagDeleted:
       applyTagEvent(payload)
     case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       applyReview(payload)

@@ -47,6 +47,13 @@ public struct SortFields: Equatable, Sendable {
   }
 }
 
+extension SortFields {
+  /// The same, with another date.
+  func withDue(_ day: CalendarDate?) -> SortFields {
+    SortFields(title: title, created: created, due: day, estimate: estimate, priority: priority, isDone: isDone)
+  }
+}
+
 /// How a list is sorted: by one key, up or down. Only a way of showing the list; nothing is written to the log.
 public struct ListSort: Equatable, Sendable {
   public var key: ListSortKey

@@ -150,7 +150,7 @@ private struct CandidatesColumn: View {
       case .waiting: waiting
       }
     }
-    .frame(width: 320)
+    .frame(width: 440)
   }
 
   private var candidates: some View {
@@ -244,6 +244,14 @@ struct PlanRow: View {
         .foregroundStyle(.secondary)
         .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
+      Group {
+        if let day = library.listedDate(of: entry.task.id) {
+          Text(day.isoString)
+            .foregroundStyle(.secondary)
+            .help(library.scheduledDate(of: entry.task.id) == nil ? "Due" : "Scheduled")
+        }
+      }
+      .frame(width: TaskColumns.date, alignment: .leading)
       Group {
         if let priority = entry.task.priority {
           Image(systemName: priority.symbol)

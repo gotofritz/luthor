@@ -35,16 +35,16 @@ struct PriorityListsColumn: View {
         Section { rows(of: group) }
       }
     }
-    .frame(width: 320)
+    .frame(width: 440)
   }
 
   /// The header, the tasks and the plus button of one priority's list.
   @ViewBuilder
   private func rows(of group: PriorityGroup) -> some View {
-    ListSortHeader(library: library, listID: "priority-\(group.id)", showsPriority: false, isRow: true)
+    ListSortHeader(library: library, listID: "priority-\(group.id)", isRow: true)
       .listRowSeparator(.hidden)
     ForEach(group.tasks, id: \.id) { task in
-      TaskRow(library: library, task: task, showsPriority: false, showsDate: true)
+      TaskRow(library: library, task: task, showsDate: true)
         .tag(task.id)
     }
     if let item = library.newItem, item.parentID == nil, item.card.priority == group.priority {
