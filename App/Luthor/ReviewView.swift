@@ -38,7 +38,8 @@ private struct DoneColumn: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       ListSortHeader(
-        library: library, listID: "review-done", showsPriority: false, trailingInset: MinutesField.width + 8)
+        library: library, listID: "review-done", showsPriority: false, priorityFirst: false,
+        trailingInset: MinutesField.width + 8)
       List {
         ForEach(library.sortedDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: true)
@@ -67,7 +68,8 @@ private struct NotDoneColumn: View {
         .padding(12)
       Divider()
       ListSortHeader(
-        library: library, listID: "review-notdone", showsPriority: false, trailingInset: MinutesField.width + 8)
+        library: library, listID: "review-notdone", showsPriority: false, priorityFirst: false,
+        trailingInset: MinutesField.width + 8)
       List(selection: $library.selection) {
         ForEach(library.sortedNotDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: false)

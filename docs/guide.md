@@ -286,7 +286,7 @@ were captured. Urgency counts days: a priority weighs A 0, B 10, C 20 and none
 30, plus the days left to the due date (no due date counts as 30, one more than
 90 days off as 90; an overdue one counts below zero). The smallest total
 comes first, so a critical task due in six months ranks below important ones with no deadline,
-which rank below one due next week, and a task due today comes first. Ties go to the higher priority. Each task says why it sits where it does
+which rank below one due next week, and a task due today comes first. Ties go to the higher priority. Each row shows the done circle, estimate, priority, date and title, the same columns as everywhere else, and a task in the plan says why it sits where it does
 ("A priority, in project Move house, due 2026-10-19"). Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
 menu): from then on the order is yours, tasks you add later follow it, and it
 survives a relaunch.
@@ -587,9 +587,9 @@ behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
 The tasks of all the picked priorities are one list under one header, the
 most urgent first and No priority last until you sort it; the header sorts
-across all of them. A task shows, in this order, its done circle, estimate, priority, the day
+across all of them. Every list but the reviews shows, in this order, the done circle, estimate, priority, the day
 it is scheduled for or else its due date (in a smaller font), and its title. At the bottom, a plus button for each
-picked priority adds a task with that priority with that priority: the card opens in the next column
+picked priority adds a task with that priority: the card opens in the next column
 as it does in a project, and the task has no project, so no estimate, until
 you set one. With none picked, there is nothing to list. You can complete a
 task from the list like anywhere else.

@@ -231,8 +231,8 @@ struct TaskRow: View {
   /// lists by priority and shows when each task is wanted.
   var showsPriority = true
   var showsDate = false
-  /// The order of the Prios place: done, duration, priority, date, title.
-  var priorityFirst = false
+  /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
+  var priorityFirst = true
   @Environment(\.theme) var theme
   @State private var confirmingDelete = false
 
@@ -260,7 +260,7 @@ struct TaskRow: View {
         .frame(width: TaskColumns.checkbox)
       if !priorityFirst { titleCells }
       durationCell
-      if priorityFirst { priorityCell }
+      if priorityFirst && showsPriority { priorityCell }
       if showsDate { dateCell }
       if showsPriority && !priorityFirst { priorityCell }
       if priorityFirst { titleCells }

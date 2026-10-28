@@ -19,8 +19,8 @@ struct ListSortHeader: View {
   /// Whether the header is a row of the list it sorts, as in a section: it then takes the insets of the rows,
   /// and has no bar, divider or padding of its own.
   var isRow = false
-  /// The order of the Prios place: done, duration, priority, date, title.
-  var priorityFirst = false
+  /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
+  var priorityFirst = true
 
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
@@ -29,7 +29,7 @@ struct ListSortHeader: View {
       if showsDuration {
         cell(.duration, label: "Duration", symbol: "stopwatch", width: TaskColumns.duration, alignment: .trailing)
       }
-      if priorityFirst { priorityCell(separated: true) }
+      if priorityFirst && showsPriority { priorityCell(separated: true) }
       if library.showsWhenColumn(ofList: listID) {
         cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
       }

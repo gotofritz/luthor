@@ -222,6 +222,7 @@ struct PlanRow: View {
   @Bindable var library: LibraryViewModel
   let entry: PlanEntry
   let kind: Kind
+  @Environment(\.theme) private var theme
 
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
@@ -233,27 +234,11 @@ struct PlanRow: View {
       .buttonStyle(.plain)
       .frame(width: TaskColumns.checkbox)
       .help("Complete")
-      VStack(alignment: .leading, spacing: 2) {
-        Text(entry.task.title)
-        Text(entry.reason)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-      Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
         .font(.caption)
         .foregroundStyle(.secondary)
         .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
-      Group {
-        if let day = library.listedDate(of: entry.task.id) {
-          Text(day.isoString)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .help(library.scheduledDate(of: entry.task.id) == nil ? "Due" : "Scheduled")
-        }
-      }
-      .frame(width: TaskColumns.date, alignment: .leading)
       Group {
         if let priority = entry.task.priority {
           Image(systemName: priority.symbol)
@@ -262,6 +247,25 @@ struct PlanRow: View {
         }
       }
       .frame(width: TaskColumns.priority)
+      Group {
+        if let day = library.listedDate(of: entry.task.id) {
+          Text(day.isoString)
+            .font(.caption)
+            .foregroundStyle(theme.ink)
+            .help(library.scheduledDate(of: entry.task.id) == nil ? "Due" : "Scheduled")
+        }
+      }
+      .frame(width: TaskColumns.date, alignment: .leading)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(entry.task.title)
+        // The columns show what the reason of a candidate or a leftover says; only the plan keeps it.
+        if kind == .planned {
+          Text(entry.reason)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+      }
+      Spacer(minLength: 0)
     }
     .draggable(entry.task.id.rawValue)
     .contextMenu {
