@@ -142,6 +142,10 @@ public final class LibraryViewModel {
   /// The events `state` was replayed from, and how far the log was read, so what is appended later is folded in
   /// without reading the log again from its start.
   @ObservationIgnored var held = HeldLog()
+  /// The commands run in this session that can be taken back, the latest last, and those undone that can be done
+  /// again. Unlimited; a new command empties the second. Both are lost on quit, as nothing of them is written.
+  var undoSteps: [UndoStep] = []
+  var redoSteps: [UndoStep] = []
   /// Counts the changes of `state` and `held`, so a read made away from the main actor knows if they moved on
   /// while it ran.
   @ObservationIgnored var generation = 0

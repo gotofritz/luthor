@@ -20,7 +20,8 @@ Or open `App/Luthor.xcodeproj` in Xcode and run. The app reads and writes
 `$LUTHOR_LOG` when it is set (launched from a shell, or from Xcode's scheme),
 otherwise `~/.luthor/events.jsonl`, and picks up changes another process
 makes to that file. Type and press Return to capture; ↑ and ↓ select a task, ⌘Return
-completes it, or click its circle.
+completes it, or click its circle. ⌘Z undoes the last thing you did, as far back as
+the session goes, and ⇧⌘Z redoes it (new events at the end of the log; nothing written is edited).
 
 The app shows one view at a time, such as Work or Private, and nothing of
 another view leaks into it. The view switcher at the top of the window

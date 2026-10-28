@@ -146,6 +146,9 @@ Sources/
     ItemDefaults.swift       ItemDefaults (priority and estimate) and what a new task (its parent's, from the nearest
                              project above that has them) or a new top-level project (the settings') starts with
     Commands+Defaults.swift  the events that give a new item those defaults
+    Undo.swift               UndoStep (the events of a command and the events that take them back) and
+                             LibraryState.undoStep(for:), which reads the state before the command; nil if any event cannot be undone
+    Commands+Undo.swift      append(_:log:): writes the events of an undo or redo as new events
     Commands+Cards.swift     rename, notes and project kind, as edited on a card; add a note to and delete a note
                              from an item's notes
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
@@ -246,6 +249,8 @@ Sources/
                              reading the log and
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
+    LibraryViewModel+Undo.swift  undo and redo of this session's commands (stacks kept in the view model, unlimited,
+                             not persisted); `perform` records each command that can be taken back
     LogCatchUp.swift         LogSnapshot (state, held events, log cursor, damaged lines) and LogCatchUp.run, which brings a snapshot
                              up to the log; no actor, so `reloadInBackground()` (LibraryViewModel+Reload.swift, with `reload()`) runs
                              it off the main actor and swaps the result in
@@ -374,11 +379,24 @@ Speed of capture and interaction is a feature: do not regress it.
 - Swift Testing (`import Testing`, `@Test`, `#expect`) for new tests
 - `swift-format` for formatting, SwiftLint for linting
 - GRDB for SQLite
-- Remote agent sessions may have no Swift toolchain. Never ask the user
-  about installing one. If a route works without asking, install it and run
-  `make check-ci` locally; otherwise write the tests first, push, and use CI
-  as the build: the fast `linux` job (`make test-linux`, package only) reports
-  in minutes, the macOS job (`make check-ci`) is the full check, fixing what it reports
+- Remote agent sessions may have no Swift toolchain. Install one before writing
+  code; never ask the user about it and never push unbuilt code to see what CI
+  says. On Linux (CI uses `swift:6.2`):
+
+  ```bash
+  mkdir -p /opt/swift-dl /opt/swift && cd /opt/swift-dl
+  curl -sSfL -o swift.tgz https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz
+  tar xzf swift.tgz -C /opt/swift --strip-components=2
+  export PATH=/opt/swift/bin:$PATH
+  ```
+
+  (adjust `ubuntu2404` and the file name to the OS and architecture), then
+  `make tools` and run `make lint` and `make test`. Only if the download is
+  refused write the tests first, push, and use CI as the build: the fast
+  `linux` job (`make test-linux`, package only) reports in minutes, the macOS
+  job (`make check-ci`) is the full check, fixing what it reports. The Mac app
+  (`make app`) needs Xcode, so only CI builds it. Delete the `Package.resolved`
+  that `swift build` leaves (it is not tracked)
 
 ### Commands
 

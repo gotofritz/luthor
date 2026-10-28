@@ -142,6 +142,19 @@ way: it comes back with the sub-projects and tasks that were completed along
 with it, but not tasks you had completed on their own before. What a project
 took along cannot be reopened by itself; reopen the project.
 
+## Undo and redo
+
+Edit → Undo (⌘Z) takes back the last thing you did in this session, and Edit →
+Redo (⇧⌘Z) does it again. There is no limit to how far back you can go, until you
+quit. Undo covers completing, dropping and reopening a task or project, its priority,
+estimate, title, project, day, due date, tags, repeat, and delegating or taking a
+task back (Send to Someday and Defer to Tomorrow too). A new action after an Undo
+empties Redo. While you are typing in a field, ⌘Z undoes the typing instead.
+
+Capturing, duplicating and deleting, and completing a task that repeats, are not
+covered. Undoing writes new lines at the end of the log; nothing already written is
+touched, so other Macs see the undo like any other change.
+
 ## Cards
 
 In the Projects place, click a task and its card opens in the column after the
@@ -479,8 +492,8 @@ calendar marks the project itself. Its estimate is shown, not planned.
 - **Delete Permanently…** (context menu of a task or a project, after a
   confirmation) removes it for good, whether it is open, dropped or
   completed. Deleting a project deletes its sub-projects and every task in
-  them, completed ones too. There is no undo; the choice to complete or
-  drop is there for what you may want back. If the columns showed the deleted
+  them, completed ones too. Undo cannot bring it back; the choice to complete
+  or drop is there for what you may want back. If the columns showed the deleted
   project, or went through it, they show its parent afterwards
 
 ## Repeating tasks

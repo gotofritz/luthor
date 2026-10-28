@@ -170,6 +170,17 @@ struct LuthorApp: App {
         Button("Export to Text…") { exportToText() }
         Button("Import from Text…") { importFromText() }
       }
+      // A text field being edited keeps its own undo; otherwise Undo and Redo take back and redo commands.
+      CommandGroup(replacing: .undoRedo) {
+        Button("Undo") {
+          if let manager = Self.textUndoManager, manager.canUndo { manager.undo() } else { library.undo() }
+        }
+        .keyboardShortcut("z", modifiers: .command)
+        Button("Redo") {
+          if let manager = Self.textUndoManager, manager.canRedo { manager.redo() } else { library.redo() }
+        }
+        .keyboardShortcut("z", modifiers: [.command, .shift])
+      }
       CommandGroup(replacing: .appSettings) {
         Button("Settings…") { library.show(.settings) }
           .keyboardShortcut(",", modifiers: .command)
@@ -253,6 +264,11 @@ struct LuthorApp: App {
           .keyboardShortcut(.delete, modifiers: [.command, .shift])
       }
     }
+  }
+
+  /// The undo manager of the text being edited, if a text field has the focus.
+  private static var textUndoManager: UndoManager? {
+    (NSApp.keyWindow?.firstResponder as? NSText)?.undoManager
   }
 
   private static func shortcut(for position: Int, modifiers: EventModifiers) -> KeyboardShortcut? {

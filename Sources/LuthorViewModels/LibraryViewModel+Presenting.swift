@@ -25,8 +25,13 @@ extension LibraryViewModel {
   /// Runs a command on the state held and appends what it returns, applying those events to the state; returns the
   /// events written. The command is given no log: `commands` knows the state. The log is read first only if its
   /// files changed since the state held was read, so events another process appended are never missed.
+  ///
+  /// Unless `recordsUndo` is off (as for an undo or redo itself), a command that can be taken back is kept for Undo.
   @discardableResult
-  func perform(_ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]) -> [EventEnvelope] {
+  func perform(
+    recordsUndo: Bool = true,
+    _ command: ([EventEnvelope]) throws(CommandError) -> [EventEnvelope]
+  ) -> [EventEnvelope] {
     if let token = log.changeToken(), token == loggedToken {
       // Nothing outside has written since.
     } else if !catchUpWithLog() {
@@ -47,10 +52,15 @@ extension LibraryViewModel {
       errorMessage = Self.describe(error)
       return []
     }
+    let step = recordsUndo ? state.undoStep(for: events.map(\.payload)) : nil
     state.append(events)
     _ = held.add(events)
     lastLamport = events.reduce(lastLamport) { max($0, $1.lamport) }
     loggedToken = log.changeToken()
+    if let step {
+      undoSteps.append(step)
+      redoSteps = []
+    }
     showState()
     return events
   }
@@ -70,6 +80,8 @@ extension LibraryViewModel {
     state = LibraryState.replay(events)
     held = HeldLog(events)
     lastLamport = events.reduce(0) { max($0, $1.lamport) }
+    undoSteps = []
+    redoSteps = []
     showState()
   }
 
