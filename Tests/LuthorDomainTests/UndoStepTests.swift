@@ -101,9 +101,9 @@ struct UndoStepTests {
     let log = base + [tagCreated("g1", "home"), tagged("t1", with: "g1")]
 
     let tagging = step(after: base + [tagCreated("g1", "home")], [tagged("t1", with: "g1")])
-    let untagging = step(after: log, [untagged("t1", with: "g1")])
+    let untagging = step(after: log, [untagged("t1", from: "g1")])
 
-    #expect(tagging?.backward == [untagged("t1", with: "g1").payload])
+    #expect(tagging?.backward == [untagged("t1", from: "g1").payload])
     #expect(untagging?.backward == [tagged("t1", with: "g1").payload])
   }
 
