@@ -28,6 +28,11 @@ struct StorageChoiceForm: View {
       if let message = controller.errorMessage {
         Text(message).foregroundStyle(.red)
       }
+      if let message = controller.folderWarning {
+        Text(message).font(.caption).foregroundStyle(.orange)
+      } else if case .inDropbox(let root) = controller.folderStatus {
+        Text("Syncing through the Dropbox folder \(root.path).").font(.caption).foregroundStyle(.secondary)
+      }
     }
   }
 }

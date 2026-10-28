@@ -32,6 +32,12 @@ struct LibraryView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding([.horizontal, .bottom], 12)
         }
+        if let message = storage.folderWarning {
+          Text(message)
+            .foregroundStyle(.orange)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding([.horizontal, .bottom], 12)
+        }
         if let message = library.logProblemsMessage {
           HStack {
             Text(message)
@@ -183,6 +189,7 @@ struct LibraryView: View {
         return (polling, changed)
       }.value
       monitor = polled.0
+      storage.refreshFolderStatus()
       if polled.1 {
         await library.reloadInBackground()
         storage.refreshCompaction()

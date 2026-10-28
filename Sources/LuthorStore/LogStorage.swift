@@ -45,6 +45,37 @@ public struct LogStorage: Equatable, Sendable {
     }
   }
 
+  /// How the folder of the log stands, as far as the file system shows.
+  public enum FolderStatus: Equatable, Sendable {
+    /// The Home Folder is chosen: nothing syncs, nothing to check.
+    case localOnly
+    /// The folder is inside a folder the Dropbox desktop app manages, this one.
+    case inDropbox(root: URL)
+    /// The folder exists but no Dropbox folder is above it, so nothing will sync it.
+    case notInDropbox
+    /// There is no folder there: it was deleted, moved or never made.
+    case missing
+  }
+
+  /// Looks at the folder now. Dropbox marks the root it syncs with a hidden `.dropbox` item, so the folder
+  /// counts as synced when it or a folder above it holds one.
+  public func folderStatus() -> FolderStatus {
+    guard kind == .dropbox else { return .localOnly }
+    let files = FileManager.default
+    var isDirectory: ObjCBool = false
+    guard files.fileExists(atPath: dropboxFolder.path, isDirectory: &isDirectory), isDirectory.boolValue
+    else { return .missing }
+    var candidate = dropboxFolder.standardizedFileURL
+    while true {
+      if files.fileExists(atPath: candidate.appendingPathComponent(".dropbox").path) {
+        return .inDropbox(root: candidate)
+      }
+      let parent = candidate.deletingLastPathComponent()
+      if parent.path == candidate.path { return .notInDropbox }
+      candidate = parent
+    }
+  }
+
   /// Makes the place ready to use. Dropbox creates its folder and the ones above it, and copies the log
   /// of the Home Folder in as this device's file the first time, so the tasks come along; it never
   /// overwrites a file already there, and the original stays. The Home Folder needs nothing.
