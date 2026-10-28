@@ -24,7 +24,8 @@ does updates this guide in the same PR (see the docs check in
   actions until promoted to another priority
 - **Project**: a group of tasks and other projects, its sub-projects, to any
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
-  children are in the order they were added. *Parallel*: every child is
+  children are in the order they were added, until you change it (see
+  [Putting a project's items in order](#putting-a-projects-items-in-order)). *Parallel*: every child is
   active. *Sequential*: only the first open child is; the others are dimmed
 - **Delete**: removing a task or a project for good. Dropping a task gives
   it up but is a decision you made; deleting is for the ones that are wrong,
@@ -462,6 +463,22 @@ appears to its right, and so on down the tree.
   [Completing a task](#completing-a-task))
 - Rename a project, switch it between parallel and sequential, or add notes
   in its card (see [Cards](#cards))
+
+## Putting a project's items in order
+
+The items in a project (tasks and sub-projects) are listed in the order you
+give them. A sequential project hands out its first open item as the next
+action, so its order is its meaning.
+
+- **Move Up** and **Move Down** in the context menu of a task or a project
+  move it one place in the project it is in. At either end, or for an item in
+  no project, nothing happens
+- **Sort Contents** in the context menu of a project puts what is in it in
+  order: *By Title, A to Z*, *By Title, Z to A* (case ignored) or *By Priority*
+  (A, B, C, no priority, then someday). Items that compare equal keep their
+  order. Sorting is a one-off, not a setting: an item added afterwards goes to
+  the end
+- Each of these is one step for Undo (⌘Z)
 
 ## Duplicating, deleting and growing an item
 

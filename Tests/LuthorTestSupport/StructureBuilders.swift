@@ -78,3 +78,19 @@ public func demoted(
     payload: .taskKindChanged(TaskKindChanged(taskID: TaskID(project), kind: nil))
   )
 }
+
+/// Builds a `ChildrenOrdered` envelope with short, readable defaults.
+public func childrenOrdered(
+  _ parent: String,
+  _ children: [String],
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 9
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "order-\(parent)-\(children.joined(separator: ","))"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .childrenOrdered(ChildrenOrdered(parentID: TaskID(parent), taskIDs: children.map(TaskID.init)))
+  )
+}

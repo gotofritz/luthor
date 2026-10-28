@@ -154,7 +154,8 @@ Sources/
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
     LibraryExport.swift      LibraryExport (views, tags, items as plain Codable data) and LibraryState.export()
     Commands+Import.swift    importLibrary: the events that add what an export holds and the library lacks
-    StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
+    StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree), ChildrenOrdered (the order of the items filed in a project)
+    Commands+Order.swift     put the items of a project in order: sort by title or priority, move one place (ChildrenOrdered)
     Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project and an empty project a task
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture

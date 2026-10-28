@@ -112,3 +112,20 @@ struct UndoStepTests {
     #expect(step(after: [], [captured("t2", "new")]) == nil)
   }
 }
+
+@Suite("When putting the children of a project in order is taken back")
+struct ChildOrderUndoTests {
+  @Test("the order before is put back")
+  func orderIsPutBack() {
+    let log = [
+      projectCreated("p1", "Errands", lamport: 1),
+      captured("t1", "a", under: "p1", lamport: 2),
+      captured("t2", "b", under: "p1", lamport: 3),
+    ]
+
+    let undo = step(after: log, [childrenOrdered("p1", ["t2", "t1"])])
+
+    #expect(undo?.backward == [childrenOrdered("p1", ["t1", "t2"]).payload])
+    #expect(undo?.forward == [childrenOrdered("p1", ["t2", "t1"]).payload])
+  }
+}

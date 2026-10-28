@@ -211,7 +211,7 @@ public struct LibraryState: Equatable, Sendable {
       applyProjectReview(payload)
     case .taskRepeatSet, .taskRecurred:
       applyRepeat(payload)
-    case .taskDuplicated, .taskDeleted:
+    case .taskDuplicated, .taskDeleted, .childrenOrdered:
       applyStructure(payload)
     }
   }

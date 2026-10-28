@@ -144,3 +144,27 @@ struct AddTasksViewModelTests {
     #expect(library.shownProject == nil)
   }
 }
+
+@MainActor
+@Suite("When the tasks of a project are put in order in the window")
+struct ChildOrderViewModelTests {
+  @Test("moving a task down writes one ChildrenOrdered and relists the project")
+  func movingDown() {
+    let (library, log) = makeInbox(holidayLog + [captured("t3", "pack", under: "p1", lamport: 5)])
+    library.open(.project(TaskID("p1")))
+
+    library.moveDown(TaskID("t1"))
+
+    #expect(log.events.last == childrenOrdered("p1", ["t3", "t1"], id: "id-1", lamport: 6))
+    #expect(library.tasks.map(\.title) == ["pack", "book flights"])
+  }
+
+  @Test("moving the last task down writes nothing")
+  func movingPastTheEnd() {
+    let (library, log) = makeInbox(holidayLog)
+
+    library.moveDown(TaskID("t1"))
+
+    #expect(log.events.count == holidayLog.count)
+  }
+}

@@ -43,3 +43,4 @@
 {"data":{"blockID":"b1"},"device":"mac","id":"e43","lamport":43,"type":"DayBlockRemoved"}
 {"data":{"date":"2026-10-19","minutes":30,"sessionID":"s1","start":540,"taskID":"t1"},"device":"mac","id":"e44","lamport":44,"type":"TaskSessionSet"}
 {"data":{"sessionID":"s1"},"device":"mac","id":"e45","lamport":45,"type":"TaskSessionRemoved"}
+{"data":{"parentID":"p1","taskIDs":["t2","t1"]},"device":"mac","id":"e46","lamport":46,"type":"ChildrenOrdered"}

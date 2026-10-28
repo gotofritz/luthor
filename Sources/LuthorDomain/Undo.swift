@@ -65,6 +65,11 @@ extension LibraryState {
     case .taskMoved(let moved):
       guard let item = items[moved.taskID]?.item else { return .irreversible }
       return .events([.taskMoved(TaskMoved(taskID: item.id, parentID: item.parentID))])
+    case .childrenOrdered(let ordered):
+      guard isOpen(ordered.parentID) else { return .irreversible }
+      return .events([
+        .childrenOrdered(ChildrenOrdered(parentID: ordered.parentID, taskIDs: filed[ordered.parentID] ?? []))
+      ])
     case .taskDueSet(let due):
       let before = dueDates[due.taskID]
       let restored = TaskDueSet(taskID: due.taskID, date: before?.date, isHard: before?.isHard ?? false)

@@ -193,6 +193,12 @@ struct ProjectRow: View {
           }
           .disabled(project.kind == .sequential)
         }
+        Menu("Sort Contents") {
+          Button("By Title, A to Z") { library.sortChildren(of: project.id, by: .title(ascending: true)) }
+          Button("By Title, Z to A") { library.sortChildren(of: project.id, by: .title(ascending: false)) }
+          Button("By Priority") { library.sortChildren(of: project.id, by: .priority) }
+        }
+        .disabled(project.children.count < 2)
         if project.children.isEmpty {
           Button("Turn into Task") { library.turnIntoTask(project.id) }
             .help("Turn this empty project back into a task")
@@ -350,6 +356,8 @@ private struct ItemFieldMenuItems: View {
     }
     RepeatMenuItems(library: library, taskID: taskID)
     Button("Duplicate") { library.duplicate(taskID) }
+    Button("Move Up") { library.moveUp(taskID) }
+    Button("Move Down") { library.moveDown(taskID) }
     Menu("Tags") {
       ForEach(library.tags) { item in
         Button {

@@ -1189,3 +1189,15 @@ what a new item starts with.
    says it). A plus button ends each list and starts
    a task with that priority (`addTask(withPriority:)`), in no project, so with
    no estimate. A picked priority with no task still shows its list
+
+## Decisions (2026-10-28, ordering in lists, issue #69)
+
+1. **One new event, `ChildrenOrdered(parent, tasks)`**, additive, with a line in the golden log. It names the
+   children in the order wanted; children it leaves out keep their order after them, and names that are not
+   children are ignored. This is the shape of `DayPlanOrdered`, not the per-sibling `TaskReordered` the
+   assessment (U-4) proposed: one event is one undo step, and a sort is one event. Replay applies events in
+   their deterministic order, so two Macs converge.
+2. **Sorting is a command, not a state.** Sort Contents (title A to Z, Z to A, priority) and Move Up / Move Down
+   compute the order and write it; nothing remembers "sorted by title", so an item added later goes to the end.
+3. **Scope**: the items filed in a project, which a sequential project follows. The order of top-level projects
+   and of the Inbox stays the order of capture.

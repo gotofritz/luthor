@@ -8,9 +8,20 @@ extension LibraryState {
       duplicate(duplicated)
     case .taskDeleted(let deleted):
       delete(deleted.taskID)
+    case .childrenOrdered(let ordered):
+      order(ordered)
     default:
       break
     }
+  }
+
+  /// Puts the items named first among the project's children, in the order given; the others follow in the
+  /// order they had.
+  private mutating func order(_ ordered: ChildrenOrdered) {
+    guard isOpen(ordered.parentID), let children = filed[ordered.parentID] else { return }
+    var seen = Set<TaskID>()
+    let named = ordered.taskIDs.filter { children.contains($0) && seen.insert($0).inserted }
+    filed[ordered.parentID] = named + children.filter { !seen.contains($0) }
   }
 
   /// Makes the open item `copyID` out of the item `sourceID`, which is open or completed: in its parent if that
@@ -53,7 +64,13 @@ extension LibraryState {
       guard let stored = items[id], stored.item.parentID == sourceID else { return false }
       if case .dropped = stored.status { return false }
       return true
-    }
+    }.enumerated().sorted { lhs, rhs in
+      // The children filed now go in their order; the finished ones, in capture order, after them.
+      let filedHere = filed[sourceID] ?? []
+      let left = filedHere.firstIndex(of: lhs.element) ?? Int.max
+      let right = filedHere.firstIndex(of: rhs.element) ?? Int.max
+      return left != right ? left < right : lhs.offset < rhs.offset
+    }.map(\.element)
     for childID in children {
       guard let child = items[childID]?.item else { continue }
       let childCopy = TaskID.copied(childID, under: copyID)
