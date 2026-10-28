@@ -22,6 +22,12 @@ struct FileCursor: Equatable, Sendable {
 
 // Reading a log file whole or from where a cursor left off. Split from the type (SwiftLint file_length).
 extension JSONLinesEventLog {
+  /// Throws if the file is larger than `maxBytes`.
+  func checkSize() throws(EventLogError) {
+    let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? NSNumber)?.intValue ?? 0
+    if size > maxBytes { throw .ioFailure("\(fileURL.path) is larger than \(maxBytes) bytes; not reading it") }
+  }
+
   public func readReportingProblems(skippingIncompleteTail: Bool) throws(EventLogError) -> LogReading {
     var reading = LogReading()
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return reading }
@@ -54,6 +60,9 @@ extension JSONLinesEventLog {
       defer { try? handle.close() }
       let size = Int(try handle.seekToEnd())
       guard size >= cursor.offset else { return nil }
+      guard size - cursor.offset <= maxBytes else {
+        throw EventLogError.ioFailure("\(fileURL.path) is larger than \(maxBytes) bytes; not reading it")
+      }
       let covered = min(FileCursor.tailLength, cursor.offset)
       try handle.seek(toOffset: UInt64(cursor.offset - covered))
       precedingBytes = [UInt8](try handle.read(upToCount: covered) ?? Data())
@@ -71,7 +80,10 @@ extension JSONLinesEventLog {
       guard !bytes.allSatisfy({ $0 == 0x20 || $0 == 0x09 || $0 == 0x0D }) else { return }
       do {
         guard let text = String(bytes: bytes, encoding: .utf8) else { throw EventLogError.unreadableLine(0) }
-        if let event = try EventLine.decodeIfKnown(text) { reading.events.append(event) }
+        if let event = try EventLine.decodeIfKnown(text) {
+          if let acceptsDevice, !acceptsDevice(event.deviceID) { throw EventLogError.unreadableLine(0) }
+          reading.events.append(event)
+        }
       } catch {
         if isTail && skippingIncompleteTail { return }
         reading.problems.append(LogProblem(file: fileURL.lastPathComponent, line: lineNumber))

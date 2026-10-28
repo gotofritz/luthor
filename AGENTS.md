@@ -202,7 +202,8 @@ Sources/
   LuthorStore/               event log on disk, config, real ID generator
     EventLog.swift           EventLog protocol
     JSONLinesEventLog.swift  canonical log: one JSON event per line (EventLine codec); damaged lines reported as
-                             LogProblem and quarantined to .rejected on repair; lines of an unknown event
+                             LogProblem and quarantined to .rejected on repair (also a Lamport counter above 2^53, a file over 512 MB is refused, and in
+                             a device file a line of another device); lines of an unknown event
                              type are skipped on read and stay in the file
     JSONLinesEventLog+Increment.swift  LogCursor (how far a reading got: bytes and lines per file, and a checksum of the
                              last bytes) and the scan that reads a file whole or from a cursor; `readIncrement(since:)` of the
@@ -469,6 +470,10 @@ Keep these instructions in sync.
 
 Work on the branch the user specifies. If their prompt names one, use it
 without asking.
+
+**IMPORTANT: always cut a new branch from the latest `origin/main`, never
+from a local `main`, which may be stale.** Run `git fetch origin main` first,
+then `git checkout -b <branch> origin/main`.
 
 **Before creating a branch**, check for an existing open PR (`gh pr list
 --state open`, or the GitHub MCP tools). If an open PR covers the same area,
