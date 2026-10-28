@@ -52,6 +52,10 @@ public enum EventLine {
     throw .ioFailure("cannot encode event \(event.id.rawValue) as UTF-8")
   }
 
+  /// The highest Lamport counter a line may carry. A hostile or corrupt value near `UInt64.max` would trap the
+  /// `+ 1` that gives the next event its counter, so a line above this is damaged, as one that is not JSON.
+  public static let maxLamport: UInt64 = 1 << 53
+
   /// Every event type this build understands, as written in the `type` field. The frozen event format: a type
   /// is only ever added to this list, never renamed or removed.
   public static var knownTypes: [String] { EventLineDTO.EventType.allCases.map(\.rawValue) }
@@ -186,10 +190,15 @@ private struct EventLineDTO: Codable {
         .reviewDateSet, .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted:
         try Self.laterPayload(type, in: container)
       }
+    let lamport = try container.decode(UInt64.self, forKey: .lamport)
+    guard lamport <= EventLine.maxLamport else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .lamport, in: container, debugDescription: "lamport above \(EventLine.maxLamport)")
+    }
     event = EventEnvelope(
       id: try container.decode(EventID.self, forKey: .id),
       deviceID: try container.decode(DeviceID.self, forKey: .device),
-      lamport: try container.decode(UInt64.self, forKey: .lamport),
+      lamport: lamport,
       payload: payload
     )
   }
@@ -282,9 +291,17 @@ private struct EventLineDTO: Codable {
 /// The canonical event log: one JSON object per line, append-only.
 public struct JSONLinesEventLog: Sendable {
   public let fileURL: URL
+  /// The most bytes of this file a read takes in at once; a larger file is an error, not a memory exhaustion.
+  public let maxBytes: Int
+  /// When set, a line whose device it refuses is damaged: the shared folder's file of one device may only hold
+  /// that device's events.
+  var acceptsDevice: (@Sendable (DeviceID) -> Bool)?
 
-  public init(fileURL: URL) {
+  public static let defaultMaxBytes = 512 * 1024 * 1024
+
+  public init(fileURL: URL, maxBytes: Int = JSONLinesEventLog.defaultMaxBytes) {
     self.fileURL = fileURL
+    self.maxBytes = maxBytes
   }
 
   /// All events in file order, except those of a type this build does not know (a newer build wrote them);
@@ -313,7 +330,9 @@ public struct JSONLinesEventLog: Sendable {
     var rejected: [Substring] = []
     for line in try readLines() where !line.allSatisfy(\.isWhitespace) {
       do {
-        _ = try EventLine.decodeIfKnown(String(line))
+        if let event = try EventLine.decodeIfKnown(String(line)), let acceptsDevice, !acceptsDevice(event.deviceID) {
+          throw EventLogError.unreadableLine(0)
+        }
         kept.append(line)
       } catch {
         rejected.append(line)
@@ -330,7 +349,14 @@ public struct JSONLinesEventLog: Sendable {
     return rejected.count
   }
 
+  /// Throws if the file is larger than `maxBytes`.
+  func checkSize() throws(EventLogError) {
+    let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? NSNumber)?.intValue ?? 0
+    if size > maxBytes { throw .ioFailure("\(fileURL.path) is larger than \(maxBytes) bytes; not reading it") }
+  }
+
   private func readLines() throws(EventLogError) -> [Substring] {
+    try checkSize()
     do {
       return try String(contentsOf: fileURL, encoding: .utf8).split(separator: "\n", omittingEmptySubsequences: false)
     } catch {

@@ -90,8 +90,17 @@ public struct DeviceFilesEventLog: EventLog, Sendable {
     try file(ownFileName).quarantineUnreadableLines()
   }
 
+  /// The file of one device log, which refuses a line whose device does not belong to it: the file's own
+  /// name, or a conflict copy of it ("events-mac (conflicted copy).jsonl"). Device IDs that sanitise to the
+  /// same name share a file, and stay apart by the device on each event.
   private func file(_ name: String) -> JSONLinesEventLog {
-    JSONLinesEventLog(fileURL: directory.appendingPathComponent(name))
+    var log = JSONLinesEventLog(fileURL: directory.appendingPathComponent(name))
+    log.acceptsDevice = { Self.fileName(for: $0) == name || name.hasPrefix(Self.stem(of: $0) + " ") }
+    return log
+  }
+
+  private static func stem(of deviceID: DeviceID) -> String {
+    String(fileName(for: deviceID).dropLast(suffix.count))
   }
 
   private func deviceLogNames() throws(EventLogError) -> [String] {

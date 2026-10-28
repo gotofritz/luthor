@@ -54,6 +54,9 @@ extension JSONLinesEventLog {
       defer { try? handle.close() }
       let size = Int(try handle.seekToEnd())
       guard size >= cursor.offset else { return nil }
+      guard size - cursor.offset <= maxBytes else {
+        throw EventLogError.ioFailure("\(fileURL.path) is larger than \(maxBytes) bytes; not reading it")
+      }
       let covered = min(FileCursor.tailLength, cursor.offset)
       try handle.seek(toOffset: UInt64(cursor.offset - covered))
       precedingBytes = [UInt8](try handle.read(upToCount: covered) ?? Data())
@@ -71,7 +74,10 @@ extension JSONLinesEventLog {
       guard !bytes.allSatisfy({ $0 == 0x20 || $0 == 0x09 || $0 == 0x0D }) else { return }
       do {
         guard let text = String(bytes: bytes, encoding: .utf8) else { throw EventLogError.unreadableLine(0) }
-        if let event = try EventLine.decodeIfKnown(text) { reading.events.append(event) }
+        if let event = try EventLine.decodeIfKnown(text) {
+          if let acceptsDevice, !acceptsDevice(event.deviceID) { throw EventLogError.unreadableLine(0) }
+          reading.events.append(event)
+        }
       } catch {
         if isTail && skippingIncompleteTail { return }
         reading.problems.append(LogProblem(file: fileURL.lastPathComponent, line: lineNumber))
