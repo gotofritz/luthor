@@ -52,13 +52,32 @@ struct CardFieldsForm: View {
   /// Whether the item can be planned for a day: a task, not a project.
   var canSchedule = true
 
-  var body: some View {
-    Picker("Priority", selection: $fields.priority) {
-      Text("None").tag(Priority?.none)
-      ForEach(Priority.allCases, id: \.self) { priority in
-        Label(priority.title, systemImage: priority.symbol).tag(Priority?.some(priority))
+  @Environment(\.theme) private var theme
+
+  /// One button for each priority; the one the item has stands out on the accent's background, and a click on it
+  /// clears the priority.
+  private var priorityButtons: some View {
+    HStack(spacing: 4) {
+      ForEach(Priority.allCases, id: \.self) { option in
+        let selected = fields.priority == option
+        Button {
+          fields.priority = selected ? nil : option
+        } label: {
+          Image(systemName: option.symbol)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 3)
+            .foregroundStyle(selected ? Color.white : Color.secondary)
+            .background(selected ? theme.fill : Color.secondary.opacity(0.12), in: .rect(cornerRadius: 5))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(selected ? "\(option.title): click again to clear" : option.title)
       }
     }
+  }
+
+  var body: some View {
+    priorityButtons
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
     HStack {
       Toggle("", isOn: $fields.hasDue)
