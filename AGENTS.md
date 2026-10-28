@@ -379,11 +379,24 @@ Speed of capture and interaction is a feature: do not regress it.
 - Swift Testing (`import Testing`, `@Test`, `#expect`) for new tests
 - `swift-format` for formatting, SwiftLint for linting
 - GRDB for SQLite
-- Remote agent sessions may have no Swift toolchain. Never ask the user
-  about installing one. If a route works without asking, install it and run
-  `make check-ci` locally; otherwise write the tests first, push, and use CI
-  as the build: the fast `linux` job (`make test-linux`, package only) reports
-  in minutes, the macOS job (`make check-ci`) is the full check, fixing what it reports
+- Remote agent sessions may have no Swift toolchain. Install one before writing
+  code; never ask the user about it and never push unbuilt code to see what CI
+  says. On Linux (CI uses `swift:6.2`):
+
+  ```bash
+  mkdir -p /opt/swift-dl /opt/swift && cd /opt/swift-dl
+  curl -sSfL -o swift.tgz https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz
+  tar xzf swift.tgz -C /opt/swift --strip-components=2
+  export PATH=/opt/swift/bin:$PATH
+  ```
+
+  (adjust `ubuntu2404` and the file name to the OS and architecture), then
+  `make tools` and run `make lint` and `make test`. Only if the download is
+  refused write the tests first, push, and use CI as the build: the fast
+  `linux` job (`make test-linux`, package only) reports in minutes, the macOS
+  job (`make check-ci`) is the full check, fixing what it reports. The Mac app
+  (`make app`) needs Xcode, so only CI builds it. Delete the `Package.resolved`
+  that `swift build` leaves (it is not tracked)
 
 ### Commands
 
