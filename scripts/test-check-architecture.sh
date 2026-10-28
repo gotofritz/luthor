@@ -84,7 +84,8 @@ echo 'struct V {}' >"$d/App/Luthor/NewView.swift"
 expect fail "$d" "NewView.swift is not in the AGENTS.md code map" "an app file is missing from the map"
 
 d="$(fixture stale-map)"
-sed -i 's/^Events.swift/Events.swift Gone.swift/' "$d/AGENTS.md"
+# Not `sed -i`: its argument differs between macOS and Linux.
+sed 's/^Events.swift/Events.swift Gone.swift/' "$d/AGENTS.md" >"$d/AGENTS.new" && mv "$d/AGENTS.new" "$d/AGENTS.md"
 expect fail "$d" "names Gone.swift, which does not exist" "the map names a file that is gone"
 
 ((failures == 0)) && echo "check-architecture: all passed"
