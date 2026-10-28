@@ -98,13 +98,13 @@ struct UndoStepTests {
 
   @Test("tagging is undone by untagging and untagging by tagging")
   func taggingIsUndone() {
-    let log = base + [tagCreated("g1", "home"), tagged("t1", "g1")]
+    let log = base + [tagCreated("g1", "home"), tagged("t1", with: "g1")]
 
-    let tagging = step(after: base + [tagCreated("g1", "home")], [tagged("t1", "g1")])
-    let untagging = step(after: log, [untagged("t1", "g1")])
+    let tagging = step(after: base + [tagCreated("g1", "home")], [tagged("t1", with: "g1")])
+    let untagging = step(after: log, [untagged("t1", with: "g1")])
 
-    #expect(tagging?.backward == [untagged("t1", "g1").payload])
-    #expect(untagging?.backward == [tagged("t1", "g1").payload])
+    #expect(tagging?.backward == [untagged("t1", with: "g1").payload])
+    #expect(untagging?.backward == [tagged("t1", with: "g1").payload])
   }
 
   @Test("a task captured cannot be taken back, so the command is not undoable")
