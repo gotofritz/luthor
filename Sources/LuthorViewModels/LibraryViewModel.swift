@@ -46,6 +46,8 @@ public final class LibraryViewModel {
   public internal(set) var columns: [ProjectColumn] = []
   /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
   public internal(set) var path: [TaskID] = []
+  /// How each list is sorted by its header bar, by list ID; a list not here is in its own order.
+  public internal(set) var listSorts: [String: ListSort] = [:]
   /// Open tasks of the inbox, of the project shown, or with a priority picked.
   public internal(set) var tasks: [TaskItem] = []
   /// The shown tasks that can be worked on now. Every inbox task is one.

@@ -154,16 +154,23 @@ private struct CandidatesColumn: View {
   }
 
   private var candidates: some View {
+    VStack(spacing: 0) {
+      ListSortHeader(library: library, listID: LibraryViewModel.candidatesListID)
+      candidateList
+    }
+  }
+
+  private var candidateList: some View {
     List(selection: $library.selection) {
       if !library.carryOver.isEmpty {
         Section("Left over from earlier days") {
-          ForEach(library.carryOver, id: \.entry.task.id) { leftOver in
+          ForEach(library.sortedCarryOver, id: \.entry.task.id) { leftOver in
             PlanRow(library: library, entry: leftOver.entry, kind: .leftOver)
               .tag(leftOver.entry.task.id)
           }
         }
       }
-      ForEach(library.plan.candidates, id: \.task.id) { entry in
+      ForEach(library.sortedCandidates, id: \.task.id) { entry in
         PlanRow(library: library, entry: entry, kind: .candidate)
           .tag(entry.task.id)
       }
@@ -224,6 +231,7 @@ struct PlanRow: View {
         Image(systemName: "circle")
       }
       .buttonStyle(.plain)
+      .frame(width: TaskColumns.checkbox)
       .help("Complete")
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.task.title)
@@ -234,12 +242,16 @@ struct PlanRow: View {
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
         .foregroundStyle(.secondary)
+        .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
-      if let priority = entry.task.priority {
-        Image(systemName: priority.symbol)
-          .foregroundStyle(.secondary)
-          .help(priority.title)
+      Group {
+        if let priority = entry.task.priority {
+          Image(systemName: priority.symbol)
+            .foregroundStyle(.secondary)
+            .help(priority.title)
+        }
       }
+      .frame(width: TaskColumns.priority)
     }
     .draggable(entry.task.id.rawValue)
     .contextMenu {

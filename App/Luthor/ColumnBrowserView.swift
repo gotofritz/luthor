@@ -119,10 +119,15 @@ struct TaskListColumn: View {
     if library.section == .priorities {
       PriorityListsColumn(library: library)
     } else {
-      List(selection: $library.selection) {
-        ForEach(library.tasks, id: \.id) { task in
-          TaskRow(library: library, task: task)
-            .tag(task.id)
+      VStack(spacing: 0) {
+        if library.section == .inbox || library.section == .tags || library.section == .weeklyReview {
+          ListSortHeader(library: library, listID: library.taskListID)
+        }
+        List(selection: $library.selection) {
+          ForEach(library.tasks, id: \.id) { task in
+            TaskRow(library: library, task: task)
+              .tag(task.id)
+          }
         }
       }
       .frame(width: 320)
@@ -250,6 +255,7 @@ struct TaskRow: View {
   var body: some View {
     HStack(spacing: 8) {
       checkbox
+        .frame(width: TaskColumns.checkbox)
       Text(task.title)
         .strikethrough(isCompleted)
         .foregroundStyle(titleStyle)
@@ -260,20 +266,28 @@ struct TaskRow: View {
           .lineLimit(1)
       }
       Spacer()
-      if let estimate = task.estimate {
-        Text("\(estimate)m")
-          .foregroundStyle(.secondary)
-          .help("Estimate")
+      Group {
+        if let estimate = task.estimate {
+          Text("\(estimate)m")
+            .foregroundStyle(.secondary)
+            .help("Estimate")
+        }
       }
+      .frame(width: TaskColumns.duration, alignment: .trailing)
       if showsDate, let day = library.listedDate(of: task.id) {
         Text(day.isoString)
           .foregroundStyle(theme.ink)
           .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
       }
-      if showsPriority, let priority = task.priority {
-        Image(systemName: priority.symbol)
-          .foregroundStyle(.secondary)
-          .help(priority.title)
+      if showsPriority {
+        Group {
+          if let priority = task.priority {
+            Image(systemName: priority.symbol)
+              .foregroundStyle(.secondary)
+              .help(priority.title)
+          }
+        }
+        .frame(width: TaskColumns.priority)
       }
     }
     .draggable(task.id.rawValue)
@@ -350,6 +364,8 @@ private struct ItemFieldMenuItems: View {
     }
     RepeatMenuItems(library: library, taskID: taskID)
     Button("Duplicate") { library.duplicate(taskID) }
+    Button("Move Up") { library.moveUp(taskID) }
+    Button("Move Down") { library.moveDown(taskID) }
     Menu("Tags") {
       ForEach(library.tags) { item in
         Button {

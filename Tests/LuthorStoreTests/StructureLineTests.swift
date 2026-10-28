@@ -63,3 +63,23 @@ struct StructureLineTests {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
   }
 }
+
+@Suite("When a ChildrenOrdered event is written to the log")
+struct ChildrenOrderedLineTests {
+  @Test("it names the project and the children in order")
+  func namesTheProjectAndTheChildren() throws {
+    let line = try EventLine.encode(childrenOrdered("p1", ["t2", "t1"], id: "e1", lamport: 1))
+
+    #expect(
+      line
+        == #"{"data":{"parentID":"p1","taskIDs":["t2","t1"]},"device":"mac","id":"e1","lamport":1,"type":"ChildrenOrdered"}"#
+    )
+  }
+
+  @Test("it reads back the same")
+  func readsBackTheSame() throws {
+    let event = childrenOrdered("p1", ["t2", "t1"], id: "e1", lamport: 1)
+
+    #expect(try EventLine.decode(EventLine.encode(event)) == event)
+  }
+}

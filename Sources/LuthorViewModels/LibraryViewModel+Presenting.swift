@@ -164,11 +164,12 @@ extension LibraryViewModel {
   /// The top-level projects, then one column for each project on the path.
   private func projectColumns(of view: ViewState, completed: Completion) -> [ProjectColumn] {
     let top = view.topLevelProjects.map { ColumnEntry.project($0) } + completed.entries(under: nil)
-    var columns = [ProjectColumn(parentID: nil, entries: top)]
+    var columns = [ProjectColumn(parentID: nil, entries: sorted(top, inList: "top"))]
     for projectID in path {
       let open = projects.first { $0.id == projectID }?.children.compactMap { entry($0) } ?? []
       let listed = open + completed.entries(under: projectID)
-      columns.append(ProjectColumn(parentID: projectID, entries: listed.projectsFirst))
+      columns.append(
+        ProjectColumn(parentID: projectID, entries: sorted(listed, inList: "project-\(projectID.rawValue)")))
     }
     return columns
   }
@@ -238,6 +239,7 @@ extension LibraryViewModel {
         nextActions = Set(view.inbox.map(\.id))
       }
     }
+    if section == .inbox || section == .tags || section == .weeklyReview { tasks = sorted(tasks) }
   }
 
   /// The project and its ancestors, top-level first.

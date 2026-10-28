@@ -13,7 +13,9 @@ extension LibraryViewModel {
   /// last. A priority with no task still has its list, which takes new ones.
   public var priorityGroups: [PriorityGroup] {
     Self.priorityRows.filter { selectedPriorities.contains($0) }.map { priority in
-      PriorityGroup(priority: priority, tasks: tasks.filter { $0.priority == priority })
+      let listed = tasks.filter { $0.priority == priority }
+      let id = priority?.rawValue ?? "none"
+      return PriorityGroup(priority: priority, tasks: sorted(listed, inList: "priority-\(id)"))
     }
   }
 

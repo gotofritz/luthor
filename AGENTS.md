@@ -154,7 +154,8 @@ Sources/
     NoteBullets.swift        notes seen as bullet points, one for each non-blank line (the text stays one string)
     LibraryExport.swift      LibraryExport (views, tags, items as plain Codable data) and LibraryState.export()
     Commands+Import.swift    importLibrary: the events that add what an export holds and the library lacks
-    StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree)
+    StructureEvents.swift    TaskDuplicated, TaskDeleted (takes the subtree), ChildrenOrdered (the order of the items filed in a project)
+    Commands+Order.swift     move an item of a project one place up or down (ChildrenOrdered)
     Commands+Structure.swift duplicate an item (with its subtree), delete an item for good, make a task a project and an empty project a task
     QuickCapture.swift       pure parser for the `!a`/`!b`/`!c`/`!someday` + `<n>m` capture syntax,
                              used by Commands.capture
@@ -249,6 +250,9 @@ Sources/
                              reading the log and
                              filling the published state (columns, lists, completed items) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
+    ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
+                             duration, priority; a way of showing the list, never written to the log)
+    LibraryViewModel+ListSort.swift  the sort of each list and the click on a header cell (`sortBy`), applied when presenting
     LibraryViewModel+Undo.swift  undo and redo of this session's commands (stacks kept in the view model, unlimited,
                              not persisted); `perform` records each command that can be taken back
     LogCatchUp.swift         LogSnapshot (state, held events, log cursor, damaged lines) and LogCatchUp.run, which brings a snapshot
@@ -277,6 +281,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
+                             ListSortHeader: the sticky table header above a list, a cell for each column;
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;

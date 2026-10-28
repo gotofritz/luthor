@@ -30,27 +30,34 @@ struct PriorityListsColumn: View {
 
   var body: some View {
     List(selection: $library.selection) {
+      // The priorities are named in the column to the left, where the ones listed are picked.
       ForEach(library.priorityGroups) { group in
-        Section(group.priority?.title ?? "No priority") {
-          ForEach(group.tasks, id: \.id) { task in
-            TaskRow(library: library, task: task, showsPriority: false, showsDate: true)
-              .tag(task.id)
-          }
-          if let item = library.newItem, item.parentID == nil, item.card.priority == group.priority {
-            NewItemRow(item: item)
-          }
-          Button {
-            library.addTask(withPriority: group.priority)
-          } label: {
-            Image(systemName: "plus")
-              .frame(maxWidth: .infinity, alignment: .leading)
-          }
-          .buttonStyle(.borderless)
-          .help("Add a task with this priority")
-          .accessibilityLabel("Add")
-        }
+        Section { rows(of: group) }
       }
     }
     .frame(width: 320)
+  }
+
+  /// The header, the tasks and the plus button of one priority's list.
+  @ViewBuilder
+  private func rows(of group: PriorityGroup) -> some View {
+    ListSortHeader(library: library, listID: "priority-\(group.id)", showsPriority: false, isRow: true)
+      .listRowSeparator(.hidden)
+    ForEach(group.tasks, id: \.id) { task in
+      TaskRow(library: library, task: task, showsPriority: false, showsDate: true)
+        .tag(task.id)
+    }
+    if let item = library.newItem, item.parentID == nil, item.card.priority == group.priority {
+      NewItemRow(item: item)
+    }
+    Button {
+      library.addTask(withPriority: group.priority)
+    } label: {
+      Image(systemName: "plus")
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .buttonStyle(.borderless)
+    .help("Add a task with this priority")
+    .accessibilityLabel("Add")
   }
 }

@@ -52,4 +52,14 @@ extension LibraryViewModel {
     open(parentID.map { .project($0) } ?? .inbox)
     if index(of: projectID) != nil { selection = projectID }
   }
+
+  /// Moves a task or project one place up in the project it is filed in.
+  public func moveUp(_ taskID: TaskID) {
+    perform { (log) throws(CommandError) in try commands.moveChild(taskID, by: -1, log: log) }
+  }
+
+  /// Moves a task or project one place down in the project it is filed in.
+  public func moveDown(_ taskID: TaskID) {
+    perform { (log) throws(CommandError) in try commands.moveChild(taskID, by: 1, log: log) }
+  }
 }

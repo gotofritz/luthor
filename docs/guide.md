@@ -24,7 +24,8 @@ does updates this guide in the same PR (see the docs check in
   actions until promoted to another priority
 - **Project**: a group of tasks and other projects, its sub-projects, to any
   depth ("Home" contains "Kitchen", which contains "Replace tap"). Its
-  children are in the order they were added. *Parallel*: every child is
+  children are in the order they were added, until you change it (see
+  [Putting a project's items in order](#putting-a-projects-items-in-order)). *Parallel*: every child is
   active. *Sequential*: only the first open child is; the others are dimmed
 - **Delete**: removing a task or a project for good. Dropping a task gives
   it up but is a decision you made; deleting is for the ones that are wrong,
@@ -462,6 +463,36 @@ appears to its right, and so on down the tree.
   [Completing a task](#completing-a-task))
 - Rename a project, switch it between parallel and sequential, or add notes
   in its card (see [Cards](#cards))
+
+## Putting a project's items in order
+
+The items in a project (tasks and sub-projects) are listed in the order you
+give them. A sequential project hands out its first open item as the next
+action, so its order is its meaning.
+
+- **Move Up** and **Move Down** in the context menu of a task or a project
+  move it one place in the project it is in. At either end, or for an item in
+  no project, nothing happens. Each is one step for Undo (⌘Z)
+- The **header** above a list (the Inbox, a tag, the top-level projects, the
+  contents of a project, each priority's list in Prios, the candidates of Today
+  and the tasks left over from earlier days with them, Done and Not done in the
+  daily review, the projects due and the tasks of the one picked in the weekly
+  review) has a cell above each column of the rows, set apart by dotted
+  lines. Click the triangle above the done circles to put the open items before
+  the done ones (the triangle points down), and again for the other way round
+  (up). Click the *Duration* cell or the *Priority* flag to sort the list by it, ascending
+  (the arrow points down); click it again for descending (the arrow points up);
+  a third click goes back to the list's own order. The first cell is a label
+  that cycles: click it to sort by *Title*, again for descending, again for
+  *Created* ascending then descending, then *Due* the same way, then back to
+  the list's own order. Items with no
+  value come last, and items that compare equal keep their order. Priority runs
+  A, B, C, no priority, someday. Each list keeps its own sort, and starts in
+  the order it has without one (the candidates of Today start in the suggested,
+  prioritised order). Where a row shows minutes, the sort by duration uses
+  those, so an unestimated task counts at the default estimate. A sort only changes how the list is shown: it
+  is kept while the window is open, not saved, and does not change the order
+  Move Up and Move Down work on
 
 ## Duplicating, deleting and growing an item
 

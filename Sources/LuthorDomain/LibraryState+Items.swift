@@ -54,6 +54,11 @@ extension LibraryState {
       priority: item.priority, estimate: item.estimate)
   }
 
+  /// The open items filed in the project, in their order.
+  func openChildren(of id: TaskID) -> [TaskItem] {
+    (filed[id] ?? []).compactMap { openItem($0) }
+  }
+
   /// Whether the item exists and is open.
   func isOpen(_ id: TaskID) -> Bool {
     items[id]?.status.isOpen ?? false

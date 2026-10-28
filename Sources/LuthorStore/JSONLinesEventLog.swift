@@ -149,6 +149,7 @@ private struct EventLineDTO: Codable {
     case taskRecurred = "TaskRecurred"
     case taskDuplicated = "TaskDuplicated"
     case taskDeleted = "TaskDeleted"
+    case childrenOrdered = "ChildrenOrdered"
   }
 
   init(from decoder: any Decoder) throws {
@@ -187,7 +188,8 @@ private struct EventLineDTO: Codable {
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
       case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .reviewIntervalSet,
-        .reviewDateSet, .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted:
+        .reviewDateSet, .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted,
+        .childrenOrdered:
         try Self.laterPayload(type, in: container)
       }
     let lamport = try container.decode(UInt64.self, forKey: .lamport)
@@ -203,8 +205,7 @@ private struct EventLineDTO: Codable {
     )
   }
 
-  /// The payload of a review event, the daily or the weekly one, or of a repeat or structure event. Split from
-  /// `init(from:)` (SwiftLint function_body_length) rather than suppressed.
+  /// The payload of a review, repeat or structure event; split from `init(from:)` (function_body_length).
   private static func laterPayload(
     _ type: EventType,
     in container: KeyedDecodingContainer<CodingKeys>
@@ -221,6 +222,7 @@ private struct EventLineDTO: Codable {
     case .taskRecurred: .taskRecurred(try container.decode(TaskRecurred.self, forKey: .data))
     case .taskDuplicated: .taskDuplicated(try container.decode(TaskDuplicated.self, forKey: .data))
     case .taskDeleted: .taskDeleted(try container.decode(TaskDeleted.self, forKey: .data))
+    case .childrenOrdered: .childrenOrdered(try container.decode(ChildrenOrdered.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
         forKey: .type, in: container, debugDescription: "not a later event: \(type.rawValue)")
@@ -274,6 +276,7 @@ private struct EventLineDTO: Codable {
     case .taskRecurred(let data): try write(.taskRecurred, data, to: &container)
     case .taskDuplicated(let data): try write(.taskDuplicated, data, to: &container)
     case .taskDeleted(let data): try write(.taskDeleted, data, to: &container)
+    case .childrenOrdered(let data): try write(.childrenOrdered, data, to: &container)
     }
   }
 
