@@ -607,6 +607,12 @@ Mac only). Settings → This Mac changes the choice later; moving to Dropbox
 copies the Home Folder's tasks in the first time. Back up by copying the
 file or folder.
 
+Luthor checks that the Dropbox folder lies inside a folder the Dropbox app
+syncs. When it does not (a mistyped path, say), the setup and Settings show an
+orange warning that the tasks stay on this Mac only; when it does, they name
+the Dropbox folder. If the folder is moved or deleted while Luthor runs, the
+same warning appears at the top of the window.
+
 ## Export and import as text
 
 File → **Export to Text…** saves your views, tags, tasks and projects as one

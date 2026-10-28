@@ -161,6 +161,8 @@ The first time you start the app, a window asks where to keep the tasks:
 Change the choice later in Settings → This Mac. Moving to Dropbox copies the
 tasks of the Home Folder in the first time, so none are lost; moving back
 copies nothing, and the Home Folder keeps the tasks it had.
+Luthor warns when the Dropbox folder is not inside a folder Dropbox syncs, and
+when it is moved or deleted while the app runs.
 
 How the sync works: Luthor has no sync code of its own. Each Mac appends only
 to its own file in the folder, `events-<device>.jsonl`, so two Macs never

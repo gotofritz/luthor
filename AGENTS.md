@@ -217,7 +217,8 @@ Sources/
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
-                             per device; prepares it (creates folders, copies the Home Folder log in)
+                             per device; prepares it (creates folders, copies the Home Folder log in); `folderStatus()` says if the folder
+                             is inside a real Dropbox, outside one, or missing
     MachineID.swift          this Mac's own ID, made once and kept by the app, so devices that share a
                              host name stay apart
     LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl) or shared folder
@@ -249,7 +250,7 @@ Sources/
                              up to the log; no actor, so `reloadInBackground()` (LibraryViewModel+Reload.swift, with `reload()`) runs
                              it off the main actor and swaps the result in
     ClockText.swift          clockText(_:), minutes after midnight as 09:00
-    StorageController.swift  where the log lives: first-start choice and Settings → This Mac, and its Compact Log button
+    StorageController.swift  where the log lives: first-start choice and Settings → This Mac, its folder warning, and its Compact Log button
     EstimateScale.swift      the estimate slider's logarithmic scale, 5 minutes to a week, and estimate labels
     NoteLinks.swift          finds web addresses in plain-text notes, so cards can link them
 App/                         Xcode project for the SwiftUI Mac app (`make app`)
