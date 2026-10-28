@@ -207,3 +207,46 @@ struct ClearDueOfRepeatingTaskTests {
     #expect(library.dueDate(of: TaskID("t1")) == nil)
   }
 }
+
+@MainActor
+@Suite("When a repeating task is done in the priorities")
+struct DoneOccurrenceInPrioritiesTests {
+  private let important = routine + [prioritized("t1", as: .important, lamport: 4)]
+
+  @Test("this occurrence stays listed as done, beside the next one, though completed tasks are hidden")
+  func theDoneOccurrenceStaysListed() {
+    let (library, _) = makeLibrary(important)
+    library.show(.priorities)
+    library.togglePriority(.important)
+
+    library.complete(TaskID("t1"))
+
+    #expect(library.tasks.map(\.id) == [nextID, TaskID("t1")])
+    #expect(library.completedTaskIDs == [TaskID("t1")])
+  }
+
+  @Test("a task that does not repeat leaves the list when done")
+  func aTaskThatDoesNotRepeatLeaves() {
+    let (library, _) = makeLibrary([
+      captured("t1", "pay tax", lamport: 1), prioritized("t1", as: .important, lamport: 2),
+    ])
+    library.show(.priorities)
+    library.togglePriority(.important)
+
+    library.complete(TaskID("t1"))
+
+    #expect(library.tasks.isEmpty)
+  }
+
+  @Test("once the next one is done too, the earlier one goes")
+  func theEarlierOneGoes() {
+    let (library, _) = makeLibrary(important)
+    library.show(.priorities)
+    library.togglePriority(.important)
+    library.complete(TaskID("t1"))
+
+    library.complete(nextID)
+
+    #expect(library.tasks.map(\.id) == [TaskID.recurring(after: nextID), nextID])
+  }
+}
