@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The sticky header above a list, like the header of a table: a cell above each column of the rows. A click
 /// on a cell sorts the list by it, a second click turns the order round, a third goes back to the list's own
-/// order. The first cell cycles through Title, Created and Due, ascending and then descending for each. The widths of the trailing cells are those of the cells in `TaskRow`, so each sits over its column.
+/// order. The first cell cycles through Title, Created and Due, ascending and then descending for each. The
+/// widths of the cells are those of the cells in `TaskRow`, so each sits over its column.
 struct ListSortHeader: View {
   @Bindable var library: LibraryViewModel
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
@@ -14,6 +15,9 @@ struct ListSortHeader: View {
   var showsPriority = true
   /// Room at the end of the rows past the cells above, such as the field of minutes in a review.
   var trailingInset: CGFloat = 0
+  /// Whether the header is a row of the list it sorts, as in a section: it then takes the insets of the rows,
+  /// and has no bar, divider or padding of its own.
+  var isRow = false
 
   var body: some View {
     HStack(spacing: 8) {
@@ -27,11 +31,11 @@ struct ListSortHeader: View {
     }
     .font(.caption)
     .foregroundStyle(.secondary)
-    .padding(.horizontal, 16)
+    .padding(.horizontal, isRow ? 0 : 16)
     .padding(.vertical, 4)
     .frame(maxWidth: .infinity)
-    .background(.bar)
-    .overlay(alignment: .bottom) { Divider() }
+    .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
+    .overlay(alignment: .bottom) { if !isRow { Divider() } }
   }
 
   /// The cell over the circles of the rows: a triangle, which is the arrow too once the list is sorted by it,
