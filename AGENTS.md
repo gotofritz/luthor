@@ -270,7 +270,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              then the individual settings of the one picked; WeekdaySettingsViews: the Global rows that open a
                              column of their own, the weekday capacity fields and the quarter-hour grid for day start and end; TodayView: the candidates with a
                              Waiting for toggle, leftovers, the day header, capacity meter, Plan / Review toggle, delegate dialog;
-                             SessionViews: a session's block and the sheet that asks for start and end;  BlockSizing: how tall a block is on the grid and the compact look of short ones; DoneViews: a done task locked in its place on the grid; DayDropDelegate: a drag over the hour grid;
+                             SessionViews: a session's block and the sheet that asks for start and end; DayBlockViews: a block of untracked time on the grid; EstimateSlider: the slider that sets an estimate; BlockSizing: how tall a block is on the grid and the compact look of short ones; DoneViews: a done task locked in its place on the grid; DayDropDelegate: a drag over the hour grid;
                              DayCalendarView: the day as an hour grid with zoom, drag and drop (DayHoursFields: its start and end fields and a Now button),
                              set start times;
                              CalendarView: the list of days and the tasks of the one picked;
@@ -292,7 +292,8 @@ Tests/
   LuthorAcceptanceTests/     end-to-end flows via the view models (`make test-acceptance`);
                              AppHarness.swift launches the app's view model on a real log
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)
-scripts/                     commit-message and coverage checks, next-version.sh (release tag
+scripts/                     commit-message, coverage and architecture checks (check-architecture.sh: domain imports and
+                             purity, layer boundaries, this code map), next-version.sh (release tag
                              from Conventional Commits, app-version.sh: the version About Luthor shows), with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
 .github/workflows/           CI (make check-ci), PR title check, release (on main pushes, and v* tags)
@@ -408,6 +409,7 @@ make hooks      # once: point git at .githooks/
 make format     # apply swift-format
 make lint       # swift-format lint --strict + SwiftLint
 make test       # swift test + script tests
+make architecture  # scripts/check-architecture.sh: domain purity, layer boundaries, code map (part of make lint)
 make coverage   # make test with coverage; fails under 90% line coverage of Sources/
 make test-unit  # unit tests only (skips LuthorAcceptanceTests and LuthorPerformanceTests)
 make test-acceptance  # end-to-end acceptance tests only
@@ -558,6 +560,9 @@ commands or setup. The user should never have to ask whether docs are current.
   format check, build, `swift test` with a 90% line-coverage gate on
   `Sources/` (`COVERAGE_MIN` in the `Makefile`), Mac app build. The same
   command runs locally
+- `scripts/check-architecture.sh` (`make architecture`, part of `make lint` and the Linux job) fails on a domain
+  import, a clock, UUID or randomness in the domain, SwiftUI/AppKit outside `App/`, GRDB or Dropbox code in the domain
+  or view models, and a source file missing from the code map (or a map entry with no file)
 - CI checks that PR titles are Conventional Commits
 - A merge to `main` with a `feat`, `fix`, `perf` or breaking (`!`) commit since
   the last tag runs `make dist` on CI and publishes a GitHub Release at the

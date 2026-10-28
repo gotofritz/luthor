@@ -5,7 +5,7 @@
         "matcher": "*",
         "hooks": [
           { "type": "command", "command": "bash .claude/hooks/caveman-activate.sh" },
-          { "type": "command", "command": "echo 'IMPORTANT: Before any work, ask the user which git branch to work on. Do not use the session-start branch. Wait for the answer, then checkout that branch.'" }
+          { "type": "command", "command": "echo 'IMPORTANT: If the user's prompt names a git branch, work on that branch without asking. Otherwise, before any work, ask the user which git branch to work on, do not use the session-start branch, wait for the answer, then checkout that branch.'" }
         ]
       }
     ],
