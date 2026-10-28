@@ -22,6 +22,8 @@ extension LibraryState {
       tag(tagged)
     case .taskUntagged(let untagged):
       untag(untagged)
+    case .tagDeleted(let deleted):
+      delete(deleted.tagID)
     default:
       break
     }
@@ -40,6 +42,21 @@ extension LibraryState {
       tag.viewID == task.viewID
     else { return }
     taskTags[tagged.taskID, default: []].insert(tagged.tagID)
+  }
+
+  /// Takes the tag out of the view's tags and off every task, open or completed.
+  private mutating func delete(_ tagID: TagID) {
+    guard tagItems.contains(where: { $0.id == tagID }) else { return }
+    tagItems.removeAll { $0.id == tagID }
+    for (taskID, carried) in taskTags where carried.contains(tagID) {
+      let left = carried.subtracting([tagID])
+      taskTags[taskID] = left.isEmpty ? nil : left
+    }
+  }
+
+  /// How many tasks carry the tag, open or completed.
+  public func tagUseCount(of tagID: TagID) -> Int {
+    taskTags.values.filter { $0.contains(tagID) }.count
   }
 
   private mutating func untag(_ untagged: TaskUntagged) {

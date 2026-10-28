@@ -1207,3 +1207,16 @@ what a new item starts with.
    menu) are the only things that write an order. An item with no value sorts last either way.
 3. **Scope**: the manual order is that of the items filed in a project, which a sequential project follows. The
    order of top-level projects and of the Inbox stays the order of capture.
+
+## Decisions (2026-10-28, list fixes after issue #69)
+
+1. **Every column of a header has a text label**, except the triangle over the done circles: Duration, When and
+   Prio. *When* names the date column of Prios and Today, which holds the day a task is scheduled for, else its
+   due date; sorting by it uses that same date.
+2. **The first cell's cycle depends on the list.** Where a date column exists (Prios, Today) the cycle leaves Due
+   to it; a priority's list has Title only, and Today's candidates start on *Suggested*, the order the plan
+   proposes, as a stop of the cycle rather than a sort.
+3. **`TagDeleted(tag)`** (additive, in the golden log) deletes a tag and takes it off every task, completed ones
+   too. The Tags place asks first only for a tag that tasks carry. Undo brings the tag back with its open tasks,
+   and is not offered when a completed task carried it, as a completed task cannot be tagged.
+4. **Tags sit under the title on a card**, after a tag icon, as they were taken for notes under the priority.

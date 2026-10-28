@@ -34,3 +34,14 @@ struct TagLineTests {
     #expect(try EventLine.decode(EventLine.encode(event)) == event)
   }
 }
+
+@Suite("When a TagDeleted event is written to the log")
+struct TagDeletedLineTests {
+  @Test("it names the tag")
+  func itNamesTheTag() throws {
+    let line = try EventLine.encode(tagDeleted("g1", id: "e1", lamport: 1))
+
+    #expect(line == #"{"data":{"tagID":"g1"},"device":"mac","id":"e1","lamport":1,"type":"TagDeleted"}"#)
+    #expect(try EventLine.decode(line) == tagDeleted("g1", id: "e1", lamport: 1))
+  }
+}

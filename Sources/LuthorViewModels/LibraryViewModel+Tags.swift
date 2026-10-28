@@ -39,6 +39,19 @@ extension LibraryViewModel {
     }
   }
 
+  /// How many tasks carry a tag, open or completed.
+  public func tagUseCount(_ tagID: TagID) -> Int {
+    _ = revision
+    return state.tagUseCount(of: tagID)
+  }
+
+  /// Deletes a tag, which takes it off its tasks. A narrowing of Today's candidates to it is dropped.
+  public func removeTag(_ tagID: TagID) {
+    var filter = candidateFilter
+    if filter.tags.remove(tagID) != nil { candidateFilter = filter }
+    perform { (log) throws(CommandError) in try commands.deleteTag(tagID, log: log) }
+  }
+
   /// Narrows Today's candidates to the tasks that carry the tag too, or if they are narrowed to it, drops it.
   public func toggleCandidateTag(_ tagID: TagID) {
     var filter = candidateFilter

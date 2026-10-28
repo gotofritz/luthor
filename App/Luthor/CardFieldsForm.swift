@@ -44,7 +44,7 @@ struct CardFields {
   }
 }
 
-/// The priority, estimate, due date, repeat and tags of a card in edit mode: the same for a task and a project.
+/// The tags, priority, estimate, due date and repeat of a card in edit mode: the same for a task and a project.
 struct CardFieldsForm: View {
   let library: LibraryViewModel
   @Binding var fields: CardFields
@@ -77,6 +77,7 @@ struct CardFieldsForm: View {
   }
 
   var body: some View {
+    tagsField
     priorityButtons
     EstimateSlider(estimate: fields.estimate) { fields.estimate = $0 }
     HStack {
@@ -98,7 +99,6 @@ struct CardFieldsForm: View {
       .onTapGesture { fields.hasScheduled = true }
     }
     RepeatEditor(rule: $fields.repeatRule, hasDue: fields.hasDue)
-    tagsField
   }
 
   /// Picking a day ticks the box, as clicking the row does.
@@ -120,12 +120,10 @@ struct CardFieldsForm: View {
       })
   }
 
-  /// The tags as typed, separated by commas, and a menu to add one the view already has.
+  /// The tags as typed, separated by commas, after the tag icon, which is also the menu that adds one the view
+  /// already has. Just under the title, so they are not taken for notes.
   private var tagsField: some View {
-    HStack {
-      TextField("Tags", text: $fields.tagsText, prompt: Text("calls, home"))
-        .textFieldStyle(.roundedBorder)
-        .onSubmit(submit)
+    HStack(spacing: 6) {
       Menu {
         ForEach(library.tags) { item in
           Button(item.name) {
@@ -139,6 +137,9 @@ struct CardFieldsForm: View {
       .fixedSize()
       .disabled(library.tags.isEmpty)
       .help("Add a tag")
+      TextField("Tags", text: $fields.tagsText, prompt: Text("calls, home"))
+        .textFieldStyle(.roundedBorder)
+        .onSubmit(submit)
     }
   }
 }

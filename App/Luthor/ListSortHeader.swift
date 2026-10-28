@@ -7,6 +7,7 @@ import SwiftUI
 /// widths of the cells are those of the cells in `TaskRow`, so each sits over its column.
 struct ListSortHeader: View {
   @Bindable var library: LibraryViewModel
+  @Environment(\.theme) private var theme
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
   let listID: String
   /// Whether the rows have a duration and a priority cell at their end, for the header to sit over.
@@ -18,24 +19,41 @@ struct ListSortHeader: View {
   /// Whether the header is a row of the list it sorts, as in a section: it then takes the insets of the rows,
   /// and has no bar, divider or padding of its own.
   var isRow = false
+  /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
+  var priorityFirst = true
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       if showsStatus { statusCell }
-      cell(
-        library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true,
-        separated: showsStatus)
-      if showsDuration { cell(.duration, width: TaskColumns.duration, alignment: .trailing) }
-      if showsPriority { cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag") }
+      if !priorityFirst { titleCell }
+      if showsDuration {
+        cell(.duration, label: "Duration", symbol: "stopwatch", width: TaskColumns.duration, alignment: .trailing)
+      }
+      if priorityFirst && showsPriority { priorityCell(separated: true) }
+      if library.showsWhenColumn(ofList: listID) {
+        cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
+      }
+      if showsPriority && !priorityFirst { priorityCell(separated: true) }
+      if priorityFirst { titleCell }
       if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
     }
     .font(.caption)
     .foregroundStyle(.secondary)
-    .padding(.horizontal, isRow ? 0 : 16)
+    .padding(.horizontal, isRow ? 0 : 11)
     .padding(.vertical, 4)
     .frame(maxWidth: .infinity)
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
-    .overlay(alignment: .bottom) { if !isRow { Divider() } }
+    .overlay(alignment: .bottom) { Divider() }
+  }
+
+  private var titleCell: some View {
+    cell(
+      library.sortLabelKey(ofList: listID), label: library.firstCellLabel(ofList: listID), width: nil,
+      alignment: .leading, firstCell: true, separated: showsStatus || priorityFirst)
+  }
+
+  private func priorityCell(separated: Bool) -> some View {
+    cell(.priority, label: "Prio", width: TaskColumns.priority, alignment: .center, separated: separated)
   }
 
   /// The cell over the circles of the rows: a triangle, which is the arrow too once the list is sorted by it,
@@ -58,19 +76,39 @@ struct ListSortHeader: View {
     .accessibilityLabel("Sort by status")
   }
 
-  /// A cell of the header; the arrow shows on the one the list is sorted by, pointing down for ascending.
+  /// A small triangle, to go above or below a word.
+  private func arrow(pointingUp: Bool) -> some View {
+    Image(systemName: pointingUp ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill").font(.system(size: 6))
+  }
+
+  /// A cell of the header, its text or, with `symbol`, its icon. The one the list is sorted by is in the accent
+  /// colour with an arrow: after the word, or, in a `stacked` narrow cell, above it when pointing up and below
+  /// it when pointing down. Ascending points down.
   private func cell(
-    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil, firstCell: Bool = false,
-    separated: Bool = true
+    _ key: ListSortKey, label: String, symbol: String? = nil, width: CGFloat?, alignment: Alignment,
+    firstCell: Bool = false, separated: Bool = true
   ) -> some View {
     let sort = library.sort(ofList: listID)
+    let isSorted = sort.key == key
+    let stacked = symbol != nil || width == TaskColumns.priority
     return Button {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
-      HStack(spacing: 2) {
-        if let symbol { Image(systemName: symbol) } else { Text(key.label) }
-        if sort.key == key { Image(systemName: sort.ascending ? "chevron.down" : "chevron.up") }
+      Group {
+        if stacked {
+          VStack(spacing: 1) {
+            arrow(pointingUp: true).opacity(isSorted && !sort.ascending ? 1 : 0)
+            if let symbol { Image(systemName: symbol) } else { Text(label) }
+            arrow(pointingUp: false).opacity(isSorted && sort.ascending ? 1 : 0)
+          }
+        } else {
+          HStack(spacing: 2) {
+            Text(label)
+            if isSorted { arrow(pointingUp: !sort.ascending) }
+          }
+        }
       }
+      .foregroundStyle(isSorted ? AnyShapeStyle(theme.ink) : AnyShapeStyle(.secondary))
       .frame(maxWidth: width == nil ? .infinity : width, alignment: alignment)
       .contentShape(Rectangle())
     }
@@ -78,9 +116,9 @@ struct ListSortHeader: View {
     .frame(width: width)
     .overlay(alignment: .leading) {
       // Half the gap between the cells, so the dots sit between them without moving them.
-      if separated { DottedSeparator().offset(x: -4) }
+      if separated { DottedSeparator().offset(x: -TaskColumns.spacing / 2) }
     }
-    .help("Sort by \(key.label.lowercased())")
+    .help("Sort by \(label.lowercased())")
   }
 }
 
@@ -100,7 +138,11 @@ private struct DottedSeparator: View {
 /// The widths of the columns a row of a task shows, shared with the header above them.
 enum TaskColumns {
   /// The done circle at the start of a row.
-  static let checkbox: CGFloat = 20
-  static let duration: CGFloat = 44
-  static let priority: CGFloat = 24
+  static let checkbox: CGFloat = 14
+  static let duration: CGFloat = 28
+  static let priority: CGFloat = 28
+  /// The date a row shows in Prios and Today, the day scheduled for else the due date.
+  static let date: CGFloat = 70
+  /// The gap between the cells of a row.
+  static let spacing: CGFloat = 4
 }

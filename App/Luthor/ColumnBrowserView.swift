@@ -140,7 +140,7 @@ struct ProjectRow: View {
   let project: Project
   @State private var confirmingDelete = false
 
-  private var isCompleted: Bool {
+  var isCompleted: Bool {
     library.completedProjectIDs.contains(project.id)
   }
 
@@ -231,10 +231,12 @@ struct TaskRow: View {
   /// lists by priority and shows when each task is wanted.
   var showsPriority = true
   var showsDate = false
-  @Environment(\.theme) private var theme
+  /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
+  var priorityFirst = true
+  @Environment(\.theme) var theme
   @State private var confirmingDelete = false
 
-  private var isCompleted: Bool {
+  var isCompleted: Bool {
     library.completedTaskIDs.contains(task.id)
   }
 
@@ -247,49 +249,24 @@ struct TaskRow: View {
     isCompleted && library.repeatRule(of: task.id) != nil
   }
 
-  private var titleStyle: AnyShapeStyle {
+  var titleStyle: AnyShapeStyle {
     if isDoneOccurrence { return AnyShapeStyle(theme.ink.opacity(0.55)) }
     return isNextAction && !isCompleted ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)
   }
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       checkbox
         .frame(width: TaskColumns.checkbox)
-      Text(task.title)
-        .strikethrough(isCompleted)
-        .foregroundStyle(titleStyle)
-      if let tags = tagLine(of: library.tagItems(of: task.id)) {
-        Text(tags)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-      }
-      Spacer()
-      Group {
-        if let estimate = task.estimate {
-          Text("\(estimate)m")
-            .foregroundStyle(.secondary)
-            .help("Estimate")
-        }
-      }
-      .frame(width: TaskColumns.duration, alignment: .trailing)
-      if showsDate, let day = library.listedDate(of: task.id) {
-        Text(day.isoString)
-          .foregroundStyle(theme.ink)
-          .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
-      }
-      if showsPriority {
-        Group {
-          if let priority = task.priority {
-            Image(systemName: priority.symbol)
-              .foregroundStyle(.secondary)
-              .help(priority.title)
-          }
-        }
-        .frame(width: TaskColumns.priority)
-      }
+      if !priorityFirst { titleCells }
+      durationCell
+      if priorityFirst && showsPriority { priorityCell }
+      if showsDate { dateCell }
+      if showsPriority && !priorityFirst { priorityCell }
+      if priorityFirst { titleCells }
     }
+    // Five points less room either side of the row than the list gives it.
+    .padding(.horizontal, -5)
     .draggable(task.id.rawValue)
     .contextMenu { menu }
     .confirmationDialog("Delete “\(task.title)” permanently?", isPresented: $confirmingDelete) {

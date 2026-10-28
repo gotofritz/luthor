@@ -121,7 +121,7 @@ Sources/
     CalendarDate.swift       pure year-month-day type (weekday, adding days, ISO text); the domain
                              never reads a clock, callers pass today in
     ReviewEvents.swift       TaskTimeLogged, UnplannedTimeLogged, DayReviewed
-    TagEvents.swift          TagCreated, TaskTagged, TaskUntagged
+    TagEvents.swift          TagCreated, TaskTagged, TaskUntagged, TagDeleted
     RepeatRule.swift         RepeatRule (every n days/weeks/months/years, weekdays, from due date or from completion) and
                              its pure nextDue(after:completedOn:today:)
     RepeatEvents.swift       TaskRepeatSet, TaskRecurred (next task copied from the previous one; its ID is
@@ -139,7 +139,7 @@ Sources/
     Commands+Sessions.swift  set apart, change and remove a session of a planned task
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
     Commands+Repeat.swift    set or stop a task's repeat, skip an occurrence, and the next task made by complete
-    Commands+Tags.swift      create a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
+    Commands+Tags.swift      create and delete a tag, tag and untag a task, tag by name (creating the tag), set a task's tags
     Commands+Review.swift    log time on a task or unplanned, review a day
     Commands+ProjectReview.swift  weekly project review: default and per-project interval, choose the next review,
                              review a project, drop it
@@ -281,7 +281,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              ReviewView: the day looked back on, time fields, deciding, closing the review;
                              TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
-                             ListSortHeader: the sticky table header above a list, a cell for each column;
+                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column;
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;

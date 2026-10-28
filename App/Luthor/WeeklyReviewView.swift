@@ -32,7 +32,8 @@ private struct ReviewProjectColumn: View {
   var body: some View {
     VStack(spacing: 0) {
       ListSortHeader(
-        library: library, listID: "review-projects", showsStatus: false, showsDuration: false, showsPriority: false)
+        library: library, listID: "review-projects", showsStatus: false, showsDuration: false, showsPriority: false,
+        priorityFirst: false)
       list
     }
     .frame(width: 260)

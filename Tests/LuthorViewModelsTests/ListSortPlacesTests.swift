@@ -27,8 +27,8 @@ private let tasks = [
 @MainActor
 @Suite("When the lists of the priorities are sorted by their headers")
 struct PriorityListSortTests {
-  @Test("each priority's list is sorted on its own")
-  func eachListIsSortedApart() {
+  @Test("the picked priorities are one list, sorted across all of them")
+  func oneListSortedAcross() {
     let library = makeLibrary(
       tasks + [
         captured("t4", "zebra", lamport: 10), prioritized("t4", as: .critical, lamport: 11),
@@ -37,11 +37,96 @@ struct PriorityListSortTests {
       show: .priorities)
     library.selectPriorities([.critical, .important])
 
-    library.sortBy(.duration, ofList: "priority-B")
+    library.sortBy(.duration, ofList: LibraryViewModel.prioritiesListID)
 
-    let groups = library.priorityGroups
-    #expect(groups.first { $0.priority == .important }?.tasks.map(\.title) == ["Fig", "apple", "pear"])
-    #expect(groups.first { $0.priority == .critical }?.tasks.map(\.title) == ["zebra", "ant"])
+    #expect(library.priorityList.map(\.title) == ["Fig", "apple", "pear", "zebra", "ant"])
+  }
+
+  @Test("until sorted, the list is grouped by priority, the most urgent first")
+  func groupedByPriority() {
+    let library = makeLibrary(
+      tasks + [captured("t4", "zebra", lamport: 10), prioritized("t4", as: .critical, lamport: 11)],
+      show: .priorities)
+    library.selectPriorities([.important, .critical])
+
+    #expect(library.priorityList.first?.title == "zebra")
+    #expect(library.priorityList.count == 4)
+  }
+}
+
+@MainActor
+@Suite("When the first cell of a header has a label of its own")
+struct FirstCellLabelTests {
+  private func steps(_ library: LibraryViewModel, _ listID: String, count: Int) -> [ListSort] {
+    (0..<count).map { _ in
+      library.sortByFirstCell(ofList: listID)
+      return library.sort(ofList: listID)
+    }
+  }
+
+  @Test("the candidates of Today rest on Suggested, then Title and Created, each both ways, then Suggested again")
+  func candidatesCycle() {
+    let library = makeLibrary(tasks, show: .today)
+    #expect(library.firstCellLabel(ofList: "candidates") == "Suggested")
+
+    let seen = steps(library, "candidates", count: 5)
+
+    #expect(
+      seen == [
+        ListSort(key: .title, ascending: true), ListSort(key: .title, ascending: false),
+        ListSort(key: .created, ascending: true), ListSort(key: .created, ascending: false), .manual,
+      ])
+    #expect(library.firstCellLabel(ofList: "candidates") == "Suggested")
+  }
+
+  @Test("while sorted, the first cell is labelled with the key")
+  func labelFollowsTheKey() {
+    let library = makeLibrary(tasks, show: .today)
+    library.sortByFirstCell(ofList: "candidates")
+    #expect(library.firstCellLabel(ofList: "candidates") == "Title")
+    library.sortByFirstCell(ofList: "candidates")
+    library.sortByFirstCell(ofList: "candidates")
+    #expect(library.firstCellLabel(ofList: "candidates") == "Created")
+  }
+
+  @Test("a priority's list has only Title, both ways, and then its own order")
+  func priorityListCycle() {
+    let library = makeLibrary(tasks, show: .priorities)
+
+    let seen = steps(library, LibraryViewModel.prioritiesListID, count: 3)
+
+    #expect(seen == [ListSort(key: .title, ascending: true), ListSort(key: .title, ascending: false), .manual])
+    #expect(library.firstCellLabel(ofList: LibraryViewModel.prioritiesListID) == "Title")
+  }
+
+  @Test("a project's list steps through Title, Created and Due, as before")
+  func projectListCycle() {
+    let library = makeLibrary(tasks, show: .inbox)
+
+    #expect(steps(library, library.taskListID, count: 7).last == .manual)
+    #expect(library.firstCellLabel(ofList: library.taskListID) == "Title")
+  }
+}
+
+@MainActor
+@Suite("When the date column of Prios and Today is sorted")
+struct WhenColumnSortTests {
+  private static let log = [
+    captured("t1", "pear", lamport: 1), prioritized("t1", as: .important, lamport: 2),
+    dueSet("t1", on: "2026-10-30", lamport: 3),
+    captured("t2", "fig", lamport: 4), prioritized("t2", as: .important, lamport: 5),
+    scheduled("t2", on: "2026-10-25", lamport: 6), dueSet("t2", on: "2026-11-20", lamport: 7),
+    captured("t3", "apple", lamport: 8), prioritized("t3", as: .important, lamport: 9),
+  ]
+
+  @Test("the day a task is scheduled for counts before its due date, and a task with neither comes last")
+  func scheduledBeforeDue() {
+    let library = makeLibrary(Self.log, show: .priorities)
+    library.selectPriorities([.important])
+
+    library.sortBy(.due, ofList: LibraryViewModel.prioritiesListID)
+
+    #expect(library.priorityList.map(\.title) == ["fig", "pear", "apple"])
   }
 }
 

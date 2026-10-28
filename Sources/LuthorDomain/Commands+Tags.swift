@@ -35,6 +35,12 @@ extension Commands {
     return [envelope(EventID(ids.next()), .taskUntagged(TaskUntagged(taskID: taskID, tagID: tagID)), log: log)]
   }
 
+  /// Deletes the tag `tagID`, which takes it off every task that carries it.
+  public func deleteTag(_ tagID: TagID, log: [EventEnvelope]) throws(CommandError) -> [EventEnvelope] {
+    guard libraryState(from: log).tagItems.contains(where: { $0.id == tagID }) else { throw .noTag(tagID) }
+    return [envelope(EventID(ids.next()), .tagDeleted(TagDeleted(tagID: tagID)), log: log)]
+  }
+
   /// Puts the tag called `name` on the open task `taskID`, creating the tag in the task's view if the view
   /// has none of that name (in any case, with or without the `@`). A task that has the tag writes nothing.
   public func tag(taskID: TaskID, named name: String, log: [EventEnvelope]) throws(CommandError)

@@ -163,3 +163,31 @@ struct CandidateFilterFlowTests {
     #expect(library.plan.candidates.map(\.task.title) == ["write report"])
   }
 }
+
+@MainActor
+@Suite("Given a tag on two tasks, when I remove it in the Tags place")
+struct RemoveTagFlowTests {
+  @Test("it is gone from the place and from the tasks, after a relaunch too")
+  func theTagIsGoneAfterARelaunch() throws {
+    let dir = try TemporaryDirectory()
+    defer { dir.remove() }
+    let url = dir.file("events.jsonl")
+    let library = launchApp(on: url)
+    library.capture("call bank")
+    library.capture("call mum")
+    let bank = try library.task("call bank")
+    library.tagTask(bank, named: "calls")
+    library.tagTask(try library.task("call mum"), named: "calls")
+    library.show(.tags)
+    let calls = try #require(library.tags.first).id
+    #expect(library.tagUseCount(calls) == 2)
+
+    library.removeTag(calls)
+
+    #expect(library.tags.isEmpty)
+    let relaunched = launchApp(on: url)
+    relaunched.show(.tags)
+    #expect(relaunched.tags.isEmpty)
+    #expect(relaunched.tagItems(of: bank).isEmpty)
+  }
+}

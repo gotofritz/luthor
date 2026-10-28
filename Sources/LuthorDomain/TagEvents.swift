@@ -32,3 +32,12 @@ public struct TaskUntagged: Equatable, Codable, Sendable {
     self.tagID = tagID
   }
 }
+
+/// Deletes a tag, and takes it off every task that carries it. Ignored for a tag that does not exist.
+public struct TagDeleted: Equatable, Codable, Sendable {
+  public let tagID: TagID
+
+  public init(tagID: TagID) {
+    self.tagID = tagID
+  }
+}

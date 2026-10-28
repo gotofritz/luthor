@@ -38,7 +38,8 @@ private struct DoneColumn: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       ListSortHeader(
-        library: library, listID: "review-done", showsPriority: false, trailingInset: MinutesField.width + 8)
+        library: library, listID: "review-done", showsPriority: false, trailingInset: MinutesField.width + 8,
+        priorityFirst: false)
       List {
         ForEach(library.sortedDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: true)
@@ -67,7 +68,8 @@ private struct NotDoneColumn: View {
         .padding(12)
       Divider()
       ListSortHeader(
-        library: library, listID: "review-notdone", showsPriority: false, trailingInset: MinutesField.width + 8)
+        library: library, listID: "review-notdone", showsPriority: false, trailingInset: MinutesField.width + 8,
+        priorityFirst: false)
       List(selection: $library.selection) {
         ForEach(library.sortedNotDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: false)
@@ -127,7 +129,7 @@ private struct ReviewRow: View {
   let isDone: Bool
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: TaskColumns.spacing) {
       Group {
         if isDone {
           Image(systemName: "checkmark.circle.fill")
@@ -153,6 +155,7 @@ private struct ReviewRow: View {
       }
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
+        .font(.caption)
         .foregroundStyle(.secondary)
         .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counted at the default estimate" : "Estimate when first planned")

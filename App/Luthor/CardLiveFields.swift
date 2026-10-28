@@ -3,7 +3,7 @@ import LuthorViewModels
 import SwiftUI
 
 /// The fields of the card of an open task or project, each one changed by clicking it and kept at once, with no
-/// pencil, OK or Cancel: title, priority as a row of buttons, estimate, due date, repeat and tags, and for a
+/// pencil, OK or Cancel: title, tags, priority as a row of buttons, estimate, due date and repeat, and for a
 /// project its kind and how often it is reviewed. The due date shows greyed out with today's date until it is
 /// set; picking a day sets it, and the box beside it follows.
 struct CardLiveFields: View {
@@ -33,13 +33,11 @@ struct CardLiveFields: View {
         }
         .pickerStyle(.segmented)
       }
+      tagsField
       priorityButtons
       EstimateSlider(estimate: estimate) { library.estimate(id, as: $0) }
       dueFields
       RepeatEditor(rule: repeatBinding, hasDue: library.dueDate(of: id) != nil)
-      TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
-        .textFieldStyle(.roundedBorder)
-        .onSubmit(saveTags)
       if isProject {
         Picker("Review", selection: reviewBinding) {
           Text("Default (\(library.reviewDefault.title))").tag(ReviewInterval?.none)
@@ -53,6 +51,18 @@ struct CardLiveFields: View {
       }
     }
     .onAppear(perform: load)
+  }
+
+  /// The tags as typed, separated by commas, under the title and after a tag icon, so they are not taken for notes.
+  private var tagsField: some View {
+    HStack(spacing: 6) {
+      Image(systemName: "tag")
+        .foregroundStyle(.secondary)
+        .help("Tags")
+      TextField("Tags", text: $tagsText, prompt: Text("calls, home"))
+        .textFieldStyle(.roundedBorder)
+        .onSubmit(saveTags)
+    }
   }
 
   /// One button for each priority; the one the item has stands out on the accent's background, and a click on it

@@ -150,6 +150,7 @@ private struct EventLineDTO: Codable {
     case taskDuplicated = "TaskDuplicated"
     case taskDeleted = "TaskDeleted"
     case childrenOrdered = "ChildrenOrdered"
+    case tagDeleted = "TagDeleted"
   }
 
   init(from decoder: any Decoder) throws {
@@ -187,9 +188,7 @@ private struct EventLineDTO: Codable {
       case .tagCreated: .tagCreated(try container.decode(TagCreated.self, forKey: .data))
       case .taskTagged: .taskTagged(try container.decode(TaskTagged.self, forKey: .data))
       case .taskUntagged: .taskUntagged(try container.decode(TaskUntagged.self, forKey: .data))
-      case .taskTimeLogged, .unplannedTimeLogged, .dayReviewed, .reviewDefaultSet, .reviewIntervalSet,
-        .reviewDateSet, .taskReviewed, .taskRepeatSet, .taskRecurred, .taskDuplicated, .taskDeleted,
-        .childrenOrdered:
+      default:
         try Self.laterPayload(type, in: container)
       }
     let lamport = try container.decode(UInt64.self, forKey: .lamport)
@@ -205,7 +204,7 @@ private struct EventLineDTO: Codable {
     )
   }
 
-  /// The payload of a review, repeat or structure event; split from `init(from:)` (function_body_length).
+  /// The payload of the later events, which `init(from:)` hands over (function_body_length); the golden log has each.
   private static func laterPayload(
     _ type: EventType,
     in container: KeyedDecodingContainer<CodingKeys>
@@ -223,6 +222,7 @@ private struct EventLineDTO: Codable {
     case .taskDuplicated: .taskDuplicated(try container.decode(TaskDuplicated.self, forKey: .data))
     case .taskDeleted: .taskDeleted(try container.decode(TaskDeleted.self, forKey: .data))
     case .childrenOrdered: .childrenOrdered(try container.decode(ChildrenOrdered.self, forKey: .data))
+    case .tagDeleted: .tagDeleted(try container.decode(TagDeleted.self, forKey: .data))
     default:
       throw DecodingError.dataCorruptedError(
         forKey: .type, in: container, debugDescription: "not a later event: \(type.rawValue)")
@@ -277,6 +277,7 @@ private struct EventLineDTO: Codable {
     case .taskDuplicated(let data): try write(.taskDuplicated, data, to: &container)
     case .taskDeleted(let data): try write(.taskDeleted, data, to: &container)
     case .childrenOrdered(let data): try write(.childrenOrdered, data, to: &container)
+    case .tagDeleted(let data): try write(.tagDeleted, data, to: &container)
     }
   }
 
@@ -377,8 +378,7 @@ public struct JSONLinesEventLog: Sendable {
     _ text: String, to url: URL, startingOnAFreshLine: Bool = false
   ) throws(EventLogError) {
     do {
-      try FileManager.default.createDirectory(
-        at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
     } catch {
       throw .ioFailure("cannot create directory for \(url.path): \(error)")
     }

@@ -44,3 +44,5 @@
 {"data":{"date":"2026-10-19","minutes":30,"sessionID":"s1","start":540,"taskID":"t1"},"device":"mac","id":"e44","lamport":44,"type":"TaskSessionSet"}
 {"data":{"sessionID":"s1"},"device":"mac","id":"e45","lamport":45,"type":"TaskSessionRemoved"}
 {"data":{"parentID":"p1","taskIDs":["t2","t1"]},"device":"mac","id":"e46","lamport":46,"type":"ChildrenOrdered"}
+{"data":{"name":"later","tagID":"g2","viewID":"work"},"device":"mac","id":"e47","lamport":47,"type":"TagCreated"}
+{"data":{"tagID":"g2"},"device":"mac","id":"e48","lamport":48,"type":"TagDeleted"}

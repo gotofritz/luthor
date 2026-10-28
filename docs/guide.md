@@ -166,10 +166,9 @@ contents, right after the row. Press the pencil again, or click the project,
 to bring the list back. Picking a task in the list shows the task's card.
 
 The card of an open task or project shows every field and each one is changed
-by clicking it, kept at once with no OK: the title (Return keeps it), the
+by clicking it, kept at once with no OK: the title (Return keeps it), the Tags field under it (after a tag icon, so it is not taken for notes; names separated by commas; Return keeps them), the
 priority as a row of four icon buttons (a thunderstorm for Critical, drizzle for Important, a cloud for Optional, a moon with stars for One day; the name is the tooltip, and a click on the lit one clears it; the lit one has the view's accent as its background), the
-estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date and the scheduled date, Repeat (see [Repeating tasks](#repeating-tasks)), the
-Tags field (names separated by commas; Return keeps them), and for a project
+estimate (a slider, logarithmic from 5 minutes at the left to a week at the right, so any value can be picked; it is kept when you let go, and the cross beside it clears the estimate), the due date and the scheduled date, Repeat (see [Repeating tasks](#repeating-tasks)), and for a project
 its kind and how often it is reviewed. The Due and Scheduled rows (a task
 only; a project has no scheduled date) always show, greyed out with today's
 date until set: click the row, or pick a day, and it ticks and takes today or
@@ -287,7 +286,7 @@ were captured. Urgency counts days: a priority weighs A 0, B 10, C 20 and none
 30, plus the days left to the due date (no due date counts as 30, one more than
 90 days off as 90; an overdue one counts below zero). The smallest total
 comes first, so a critical task due in six months ranks below important ones with no deadline,
-which rank below one due next week, and a task due today comes first. Ties go to the higher priority. Each task says why it sits where it does
+which rank below one due next week, and a task due today comes first. Ties go to the higher priority. Each row shows the done circle, estimate, priority, date and title, the same columns as everywhere else, and a task in the plan says why it sits where it does
 ("A priority, in project Move house, due 2026-10-19"). Move a task with ⌥⌘↑ and ⌥⌘↓ (Plan menu or its context
 menu): from then on the order is yours, tasks you add later follow it, and it
 survives a relaunch.
@@ -474,25 +473,31 @@ action, so its order is its meaning.
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
-  contents of a project, each priority's list in Prios, the candidates of Today
+  contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the
   daily review, the projects due and the tasks of the one picked in the weekly
   review) has a cell above each column of the rows, set apart by dotted
-  lines. Click the triangle above the done circles to put the open items before
-  the done ones (the triangle points down), and again for the other way round
-  (up). Click the *Duration* cell or the *Priority* flag to sort the list by it, ascending
-  (the arrow points down); click it again for descending (the arrow points up);
-  a third click goes back to the list's own order. The first cell is a label
-  that cycles: click it to sort by *Title*, again for descending, again for
-  *Created* ascending then descending, then *Due* the same way, then back to
-  the list's own order. Items with no
-  value come last, and items that compare equal keep their order. Priority runs
-  A, B, C, no priority, someday. Each list keeps its own sort, and starts in
-  the order it has without one (the candidates of Today start in the suggested,
-  prioritised order). Where a row shows minutes, the sort by duration uses
-  those, so an unestimated task counts at the default estimate. A sort only changes how the list is shown: it
-  is kept while the window is open, not saved, and does not change the order
-  Move Up and Move Down work on
+  lines, and every column has a label. Click the triangle above the done
+  circles to put the open items before the done ones (the triangle points
+  down), and again for the other way round (up). Click the stopwatch (duration), *When*
+  or *Prio* cell to sort the list by it, ascending (the arrow points down);
+  click it again for descending (the arrow points up); the sorted column is in
+  the accent colour, its arrow after the word, or for the stopwatch and *Prio*
+  below it (down) or above it (up); a third click goes back
+  to the list's own order. The first cell, over the titles, is a label that
+  cycles: *Title*, then descending, then *Created* ascending and descending,
+  then *Due* the same way, then back to the list's own order. Where the rows
+  have a date column of their own, in Prios and Today, that column is *When*
+  (the day the task is scheduled for, else its due date) and the first cell
+  leaves *Due* out; a priority's list has no *Created* either. The candidates
+  of Today rest on *Suggested*, the order the plan proposes (priority first,
+  then how close the deadline is), which the first cell goes back to after
+  its last stop. Items with no value come last, and items that compare equal
+  keep their order. Prio runs A, B, C, no priority, someday. Each list keeps
+  its own sort. Where a row shows minutes, the sort by duration uses those, so
+  an unestimated task counts at the default estimate. A sort only changes how
+  the list is shown: it is kept while the window is open, not saved, and does
+  not change the order Move Up and Move Down work on
 
 ## Duplicating, deleting and growing an item
 
@@ -580,11 +585,11 @@ taken to another view.
 Prios lists Critical, Important, Optional, One day and No priority. It
 behaves like any Mac list. Click one to list its tasks. Shift-click to pick
 the range up to it, or ⌘-click to add a priority to the picked ones or drop it.
-Each picked priority has a list of its own, headed by its name, the most
-urgent first and No priority last; a task shows its estimate and, in the
-accent colour, the day it is scheduled for or else its due date, not its
-priority, which the heading says. At the bottom of each list a
-plus button adds a task with that priority: the card opens in the next column
+The tasks of all the picked priorities are one list under one header, the
+most urgent first and No priority last until you sort it; the header sorts
+across all of them. Every list but the reviews shows, in this order, the done circle, estimate, priority, the day
+it is scheduled for or else its due date (in a smaller font), and its title. At the bottom, a plus button for each
+picked priority adds a task with that priority: the card opens in the next column
 as it does in a project, and the task has no project, so no estimate, until
 you set one. With none picked, there is nothing to list. You can complete a
 task from the list like anywhere else.
@@ -598,18 +603,22 @@ A tag is a label for a context: `@home`, `@calls`, `@deep-work`. Tags belong
 to a view, so the tags of Work and of Private are separate, even when they
 have the same name, and taking a task to another view leaves its tags behind.
 
-Put tags on a task in the Tags field of its card: type names
+Put tags on a task in the Tags field of its card, just under the title and
+after a tag icon: type names
 separated by commas, with or without the `@`, in any case. A name the view
 does not have yet creates the tag; a name you take out of the field takes
-the tag off the task. The tag button beside the field adds a tag the view
-already has. Tags show next to the task in lists and on its card. Tags in
+the tag off the task. The tag icon in front of the field adds a tag the view
+already has (when the card is in edit mode). Tags show next to the task in lists and on its card. Tags in
 the task's context menu (Tags) puts one on or takes it off in one click.
 
 Tags is a place on the rail. Its first column lists the view's tags, each
 with how many open tasks carry it; click one and the next column lists
 those tasks, and a task opens its card. A completed task leaves the list and
-the count, and brings its tags back when reopened. There is no way yet to
-rename or delete a tag.
+the count, and brings its tags back when reopened. **Remove Tag** in a tag's
+context menu deletes it and takes it off every task that carries it, completed
+ones too. A tag nothing carries goes at once; for one that tasks carry it asks
+first, saying how many. Undo (⌘Z) brings it back, unless a completed task
+carried it. There is no way yet to rename a tag.
 
 To narrow Today's candidates by tag, priority, project or deadline, see
 Today.

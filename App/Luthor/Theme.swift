@@ -91,6 +91,7 @@ private struct ThemedModifier: ViewModifier {
     content
       .environment(\.theme, theme)
       .tint(theme.ink)
+      .accentColor(theme.ink)
   }
 }
 

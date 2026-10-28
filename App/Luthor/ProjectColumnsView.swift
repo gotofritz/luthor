@@ -22,7 +22,7 @@ struct ColumnView: View {
       ListSortHeader(library: library, listID: column.id)
       list
     }
-    .frame(width: 260)
+    .frame(width: 320)
   }
 
   private var list: some View {
