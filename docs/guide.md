@@ -219,7 +219,8 @@ Split Off a Session… in its block's context menu. The window gives the part th
 task keeps (A, from and to) and the part cut off (B, from and to), each with a
 Now button. Under way, A ends now and B takes the rest from now. B becomes a
 block of its own, drawn with a dashed edge. Tick Defer and B is not put on the
-day: it becomes a new task of its length, among the candidates.
+day: it becomes a new task of its length, among the candidates. If the task repeats, only
+the task keeps the repeat: the new one does not, so the split starts no second series.
 The task's own block shrinks by those minutes (and goes when the sessions take
 all of them), so the estimate stays the total. Drag a session, or choose Set
 Times… on it, to move it; Remove Session takes it off the day with its minutes, and the

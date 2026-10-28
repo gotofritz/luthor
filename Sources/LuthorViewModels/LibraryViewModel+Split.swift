@@ -34,7 +34,8 @@ extension LibraryViewModel {
 
   /// Splits a planned task. A gets the times of `times`; B becomes a session of the same task. With `deferring`
   /// B is not put on the day: it is a new task, a copy of this one of the length of B, that goes back among
-  /// the candidates. Nothing happens unless A ends after it starts, and B too unless it is deferred.
+  /// the candidates and does not repeat. Nothing happens unless A ends after it starts, and B too unless it is
+  /// deferred.
   public func splitTask(_ taskID: TaskID, times: SplitTimes, deferring: Bool) {
     guard times.aEnd > times.aStart, deferring || times.bEnd > times.bStart else { return }
     if deferring {
@@ -45,6 +46,8 @@ extension LibraryViewModel {
       }
       for case .taskDuplicated(let duplicated) in events.map(\.payload) {
         estimate(duplicated.copy, as: minutes)
+        // The copy is the rest of this occurrence, not a new series.
+        stopRepeating(duplicated.copy)
       }
     } else {
       addSession(of: taskID, start: times.bStart, end: times.bEnd)

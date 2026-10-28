@@ -68,6 +68,20 @@ struct SplitTaskTests {
     #expect(library.plan.candidates.map(\.minutes) == [30])
   }
 
+  @Test("deferred, B of a repeating task does not repeat, so the split starts no second series")
+  func deferredBDoesNotRepeat() {
+    let weekly = RepeatRule(every: 1, unit: .week)
+    let library = makeLibrary(reportAtNine + [repeatSet("t1", weekly, lamport: 5)], now: 570)
+
+    library.splitTask(
+      TaskID("t1"), times: SplitTimes(aStart: 540, aEnd: 570, bStart: 570, bEnd: 600), deferring: true)
+
+    let copies = library.plan.candidates.map(\.task.id)
+    #expect(copies.count == 1)
+    #expect(library.repeatRule(of: TaskID("t1")) == weekly)
+    #expect(copies.allSatisfy { library.repeatRule(of: $0) == nil })
+  }
+
   @Test("an A that does not end after it starts changes nothing")
   func aBadAChangesNothing() {
     let library = makeLibrary(reportAtNine, now: 570)
