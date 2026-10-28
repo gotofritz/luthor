@@ -212,6 +212,38 @@ struct ListSortViewModelTests {
     #expect(titles(library) == ["banana", "Cherry", "apple"])
   }
 
+  @Test("the first cell steps through title, created and due, each ascending and then descending, then back")
+  func firstCellCycles() {
+    let (library, _) = makeInbox(Self.log)
+    library.open(.project(TaskID("p1")))
+    let column = "project-p1"
+    #expect(library.sortLabelKey(ofList: column) == .title)
+
+    var seen: [ListSort] = []
+    for _ in 0..<7 {
+      library.sortByFirstCell(ofList: column)
+      seen.append(library.sort(ofList: column))
+    }
+
+    #expect(
+      seen == [
+        ListSort(key: .title, ascending: true), ListSort(key: .title, ascending: false),
+        ListSort(key: .created, ascending: true), ListSort(key: .created, ascending: false),
+        ListSort(key: .due, ascending: true), ListSort(key: .due, ascending: false), .manual,
+      ])
+  }
+
+  @Test("the first cell is labelled with the key the list is sorted by, else title")
+  func firstCellLabel() {
+    let (library, _) = makeInbox(Self.log)
+    library.open(.project(TaskID("p1")))
+    library.setSort(ListSort(key: .due, ascending: true), ofList: "project-p1")
+    #expect(library.sortLabelKey(ofList: "project-p1") == .due)
+
+    library.sortBy(.priority, ofList: "project-p1")
+    #expect(library.sortLabelKey(ofList: "project-p1") == .title)
+  }
+
   @Test("each list keeps its own sort, and sorting writes nothing to the log")
   func listsAreSortedApart() {
     let (library, log) = makeInbox(Self.log + [captured("i1", "zebra", lamport: 5), captured("i2", "ant", lamport: 6)])

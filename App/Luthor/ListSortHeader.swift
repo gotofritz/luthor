@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The sticky header above a list, like the header of a table: a cell above each column of the rows. A click
 /// on a cell sorts the list by it, a second click turns the order round, a third goes back to the list's own
-/// order. The widths of the trailing cells are those of the cells in `TaskRow`, so each sits over its column.
+/// order. The first cell cycles through Title, Created and Due, ascending and then descending for each. The widths of the trailing cells are those of the cells in `TaskRow`, so each sits over its column.
 struct ListSortHeader: View {
   @Bindable var library: LibraryViewModel
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
@@ -11,7 +11,7 @@ struct ListSortHeader: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      cell(.title, width: nil, alignment: .leading)
+      cell(library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true)
       cell(.duration, width: TaskColumns.duration, alignment: .trailing)
       cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag")
     }
@@ -26,11 +26,11 @@ struct ListSortHeader: View {
 
   /// A cell of the header; the arrow shows on the one the list is sorted by, pointing down for ascending.
   private func cell(
-    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil
+    _ key: ListSortKey, width: CGFloat?, alignment: Alignment, symbol: String? = nil, firstCell: Bool = false
   ) -> some View {
     let sort = library.sort(ofList: listID)
     return Button {
-      library.sortBy(key, ofList: listID)
+      if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
       HStack(spacing: 2) {
         if let symbol { Image(systemName: symbol) } else { Text(key.label) }

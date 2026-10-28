@@ -25,6 +25,29 @@ extension LibraryViewModel {
     setSort(current.ascending ? ListSort(key: key, ascending: false) : .manual, ofList: listID)
   }
 
+  /// The keys the first cell of the header steps through.
+  private static let textKeys: [ListSortKey] = [.title, .created, .due]
+
+  /// The key the first cell shows: the one the list is sorted by if it is among its own, else title.
+  public func sortLabelKey(ofList listID: String) -> ListSortKey {
+    let key = sort(ofList: listID).key
+    return Self.textKeys.contains(key) ? key : .title
+  }
+
+  /// A click on the first cell: sorts by the key it shows, ascending, then descending, and goes on to the next
+  /// key; after the last, back to the list's own order. From a sort by another cell it starts at title.
+  public func sortByFirstCell(ofList listID: String) {
+    let current = sort(ofList: listID)
+    guard let position = Self.textKeys.firstIndex(of: current.key) else {
+      return setSort(ListSort(key: .title, ascending: true), ofList: listID)
+    }
+    if current.ascending { return setSort(ListSort(key: current.key, ascending: false), ofList: listID) }
+    let next =
+      Self.textKeys.indices.contains(position + 1)
+      ? ListSort(key: Self.textKeys[position + 1], ascending: true) : .manual
+    setSort(next, ofList: listID)
+  }
+
   /// The sub-projects sorted, then the tasks sorted.
   func sorted(_ entries: [ColumnEntry], inList listID: String) -> [ColumnEntry] {
     let sort = sort(ofList: listID)
