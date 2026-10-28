@@ -20,7 +20,8 @@ extension TaskRow {
   }
 
   var durationCell: some View {
-    Group {
+    ZStack(alignment: .trailing) {
+      Color.clear.frame(height: 1)
       if let estimate = task.estimate {
         Text("\(estimate)m")
           .foregroundStyle(.secondary)
@@ -31,7 +32,8 @@ extension TaskRow {
   }
 
   var dateCell: some View {
-    Group {
+    ZStack(alignment: .leading) {
+      Color.clear.frame(height: 1)
       if let day = library.listedDate(of: task.id) {
         Text(day.isoString)
           .font(.caption)
@@ -43,7 +45,8 @@ extension TaskRow {
   }
 
   var priorityCell: some View {
-    Group {
+    ZStack {
+      Color.clear.frame(height: 1)
       if let priority = task.priority {
         Image(systemName: priority.symbol)
           .foregroundStyle(.secondary)
