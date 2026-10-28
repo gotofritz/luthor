@@ -233,7 +233,7 @@ struct TaskRow: View {
   var showsDate = false
   /// The order of the Prios place: done, priority, duration, date, title.
   var priorityFirst = false
-  @Environment(\.theme) private var theme
+  @Environment(\.theme) var theme
   @State private var confirmingDelete = false
 
   var isCompleted: Bool {
