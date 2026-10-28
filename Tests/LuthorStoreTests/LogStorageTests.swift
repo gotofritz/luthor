@@ -127,3 +127,61 @@ struct LogStoragePrepareTests {
     }
   }
 }
+
+@Suite("When the folder of the log is checked")
+struct LogStorageFolderStatusTests {
+  private func storage(_ folder: URL) -> LogStorage { LogStorage(kind: .dropbox, dropboxFolder: folder) }
+
+  private func makeDropboxRoot(in home: TemporaryDirectory) throws -> URL {
+    let root = home.file("Dropbox")
+    try FileManager.default.createDirectory(
+      at: root.appendingPathComponent(".dropbox"), withIntermediateDirectories: true)
+    return root
+  }
+
+  @Test("a folder inside a folder Dropbox marks as its own is synced, and names that Dropbox")
+  func insideDropbox() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let root = try makeDropboxRoot(in: home)
+    let folder = root.appendingPathComponent("backups/Luthor")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+    #expect(storage(folder).folderStatus() == .inDropbox(root: URL(fileURLWithPath: root.path, isDirectory: true)))
+  }
+
+  @Test("a folder with no Dropbox above it is only a local folder")
+  func notInDropbox() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let folder = home.file("Dropbox/backups/Luthor")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+    #expect(storage(folder).folderStatus() == .notInDropbox)
+  }
+
+  @Test("a folder that is gone is reported missing, even inside Dropbox")
+  func missing() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let root = try makeDropboxRoot(in: home)
+
+    #expect(storage(root.appendingPathComponent("backups/Luthor")).folderStatus() == .missing)
+  }
+
+  @Test("a file where the folder should be is reported missing")
+  func fileIsNotAFolder() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    try "a file".write(to: home.file("Luthor"), atomically: true, encoding: .utf8)
+
+    #expect(storage(home.file("Luthor")).folderStatus() == .missing)
+  }
+
+  @Test("the Home Folder has no folder to check")
+  func homeFolderIsLocalOnly() {
+    let storage = LogStorage(kind: .homeFolder, dropboxFolder: URL(fileURLWithPath: "/nowhere"))
+
+    #expect(storage.folderStatus() == .localOnly)
+  }
+}

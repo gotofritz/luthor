@@ -40,6 +40,9 @@ public final class StorageController {
   /// What the last compaction did, or why it did not happen.
   public private(set) var compactionMessage: String?
 
+  /// How the chosen folder stands; `nil` until a place is chosen. Call `refreshFolderStatus` to look again.
+  public private(set) var folderStatus: LogStorage.FolderStatus?
+
   private let home: URL
   private let deviceID: DeviceID
   private let save: (LogStorage) -> Void
@@ -55,6 +58,23 @@ public final class StorageController {
     self.home = home
     self.deviceID = deviceID
     self.save = save
+    folderStatus = saved?.folderStatus()
+  }
+
+  /// A warning when the folder will not sync, or is gone; `nil` when all is well or the Home Folder is used.
+  public var folderWarning: String? {
+    switch folderStatus {
+    case .notInDropbox:
+      "This folder is not inside a Dropbox folder, so nothing will sync it. It works as a folder on this Mac only."
+    case .missing:
+      "This folder cannot be found. It may have been moved or deleted; until it is back, changes are not saved there."
+    case .localOnly, .inDropbox, nil: nil
+    }
+  }
+
+  /// Looks at the folder again, to notice that it moved or went away. Call it whenever the shared folder changes.
+  public func refreshFolderStatus() {
+    folderStatus = storage?.folderStatus()
   }
 
   /// Whether the user has still to choose, so the app asks before it opens a log.
@@ -77,6 +97,7 @@ public final class StorageController {
     }
     save(chosen)
     storage = chosen
+    refreshFolderStatus()
     errorMessage = nil
   }
 

@@ -132,6 +132,82 @@ struct StorageControllerTests {
 }
 
 @MainActor
+@Suite("When the Dropbox folder is checked")
+struct FolderStatusTests {
+  private func controller(in home: TemporaryDirectory, saved: LogStorage? = nil) -> StorageController {
+    StorageController(saved: saved, home: home.url, deviceID: DeviceID("desk"), save: { _ in })
+  }
+
+  private func makeDropbox(in home: TemporaryDirectory) throws {
+    try FileManager.default.createDirectory(
+      at: home.file("Dropbox/.dropbox"), withIntermediateDirectories: true)
+  }
+
+  @Test("a folder that is not in a real Dropbox is accepted, with a warning")
+  func foldersOutsideDropboxWarn() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let controller = controller(in: home)
+
+    controller.confirm()
+
+    #expect(controller.storage?.kind == .dropbox)
+    #expect(controller.folderStatus == .notInDropbox)
+    #expect(controller.folderWarning?.contains("not inside a Dropbox folder") == true)
+  }
+
+  @Test("a folder inside a real Dropbox has no warning")
+  func foldersInDropboxAreQuiet() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    try makeDropbox(in: home)
+    let controller = controller(in: home)
+
+    controller.confirm()
+
+    let root = URL(fileURLWithPath: home.file("Dropbox").path, isDirectory: true)
+    #expect(controller.folderStatus == .inDropbox(root: root))
+    #expect(controller.folderWarning == nil)
+  }
+
+  @Test("a folder that disappears is noticed when the status is refreshed")
+  func disappearingFolderWarns() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    try makeDropbox(in: home)
+    let controller = controller(in: home)
+    controller.confirm()
+
+    try FileManager.default.removeItem(at: home.file("Dropbox/backups"))
+    controller.refreshFolderStatus()
+
+    #expect(controller.folderStatus == .missing)
+    #expect(controller.folderWarning?.contains("cannot be found") == true)
+  }
+
+  @Test("a saved folder is checked when Luthor starts")
+  func savedFolderIsChecked() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let saved = LogStorage(kind: .dropbox, dropboxFolder: home.file("Moved/Luthor"))
+
+    #expect(controller(in: home, saved: saved).folderStatus == .missing)
+  }
+
+  @Test("the Home Folder has nothing to warn about")
+  func homeFolderIsQuiet() throws {
+    let home = try TemporaryDirectory()
+    defer { home.remove() }
+    let saved = LogStorage(kind: .homeFolder, dropboxFolder: home.file("Dropbox/backups/Luthor"))
+
+    let controller = controller(in: home, saved: saved)
+
+    #expect(controller.folderStatus == .localOnly)
+    #expect(controller.folderWarning == nil)
+  }
+}
+
+@MainActor
 @Suite("When the log is compacted from Settings")
 struct CompactLogTests {
   private final class Runs {
