@@ -104,7 +104,7 @@ struct ListSortHeader: View {
         } else {
           HStack(spacing: 2) {
             Text(label)
-            if isSorted { Image(systemName: sort.ascending ? "chevron.down" : "chevron.up") }
+            if isSorted { arrow(pointingUp: !sort.ascending) }
           }
         }
       }
@@ -139,7 +139,7 @@ private struct DottedSeparator: View {
 enum TaskColumns {
   /// The done circle at the start of a row.
   static let checkbox: CGFloat = 20
-  static let duration: CGFloat = 34
+  static let duration: CGFloat = 28
   static let priority: CGFloat = 28
   /// The date a row shows in Prios and Today, the day scheduled for else the due date.
   static let date: CGFloat = 70
