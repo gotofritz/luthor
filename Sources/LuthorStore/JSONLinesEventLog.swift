@@ -349,12 +349,6 @@ public struct JSONLinesEventLog: Sendable {
     return rejected.count
   }
 
-  /// Throws if the file is larger than `maxBytes`.
-  func checkSize() throws(EventLogError) {
-    let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? NSNumber)?.intValue ?? 0
-    if size > maxBytes { throw .ioFailure("\(fileURL.path) is larger than \(maxBytes) bytes; not reading it") }
-  }
-
   private func readLines() throws(EventLogError) -> [Substring] {
     try checkSize()
     do {
