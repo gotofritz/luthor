@@ -21,7 +21,7 @@ APP_VERSION := $(shell scripts/app-version.sh '$(VERSION)')
 APP_BUILD_NUMBER := $(shell git rev-list --count HEAD 2>/dev/null)
 TERRAFORM ?= terraform
 
-.PHONY: format format-check swiftlint swiftlint-version lint lint-files build test coverage test-unit test-acceptance bench test-linux app install dist check-ci hooks tools infra infra-token
+.PHONY: format format-check swiftlint swiftlint-version lint architecture lint-files build test coverage test-unit test-acceptance bench test-linux app install dist check-ci hooks tools infra infra-token
 
 format:
 	$(SWIFT_FORMAT) --in-place --recursive $(SWIFT_PATHS)
@@ -40,7 +40,11 @@ swiftlint-version:
 	  echo "SwiftLint $$found found, $(SWIFTLINT_VERSION) pinned: run 'make tools'"; exit 1; \
 	fi
 
-lint: format-check swiftlint
+lint: format-check swiftlint architecture
+
+# Architecture rules (domain purity, layer boundaries) and the AGENTS.md code map, checked by script.
+architecture:
+	scripts/check-architecture.sh
 
 # Format check and lint on the given files only; used by the pre-commit hook.
 lint-files: swiftlint-version
@@ -56,6 +60,7 @@ test:
 	scripts/test-check-coverage.sh
 	scripts/test-next-version.sh
 	scripts/test-app-version.sh
+	scripts/test-check-architecture.sh
 
 # Runs the tests with coverage on and fails below COVERAGE_MIN percent line coverage of Sources/.
 coverage:
@@ -81,6 +86,7 @@ bench:
 test-linux:
 	swift build
 	swift test
+	scripts/check-architecture.sh
 
 # Builds the Mac app, ad-hoc signed, into $(APP_BUILD), with the version of the tag it is built from.
 app:
