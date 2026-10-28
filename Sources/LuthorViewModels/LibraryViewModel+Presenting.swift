@@ -239,7 +239,7 @@ extension LibraryViewModel {
         nextActions = Set(view.inbox.map(\.id))
       }
     }
-    if section == .inbox || section == .tags { tasks = sorted(tasks) }
+    if section == .inbox || section == .tags || section == .weeklyReview { tasks = sorted(tasks) }
   }
 
   /// The project and its ancestors, top-level first.

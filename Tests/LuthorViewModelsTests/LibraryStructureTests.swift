@@ -248,7 +248,7 @@ struct ListSortViewModelTests {
   func listsAreSortedApart() {
     let (library, log) = makeInbox(Self.log + [captured("i1", "zebra", lamport: 5), captured("i2", "ant", lamport: 6)])
 
-    library.sortBy(.title, ofList: LibraryViewModel.taskListID)
+    library.sortBy(.title, ofList: library.taskListID)
 
     #expect(library.tasks.map(\.title) == ["ant", "zebra"])
     #expect(library.sort(ofList: "top") == .manual)

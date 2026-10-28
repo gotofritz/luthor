@@ -1201,7 +1201,9 @@ what a new item starts with.
    Priority cells sort on a click, reverse on a second and go back to the list's own order on a third; the first
    cell is a cycling label (Title, Created, Due, each ascending then descending), as the rows do not show
    created and due. Nothing is
-   written to the log and the choice is kept only while the window is open. Move Up and Move Down (the context
+   written to the log and the choice is kept only while the window is open. Every list has one: the project columns, Inbox, tags, each priority's list, the
+   candidates of Today (starting in the suggested order), Done and Not done in the daily review, and the weekly
+   review; the calendar's day list has none. Move Up and Move Down (the context
    menu) are the only things that write an order. An item with no value sorts last either way.
 3. **Scope**: the manual order is that of the items filed in a project, which a sequential project follows. The
    order of top-level projects and of the Inbox stays the order of capture.

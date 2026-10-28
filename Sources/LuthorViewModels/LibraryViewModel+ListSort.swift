@@ -1,10 +1,12 @@
 import LuthorDomain
 
-/// The header of a list, a cell above each column of its rows: how the list is sorted, and the click that changes it. A sort is only how the list is
-/// shown, kept while the window is open; it writes nothing to the log.
+/// The header of a list, a cell above each column of its rows: how the list is sorted, and the click that
+/// changes it. A sort is only how the list is shown, kept while the window is open; it writes nothing to the log.
 extension LibraryViewModel {
-  /// The ID of the list of tasks beside the columns (the inbox, a tag).
-  public static let taskListID = "tasks"
+  /// The ID of the list of tasks beside the columns; each place that has one sorts it apart.
+  public var taskListID: String {
+    "tasks-\(section)"
+  }
 
   /// How the list is sorted; the order it has until a header is clicked.
   public func sort(ofList listID: String) -> ListSort {
@@ -65,7 +67,55 @@ extension LibraryViewModel {
 
   /// The tasks of the list beside the columns, sorted.
   func sorted(_ tasks: [TaskItem]) -> [TaskItem] {
-    sort(ofList: Self.taskListID).sorted(tasks, by: sortFields)
+    sorted(tasks, inList: taskListID)
+  }
+
+  /// The tasks in the sort of the list.
+  func sorted(_ tasks: [TaskItem], inList listID: String) -> [TaskItem] {
+    sorted(tasks, inList: listID, fields: sortFields)
+  }
+
+  /// The items in the sort of the list.
+  private func sorted<Item>(_ items: [Item], inList listID: String, fields: (Item) -> SortFields) -> [Item] {
+    sort(ofList: listID).sorted(items, by: fields)
+  }
+
+  /// The candidates of Today, and the leftovers above them, are one list; sorted by the minutes they count for.
+  public var sortedCandidates: [PlanEntry] {
+    sorted(plan.candidates, inList: Self.candidatesListID, fields: sortFields)
+  }
+
+  public var sortedCarryOver: [CarryOverEntry] {
+    sorted(carryOver, inList: Self.candidatesListID) { sortFields($0.entry) }
+  }
+
+  public static let candidatesListID = "candidates"
+
+  /// The tasks done on the day reviewed, sorted by the minutes they were planned at.
+  public var sortedDone: [ReviewEntry] {
+    sorted(review.done, inList: "review-done", fields: sortFields)
+  }
+
+  /// The tasks not done on the day reviewed.
+  public var sortedNotDone: [ReviewEntry] {
+    sorted(review.notDone, inList: "review-notdone", fields: sortFields)
+  }
+
+  /// The projects due for review.
+  public var sortedProjectReview: [ProjectReviewItem] {
+    sorted(projectReview, inList: "review-projects") { sortFields($0.project) }
+  }
+
+  private func sortFields(_ entry: PlanEntry) -> SortFields {
+    SortFields(
+      title: entry.task.title, created: entry.task.createdOn, due: state.dueDate(of: entry.task.id)?.date,
+      estimate: entry.minutes, priority: entry.task.priority)
+  }
+
+  private func sortFields(_ entry: ReviewEntry) -> SortFields {
+    SortFields(
+      title: entry.task.title, created: entry.task.createdOn, due: state.dueDate(of: entry.task.id)?.date,
+      estimate: entry.minutes, priority: entry.task.priority)
   }
 
   private func sortFields(_ task: TaskItem) -> SortFields {

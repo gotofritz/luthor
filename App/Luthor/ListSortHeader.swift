@@ -8,12 +8,18 @@ struct ListSortHeader: View {
   @Bindable var library: LibraryViewModel
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
   let listID: String
+  /// Whether the rows have a duration and a priority cell at their end, for the header to sit over.
+  var showsDuration = true
+  var showsPriority = true
+  /// Room at the end of the rows past the cells above, such as the field of minutes in a review.
+  var trailingInset: CGFloat = 0
 
   var body: some View {
     HStack(spacing: 8) {
       cell(library.sortLabelKey(ofList: listID), width: nil, alignment: .leading, firstCell: true)
-      cell(.duration, width: TaskColumns.duration, alignment: .trailing)
-      cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag")
+      if showsDuration { cell(.duration, width: TaskColumns.duration, alignment: .trailing) }
+      if showsPriority { cell(.priority, width: TaskColumns.priority, alignment: .center, symbol: "flag") }
+      if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
     }
     .font(.caption)
     .foregroundStyle(.secondary)

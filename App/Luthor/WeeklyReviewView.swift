@@ -30,8 +30,16 @@ private struct ReviewProjectColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
+    VStack(spacing: 0) {
+      ListSortHeader(library: library, listID: "review-projects", showsDuration: false, showsPriority: false)
+      list
+    }
+    .frame(width: 260)
+  }
+
+  private var list: some View {
     List(selection: Binding(get: { library.reviewProjectID }, set: { library.showReviewProject($0) })) {
-      ForEach(library.projectReview, id: \.project.id) { item in
+      ForEach(library.sortedProjectReview, id: \.project.id) { item in
         HStack {
           Label(item.project.title, systemImage: item.project.kind.symbol)
           Spacer()
@@ -51,7 +59,6 @@ private struct ReviewProjectColumn: View {
           .padding()
       }
     }
-    .frame(width: 260)
   }
 }
 

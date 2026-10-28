@@ -474,7 +474,10 @@ action, so its order is its meaning.
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
-  contents of a project) has a cell above each column of the rows. Click the
+  contents of a project, each priority's list in Prios, the candidates of Today
+  and the tasks left over from earlier days with them, Done and Not done in the
+  daily review, the projects due and the tasks of the one picked in the weekly
+  review) has a cell above each column of the rows. Click the
   *Duration* cell or the *Priority* flag to sort the list by it, ascending
   (the arrow points down); click it again for descending (the arrow points up);
   a third click goes back to the list's own order. The first cell is a label
@@ -482,7 +485,10 @@ action, so its order is its meaning.
   *Created* ascending then descending, then *Due* the same way, then back to
   the list's own order. Items with no
   value come last, and items that compare equal keep their order. Priority runs
-  A, B, C, no priority, someday. A sort only changes how the list is shown: it
+  A, B, C, no priority, someday. Each list keeps its own sort, and starts in
+  the order it has without one (the candidates of Today start in the suggested,
+  prioritised order). Where a row shows minutes, the sort by duration uses
+  those, so an unestimated task counts at the default estimate. A sort only changes how the list is shown: it
   is kept while the window is open, not saved, and does not change the order
   Move Up and Move Down work on
 

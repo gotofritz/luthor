@@ -31,7 +31,7 @@ struct PriorityListsColumn: View {
   var body: some View {
     List(selection: $library.selection) {
       ForEach(library.priorityGroups) { group in
-        Section(group.priority?.title ?? "No priority") {
+        Section {
           ForEach(group.tasks, id: \.id) { task in
             TaskRow(library: library, task: task, showsPriority: false, showsDate: true)
               .tag(task.id)
@@ -48,6 +48,13 @@ struct PriorityListsColumn: View {
           .buttonStyle(.borderless)
           .help("Add a task with this priority")
           .accessibilityLabel("Add")
+        } header: {
+          VStack(alignment: .leading, spacing: 0) {
+            Text(group.priority?.title ?? "No priority")
+              .padding(.vertical, 4)
+            ListSortHeader(
+              library: library, listID: "priority-\(group.id)", showsPriority: false)
+          }
         }
       }
     }

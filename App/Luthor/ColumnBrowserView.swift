@@ -120,8 +120,8 @@ struct TaskListColumn: View {
       PriorityListsColumn(library: library)
     } else {
       VStack(spacing: 0) {
-        if library.section == .inbox || library.section == .tags {
-          ListSortHeader(library: library, listID: LibraryViewModel.taskListID)
+        if library.section == .inbox || library.section == .tags || library.section == .weeklyReview {
+          ListSortHeader(library: library, listID: library.taskListID)
         }
         List(selection: $library.selection) {
           ForEach(library.tasks, id: \.id) { task in

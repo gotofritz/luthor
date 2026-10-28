@@ -37,8 +37,10 @@ private struct DoneColumn: View {
         .font(Theme.section)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
+      ListSortHeader(
+        library: library, listID: "review-done", showsPriority: false, trailingInset: MinutesField.width + 8)
       List {
-        ForEach(library.review.done, id: \.task.id) { entry in
+        ForEach(library.sortedDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: true)
         }
       }
@@ -64,8 +66,10 @@ private struct NotDoneColumn: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
       Divider()
+      ListSortHeader(
+        library: library, listID: "review-notdone", showsPriority: false, trailingInset: MinutesField.width + 8)
       List(selection: $library.selection) {
-        ForEach(library.review.notDone, id: \.task.id) { entry in
+        ForEach(library.sortedNotDone, id: \.task.id) { entry in
           ReviewRow(library: library, entry: entry, isDone: false)
             .tag(entry.task.id)
         }
@@ -147,6 +151,7 @@ private struct ReviewRow: View {
       Spacer()
       Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
         .foregroundStyle(.secondary)
+        .frame(width: TaskColumns.duration, alignment: .trailing)
         .help(entry.isUnestimated ? "Unestimated: counted at the default estimate" : "Estimate when first planned")
       MinutesField(minutes: entry.loggedMinutes, prompt: entry.task.estimate == nil ? nil : entry.currentMinutes) {
         library.logTime(entry.task.id, minutes: $0)
@@ -202,11 +207,14 @@ private struct MinutesField: View {
   let commit: (Int?) -> Void
   @State private var text = ""
 
+  /// How wide the field is, for the header above a column of them.
+  static let width: CGFloat = 56
+
   var body: some View {
     TextField("min", text: $text, prompt: Text(prompt.map(String.init) ?? "min"))
       .textFieldStyle(.roundedBorder)
       .multilineTextAlignment(.trailing)
-      .frame(width: 56)
+      .frame(width: Self.width)
       .onSubmit(submit)
       .onAppear { text = shown }
       .onChange(of: minutes) { text = shown }
