@@ -65,14 +65,15 @@ public struct LogStorage: Equatable, Sendable {
     var isDirectory: ObjCBool = false
     guard files.fileExists(atPath: dropboxFolder.path, isDirectory: &isDirectory), isDirectory.boolValue
     else { return .missing }
-    var candidate = dropboxFolder.standardizedFileURL
+    // Climb by path text: `deletingLastPathComponent` on a URL for `/` gives `/..` on macOS, which never ends.
+    var path = dropboxFolder.standardizedFileURL.path
     while true {
-      if files.fileExists(atPath: candidate.appendingPathComponent(".dropbox").path) {
-        return .inDropbox(root: URL(fileURLWithPath: candidate.path, isDirectory: true))
+      if files.fileExists(atPath: (path as NSString).appendingPathComponent(".dropbox")) {
+        return .inDropbox(root: URL(fileURLWithPath: path, isDirectory: true))
       }
-      let parent = candidate.deletingLastPathComponent()
-      if parent.path == candidate.path { return .notInDropbox }
-      candidate = parent
+      let parent = (path as NSString).deletingLastPathComponent
+      if parent == path || parent.isEmpty { return .notInDropbox }
+      path = parent
     }
   }
 
