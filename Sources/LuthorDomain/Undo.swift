@@ -28,7 +28,7 @@ extension LibraryState {
         inverses.append(taken)
       }
     }
-    guard !forward.isEmpty else { return .irreversible }
+    guard !forward.isEmpty else { return nil }
     return UndoStep(forward: forward, backward: inverses.reversed().flatMap { $0 })
   }
 
@@ -71,7 +71,8 @@ extension LibraryState {
       return .events([daySet(of: unscheduled.taskID)])
     case .taskDueSet(let due):
       let before = dueDates[due.taskID]
-      return .events([.taskDueSet(TaskDueSet(taskID: due.taskID, date: before?.date, isHard: before?.isHard ?? false))])
+      let restored = TaskDueSet(taskID: due.taskID, date: before?.date, isHard: before?.isHard ?? false)
+      return .events([.taskDueSet(restored)])
     case .taskTagged(let tagged):
       let had = taskTags[tagged.taskID]?.contains(tagged.tagID) ?? false
       return .events(had ? [] : [.taskUntagged(TaskUntagged(taskID: tagged.taskID, tagID: tagged.tagID))])
@@ -83,7 +84,8 @@ extension LibraryState {
     case .taskReclaimed(let reclaimed):
       return .events(delegationSet(of: reclaimed.taskID))
     case .taskRepeatSet(let repeating):
-      return .events([.taskRepeatSet(TaskRepeatSet(taskID: repeating.taskID, rule: repeatRules[repeating.taskID]))])
+      let restored = TaskRepeatSet(taskID: repeating.taskID, rule: repeatRules[repeating.taskID])
+      return .events([.taskRepeatSet(restored)])
     default:
       return .irreversible
     }
@@ -100,7 +102,7 @@ extension LibraryState {
     guard let held = delegations[taskID] else { return [.taskReclaimed(TaskReclaimed(taskID: taskID))] }
     return [
       .taskDelegated(
-        TaskDelegated(taskID: taskID, to: held.person, since: held.since, followUpDate: held.followUpDate))
+        TaskDelegated(taskID: taskID, to: held.person, since: held.since, followUpDate: held.followUpDate)),
     ]
   }
 }
