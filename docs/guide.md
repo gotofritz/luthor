@@ -644,7 +644,8 @@ logged and the days you reviewed. Only the history of how each change came
 about is dropped. Compact Log refuses, and changes nothing, if the log holds
 events written by a newer version of Luthor (update Luthor first) or if a log
 file changed while it worked. Delete the `backups` folder when you no longer
-need it.
+need it. In a shared folder the other Macs' log files are not deleted but renamed to
+`events-<mac>.jsonl.compacted-<date>`, so changes a Mac wrote after the checks are never lost.
 
 With Dropbox the Macs do not have to be together. Compact Log first asks the
 others, through small `compaction-…` files in the shared folder, to stop
