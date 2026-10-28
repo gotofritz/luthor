@@ -65,10 +65,6 @@ extension LibraryState {
     case .taskMoved(let moved):
       guard let item = items[moved.taskID]?.item else { return .irreversible }
       return .events([.taskMoved(TaskMoved(taskID: item.id, parentID: item.parentID))])
-    case .taskScheduled(let scheduled):
-      return .events([daySet(of: scheduled.taskID)])
-    case .taskUnscheduled(let unscheduled):
-      return .events([daySet(of: unscheduled.taskID)])
     case .taskDueSet(let due):
       let before = dueDates[due.taskID]
       let restored = TaskDueSet(taskID: due.taskID, date: before?.date, isHard: before?.isHard ?? false)
@@ -79,6 +75,18 @@ extension LibraryState {
     case .taskUntagged(let untagged):
       let had = taskTags[untagged.taskID]?.contains(untagged.tagID) ?? false
       return .events(had ? [.taskTagged(TaskTagged(taskID: untagged.taskID, tagID: untagged.tagID))] : [])
+    default:
+      return planningInverse(of: event)
+    }
+  }
+
+  /// `inverse(of:)` for the events about the day and who has a task, and its repeat.
+  private func planningInverse(of event: EventPayload) -> Inverse {
+    switch event {
+    case .taskScheduled(let scheduled):
+      return .events([daySet(of: scheduled.taskID)])
+    case .taskUnscheduled(let unscheduled):
+      return .events([daySet(of: unscheduled.taskID)])
     case .taskDelegated(let delegated):
       return .events(delegationSet(of: delegated.taskID) + [daySet(of: delegated.taskID)])
     case .taskReclaimed(let reclaimed):
@@ -102,7 +110,7 @@ extension LibraryState {
     guard let held = delegations[taskID] else { return [.taskReclaimed(TaskReclaimed(taskID: taskID))] }
     return [
       .taskDelegated(
-        TaskDelegated(taskID: taskID, to: held.person, since: held.since, followUpDate: held.followUpDate)),
+        TaskDelegated(taskID: taskID, to: held.person, since: held.since, followUpDate: held.followUpDate))
     ]
   }
 }

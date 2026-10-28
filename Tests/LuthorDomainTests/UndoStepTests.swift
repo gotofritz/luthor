@@ -90,7 +90,7 @@ struct UndoStepTests {
 
     #expect(
       step(after: log, [dueSet("t1", on: "2026-12-01", hard: false)])?.backward == [
-        dueSet("t1", on: "2026-11-01", hard: true).payload,
+        dueSet("t1", on: "2026-11-01", hard: true).payload
       ])
     let rename = step(after: base, [renamed("t1", to: "ring bank")])
     #expect(rename?.backward == [renamed("t1", to: "call bank").payload])
