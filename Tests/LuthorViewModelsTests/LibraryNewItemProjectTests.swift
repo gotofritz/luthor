@@ -26,6 +26,7 @@ struct NewItemProjectViewModelTests {
 
     library.saveNewItem(card)
 
+    library.open(.project(TaskID("p1")))
     let prune = try #require(library.tasks.first { $0.title == "prune" })
     #expect(prune.parentID == TaskID("p1"))
     #expect(prune.priority == .important)
