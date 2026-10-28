@@ -217,7 +217,8 @@ Sources/
     DeviceFilesEventLog.swift  shared-folder log (slice 10): appends to events-<device>.jsonl only,
                              reads the merge of every device's file
     LogStorage.swift         the place the user chose for the log (Dropbox folder or Home Folder),
-                             per device; prepares it, and `folderStatus()` (inside a real Dropbox, not, or missing) (creates folders, copies the Home Folder log in)
+                             per device; prepares it (creates folders, copies the Home Folder log in); `folderStatus()` says if the folder
+                             is inside a real Dropbox, outside one, or missing
     MachineID.swift          this Mac's own ID, made once and kept by the app, so devices that share a
                              host name stay apart
     LuthorConfiguration.swift log path (LUTHOR_LOG, default ~/.luthor/events.jsonl) or shared folder
