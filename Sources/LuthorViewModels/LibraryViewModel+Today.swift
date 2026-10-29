@@ -20,6 +20,20 @@ extension CalendarDate {
   }
 }
 
+/// What the system clock reads: the instant, and the time zone the day is worked out in.
+struct SystemClock {
+  let instant: () -> Date
+  let timeZone: TimeZone
+
+  func today(dayChangesAt: Int) -> CalendarDate {
+    CalendarDate.today(at: instant(), in: timeZone, dayChangesAt: dayChangesAt)
+  }
+
+  func minutes(dayChangesAt: Int) -> Int {
+    minutesSinceDayStart(at: instant(), in: timeZone, dayChangesAt: dayChangesAt)
+  }
+}
+
 /// The minutes since the start of the day it is at an instant, which begins `dayChangesAt` minutes after midnight:
 /// 01:30 is 25:30 of the day before when the day changes at 04:00.
 public func minutesSinceDayStart(at instant: Date, in timeZone: TimeZone, dayChangesAt: Int) -> Int {
@@ -37,6 +51,16 @@ private func gregorian(in timeZone: TimeZone) -> Calendar {
 // Today: choosing the day shown, planning it, and deciding on its tasks. In its own file (SwiftLint
 // file_length) rather than suppressed.
 extension LibraryViewModel {
+  /// The day it is by the clock.
+  func clock() -> CalendarDate {
+    injectedToday?() ?? systemClock.today(dayChangesAt: globalSettings.dayChangesAt)
+  }
+
+  /// The minutes since the day began by the clock.
+  func minuteClock() -> Int {
+    injectedMinutes?() ?? systemClock.minutes(dayChangesAt: globalSettings.dayChangesAt)
+  }
+
   /// Shows the plan of another day.
   public func showDay(_ date: CalendarDate) {
     planDate = date

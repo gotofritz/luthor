@@ -139,11 +139,8 @@ public final class LibraryViewModel {
 
   let log: any EventLog
   let injectedToday: (() -> CalendarDate)?
-  /// The minutes since midnight by the clock.
   let injectedMinutes: (() -> Int)?
-  /// The instant and time zone the system clock reads, for the day and minutes when none are injected.
-  let instant: () -> Date
-  let timeZone: TimeZone
+  let systemClock: SystemClock
   let unboundCommands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
   /// The highest Lamport counter of the log as last read or written here.
@@ -164,8 +161,7 @@ public final class LibraryViewModel {
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
 
-  /// `today` tells the day it is and `now` the minutes since the day began; by default both come from the system
-  /// clock (`instant`, in `timeZone`) and the "Day changes at" setting.
+  /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
     log: any EventLog,
     commands: Commands,
@@ -179,26 +175,13 @@ public final class LibraryViewModel {
     unboundCommands = commands
     injectedToday = today
     injectedMinutes = now
-    self.instant = instant
-    self.timeZone = timeZone
+    systemClock = SystemClock(instant: instant, timeZone: timeZone)
     currentView = view
-    let day = today?() ?? CalendarDate.today(at: instant(), in: timeZone, dayChangesAt: Settings.defaultDayChangesAt)
+    let day = today?() ?? systemClock.today(dayChangesAt: Settings.defaultDayChangesAt)
     self.today = day
     planDate = day
     plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
     review = LibraryState.replay([]).dayReview(for: view, on: day, today: day)
-  }
-
-  /// The day it is by the clock.
-  func clock() -> CalendarDate {
-    injectedToday?()
-      ?? CalendarDate.today(at: instant(), in: timeZone, dayChangesAt: globalSettings.dayChangesAt)
-  }
-
-  /// The minutes since the day began by the clock.
-  func minuteClock() -> Int {
-    injectedMinutes?()
-      ?? minutesSinceDayStart(at: instant(), in: timeZone, dayChangesAt: globalSettings.dayChangesAt)
   }
 
   /// Shows another view, at its inbox, with no task selected.
