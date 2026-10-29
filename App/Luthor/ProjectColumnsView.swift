@@ -52,17 +52,19 @@ struct ColumnView: View {
     }
   }
 
+  private var currentSelection: Set<ColumnSelection> {
+    if position < library.path.count { return [.project(library.path[position])] }
+    if column.parentID == nil { return [] }
+    return Set(library.selectedIDs.map(ColumnSelection.task))
+  }
+
   /// The project of the path this column leads to, else the tasks picked. A shift-click or command-click picks
   /// several tasks of the column together.
   private var selection: Binding<Set<ColumnSelection>> {
     Binding(
-      get: {
-        if position < library.path.count { return [.project(library.path[position])] }
-        if column.parentID == nil { return [] }
-        return Set(library.selectedIDs.map(ColumnSelection.task))
-      },
+      get: { currentSelection },
       set: { picked in
-        let current = selection.wrappedValue
+        let current = currentSelection
         let tasks = Set(
           picked.compactMap { (item) -> TaskID? in
             if case .task(let taskID) = item { return taskID }
