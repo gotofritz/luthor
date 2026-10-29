@@ -23,6 +23,8 @@ struct LuthorApp: App {
   /// The `UserDefaults` key of this Mac's own ID, made on first start; it names this Mac's file in the shared
   /// folder, since two Macs can have the same host name.
   private static let machineIDKey = "machineID"
+  /// The `UserDefaults` key of the columns each list shows (JSON), per device like the place of the log.
+  private static let listColumnsKey = "listColumns"
 
   private let home = FileManager.default.homeDirectoryForCurrentUser
   private let environment: [String: String]
@@ -85,9 +87,20 @@ struct LuthorApp: App {
       save: { UserDefaults.standard.set($0, forKey: machineIDKey) })
   }
 
+  /// The columns each list was left with; none if nothing was saved or it cannot be read.
+  private static func savedListColumns() -> [String: Set<ListColumn>] {
+    guard let data = UserDefaults.standard.data(forKey: listColumnsKey) else { return [:] }
+    return (try? JSONDecoder().decode([String: Set<ListColumn>].self, from: data)) ?? [:]
+  }
+
   private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {
     let library = LibraryViewModel(
-      log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view)
+      log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view,
+      listColumns: savedListColumns())
+    library.onListColumnsChanged = { columns in
+      guard let data = try? JSONEncoder().encode(columns) else { return }
+      UserDefaults.standard.set(data, forKey: listColumnsKey)
+    }
     library.reload()
     return library
   }

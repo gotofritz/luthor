@@ -25,19 +25,45 @@ struct ListColumnsTests {
     #expect(!library.isColumnShown(.when, inList: "project-p1"))
   }
 
-  @Test("each list keeps its own columns")
-  func listsAreIndependent() {
+  @Test("the lists of one place share their columns, and each place has its own")
+  func placesAreIndependent() {
     let library = makeLibrary()
 
     library.toggleColumn(.duration, inList: "project-p1")
 
     #expect(!library.isColumnShown(.duration, inList: "project-p1"))
-    #expect(library.isColumnShown(.duration, inList: "project-p2"))
+    #expect(!library.isColumnShown(.duration, inList: "project-p2"))
+    #expect(!library.isColumnShown(.duration, inList: "top"))
+    #expect(library.isColumnShown(.duration, inList: LibraryViewModel.prioritiesListID))
+    #expect(library.isColumnShown(.duration, inList: library.taskListID))
     #expect(library.isColumnShown(.priority, inList: "project-p1"))
+
+    library.toggleColumn(.duration, inList: "top")
+
+    #expect(library.isColumnShown(.duration, inList: "project-p1"))
+  }
+
+  @Test("the columns a list was left with are the ones it starts with")
+  func startsWithTheKeptColumns() {
+    let library = LibraryViewModel(
+      log: InMemoryEventLog([]), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()),
+      today: { date("2026-10-21") }, listColumns: ["projects": [.priority, .when]])
+
+    #expect(!library.isColumnShown(.duration, inList: "project-p1"))
+    #expect(library.isColumnShown(.when, inList: "project-p1"))
+    #expect(!library.isColumnShown(.duration, inList: "project-p2"))
+    #expect(library.isColumnShown(.duration, inList: LibraryViewModel.prioritiesListID))
+  }
+
+  @Test("each change is handed on to be kept, with every list's columns")
+  func changesAreHandedOn() {
+    let library = makeLibrary()
+    var kept: [String: Set<ListColumn>] = [:]
+    library.onListColumnsChanged = { kept = $0 }
 
     library.toggleColumn(.duration, inList: "project-p1")
 
-    #expect(library.isColumnShown(.duration, inList: "project-p1"))
+    #expect(kept["projects"] == [.status, .priority])
   }
 
   @Test("the date can be turned on in a list of a project, and then it is the date column")
@@ -47,7 +73,8 @@ struct ListColumnsTests {
     library.toggleColumn(.when, inList: "project-p1")
 
     #expect(library.showsWhenColumn(ofList: "project-p1"))
-    #expect(!library.showsWhenColumn(ofList: "project-p2"))
+    #expect(library.showsWhenColumn(ofList: "project-p2"))
+    #expect(!library.showsWhenColumn(ofList: library.taskListID))
   }
 
   @Test("a list with a date column leaves Due out of its first cell, which steps through Title and Created")

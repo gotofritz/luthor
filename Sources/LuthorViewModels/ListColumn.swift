@@ -1,5 +1,5 @@
 /// A column of the rows of a list that its header can turn on and off.
-public enum ListColumn: CaseIterable, Sendable {
+public enum ListColumn: String, CaseIterable, Codable, Sendable {
   case status
   case duration
   case priority

@@ -473,9 +473,9 @@ action, so its order is its meaning.
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
 - **Right-click a header** to choose its columns: a tick beside Done, Duration,
-  Priority and When turns each on or off. Each list keeps its own choice while
-  the window is open (the reviews have fixed columns). When is off in project
-  lists until you turn it on, and leaves *Due* out of the first cell once on
+  Priority and When turns each on or off. Each place (Projects, Prios, Today, Inbox, a tag...) keeps its own
+  choice, also after a restart; all the columns of Projects share theirs (the
+  reviews have fixed columns). When is off in Projects until you turn it on, and leaves *Due* out of the first cell once on
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the

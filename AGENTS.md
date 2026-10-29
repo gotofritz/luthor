@@ -259,7 +259,7 @@ Sources/
                              each in a class of its own, so a view reads one without being told of another's;
                              LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
-    LibraryViewModel+ListColumns.swift  the columns each list shows (its own, kept while the window is open), `toggleColumn`
+    LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)
     LibraryViewModel+ListSort.swift  the sort of each list and the click on a header cell (`sortBy`), applied when presenting
