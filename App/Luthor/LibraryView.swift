@@ -65,7 +65,9 @@ struct LibraryView: View {
     .defaultFocus($captureFocused, true)
     .onAppear { captureFocused = true }
     // Clicking a row or its checkbox would take the focus; hand it back to the capture field.
-    .onChange(of: library.selection) { captureFocused = true }
+    // Several tasks picked together leave `selection` empty; the list keeps the focus, or a shift-click or
+    // command-click after the first would land on a list that has lost it.
+    .onChange(of: library.selection) { if !library.isBulkSelection { captureFocused = true } }
     .onChange(of: library.tasks) { captureFocused = true }
     .onChange(of: library.sidebarSelection) { captureFocused = true }
     .onChange(of: library.section) { captureFocused = true }

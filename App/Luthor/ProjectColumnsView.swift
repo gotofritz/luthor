@@ -41,8 +41,6 @@ struct ColumnView: View {
         case .task(let task):
           TaskRow(library: library, task: task)
             .tag(ColumnSelection.task(task.id))
-            .contentShape(Rectangle())
-            .onTapGesture { click(.task(task.id)) }
         }
       }
       AddItemRow(library: library, parentID: column.parentID)
