@@ -79,14 +79,14 @@ struct DayLayoutCostTests {
   func oneLayoutServesAllFour() {
     let library = makeLibrary()
     library.show(.today)
-    let before = library.layoutsComputed
+    let before = library.layouts.computed
 
     _ = library.planSlots
     _ = library.planBlocks
     _ = library.planSessions
     _ = library.planDone
 
-    #expect(library.layoutsComputed == before + 1)
+    #expect(library.layouts.computed == before + 1)
   }
 
   @Test("a change to the plan lays the day out again")

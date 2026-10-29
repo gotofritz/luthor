@@ -95,7 +95,7 @@ extension LibraryViewModel {
 
   /// Fills the view switcher, the sidebar and the list from the current view of the last replayed state.
   func present() {
-    cachedLayout = nil
+    layouts.cached = nil
     pruneMultiSelection()
     views = state.views
     if !views.contains(where: { $0.id == currentView }) {

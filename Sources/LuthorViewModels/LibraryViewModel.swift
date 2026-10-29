@@ -154,16 +154,12 @@ public final class LibraryViewModel {
   /// again. Unlimited; a new command empties the second. Both are lost on quit, as nothing of them is written.
   var undoSteps: [UndoStep] = []
   var redoSteps: [UndoStep] = []
-  /// Counts the changes of `state` and `held`, so a read made away from the main actor knows if they moved on
-  /// while it ran.
+  /// Counts the changes of `state` and `held`, so a read made off the main actor knows if they moved on.
   @ObservationIgnored var generation = 0
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
-  /// The day's layout as last worked out, so the slots, blocks, sessions and done tasks read one after another share
-  /// it; `present()` drops it, a drag or the clock moving on is another key. And how many were worked out.
-  @ObservationIgnored var cachedLayout: (key: DayLayoutKey, layout: DayLayout)?
-  @ObservationIgnored var layoutsComputed = 0
+  @ObservationIgnored var layouts = DayLayoutCache()
 
   /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
