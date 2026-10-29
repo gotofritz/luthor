@@ -24,14 +24,14 @@ private func makeLibrary() -> LibraryViewModel {
 
 /// Whether anything `read` touches is told of a change while `change` runs.
 @MainActor
-private func isTold(of read: () -> Void, whenYou change: () -> Void) -> Bool {
-  let told = Told()
+func isTold(of read: () -> Void, whenYou change: () -> Void) -> Bool {
+  let told = ChangeFlag()
   withObservationTracking(read) { told.set() }
   change()
   return told.value
 }
 
-private final class Told: @unchecked Sendable {
+final class ChangeFlag: @unchecked Sendable {
   private let lock = NSLock()
   private var flag = false
   var value: Bool { lock.withLock { flag } }

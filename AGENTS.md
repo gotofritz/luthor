@@ -251,7 +251,7 @@ Sources/
                              `newItem`, kept by OK) in LibraryViewModel+NewItem.swift, the priorities place's lists (`priorityGroups`, a task added from the bottom of one) in LibraryViewModel+PriorityLists.swift, notes
                              on a card, deselecting a column, the project card that replaces a list (`projectCardOpen`, `toggleProjectCard`) and the card the last column shows (`cardTarget`) in LibraryViewModel+Columns.swift, and the card's repeat summary in RepeatSummary.swift,
                              reading the log and
-                             filling the published state (columns, lists, completed items) and text export/import in
+                             filling the published state (columns, lists, completed items), `observing(_:)` (how a view reads the unobserved state) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)

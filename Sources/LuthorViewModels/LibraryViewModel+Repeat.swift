@@ -5,8 +5,7 @@ import LuthorDomain
 extension LibraryViewModel {
   /// How a task repeats; `nil` if it does not.
   public func repeatRule(of taskID: TaskID) -> RepeatRule? {
-    _ = revision
-    return state.repeatRule(of: taskID)
+    observing { $0.repeatRule(of: taskID) }
   }
 
   /// Makes a task repeat by `rule`, or with `nil` stops it. A repeat never gives the task a due date, and one

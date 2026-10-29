@@ -14,8 +14,7 @@ extension LibraryViewModel {
 
   /// The tags a task carries, in the order they were created.
   public func tagItems(of taskID: TaskID) -> [TagItem] {
-    _ = revision
-    return state.tags(of: taskID)
+    observing { $0.tags(of: taskID) }
   }
 
   /// Puts the tag called `name` on a task, creating it in the task's view if the view has none of that name.
@@ -41,8 +40,7 @@ extension LibraryViewModel {
 
   /// How many tasks carry a tag, open or completed.
   public func tagUseCount(_ tagID: TagID) -> Int {
-    _ = revision
-    return state.tagUseCount(of: tagID)
+    observing { $0.tagUseCount(of: tagID) }
   }
 
   /// Deletes a tag, which takes it off its tasks. A narrowing of Today's candidates to it is dropped.

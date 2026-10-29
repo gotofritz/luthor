@@ -17,6 +17,13 @@ extension LibraryViewModel {
   /// changes. Anything that is handed a whole log uses `unboundCommands`.
   var commands: Commands { unboundCommands.after(state, lamport: lastLamport) }
 
+  /// Reads from the state held for a view. `state` is not observed, so a read made straight from it leaves the view
+  /// stale when the log changes; this one reads `revision` too, which every replay moves, so the view is told.
+  func observing<Value>(_ read: (LibraryState) -> Value) -> Value {
+    _ = revision
+    return read(state)
+  }
+
   /// The selected task, whose card is shown.
   public var selectedTask: TaskItem? {
     selection.flatMap { selected in tasks.first { $0.id == selected } }
