@@ -101,9 +101,12 @@ private struct ThemedModifier: ViewModifier {
 private struct SelectionBackgroundModifier: ViewModifier {
   let isSelected: Bool
   @Environment(\.theme) private var theme
+  @Environment(\.colorScheme) private var colorScheme
 
   func body(content: Content) -> some View {
-    content.listRowBackground(isSelected ? theme.fill.opacity(0.28) : Color.clear)
+    // The accent as ink is the lighter one in dark mode, and it needs more of it to show on a dark window.
+    let fill = colorScheme == .dark ? theme.ink.opacity(0.55) : theme.fill.opacity(0.28)
+    return content.listRowBackground(isSelected ? fill : Color.clear)
   }
 }
 
@@ -114,12 +117,15 @@ private struct NoSystemHighlight: NSViewRepresentable {
   func makeNSView(context: Context) -> NSView { NSView() }
 
   func updateNSView(_ view: NSView, context: Context) {
-    // The list is a sibling of this view, so look for its table in the ancestors, once it is in the window.
+    // The list is a sibling of this view, so look in the ancestors, once it is in the window, for the table
+    // under this view. Columns side by side can share an ancestor, so only a table that covers this view counts.
     DispatchQueue.main.async {
+      let here = view.convert(view.bounds, to: nil)
       var ancestor = view.superview
       while let current = ancestor {
-        if let table = Self.table(in: current) {
-          table.selectionHighlightStyle = .none
+        let covering = Self.tables(in: current).filter { $0.convert($0.bounds, to: nil).intersects(here) }
+        if !covering.isEmpty {
+          for table in covering { table.selectionHighlightStyle = .none }
           return
         }
         ancestor = current.superview
@@ -127,12 +133,9 @@ private struct NoSystemHighlight: NSViewRepresentable {
     }
   }
 
-  private static func table(in view: NSView) -> NSTableView? {
-    if let table = view as? NSTableView { return table }
-    for child in view.subviews {
-      if let table = table(in: child) { return table }
-    }
-    return nil
+  private static func tables(in view: NSView) -> [NSTableView] {
+    if let table = view as? NSTableView { return [table] }
+    return view.subviews.flatMap { tables(in: $0) }
   }
 }
 
