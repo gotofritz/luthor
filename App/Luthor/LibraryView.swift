@@ -52,12 +52,6 @@ struct LibraryView: View {
       }
     }
     .navigationTitle("Luthor | \(title)")
-    .toolbar {
-      if library.section == .projects, let projectID = shownProjectID {
-        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
-          .help("Complete this project, its sub-projects and their open tasks")
-      }
-    }
     .sheet(isPresented: isDelegating) {
       DelegateSheet(library: library)
     }
@@ -125,6 +119,12 @@ struct LibraryView: View {
       }
       .toggleStyle(.button)
       .help("Show completed and dropped tasks and projects")
+      // In the window, not the toolbar: a toolbar that comes and goes with the project picked changes the
+      // height of the title bar.
+      if library.section == .projects, let projectID = shownProjectID {
+        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
+          .help("Complete this project, its sub-projects and their open tasks")
+      }
       ViewSwitcher(library: library)
     }
     .padding(.horizontal, 12)
