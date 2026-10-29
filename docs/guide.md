@@ -764,4 +764,5 @@ shows the same result. If two Macs change the same thing, the later change
 
 See the README: `make install`, or a release from GitHub, which installs on
 another Mac without compiling. The app is not notarised, so the first launch
-of an app downloaded in a browser needs right-click → Open.
+of an app downloaded in a browser needs right-click → Open. The README
+says how to check a download against its checksum and build provenance.

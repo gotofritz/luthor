@@ -305,9 +305,11 @@ Tests/
 docs/brand/                  source SVG and PNG of the app icon (the README masthead)
 scripts/                     commit-message, coverage and architecture checks (check-architecture.sh: domain imports and
                              purity, layer boundaries, this code map), next-version.sh (release tag
-                             from Conventional Commits, app-version.sh: the version About Luthor shows), with their shell tests
+                             from Conventional Commits, app-version.sh: the version About Luthor shows, check-version-tag.sh: a release tag is vX.Y.Z),
+                             with their shell tests
 .githooks/  infra/ (Terraform for the GitHub repo settings)
-.github/workflows/           CI (make check-ci), PR title check, release (on main pushes, and v* tags)
+.github/workflows/           CI (make check-ci), PR title check, release (on main pushes, and v* tags: a read-only build job, then a publish job
+                             with the checksum, provenance attestation and a draft made public last)
 ```
 
 Dependencies point inwards: `LuthorStore` and `LuthorViewModels` depend on

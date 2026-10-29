@@ -244,7 +244,19 @@ xattr -dr com.apple.quarantine /Applications/Luthor.app
 ```
 
 Notarising (an Apple Developer ID, $99 a year) would remove that step; it is
-not set up.
+not set up. The app is not sandboxed either: it reads and writes the log in
+the folder you choose, and a sandbox would need a permission prompt for it.
+
+Each release carries a `SHA256SUMS` file and a signed build provenance
+attestation, which says the zip was built by this repository's release
+workflow from a given commit. To verify a download:
+
+```bash
+cd "$(mktemp -d)"
+gh release download --repo gotofritz/luthor --pattern 'Luthor-*.zip' --pattern SHA256SUMS
+shasum -a 256 -c SHA256SUMS
+gh attestation verify Luthor-*.zip --repo gotofritz/luthor
+```
 
 ## Development
 
