@@ -51,8 +51,7 @@ struct LibraryView: View {
         ColumnBrowserView(library: library)
       }
     }
-    .navigationTitle(title)
-    .navigationSubtitle(configuration.location.path)
+    .navigationTitle("Luthor | \(title)")
     .toolbar {
       if library.section == .projects, let projectID = shownProjectID {
         Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
@@ -158,10 +157,6 @@ struct LibraryView: View {
     return projectID
   }
 
-  private var shownProject: Project? {
-    library.shownProject
-  }
-
   private var title: String {
     switch library.section {
     case .inbox: "Inbox"
@@ -169,7 +164,7 @@ struct LibraryView: View {
     case .calendar: "Calendar"
     case .review: "Review"
     case .weeklyReview: "Reviews"
-    case .projects: shownProject?.title ?? "Projects"
+    case .projects: "Projects"
     case .priorities: "Prios"
     case .tags: "Tags"
     case .settings: "Settings"
