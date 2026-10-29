@@ -428,8 +428,8 @@ before the app kept the day is due at once.
 ## Projects
 
 Projects show in Miller columns. The first column lists the top-level
-projects. Click a project to open it: a column of its sub-projects and tasks
-appears to its right, and so on down the tree.
+projects. Click a project to open it: a column of its tasks and sub-projects
+(the tasks first, so they sit near the header) appears to its right, and so on down the tree.
 
 - The plus button at the end of a column adds to it. One press shows a box
   above the button, which cannot be typed in, and replaces the card in the next
@@ -472,6 +472,10 @@ action, so its order is its meaning.
 - **Move Up** and **Move Down** in the context menu of a task or a project
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
+- **Right-click a header** to choose its columns: a tick beside Done, Duration,
+  Priority and When turns each on or off. Each list keeps its own choice while
+  the window is open (the reviews have fixed columns). When is off in project
+  lists until you turn it on, and leaves *Due* out of the first cell once on
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the

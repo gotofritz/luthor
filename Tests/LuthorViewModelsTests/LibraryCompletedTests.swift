@@ -58,14 +58,14 @@ struct CompletedShownViewModelTests {
     #expect(library.nextActions.isEmpty)
   }
 
-  @Test("a project's column lists its completed tasks after its open children")
+  @Test("a project's column lists its completed tasks after its open tasks, and its sub-projects last")
   func projectColumnListsCompletedTasksLast() {
     let (library, _) = makeInbox(completedLog)
     library.showCompleted = true
 
     library.open(.project(TaskID("p1")))
 
-    #expect(library.columns.last?.entries.map(\.id) == ["project-p2", "task-t1", "task-t2"])
+    #expect(library.columns.last?.entries.map(\.id) == ["task-t1", "task-t2", "project-p2"])
     #expect(library.tasks.map(\.title) == ["book flights", "pack"])
     #expect(library.completedTaskIDs == [TaskID("t2")])
   }
@@ -79,7 +79,7 @@ struct CompletedShownViewModelTests {
     library.open(.project(TaskID("p1")))
 
     #expect(library.path == [TaskID("p1")])
-    #expect(library.columns.last?.entries.map(\.id) == ["project-p2", "task-t2", "task-t1"])
+    #expect(library.columns.last?.entries.map(\.id) == ["task-t2", "task-t1", "project-p2"])
     #expect(library.completedTaskIDs == [TaskID("t2"), TaskID("t1")])
     #expect(library.reopenableTaskIDs == [TaskID("t2")])
     #expect(library.reopenableProjectIDs == [TaskID("p1"), TaskID("p3")])

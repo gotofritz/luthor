@@ -10,6 +10,7 @@ struct ListSortHeader: View {
   @Environment(\.theme) private var theme
   /// The list this header sorts; see `LibraryViewModel.sort(ofList:)`.
   let listID: String
+  /// Whether the rows may have a status, duration and priority cell; the header's menu can turn them off too.
   /// Whether the rows have a duration and a priority cell at their end, for the header to sit over.
   var showsStatus = true
   var showsDuration = true
@@ -24,16 +25,16 @@ struct ListSortHeader: View {
 
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
-      if showsStatus { statusCell }
+      if shows(.status, showsStatus) { statusCell }
       if !priorityFirst { titleCell }
-      if showsDuration {
+      if shows(.duration, showsDuration) {
         cell(.duration, label: "Duration", symbol: "stopwatch", width: TaskColumns.duration, alignment: .trailing)
       }
-      if priorityFirst && showsPriority { priorityCell(separated: true) }
-      if library.showsWhenColumn(ofList: listID) {
+      if priorityFirst && shows(.priority, showsPriority) { priorityCell(separated: true) }
+      if priorityFirst && library.showsWhenColumn(ofList: listID) {
         cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
       }
-      if showsPriority && !priorityFirst { priorityCell(separated: true) }
+      if shows(.priority, showsPriority) && !priorityFirst { priorityCell(separated: true) }
       if priorityFirst { titleCell }
       if trailingInset > 0 { Color.clear.frame(width: trailingInset, height: 1) }
     }
@@ -44,6 +45,26 @@ struct ListSortHeader: View {
     .frame(maxWidth: .infinity)
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
     .overlay(alignment: .bottom) { Divider() }
+    .contentShape(Rectangle())
+    .contextMenu { if priorityFirst { columnsMenu } }
+  }
+
+  /// Whether a column of the rows is shown: the lists of the reviews have their own, fixed columns; the others
+  /// show what their header's menu has on.
+  private func shows(_ column: ListColumn, _ allowed: Bool) -> Bool {
+    allowed && (!priorityFirst || library.isColumnShown(column, inList: listID))
+  }
+
+  /// A tick beside each column, to turn it on and off; each list keeps its own.
+  @ViewBuilder
+  private var columnsMenu: some View {
+    ForEach(ListColumn.allCases, id: \.self) { column in
+      Toggle(
+        column.label,
+        isOn: Binding(
+          get: { library.isColumnShown(column, inList: listID) },
+          set: { _ in library.toggleColumn(column, inList: listID) }))
+    }
   }
 
   private var titleCell: some View {

@@ -95,7 +95,23 @@ private struct ThemedModifier: ViewModifier {
   }
 }
 
+/// Fills the row of a list the view's accent while it is picked, so a pick always has the colour of the view
+/// and never the system's, which changes with the window's focus.
+private struct SelectionBackgroundModifier: ViewModifier {
+  let isSelected: Bool
+  @Environment(\.theme) private var theme
+
+  func body(content: Content) -> some View {
+    content.listRowBackground(isSelected ? theme.fill.opacity(0.28) : Color.clear)
+  }
+}
+
 extension View {
+  /// The row of a list in the accent of the view when `isSelected`.
+  func selectionBackground(_ isSelected: Bool) -> some View {
+    modifier(SelectionBackgroundModifier(isSelected: isSelected))
+  }
+
   /// Draws this view and everything in it in `accent`.
   func themed(_ accent: ThemeAccent) -> some View {
     modifier(ThemedModifier(accent: accent))

@@ -39,7 +39,7 @@ struct ColumnView: View {
               library.drop(payloads, on: project.id)
             }
         case .task(let task):
-          TaskRow(library: library, task: task)
+          TaskRow(library: library, task: task, listID: column.id)
             .tag(ColumnSelection.task(task.id))
         }
       }

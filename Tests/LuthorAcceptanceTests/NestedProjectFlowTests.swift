@@ -94,7 +94,7 @@ struct NestedNextActionFlowTests {
     let tap = try library.task("replace the tap")
     let wall = try library.task("paint the wall")
     try #require(library.columns.count == 3)
-    #expect(library.columns[1].entries.first?.id == "project-\(kitchen.rawValue)")
+    #expect(library.columns[1].entries.last?.id == "project-\(kitchen.rawValue)")
     #expect(library.columns[1].entries.count == 2)
     #expect(library.nextActions == [tap, wall])
   }

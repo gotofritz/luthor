@@ -31,13 +31,13 @@ extension LibraryViewModel {
   /// a priority and Today's candidates, leaves Due to that column, and a priority's list has no Created.
   private func textKeys(ofList listID: String) -> [ListSortKey] {
     if listID == Self.prioritiesListID { return [.title] }
-    if listID == Self.candidatesListID { return [.title, .created] }
+    if showsWhenColumn(ofList: listID) { return [.title, .created] }
     return [.title, .created, .due]
   }
 
   /// Whether the rows of the list show a column of dates, the day scheduled for else the due date.
   public func showsWhenColumn(ofList listID: String) -> Bool {
-    listID == Self.prioritiesListID || listID == Self.candidatesListID
+    isColumnShown(.when, inList: listID)
   }
 
   /// The key the first cell shows: the one the list is sorted by if it is among its own, else title.
@@ -68,10 +68,10 @@ extension LibraryViewModel {
     setSort(next, ofList: listID)
   }
 
-  /// The sub-projects sorted, then the tasks sorted.
+  /// The tasks sorted, then the sub-projects sorted.
   func sorted(_ entries: [ColumnEntry], inList listID: String) -> [ColumnEntry] {
     let sort = sort(ofList: listID)
-    let ordered = entries.projectsFirst
+    let ordered = entries.tasksFirst
     guard sort.key != .manual else { return ordered }
     let projects = ordered.compactMap { entry -> Project? in
       if case .project(let project) = entry { project } else { nil }
@@ -79,8 +79,8 @@ extension LibraryViewModel {
     let tasks = ordered.compactMap { entry -> TaskItem? in
       if case .task(let task) = entry { task } else { nil }
     }
-    return sort.sorted(projects, by: sortFields).map(ColumnEntry.project)
-      + sort.sorted(tasks, by: sortFields).map(ColumnEntry.task)
+    return sort.sorted(tasks, by: sortFields).map(ColumnEntry.task)
+      + sort.sorted(projects, by: sortFields).map(ColumnEntry.project)
   }
 
   /// The tasks of the list beside the columns, sorted.
