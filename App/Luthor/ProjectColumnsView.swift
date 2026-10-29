@@ -46,6 +46,7 @@ struct ColumnView: View {
       }
       AddItemRow(library: library, parentID: column.parentID)
     }
+    .accentSelectionOnly()
     .dropDestination(for: String.self) { payloads, _ in
       library.drop(payloads, on: column.parentID)
     }

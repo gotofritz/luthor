@@ -17,8 +17,10 @@ struct PriorityColumn: View {
       ForEach(LibraryViewModel.priorityRows, id: \.self) { priority in
         Label(priority?.title ?? "No priority", systemImage: priority?.symbol ?? "circle.dashed")
           .tag(priority)
+          .selectionBackground(library.selectedPriorities.contains(priority))
       }
     }
+    .accentSelectionOnly()
     .frame(width: 200)
   }
 }
@@ -53,6 +55,7 @@ struct PriorityListsColumn: View {
         }
       }
     }
+    .accentSelectionOnly()
     .frame(width: 440)
   }
 }

@@ -1,3 +1,4 @@
+import AppKit
 import LuthorDomain
 import SwiftUI
 
@@ -106,7 +107,41 @@ private struct SelectionBackgroundModifier: ViewModifier {
   }
 }
 
+/// Switches off the highlight macOS draws for the picked rows of the list it sits behind. That highlight is the
+/// system's accent colour while the list has the focus and grey when it has not, so it alternates with the
+/// view's own; with it off, `selectionBackground` is the only one.
+private struct NoSystemHighlight: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSView { NSView() }
+
+  func updateNSView(_ view: NSView, context: Context) {
+    // The list is a sibling of this view, so look for its table in the ancestors, once it is in the window.
+    DispatchQueue.main.async {
+      var ancestor = view.superview
+      while let current = ancestor {
+        if let table = Self.table(in: current) {
+          table.selectionHighlightStyle = .none
+          return
+        }
+        ancestor = current.superview
+      }
+    }
+  }
+
+  private static func table(in view: NSView) -> NSTableView? {
+    if let table = view as? NSTableView { return table }
+    for child in view.subviews {
+      if let table = table(in: child) { return table }
+    }
+    return nil
+  }
+}
+
 extension View {
+  /// A list whose picked rows have only the accent of the view, from `selectionBackground`.
+  func accentSelectionOnly() -> some View {
+    background(NoSystemHighlight())
+  }
+
   /// The row of a list in the accent of the view when `isSelected`.
   func selectionBackground(_ isSelected: Bool) -> some View {
     modifier(SelectionBackgroundModifier(isSelected: isSelected))

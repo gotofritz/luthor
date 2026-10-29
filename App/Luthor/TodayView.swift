@@ -175,6 +175,7 @@ private struct CandidatesColumn: View {
           .tag(entry.task.id)
       }
     }
+    .accentSelectionOnly()
     // A task dropped here, from the calendar, goes back to the candidates.
     .dropDestination(for: String.self) { items, _ in
       guard let dropped = items.first else { return false }

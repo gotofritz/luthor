@@ -133,6 +133,7 @@ struct TaskListColumn: View {
               .tag(task.id)
           }
         }
+        .accentSelectionOnly()
       }
       .frame(width: 320)
     }
@@ -185,6 +186,7 @@ struct ProjectRow: View {
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
     }
+    .selectionBackground(library.path.contains(project.id))
     // The whole row, spacer included, is what a drag picks up. The drop lives on the row in the column
     // (ColumnView), not here: one view that is both dragged and dropped on never starts a drag in a List.
     .contentShape(Rectangle())
