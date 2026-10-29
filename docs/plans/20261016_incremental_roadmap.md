@@ -1220,3 +1220,20 @@ what a new item starts with.
    too. The Tags place asks first only for a tag that tasks carry. Undo brings the tag back with its open tasks,
    and is not offered when a completed task carried it, as a completed task cannot be tagged.
 4. **Tags sit under the title on a card**, after a tag icon, as they were taken for notes under the priority.
+
+## Decisions (2026-10-29, issue #56)
+
+- Bulk editing is a view-model concern plus pure domain helpers; no new event
+  type, so the frozen format and the golden log are untouched. A bulk change
+  is the same events as editing each task, appended in one command, so Undo
+  takes the whole change back in one step
+- `BulkSummary` decides what the card shows: a field shows a value only when
+  all selected tasks agree, otherwise it is `mixed` and greyed. Setting a
+  field writes it for every task; a task that already has the value writes
+  nothing
+- The selection stays `selection` for one task; two or more are
+  `multiSelection` with `selection` nil, so everything that works on the one
+  selected task is unchanged. Tasks that stop being open leave the selection
+- Multi-select is on the Inbox, Tags, weekly-review and priorities lists. The
+  project columns still select one at a time (they mix projects and tasks)
+- Delete cannot be undone, as for a single task

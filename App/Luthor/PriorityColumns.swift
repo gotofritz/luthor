@@ -29,7 +29,7 @@ struct PriorityListsColumn: View {
   @Bindable var library: LibraryViewModel
 
   var body: some View {
-    List(selection: $library.selection) {
+    List(selection: Binding(get: { library.selectedIDs }, set: { library.setSelection($0) })) {
       // The priorities are named in the column to the left, where the ones listed are picked.
       ListSortHeader(library: library, listID: LibraryViewModel.prioritiesListID, isRow: true)
         .listRowSeparator(.hidden)

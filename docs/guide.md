@@ -623,6 +623,24 @@ carried it. There is no way yet to rename a tag.
 To narrow Today's candidates by tag, priority, project or deadline, see
 Today.
 
+## Editing several tasks at once
+
+In the Inbox, a tag's list, the weekly review and the priorities lists,
+select more than one task the usual Mac way: Shift-click for a range,
+Command-click to add or remove one. The card then edits all of them
+together: project, tags, priority, estimate and due date.
+
+A field shows its value only where every selected task has the same; where
+they differ it is greyed. Setting any field, even a greyed one, sets it on
+every selected task. Tags all of them carry have a button that takes the tag
+off every task; tags only some carry are greyed and a click puts them on
+all; the Add a tag field puts a new one on all. **Drop** drops all of them
+and **Delete…** deletes all of them for good, after asking.
+
+Each change is one step for Undo (⌘Z), however many tasks it touched. A
+delete cannot be undone, as for one task. Lists inside a project's columns
+select one task at a time for now.
+
 ## Settings
 
 Settings shows three families in its first column: Global, Views and This Mac.
