@@ -156,8 +156,8 @@ public final class LibraryViewModel {
   var redoSteps: [UndoStep] = []
   /// Counts the changes of `state` and `held`, so a read made off the main actor knows if they moved on.
   @ObservationIgnored var generation = 0
-  /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
-  /// tags, a review) reads this too, and the view is told when the log changes.
+  /// Counts the replays of the log. `state` is not observed, so a view reads it through `observing(_:)`, which reads
+  /// this too, and the view is told when the log changes.
   var revision = 0
   @ObservationIgnored var layouts = DayLayoutCache()
 

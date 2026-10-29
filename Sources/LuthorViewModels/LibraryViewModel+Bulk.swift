@@ -25,10 +25,11 @@ extension LibraryViewModel {
 
   /// The fields of the tasks selected together, shown only where all agree; `nil` unless there are two or more.
   public var bulkCard: BulkSummary? {
-    _ = revision
-    guard isBulkSelection else { return nil }
-    let summary = state.bulkSummary(of: orderedSelection)
-    return summary.count > 1 ? summary : nil
+    observing { state in
+      guard isBulkSelection else { return nil }
+      let summary = state.bulkSummary(of: orderedSelection)
+      return summary.count > 1 ? summary : nil
+    }
   }
 
   /// Applies what the bulk card sets to every task selected, as one step to undo.
