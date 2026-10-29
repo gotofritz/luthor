@@ -56,6 +56,9 @@ extension LibraryState {
     case .taskRenamed(let renamed):
       guard let item = items[renamed.taskID]?.item else { return .irreversible }
       return .events([.taskRenamed(TaskRenamed(taskID: item.id, title: item.title))])
+    case .taskNoted(let noted):
+      guard let item = items[noted.taskID]?.item else { return .irreversible }
+      return .events([.taskNoted(TaskNoted(taskID: item.id, notes: item.notes))])
     case .taskPrioritized(let prioritized):
       guard let item = items[prioritized.taskID]?.item else { return .irreversible }
       return .events([.taskPrioritized(TaskPrioritized(taskID: item.id, priority: item.priority))])

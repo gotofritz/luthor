@@ -10,6 +10,7 @@ struct BulkCardColumn: View {
 
   @Environment(\.theme) private var theme
   @State private var tagText = ""
+  @State private var noteText = ""
   @State private var confirmingDelete = false
 
   var body: some View {
@@ -23,6 +24,10 @@ struct BulkCardColumn: View {
         EstimateSlider(estimate: shared(summary.estimate)) { library.applyBulk(BulkEdit(estimate: .set($0))) }
           .opacity(summary.estimate == .mixed ? 0.5 : 1)
         dueFields
+        scheduledFields
+        RepeatEditor(rule: repeatBinding, hasDue: shared(summary.due) != nil)
+          .opacity(summary.repeatRule == .mixed ? 0.5 : 1)
+        notesFields
         Divider()
         actions
       }
@@ -129,6 +134,56 @@ struct BulkCardColumn: View {
       .labelsHidden()
       DatePicker("Due", selection: day, displayedComponents: .date)
         .opacity(due == nil ? 0.5 : 1)
+    }
+  }
+
+  private var scheduledFields: some View {
+    let planned = shared(summary.scheduled)
+    let day = Binding<Date>(
+      get: { (planned ?? library.today).startOfDay ?? Date() },
+      set: { picked in
+        guard let date = CalendarDate(dayOf: picked) else { return }
+        library.applyBulk(BulkEdit(scheduled: .set(date)))
+      })
+    return HStack {
+      Toggle(
+        "",
+        isOn: Binding(
+          get: { planned != nil },
+          set: { isOn in library.applyBulk(BulkEdit(scheduled: .set(isOn ? library.today : nil))) })
+      )
+      .labelsHidden()
+      DatePicker("Scheduled", selection: day, displayedComponents: .date)
+        .opacity(planned == nil ? 0.5 : 1)
+    }
+  }
+
+  private var repeatBinding: Binding<RepeatRule?> {
+    Binding(
+      get: { shared(summary.repeatRule) },
+      set: { library.applyBulk(BulkEdit(repeatRule: .set($0))) })
+  }
+
+  /// The notes every task has, when they agree, and a field that adds a note to each task.
+  private var notesFields: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Notes")
+        .font(Theme.section)
+      if summary.notes == .mixed {
+        Text("The notes differ")
+          .foregroundStyle(.secondary)
+      } else {
+        ForEach(Array(NoteBullets.bullets(in: shared(summary.notes)).enumerated()), id: \.offset) { _, bullet in
+          Text("• " + bullet)
+        }
+      }
+      TextField("Add a note to every task", text: $noteText, axis: .vertical)
+        .textFieldStyle(.roundedBorder)
+        .lineLimit(1...5)
+        .onSubmit {
+          library.applyBulk(BulkEdit(addNote: noteText))
+          noteText = ""
+        }
     }
   }
 

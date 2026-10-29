@@ -1234,6 +1234,9 @@ what a new item starts with.
 - The selection stays `selection` for one task; two or more are
   `multiSelection` with `selection` nil, so everything that works on the one
   selected task is unchanged. Tasks that stop being open leave the selection
-- Multi-select is on the Inbox, Tags, weekly-review and priorities lists. The
-  project columns still select one at a time (they mix projects and tasks)
+- Multi-select is on the Inbox, Tags, weekly-review and priorities lists and
+  in a project's column (tasks of that one column, so at the same level of
+  nesting; a project row is still picked alone). The card has all the fields
+  of a task's card but the title. Notes are added to, never replaced, so a
+  bulk edit cannot lose a task's notes. Notes edits are now undoable
 - Delete cannot be undone, as for a single task

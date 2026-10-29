@@ -127,4 +127,33 @@ struct LibraryBulkEditTests {
 
     #expect(library.bulkCard == nil)
   }
+
+  @Test("the scheduled day, repeat and a note are applied to every task, and Undo is one step")
+  func appliesScheduleRepeatAndNote() {
+    let (library, _) = makeInbox(bulkLog)
+    library.setSelection([TaskID("t1"), TaskID("t3")])
+    let day = date("2026-10-20")
+    let rule = RepeatRule(every: 1, unit: .week, afterCompletion: true)
+
+    library.applyBulk(BulkEdit(scheduled: .set(day), repeatRule: .set(rule), addNote: "bring the form"))
+
+    #expect(library.bulkCard?.scheduled == .same(day))
+    #expect(library.bulkCard?.repeatRule == .same(rule))
+    #expect(library.bulkCard?.notes == .same("bring the form"))
+
+    library.undo()
+    #expect(library.bulkCard?.scheduled == .same(nil))
+    #expect(library.bulkCard?.repeatRule == .same(nil))
+    #expect(library.bulkCard?.notes == .same(nil))
+  }
+
+  @Test("a repeat set on tasks with no due date counts from when they are done")
+  func repeatWithoutDueCountsFromCompletion() {
+    let (library, _) = makeInbox(bulkLog)
+    library.setSelection([TaskID("t1"), TaskID("t3")])
+
+    library.applyBulk(BulkEdit(repeatRule: .set(RepeatRule(every: 2, unit: .day))))
+
+    #expect(library.bulkCard?.repeatRule == .same(RepeatRule(every: 2, unit: .day, afterCompletion: true)))
+  }
 }

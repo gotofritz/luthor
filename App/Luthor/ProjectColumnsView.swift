@@ -1,3 +1,4 @@
+import AppKit
 import LuthorDomain
 import LuthorViewModels
 import SwiftUI
@@ -51,17 +52,27 @@ struct ColumnView: View {
     }
   }
 
-  /// The project of the path this column leads to, else the task picked.
-  private var selection: Binding<ColumnSelection?> {
+  /// The project of the path this column leads to, else the tasks picked. A shift-click or command-click picks
+  /// several tasks of the column together.
+  private var selection: Binding<Set<ColumnSelection>> {
     Binding(
       get: {
-        if position < library.path.count { return .project(library.path[position]) }
-        if column.parentID == nil { return nil }
-        return library.selection.map(ColumnSelection.task)
+        if position < library.path.count { return [.project(library.path[position])] }
+        if column.parentID == nil { return [] }
+        return Set(library.selectedIDs.map(ColumnSelection.task))
       },
       set: { picked in
-        if let picked {
-          choose(picked)
+        let current = selection.wrappedValue
+        let tasks = Set(
+          picked.compactMap { (item) -> TaskID? in
+            if case .task(let taskID) = item { return taskID }
+            return nil
+          })
+        if !tasks.isEmpty {
+          if let parentID = column.parentID, library.path.last != parentID { library.open(.project(parentID)) }
+          library.setSelection(tasks)
+        } else if let chosen = picked.subtracting(current).first ?? picked.first {
+          choose(chosen)
         } else {
           library.deselectColumn(of: column.parentID)
         }
@@ -72,7 +83,8 @@ struct ColumnView: View {
   /// A click. The list reports a change of its selection only, so a click on what is picked already, as the
   /// project whose column is open to the right, would do nothing; this one still closes what is picked beyond it.
   private func click(_ picked: ColumnSelection) {
-    choose(picked)
+    // The list takes a shift-click or a command-click for itself, as it adds to what is picked.
+    if NSEvent.modifierFlags.isDisjoint(with: [.command, .shift]) { choose(picked) }
     reveal()
   }
 

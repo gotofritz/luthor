@@ -11,6 +11,11 @@ public struct BulkEdit: Equatable, Sendable {
   public var due: FieldChange<DueDate?>
   /// The project the tasks are filed in; `.set(nil)` takes them out of their project.
   public var project: FieldChange<TaskID?>
+  /// The day the tasks are planned for; `.set(nil)` takes them off their day.
+  public var scheduled: FieldChange<CalendarDate?>
+  public var repeatRule: FieldChange<RepeatRule?>
+  /// A note added, as a bullet after the notes each task has.
+  public var addNote: String
   /// Names of tags to put on every task, created in the view if it lacks them.
   public var addTags: [String]
   public var removeTags: [TagID]
@@ -20,6 +25,9 @@ public struct BulkEdit: Equatable, Sendable {
     estimate: FieldChange<Int?> = .keep,
     due: FieldChange<DueDate?> = .keep,
     project: FieldChange<TaskID?> = .keep,
+    scheduled: FieldChange<CalendarDate?> = .keep,
+    repeatRule: FieldChange<RepeatRule?> = .keep,
+    addNote: String = "",
     addTags: [String] = [],
     removeTags: [TagID] = []
   ) {
@@ -27,6 +35,9 @@ public struct BulkEdit: Equatable, Sendable {
     self.estimate = estimate
     self.due = due
     self.project = project
+    self.scheduled = scheduled
+    self.repeatRule = repeatRule
+    self.addNote = addNote
     self.addTags = addTags
     self.removeTags = removeTags
   }
@@ -54,6 +65,10 @@ public struct BulkSummary: Equatable, Sendable {
   public let estimate: Common<Int?>
   public let due: Common<DueDate?>
   public let project: Common<TaskID?>
+  public let scheduled: Common<CalendarDate?>
+  public let repeatRule: Common<RepeatRule?>
+  /// The notes, when every task has the same.
+  public let notes: Common<String?>
   /// The tags every task carries, and those only some do.
   public let commonTags: [TagItem]
   public let partialTags: [TagItem]
@@ -74,6 +89,9 @@ extension LibraryState {
       estimate: Common(tasks.map(\.estimate)),
       due: Common(tasks.map { dueDate(of: $0.id) }),
       project: Common(tasks.map(\.parentID)),
+      scheduled: Common(tasks.map { scheduledDate(of: $0.id) }),
+      repeatRule: Common(tasks.map { repeatRule(of: $0.id) }),
+      notes: Common(tasks.map(\.notes)),
       commonTags: tagItems.filter { all.contains($0.id) },
       partialTags: tagItems.filter { some.contains($0.id) })
   }
@@ -94,8 +112,25 @@ extension Commands {
         events += try estimate(taskID: taskID, as: minutes, log: log + events)
       }
       if case .set(let due) = edit.due {
+        // As clearing one due date does: a repeat with no due date to count from counts from completion.
+        if due == nil, let rule = libraryState(from: log + events).repeatRule(of: taskID) {
+          events += try setRepeat(taskID: taskID, to: rule.countingFromCompletion, dueIfNone: nil, log: log + events)
+        }
         events += try setDue(taskID: taskID, to: due?.date, isHard: due?.isHard ?? false, log: log + events)
       }
+      if case .set(let day) = edit.scheduled {
+        if let day {
+          events += try schedule(taskID: taskID, on: day, log: log + events)
+        } else {
+          events += try unschedule(taskID: taskID, log: log + events)
+        }
+      }
+      if case .set(let rule) = edit.repeatRule {
+        let hasDue = libraryState(from: log + events).dueDate(of: taskID) != nil
+        events += try setRepeat(
+          taskID: taskID, to: hasDue ? rule : rule?.countingFromCompletion, dueIfNone: nil, log: log + events)
+      }
+      if !edit.addNote.isEmpty { events += try appendNote(taskID: taskID, edit.addNote, log: log + events) }
       if case .set(let projectID) = edit.project {
         events += try move(taskID: taskID, to: projectID, log: log + events)
       }
