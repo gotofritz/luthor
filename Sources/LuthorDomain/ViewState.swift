@@ -9,6 +9,8 @@ public struct ViewState: Equatable, Sendable {
   public let completedTasks: [Completed<TaskItem>]
   /// Completed and dropped projects of the view, in the order they were.
   public let completedProjects: [Completed<Project>]
+  /// The open projects by ID, so walking a project tree looks each one up at once.
+  private let projectsByID: [TaskID: Project]
 
   init(
     id: ViewID,
@@ -22,6 +24,7 @@ public struct ViewState: Equatable, Sendable {
     self.projects = projects
     self.completedTasks = completedTasks
     self.completedProjects = completedProjects
+    projectsByID = Dictionary(projects.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
   }
 
   /// Open tasks of the view not yet clarified: no priority, no estimate and no parent, in capture order.
@@ -76,6 +79,6 @@ public struct ViewState: Equatable, Sendable {
   }
 
   private func project(_ projectID: TaskID) -> Project? {
-    projects.first { $0.id == projectID }
+    projectsByID[projectID]
   }
 }

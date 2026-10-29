@@ -18,7 +18,10 @@ struct PlannedEstimate: Equatable, Sendable {
 /// What the daily review looks back on, kept apart from the rest of the state.
 struct ReviewRecords: Equatable, Sendable {
   /// Minutes logged for a task on a day, as last set.
-  var taskMinutes: [TaskDay: Int] = [:]
+  private(set) var taskMinutes: [TaskDay: Int] = [:]
+  /// The minutes logged for each task over all days: `taskMinutes` added up, kept so a task's history is not
+  /// a scan of every logged day of every task.
+  private(set) var taskTotals: [TaskID: Int] = [:]
   /// Minutes one view logged on a day for work outside the plan, as last set.
   var unplannedMinutes: [DayKey: Int] = [:]
   /// The days that were reviewed, with their notes.
@@ -28,6 +31,24 @@ struct ReviewRecords: Equatable, Sendable {
   var plannedDays: [TaskID: CalendarDate] = [:]
   /// The estimate each task had when it was first planned for a day.
   var plannedEstimates: [TaskID: PlannedEstimate] = [:]
+
+  /// Sets the minutes logged for a task on a day, or clears them with `nil`.
+  mutating func setMinutes(_ minutes: Int?, for key: TaskDay) {
+    let before = taskMinutes[key] ?? 0
+    if let minutes {
+      taskMinutes[key] = minutes
+    } else {
+      taskMinutes.removeValue(forKey: key)
+    }
+    let total = (taskTotals[key.taskID] ?? 0) - before + (minutes ?? 0)
+    taskTotals[key.taskID] = total > 0 ? total : nil
+  }
+
+  /// Forgets all the time logged for these tasks.
+  mutating func removeMinutes(ofTasks doomed: Set<TaskID>) {
+    taskMinutes = taskMinutes.filter { !doomed.contains($0.key.taskID) }
+    for id in doomed { taskTotals.removeValue(forKey: id) }
+  }
 }
 
 /// A task as the review of a day lists it.
@@ -162,11 +183,7 @@ extension LibraryState {
   /// Logging nothing, or zero minutes, clears the day's time.
   mutating func record(_ logged: TaskTimeLogged) {
     let key = TaskDay(taskID: logged.taskID, date: logged.date)
-    if let minutes = logged.minutes, minutes > 0 {
-      reviewRecords.taskMinutes[key] = minutes
-    } else {
-      reviewRecords.taskMinutes.removeValue(forKey: key)
-    }
+    reviewRecords.setMinutes(logged.minutes.flatMap { $0 > 0 ? $0 : nil }, for: key)
   }
 
   /// Logging nothing, or zero minutes, clears the day's time.
@@ -267,8 +284,7 @@ extension LibraryState {
   /// estimate and some logged time.
   public func estimateHistory(ofTask taskID: TaskID) -> EstimateHistory? {
     guard let task = existingTask(taskID), let estimate = plannedEstimate(of: task) else { return nil }
-    let logged = reviewRecords.taskMinutes.reduce(0) { $1.key.taskID == taskID ? $0 + $1.value : $0 }
-    guard logged > 0 else { return nil }
+    guard let logged = reviewRecords.taskTotals[taskID] else { return nil }
     return EstimateHistory(estimatedMinutes: estimate, loggedMinutes: logged, taskCount: 1)
   }
 
