@@ -51,14 +51,7 @@ struct LibraryView: View {
         ColumnBrowserView(library: library)
       }
     }
-    .navigationTitle(title)
-    .navigationSubtitle(configuration.location.path)
-    .toolbar {
-      if library.section == .projects, let projectID = shownProjectID {
-        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
-          .help("Complete this project, its sub-projects and their open tasks")
-      }
-    }
+    .navigationTitle("Luthor | \(title)")
     .sheet(isPresented: isDelegating) {
       DelegateSheet(library: library)
     }
@@ -126,6 +119,12 @@ struct LibraryView: View {
       }
       .toggleStyle(.button)
       .help("Show completed and dropped tasks and projects")
+      // In the window, not the toolbar: a toolbar that comes and goes with the project picked changes the
+      // height of the title bar.
+      if library.section == .projects, let projectID = shownProjectID {
+        Button("Complete Project", systemImage: "checkmark.circle") { library.completeProject(projectID) }
+          .help("Complete this project, its sub-projects and their open tasks")
+      }
       ViewSwitcher(library: library)
     }
     .padding(.horizontal, 12)
@@ -158,10 +157,6 @@ struct LibraryView: View {
     return projectID
   }
 
-  private var shownProject: Project? {
-    library.shownProject
-  }
-
   private var title: String {
     switch library.section {
     case .inbox: "Inbox"
@@ -169,7 +164,7 @@ struct LibraryView: View {
     case .calendar: "Calendar"
     case .review: "Review"
     case .weeklyReview: "Reviews"
-    case .projects: shownProject?.title ?? "Projects"
+    case .projects: "Projects"
     case .priorities: "Prios"
     case .tags: "Tags"
     case .settings: "Settings"

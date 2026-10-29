@@ -137,6 +137,32 @@ struct EstimateHistoryReplayTests {
     #expect(state.estimateHistory(ofTask: TaskID("unknown")) == nil)
   }
 
+  @Test("a day's time that is changed or cleared is counted as it last stood")
+  func aDaysTimeChangedOrClearedIsCountedAsItLastStood() {
+    let changed = LibraryState.replay(
+      plannedMonday + [
+        timeLogged("t1", on: "2026-10-19", minutes: 50, lamport: 13),
+        timeLogged("t1", on: "2026-10-20", minutes: 40, lamport: 14),
+        timeLogged("t1", on: "2026-10-19", minutes: 10, id: "again", lamport: 15),
+      ])
+    let cleared = LibraryState.replay(
+      plannedMonday + [
+        timeLogged("t1", on: "2026-10-19", minutes: 50, lamport: 13),
+        timeLogged("t1", on: "2026-10-19", minutes: nil, lamport: 14),
+      ])
+
+    #expect(changed.estimateHistory(ofTask: TaskID("t1"))?.loggedMinutes == 50)
+    #expect(cleared.estimateHistory(ofTask: TaskID("t1")) == nil)
+  }
+
+  @Test("a task deleted for good leaves no logged time behind")
+  func aDeletedTaskLeavesNoLoggedTime() {
+    let state = LibraryState.replay(
+      plannedMonday + [timeLogged("t1", on: "2026-10-19", minutes: 50, lamport: 13), taskDeleted("t1", lamport: 14)])
+
+    #expect(state.estimateHistory(ofTask: TaskID("t1")) == nil)
+  }
+
   @Test("the history is never applied: the estimate stays what the user set")
   func theHistoryIsNeverApplied() {
     let state = LibraryState.replay(plannedMonday + [timeLogged("t2", on: "2026-10-19", minutes: 80, lamport: 13)])

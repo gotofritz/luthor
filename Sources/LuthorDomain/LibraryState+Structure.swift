@@ -115,7 +115,7 @@ extension LibraryState {
       projectReviews.reviewedOn.removeValue(forKey: id)
       projectReviews.chosenNext.removeValue(forKey: id)
     }
-    reviewRecords.taskMinutes = reviewRecords.taskMinutes.filter { !doomed.contains($0.key.taskID) }
+    reviewRecords.removeMinutes(ofTasks: doomed)
   }
 
   /// The item and every item that has it as an ancestor, in any state; empty for an item that does not exist.
