@@ -101,9 +101,14 @@ public final class LibraryViewModel {
         editingCard = nil
         newItem = nil
       }
-      if selection != nil { projectCardOpen = false }
+      if selection != nil {
+        projectCardOpen = false
+        multiSelection = []
+      }
     }
   }
+  /// The tasks picked together; empty unless there are two or more, then `selection` is `nil`.
+  public internal(set) var multiSelection: Set<TaskID> = []
   /// Whether the card of the project shown replaces its list of children, as the pencil on its row does.
   public internal(set) var projectCardOpen = false
   /// The card being edited, if any. Cards are read-only until Edit puts one here; OK and Cancel take it out.

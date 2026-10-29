@@ -93,6 +93,10 @@ struct ColumnBrowserView: View {
 
   @ViewBuilder
   private var pickedCardColumn: some View {
+    if let summary = library.bulkCard {
+      BulkCardColumn(library: library, summary: summary)
+      Divider()
+    }
     switch library.cardTarget {
     case .task:
       if let task = library.selectedTask {
@@ -123,7 +127,7 @@ struct TaskListColumn: View {
         if library.section == .inbox || library.section == .tags || library.section == .weeklyReview {
           ListSortHeader(library: library, listID: library.taskListID)
         }
-        List(selection: $library.selection) {
+        List(selection: multiSelection) {
           ForEach(library.tasks, id: \.id) { task in
             TaskRow(library: library, task: task)
               .tag(task.id)
@@ -132,6 +136,11 @@ struct TaskListColumn: View {
       }
       .frame(width: 320)
     }
+  }
+
+  /// A click picks one task, a shift-click a range and a command-click adds one; several make a bulk selection.
+  private var multiSelection: Binding<Set<TaskID>> {
+    Binding(get: { library.selectedIDs }, set: { library.setSelection($0) })
   }
 }
 
