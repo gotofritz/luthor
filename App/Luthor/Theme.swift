@@ -1,3 +1,4 @@
+import AppKit
 import LuthorDomain
 import SwiftUI
 
@@ -95,7 +96,60 @@ private struct ThemedModifier: ViewModifier {
   }
 }
 
+/// Fills the row of a list the view's accent while it is picked, so a pick always has the colour of the view
+/// and never the system's, which changes with the window's focus.
+private struct SelectionBackgroundModifier: ViewModifier {
+  let isSelected: Bool
+  @Environment(\.theme) private var theme
+  @Environment(\.colorScheme) private var colorScheme
+
+  func body(content: Content) -> some View {
+    // The accent as ink is the lighter one in dark mode, and it needs more of it to show on a dark window.
+    let fill = colorScheme == .dark ? theme.ink.opacity(0.55) : theme.fill.opacity(0.28)
+    return content.listRowBackground(isSelected ? fill : Color.clear)
+  }
+}
+
+/// Switches off the highlight macOS draws for the picked rows of the list it sits behind. That highlight is the
+/// system's accent colour while the list has the focus and grey when it has not, so it alternates with the
+/// view's own; with it off, `selectionBackground` is the only one.
+private struct NoSystemHighlight: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSView { NSView() }
+
+  func updateNSView(_ view: NSView, context: Context) {
+    // The list is a sibling of this view, so look in the ancestors, once it is in the window, for the table
+    // under this view. Columns side by side can share an ancestor, so only a table that covers this view counts.
+    DispatchQueue.main.async {
+      let here = view.convert(view.bounds, to: nil)
+      var ancestor = view.superview
+      while let current = ancestor {
+        let covering = Self.tables(in: current).filter { $0.convert($0.bounds, to: nil).intersects(here) }
+        if !covering.isEmpty {
+          for table in covering { table.selectionHighlightStyle = .none }
+          return
+        }
+        ancestor = current.superview
+      }
+    }
+  }
+
+  private static func tables(in view: NSView) -> [NSTableView] {
+    if let table = view as? NSTableView { return [table] }
+    return view.subviews.flatMap { tables(in: $0) }
+  }
+}
+
 extension View {
+  /// A list whose picked rows have only the accent of the view, from `selectionBackground`.
+  func accentSelectionOnly() -> some View {
+    background(NoSystemHighlight())
+  }
+
+  /// The row of a list in the accent of the view when `isSelected`.
+  func selectionBackground(_ isSelected: Bool) -> some View {
+    modifier(SelectionBackgroundModifier(isSelected: isSelected))
+  }
+
   /// Draws this view and everything in it in `accent`.
   func themed(_ accent: ThemeAccent) -> some View {
     modifier(ThemedModifier(accent: accent))

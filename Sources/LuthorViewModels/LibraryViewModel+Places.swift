@@ -140,6 +140,10 @@ extension LibraryViewModel {
     get { browserModel.listSorts }
     set { browserModel.listSorts = newValue }
   }
+  public internal(set) var listColumns: [String: Set<ListColumn>] {
+    get { browserModel.listColumns }
+    set { browserModel.listColumns = newValue }
+  }
   public internal(set) var tasks: [TaskItem] {
     get { listedModel.tasks }
     set { listedModel.tasks = newValue }

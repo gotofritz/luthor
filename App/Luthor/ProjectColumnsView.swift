@@ -23,7 +23,8 @@ struct ColumnView: View {
       ListSortHeader(library: library, listID: column.id)
       list
     }
-    .frame(width: 320)
+    // The first column, of the top-level projects, is narrower than the ones that list a project.
+    .frame(width: position == 0 ? 192 : 440)
   }
 
   private var list: some View {
@@ -39,12 +40,13 @@ struct ColumnView: View {
               library.drop(payloads, on: project.id)
             }
         case .task(let task):
-          TaskRow(library: library, task: task)
+          TaskRow(library: library, task: task, listID: column.id)
             .tag(ColumnSelection.task(task.id))
         }
       }
       AddItemRow(library: library, parentID: column.parentID)
     }
+    .accentSelectionOnly()
     .dropDestination(for: String.self) { payloads, _ in
       library.drop(payloads, on: column.parentID)
     }

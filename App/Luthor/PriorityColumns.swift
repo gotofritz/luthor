@@ -17,8 +17,10 @@ struct PriorityColumn: View {
       ForEach(LibraryViewModel.priorityRows, id: \.self) { priority in
         Label(priority?.title ?? "No priority", systemImage: priority?.symbol ?? "circle.dashed")
           .tag(priority)
+          .selectionBackground(library.selectedPriorities.contains(priority))
       }
     }
+    .accentSelectionOnly()
     .frame(width: 200)
   }
 }
@@ -34,7 +36,7 @@ struct PriorityListsColumn: View {
       ListSortHeader(library: library, listID: LibraryViewModel.prioritiesListID, isRow: true)
         .listRowSeparator(.hidden)
       ForEach(library.priorityList, id: \.id) { task in
-        TaskRow(library: library, task: task, showsDate: true)
+        TaskRow(library: library, task: task, listID: LibraryViewModel.prioritiesListID)
           .tag(task.id)
       }
       if let item = library.newItem, item.parentID == nil {
@@ -53,6 +55,7 @@ struct PriorityListsColumn: View {
         }
       }
     }
+    .accentSelectionOnly()
     .frame(width: 440)
   }
 }

@@ -67,6 +67,9 @@ public final class LibraryViewModel {
   var revision = 0
   @ObservationIgnored var layouts = DayLayoutCache()
 
+  /// Called with every list's columns after a header turns one on or off, for the app to keep them per device.
+  public var onListColumnsChanged: (([String: Set<ListColumn>]) -> Void)?
+
   /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
     log: any EventLog,
@@ -75,7 +78,8 @@ public final class LibraryViewModel {
     today: (() -> CalendarDate)? = nil,
     now: (() -> Int)? = nil,
     instant: @escaping () -> Date = { Date() },
-    timeZone: TimeZone = .current
+    timeZone: TimeZone = .current,
+    listColumns: [String: Set<ListColumn>] = [:]
   ) {
     self.log = log
     unboundCommands = commands
@@ -85,6 +89,7 @@ public final class LibraryViewModel {
     currentView = view
     let day = today?() ?? systemClock.today(dayChangesAt: Settings.defaultDayChangesAt)
     dayModel = DayModel(view: view, day: day)
+    browserModel.listColumns = listColumns
   }
 
   /// Shows another view, at its inbox, with no task selected.

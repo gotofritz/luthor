@@ -332,9 +332,9 @@ extension LibraryViewModel {
 }
 
 extension [ColumnEntry] {
-  /// The sub-projects, then the tasks, each in the order they had.
-  var projectsFirst: [ColumnEntry] {
-    filter { if case .project = $0 { true } else { false } } + filter { if case .task = $0 { true } else { false } }
+  /// The tasks, then the sub-projects, each in the order they had; the tasks stay near the header.
+  var tasksFirst: [ColumnEntry] {
+    filter { if case .task = $0 { true } else { false } } + filter { if case .project = $0 { true } else { false } }
   }
 }
 

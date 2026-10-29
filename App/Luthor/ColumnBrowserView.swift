@@ -129,10 +129,11 @@ struct TaskListColumn: View {
         }
         List(selection: multiSelection) {
           ForEach(library.tasks, id: \.id) { task in
-            TaskRow(library: library, task: task)
+            TaskRow(library: library, task: task, listID: library.taskListID)
               .tag(task.id)
           }
         }
+        .accentSelectionOnly()
       }
       .frame(width: 320)
     }
@@ -185,6 +186,7 @@ struct ProjectRow: View {
       Image(systemName: "chevron.right")
         .foregroundStyle(.secondary)
     }
+    .selectionBackground(library.path.contains(project.id))
     // The whole row, spacer included, is what a drag picks up. The drop lives on the row in the column
     // (ColumnView), not here: one view that is both dragged and dropped on never starts a drag in a List.
     .contentShape(Rectangle())
@@ -240,6 +242,8 @@ struct TaskRow: View {
   /// lists by priority and shows when each task is wanted.
   var showsPriority = true
   var showsDate = false
+  /// The list the row is in, whose header says which columns it shows; `nil` shows the usual ones.
+  var listID: String?
   /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
   var priorityFirst = true
   @Environment(\.theme) var theme
@@ -263,17 +267,24 @@ struct TaskRow: View {
     return isNextAction && !isCompleted ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)
   }
 
+  private func shows(_ column: ListColumn) -> Bool {
+    listID.map { library.isColumnShown(column, inList: $0) } ?? true
+  }
+
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
-      checkbox
-        .frame(width: TaskColumns.checkbox)
+      if shows(.status) {
+        checkbox
+          .frame(width: TaskColumns.checkbox)
+      }
       if !priorityFirst { titleCells }
-      durationCell
-      if priorityFirst && showsPriority { priorityCell }
-      if showsDate { dateCell }
+      if shows(.duration) { durationCell }
+      if priorityFirst && showsPriority && shows(.priority) { priorityCell }
+      if listID.map({ library.showsWhenColumn(ofList: $0) }) ?? showsDate { dateCell }
       if showsPriority && !priorityFirst { priorityCell }
       if priorityFirst { titleCells }
     }
+    .selectionBackground(library.selectedIDs.contains(task.id))
     // Five points less room either side of the row than the list gives it.
     .padding(.horizontal, -5)
     .draggable(task.id.rawValue)
