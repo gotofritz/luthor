@@ -160,6 +160,10 @@ public final class LibraryViewModel {
   /// Counts the replays of the log. `state` is not observed, so what a view reads from it (a due date, a repeat,
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
+  /// The day's layout as last worked out, so the slots, blocks, sessions and done tasks read one after another share
+  /// it; `present()` drops it, a drag or the clock moving on is another key. And how many were worked out.
+  @ObservationIgnored var cachedLayout: (key: DayLayoutKey, layout: DayLayout)?
+  @ObservationIgnored var layoutsComputed = 0
 
   /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(

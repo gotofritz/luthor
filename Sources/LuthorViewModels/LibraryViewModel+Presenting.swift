@@ -95,6 +95,7 @@ extension LibraryViewModel {
 
   /// Fills the view switcher, the sidebar and the list from the current view of the last replayed state.
   func present() {
+    cachedLayout = nil
     pruneMultiSelection()
     views = state.views
     if !views.contains(where: { $0.id == currentView }) {
@@ -206,44 +207,48 @@ extension LibraryViewModel {
   /// shown, or the inbox; completed tasks follow the open ones.
   private func presentTasks(of view: ViewState, completed: Completion) {
     let completedItems = completed.tasks.map(\.item)
+    var listed: [TaskItem]
+    var actionable: Set<TaskID>
     switch section {
     case .today:
-      tasks = (carryOver.map(\.entry) + plan.entries + plan.candidates).map(\.task)
-      nextActions = Set(tasks.map(\.id))
+      listed = (carryOver.map(\.entry) + plan.entries + plan.candidates).map(\.task)
+      actionable = Set(listed.map(\.id))
     case .review:
-      tasks = review.notDone.map(\.task)
-      nextActions = Set(tasks.map(\.id))
+      listed = review.notDone.map(\.task)
+      actionable = Set(listed.map(\.id))
     case .weeklyReview:
-      tasks = projectReview.first { $0.project.id == reviewProjectID }?.project.tasks ?? []
-      nextActions = Set(view.nextActions.map(\.id)).intersection(tasks.map(\.id))
+      listed = projectReview.first { $0.project.id == reviewProjectID }?.project.tasks ?? []
+      actionable = Set(view.nextActions.map(\.id)).intersection(listed.map(\.id))
     case .calendar:
-      tasks = calendarEntries.map(\.task)
-      nextActions = Set(tasks.map(\.id))
+      listed = calendarEntries.map(\.task)
+      actionable = Set(listed.map(\.id))
     case .priorities:
-      tasks =
+      listed =
         view.tasks(prioritised: selectedPriorities)
         + completedItems.filter { selectedPriorities.contains($0.priority) }
-      let actionable = Set(view.nextActions.map(\.id))
-      nextActions = Set(tasks.filter { $0.parentID == nil || actionable.contains($0.id) }.map(\.id))
+      let next = Set(view.nextActions.map(\.id))
+      actionable = Set(listed.filter { $0.parentID == nil || next.contains($0.id) }.map(\.id))
     case .tags:
-      tasks = selectedTagID.map { state.tasks(tagged: $0) } ?? []
-      let actionable = Set(view.nextActions.map(\.id))
-      nextActions = Set(tasks.filter { $0.parentID == nil || actionable.contains($0.id) }.map(\.id))
+      listed = selectedTagID.map { state.tasks(tagged: $0) } ?? []
+      let next = Set(view.nextActions.map(\.id))
+      actionable = Set(listed.filter { $0.parentID == nil || next.contains($0.id) }.map(\.id))
     case .inbox, .projects, .settings:
       if let projectID = shownProjectID {
-        tasks =
+        listed =
           (projects.first { $0.id == projectID }?.tasks ?? []) + completedItems.filter { $0.parentID == projectID }
         let shown = columns.flatMap(\.entries).compactMap { entry -> TaskID? in
           guard case .task(let task) = entry else { return nil }
           return task.id
         }
-        nextActions = Set(view.nextActions.map(\.id)).intersection(shown)
+        actionable = Set(view.nextActions.map(\.id)).intersection(shown)
       } else {
-        tasks = view.inbox + completedItems.filter { $0.parentID == nil }
-        nextActions = Set(view.inbox.map(\.id))
+        listed = view.inbox + completedItems.filter { $0.parentID == nil }
+        actionable = Set(view.inbox.map(\.id))
       }
     }
-    if section == .inbox || section == .tags || section == .weeklyReview { tasks = sorted(tasks) }
+    if section == .inbox || section == .tags || section == .weeklyReview { listed = sorted(listed) }
+    tasks = listed
+    nextActions = actionable
   }
 
   /// The project and its ancestors, top-level first.

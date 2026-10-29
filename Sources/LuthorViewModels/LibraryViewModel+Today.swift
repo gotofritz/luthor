@@ -48,6 +48,15 @@ private func gregorian(in timeZone: TimeZone) -> Calendar {
   return calendar
 }
 
+/// What a layout of the day shown was worked out for.
+struct DayLayoutKey: Equatable {
+  let moving: TaskID?
+  let minute: Int
+  let block: DayBlock?
+  let session: SessionID?
+  let notBefore: Int
+}
+
 // Today: choosing the day shown, planning it, and deciding on its tasks. In its own file (SwiftLint
 // file_length) rather than suppressed.
 extension LibraryViewModel {
@@ -114,15 +123,20 @@ extension LibraryViewModel {
   }
 
   private var shownLayout: DayLayout {
-    dayLayout(
-      moving: dragPreview?.taskID, to: dragPreview?.minute ?? sessionPreview?.minute ?? 0, block: blockPreview,
-      session: sessionPreview?.sessionID)
+    let key = DayLayoutKey(
+      moving: dragPreview?.taskID, minute: dragPreview?.minute ?? sessionPreview?.minute ?? 0, block: blockPreview,
+      session: sessionPreview?.sessionID, notBefore: notBefore)
+    if let cachedLayout, cachedLayout.key == key { return cachedLayout.layout }
+    let layout = dayLayout(moving: key.moving, to: key.minute, block: key.block, session: key.session)
+    cachedLayout = (key, layout)
+    return layout
   }
 
   /// The one layout of a day, for what is shown while dragging and for what a drop keeps: the tasks and blocks
   /// with `moving` (or the session `session`) laid first at `minute` and `block` laid first, the others making
   /// room. A candidate being dragged counts as planned.
   func dayLayout(moving: TaskID?, to minute: Int, block: DayBlock?, session: SessionID? = nil) -> DayLayout {
+    layoutsComputed += 1
     var entries = plan.entries
     if let moving, !entries.contains(where: { $0.task.id == moving }),
       let candidate = plan.candidates.first(where: { $0.task.id == moving })
