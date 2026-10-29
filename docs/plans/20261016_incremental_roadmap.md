@@ -64,6 +64,18 @@ releases. Not notarised: the first launch needs right-click → Open. The
 universal `luthor` CLI shipped alongside until it was removed (see Decisions
 2026-10-17, slice 13 dropped).
 
+### CD-2. Release pipeline hardening (issue #99) ✅
+
+The app shows the tag's version (`MARKETING_VERSION` from `app-version.sh`). The
+release workflow builds with read-only rights; a second job, run only when
+there is something to publish, holds `contents: write`. The version must match
+`vX.Y.Z` (`check-version-tag.sh`) and is quoted in the Makefile and workflow.
+The zip is checked, a `SHA256SUMS` file and a build provenance attestation are
+added, and the release is made as a draft with every asset and published last,
+so a failed run never leaves a half-made release. The README says how to verify.
+Signing stays as decided: ad-hoc, not notarised, not sandboxed (Decisions,
+2026-10-29).
+
 ### CI-3. Event format guard (slice 15)
 
 - Golden-file replay tests are part of `make check-ci`; a change that breaks
@@ -1240,3 +1252,12 @@ what a new item starts with.
   of a task's card but the title. Notes are added to, never replaced, so a
   bulk edit cannot lose a task's notes. Notes edits are now undoable
 - Delete cannot be undone, as for a single task
+
+## Decisions (2026-10-29, issue #99)
+
+1. **Still ad-hoc signed, not notarised, not sandboxed.** One user on their own
+   Macs, fetching with `gh`, so Gatekeeper does not get in the way; a Developer
+   ID costs $99 a year for no gain here. A sandbox would break the chosen log
+   folder (Dropbox) without a bookmark prompt. Provenance and checksums
+   give a download its integrity check instead. Revisit if the app goes to
+   anyone else

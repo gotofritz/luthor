@@ -60,6 +60,7 @@ test:
 	scripts/test-check-coverage.sh
 	scripts/test-next-version.sh
 	scripts/test-app-version.sh
+	scripts/test-check-version-tag.sh
 	scripts/test-check-architecture.sh
 
 # Runs the tests with coverage on and fails below COVERAGE_MIN percent line coverage of Sources/.
@@ -105,7 +106,7 @@ install: app
 dist: app
 	rm -rf $(DIST)
 	mkdir -p $(DIST)
-	ditto -c -k --keepParent $(APP_BUILD) $(DIST)/Luthor-$(VERSION).zip
+	ditto -c -k --keepParent $(APP_BUILD) '$(DIST)/Luthor-$(VERSION).zip'
 
 check-ci: lint build coverage app
 
