@@ -26,11 +26,6 @@ public final class LibraryViewModel {
   /// The priorities picked in the priorities section, `nil` being no priority; the list shows the tasks of
   /// all of them.
   public internal(set) var selectedPriorities: Set<Priority?> = []
-  /// The tags of the view in creation order, how many open tasks each carries, and the one picked in the Tags
-  /// place (`nil` until one is), whose open tasks that place lists.
-  public internal(set) var tags: [TagItem] = []
-  public internal(set) var tagTaskCounts: [TagID: Int] = [:]
-  public internal(set) var selectedTagID: TagID?
   /// What Today's candidates are narrowed to; nothing is, until it is set. The tasks planned for the day stay.
   public var candidateFilter = TaskFilter() {
     didSet { present() }
@@ -63,26 +58,6 @@ public final class LibraryViewModel {
   public internal(set) var overriddenKeysByView: [ViewID: Set<SettingKey>] = [:]
   /// The default view chosen in settings.
   public internal(set) var defaultViewID = ViewID.default
-  /// The day it is by the clock as of the last refresh, the day whose plan Today shows, that plan (planned
-  /// tasks, candidates, capacity) for the current view, and the view's delegated tasks, longest wait first.
-  public internal(set) var today: CalendarDate
-  public internal(set) var planDate: CalendarDate
-  public internal(set) var plan: DayPlan
-  public internal(set) var waiting: [WaitingItem] = []
-  /// The review of the day shown, and the open tasks planned for an earlier day than today, which wait at
-  /// the top of Today until each is decided.
-  public internal(set) var review: DayReview
-  public internal(set) var carryOver: [CarryOverEntry] = []
-  /// The calendar's days around today with their marks, the day picked on it (`nil` until one is) and that
-  /// day's tasks: the ones planned for it, then those only due on it.
-  public internal(set) var calendarDays: [CalendarDay] = []
-  public internal(set) var calendarDate: CalendarDate?
-  public internal(set) var calendarEntries: [CalendarEntry] = []
-  /// The weekly review: the projects of the view whose review is due, the longest overdue first, the one
-  /// picked (`nil` while none is due), and how often projects are reviewed unless they say otherwise.
-  public internal(set) var projectReview: [ProjectReviewItem] = []
-  public internal(set) var reviewProjectID: TaskID?
-  public internal(set) var reviewDefault = ReviewInterval.weekly
   /// Whether completed and dropped tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }
@@ -124,18 +99,6 @@ public final class LibraryViewModel {
   public internal(set) var errorMessage: String?
   /// Lines of the log that could not be read, left out of what is shown; empty when the log is sound.
   public internal(set) var logProblems: [LogProblem] = []
-  /// While a task is dragged over the day, where it would land: the tasks around it show making room.
-  /// The task being dragged on the day calendar, set when the drag starts.
-  public var draggedTaskID: TaskID?
-  /// The block of untracked time being dragged on the day calendar, set when the drag starts.
-  public var draggedBlockID: BlockID?
-  /// The session being dragged on the day calendar, set when the drag starts.
-  public var draggedSessionID: SessionID?
-  /// While a session is dragged over the day, where it would land.
-  public var sessionPreview: (sessionID: SessionID, minute: Int)?
-  /// While a block of untracked time is dragged over the day, where it would land.
-  public var blockPreview: DayBlock?
-  public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog
   let injectedToday: (() -> CalendarDate)?
@@ -156,6 +119,11 @@ public final class LibraryViewModel {
   var redoSteps: [UndoStep] = []
   /// Counts the changes of `state` and `held`, so a read made off the main actor knows if they moved on.
   @ObservationIgnored var generation = 0
+  /// The state of the places that have a lot of it of their own, kept apart; `LibraryViewModel+Places.swift`
+  /// forwards their properties, so a view reads them as ever.
+  let dayModel: DayModel
+  let tagsModel = TagsModel()
+  let reviewModel = WeeklyReviewModel()
   /// Counts the replays of the log. `state` is not observed, so a view reads it through `observing(_:)`, which reads
   /// this too, and the view is told when the log changes.
   var revision = 0
@@ -178,10 +146,7 @@ public final class LibraryViewModel {
     systemClock = SystemClock(instant: instant, timeZone: timeZone)
     currentView = view
     let day = today?() ?? systemClock.today(dayChangesAt: Settings.defaultDayChangesAt)
-    self.today = day
-    planDate = day
-    plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
-    review = LibraryState.replay([]).dayReview(for: view, on: day, today: day)
+    dayModel = DayModel(view: view, day: day)
   }
 
   /// Shows another view, at its inbox, with no task selected.
