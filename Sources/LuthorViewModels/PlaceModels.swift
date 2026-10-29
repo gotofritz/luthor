@@ -60,3 +60,59 @@ final class WeeklyReviewModel {
   var reviewProjectID: TaskID?
   var reviewDefault = ReviewInterval.weekly
 }
+
+/// The views and the settings: every view, the one the settings place is editing, the settings with no override and
+/// those `currentView` plans with, and the settings of every view for a screen that shows one other than the view shown.
+@MainActor
+@Observable
+final class SettingsModel {
+  var views: [ViewItem] = []
+  var viewBeingEdited: ViewID?
+  var globalSettings = LibraryState.replay([]).globalSettings
+  var viewSettings = LibraryState.replay([]).settings(for: .default)
+  var settingsByView: [ViewID: Settings] = [:]
+  var overriddenKeysByView: [ViewID: Set<SettingKey>] = [:]
+  var defaultViewID = ViewID.default
+}
+
+/// The project browser: every active project of the view, those a card can name, the project shown and its path, the
+/// columns, and how each list is sorted by its header bar.
+@MainActor
+@Observable
+final class BrowserModel {
+  var projects: [Project] = []
+  var knownProjects: [Project] = []
+  var shownProject: Project?
+  var columns: [ProjectColumn] = []
+  var path: [TaskID] = []
+  var listSorts: [String: ListSort] = [:]
+}
+
+/// The tasks listed, those of them that can be worked on now, and the completed and dropped items listed beside
+/// them, with those that can be reopened.
+@MainActor
+@Observable
+final class ListedModel {
+  var tasks: [TaskItem] = []
+  var nextActions: Set<TaskID> = []
+  var completedTaskIDs: Set<TaskID> = []
+  var completedProjectIDs: Set<TaskID> = []
+  var droppedTaskIDs: Set<TaskID> = []
+  var droppedProjectIDs: Set<TaskID> = []
+  var reopenableTaskIDs: Set<TaskID> = []
+  var reopenableProjectIDs: Set<TaskID> = []
+}
+
+/// What is picked and what is being edited: the selected task or tasks, the card open, the item being added, and the
+/// task the Delegate dialog asks about.
+@MainActor
+@Observable
+final class SelectionModel {
+  var selection: TaskID?
+  var multiSelection: Set<TaskID> = []
+  var projectCardOpen = false
+  var editingCard: CardTarget?
+  var newItem: NewItemDraft?
+  var newItemsStarted = 0
+  var delegatingTaskID: TaskID?
+}

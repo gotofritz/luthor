@@ -13,11 +13,6 @@ import Observation
 @MainActor
 @Observable
 public final class LibraryViewModel {
-  /// Every view, the default one first.
-  public internal(set) var views: [ViewItem] = []
-  /// The view the settings place shows the settings of, when one was picked (from the view switcher or the
-  /// list of views); `nil` means the view shown.
-  public internal(set) var viewBeingEdited: ViewID?
   /// The one view the window shows; nothing from another view is ever listed.
   public internal(set) var currentView: ViewID
   /// The place the navigation rail has picked.
@@ -30,72 +25,11 @@ public final class LibraryViewModel {
   public var candidateFilter = TaskFilter() {
     didSet { present() }
   }
-  /// Every active project of the view, nested or not, in creation order.
-  public internal(set) var projects: [Project] = []
-  /// The active projects of the view and, while completed items are listed, the completed ones: whatever a
-  /// card can name as the project of a task.
-  public internal(set) var knownProjects: [Project] = []
-  /// The project the columns lead to, whose card is shown; a completed one too while completed items are
-  /// listed. `nil` while the inbox, Today or the priorities are shown.
-  public internal(set) var shownProject: Project?
-  /// The project browser: the top-level projects, then one column for each project on the path.
-  public internal(set) var columns: [ProjectColumn] = []
-  /// The shown project and its ancestors, top-level first; empty while the inbox is shown.
-  public internal(set) var path: [TaskID] = []
-  /// How each list is sorted by its header bar, by list ID; a list not here is in its own order.
-  public internal(set) var listSorts: [String: ListSort] = [:]
-  /// Open tasks of the inbox, of the project shown, or with a priority picked.
-  public internal(set) var tasks: [TaskItem] = []
-  /// The shown tasks that can be worked on now. Every inbox task is one.
-  public internal(set) var nextActions: Set<TaskID> = []
-  /// The settings with no per-view override applied.
-  public internal(set) var globalSettings = LibraryState.replay([]).globalSettings
-  /// The settings `currentView` plans with: its own overrides, then the global values.
-  public internal(set) var viewSettings = LibraryState.replay([]).settings(for: .default)
-  /// The settings of every view, and the keys each overrides, for a screen that shows the settings of a view
-  /// other than the one shown; `state` is not observed, so it cannot be read from a view body.
-  public internal(set) var settingsByView: [ViewID: Settings] = [:]
-  public internal(set) var overriddenKeysByView: [ViewID: Set<SettingKey>] = [:]
-  /// The default view chosen in settings.
-  public internal(set) var defaultViewID = ViewID.default
   /// Whether completed and dropped tasks and projects are listed too, dimmed, after the open ones.
   public var showCompleted = false {
     didSet { present() }
   }
-  /// Of the completed and dropped items listed, those that can be reopened and those that came with their
-  /// project, and those that were dropped, not completed.
-  public internal(set) var completedTaskIDs: Set<TaskID> = []
-  public internal(set) var completedProjectIDs: Set<TaskID> = []
-  public internal(set) var droppedTaskIDs: Set<TaskID> = []
-  public internal(set) var droppedProjectIDs: Set<TaskID> = []
-  public internal(set) var reopenableTaskIDs: Set<TaskID> = []
-  public internal(set) var reopenableProjectIDs: Set<TaskID> = []
   public var draft = ""
-  public var selection: TaskID? {
-    didSet {
-      if selection != oldValue {
-        editingCard = nil
-        newItem = nil
-      }
-      if selection != nil {
-        projectCardOpen = false
-        multiSelection = []
-      }
-    }
-  }
-  /// The tasks picked together; empty unless there are two or more, then `selection` is `nil`.
-  public internal(set) var multiSelection: Set<TaskID> = []
-  /// Whether the card of the project shown replaces its list of children, as the pencil on its row does.
-  public internal(set) var projectCardOpen = false
-  /// The card being edited, if any. Cards are read-only until Edit puts one here; OK and Cancel take it out.
-  public internal(set) var editingCard: CardTarget?
-  /// The item the plus button of a column started, edited on the card in the column after it until OK
-  /// makes it; Cancel, or going anywhere else, drops it.
-  public internal(set) var newItem: NewItemDraft?
-  /// How many items `newItem` has held since launch; the number of the last one.
-  var newItemsStarted = 0
-  /// The task the Delegate dialog is asking about; the menus set it, the window shows the dialog.
-  public var delegatingTaskID: TaskID?
   public internal(set) var errorMessage: String?
   /// Lines of the log that could not be read, left out of what is shown; empty when the log is sound.
   public internal(set) var logProblems: [LogProblem] = []
@@ -124,6 +58,10 @@ public final class LibraryViewModel {
   let dayModel: DayModel
   let tagsModel = TagsModel()
   let reviewModel = WeeklyReviewModel()
+  let settingsModel = SettingsModel()
+  let browserModel = BrowserModel()
+  let listedModel = ListedModel()
+  let selectionModel = SelectionModel()
   /// Counts the replays of the log. `state` is not observed, so a view reads it through `observing(_:)`, which reads
   /// this too, and the view is told when the log changes.
   var revision = 0

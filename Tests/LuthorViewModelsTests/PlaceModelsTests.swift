@@ -35,4 +35,45 @@ struct PlaceModelsTests {
     #expect(model.reviewProjectID == nil)
     #expect(model.reviewDefault == .weekly)
   }
+
+  @Test("the settings start with the built-in values and the default view")
+  func theSettingsStartWithTheBuiltInValues() {
+    let model = SettingsModel()
+
+    #expect(model.views.isEmpty)
+    #expect(model.defaultViewID == .default)
+    #expect(model.viewBeingEdited == nil)
+    #expect(model.globalSettings == LibraryState.replay([]).globalSettings)
+  }
+
+  @Test("the project browser starts with no project shown")
+  func theBrowserStartsWithNoProjectShown() {
+    let model = BrowserModel()
+
+    #expect(model.columns.isEmpty)
+    #expect(model.path.isEmpty)
+    #expect(model.shownProject == nil)
+    #expect(model.listSorts.isEmpty)
+  }
+
+  @Test("the list starts with no task, and none completed, dropped or reopenable")
+  func theListStartsEmpty() {
+    let model = ListedModel()
+
+    #expect(model.tasks.isEmpty)
+    #expect(model.nextActions.isEmpty)
+    #expect(model.completedTaskIDs.isEmpty)
+    #expect(model.reopenableProjectIDs.isEmpty)
+  }
+
+  @Test("nothing is selected, edited or being added at the start")
+  func nothingIsSelectedAtTheStart() {
+    let model = SelectionModel()
+
+    #expect(model.selection == nil)
+    #expect(model.multiSelection.isEmpty)
+    #expect(model.editingCard == nil)
+    #expect(model.newItem == nil)
+    #expect(!model.projectCardOpen)
+  }
 }

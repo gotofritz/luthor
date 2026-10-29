@@ -253,9 +253,11 @@ Sources/
                              reading the log and
                              filling the published state (columns, lists, completed items), `observing(_:)` (how a view reads the unobserved state) and text export/import in
                              LibraryViewModel+Presenting.swift (split for file_length)
-    PlaceModels.swift        DayModel (the day, its plan, the calendar and review, the drag in progress), TagsModel and
-                             WeeklyReviewModel: each place's state in a class of its own, so a view reads one without being
-                             told of another's; LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
+    PlaceModels.swift        DayModel (the day, its plan, the calendar and review, the drag in progress), TagsModel,
+                             WeeklyReviewModel, SettingsModel (views and settings), BrowserModel (projects, columns, path, list sorts),
+                             ListedModel (the tasks listed, completed and dropped) and SelectionModel (selection, card, item being added):
+                             each in a class of its own, so a view reads one without being told of another's;
+                             LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)
     LibraryViewModel+ListSort.swift  the sort of each list and the click on a header cell (`sortBy`), applied when presenting
