@@ -111,32 +111,42 @@ extension Commands {
       if case .set(let minutes) = edit.estimate {
         events += try estimate(taskID: taskID, as: minutes, log: log + events)
       }
-      if case .set(let due) = edit.due {
-        // As clearing one due date does: a repeat with no due date to count from counts from completion.
-        if due == nil, let rule = libraryState(from: log + events).repeatRule(of: taskID) {
-          events += try setRepeat(taskID: taskID, to: rule.countingFromCompletion, dueIfNone: nil, log: log + events)
-        }
-        events += try setDue(taskID: taskID, to: due?.date, isHard: due?.isHard ?? false, log: log + events)
-      }
-      if case .set(let day) = edit.scheduled {
-        if let day {
-          events += try schedule(taskID: taskID, on: day, log: log + events)
-        } else {
-          events += try unschedule(taskID: taskID, log: log + events)
-        }
-      }
-      if case .set(let rule) = edit.repeatRule {
-        let hasDue = libraryState(from: log + events).dueDate(of: taskID) != nil
-        events += try setRepeat(
-          taskID: taskID, to: hasDue ? rule : rule?.countingFromCompletion, dueIfNone: nil, log: log + events)
-      }
-      if !edit.addNote.isEmpty { events += try appendNote(taskID: taskID, edit.addNote, log: log + events) }
+      events += try planFields(edit, taskID: taskID, log: log + events)
       if case .set(let projectID) = edit.project {
         events += try move(taskID: taskID, to: projectID, log: log + events)
       }
       for name in edit.addTags { events += try tag(taskID: taskID, named: name, log: log + events) }
       for tagID in edit.removeTags { events += try untag(taskID: taskID, from: tagID, log: log + events) }
     }
+    return events
+  }
+
+  /// The events that set the due date, the day and the repeat of one task. They are in one place because a repeat
+  /// and a due date depend on each other.
+  private func planFields(_ edit: BulkEdit, taskID: TaskID, log: [EventEnvelope]) throws(CommandError)
+    -> [EventEnvelope]
+  {
+    var events: [EventEnvelope] = []
+    if case .set(let due) = edit.due {
+      // As clearing one due date does: a repeat with no due date to count from counts from completion.
+      if due == nil, let rule = libraryState(from: log + events).repeatRule(of: taskID) {
+        events += try setRepeat(taskID: taskID, to: rule.countingFromCompletion, dueIfNone: nil, log: log + events)
+      }
+      events += try setDue(taskID: taskID, to: due?.date, isHard: due?.isHard ?? false, log: log + events)
+    }
+    if case .set(let day) = edit.scheduled {
+      if let day {
+        events += try schedule(taskID: taskID, on: day, log: log + events)
+      } else {
+        events += try unschedule(taskID: taskID, log: log + events)
+      }
+    }
+    if case .set(let rule) = edit.repeatRule {
+      let hasDue = libraryState(from: log + events).dueDate(of: taskID) != nil
+      events += try setRepeat(
+        taskID: taskID, to: hasDue ? rule : rule?.countingFromCompletion, dueIfNone: nil, log: log + events)
+    }
+    if !edit.addNote.isEmpty { events += try appendNote(taskID: taskID, edit.addNote, log: log + events) }
     return events
   }
 
