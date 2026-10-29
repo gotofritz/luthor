@@ -241,7 +241,7 @@ Sources/
                              a project's rolled-up estimate in LibraryViewModel+Cards.swift; SidebarItem/NavigationSection/
                              ColumnEntry/ProjectColumn/TaskCardDraft types live in LibraryViewModel+Types.swift, settings
                              methods in LibraryViewModel+Settings.swift, the day shown, plan and
-                             delegation actions in LibraryViewModel+Today.swift, the calendar's days,
+                             delegation actions and the day's layout, worked out once for each present, in LibraryViewModel+Today.swift, the calendar's days,
                              the day picked and due dates in LibraryViewModel+Calendar.swift, logging time and
                              reviewing a day in LibraryViewModel+Review.swift, starting and stopping a task now and giving it times in LibraryViewModel+Running.swift, a task's sessions in LibraryViewModel+Sessions.swift, splitting a task in two (its times, deferring the part cut off) in LibraryViewModel+Split.swift, the weekly project review (due list, mark
                              reviewed, intervals, drop) in LibraryViewModel+ProjectReview.swift, the Tags place, tagging and the
