@@ -2,14 +2,36 @@ import Foundation
 import LuthorDomain
 
 extension CalendarDate {
-  /// Today by the system's calendar and clock; what a window uses unless it is handed another clock.
+  /// Today by the system's clock, in the Gregorian calendar whatever calendar the Mac is set to.
   public static func systemToday() -> CalendarDate {
-    let parts = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+    today(at: Date(), in: .current, dayChangesAt: 0)
+  }
+
+  /// The day it is at an instant: the Gregorian day in the time zone, the new one starting `dayChangesAt` minutes
+  /// after midnight, so before then it is still the day before.
+  public static func today(at instant: Date, in timeZone: TimeZone, dayChangesAt: Int) -> CalendarDate {
+    let calendar = gregorian(in: timeZone)
+    let shifted = instant.addingTimeInterval(-Double(dayChangesAt * 60))
+    let parts = calendar.dateComponents([.year, .month, .day], from: shifted)
     guard let year = parts.year, let month = parts.month, let day = parts.day,
       let today = CalendarDate(year: year, month: month, day: day)
     else { return CalendarDate(daysSinceEpoch: 0) }
     return today
   }
+}
+
+/// The minutes since the start of the day it is at an instant, which begins `dayChangesAt` minutes after midnight:
+/// 01:30 is 25:30 of the day before when the day changes at 04:00.
+public func minutesSinceDayStart(at instant: Date, in timeZone: TimeZone, dayChangesAt: Int) -> Int {
+  let parts = gregorian(in: timeZone).dateComponents([.hour, .minute], from: instant)
+  let sinceMidnight = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+  return sinceMidnight >= dayChangesAt ? sinceMidnight : sinceMidnight + 24 * 60
+}
+
+private func gregorian(in timeZone: TimeZone) -> Calendar {
+  var calendar = Calendar(identifier: .gregorian)
+  calendar.timeZone = timeZone
+  return calendar
 }
 
 // Today: choosing the day shown, planning it, and deciding on its tasks. In its own file (SwiftLint

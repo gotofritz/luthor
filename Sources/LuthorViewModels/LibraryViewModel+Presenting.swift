@@ -121,7 +121,10 @@ extension LibraryViewModel {
     path = shownProjectID.map { ancestry(of: $0, among: known) } ?? []
     shownProject = path.last.flatMap { id in known.first { $0.id == id } }
     columns = projectColumns(of: view, completed: completed)
+    let previousToday = today
     today = clock()
+    // The day shown as today moves on with it; a day looked at on purpose stays.
+    if planDate == previousToday { planDate = today }
     // Each place is worked out only while it is shown, so an action elsewhere does not pay for it; going to a
     // place presents again.
     if section == .today || section == .review {

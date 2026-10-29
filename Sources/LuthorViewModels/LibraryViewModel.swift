@@ -1,3 +1,4 @@
+import Foundation
 import LuthorDomain
 import LuthorStore
 import Observation
@@ -137,9 +138,12 @@ public final class LibraryViewModel {
   public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog
-  let clock: () -> CalendarDate
+  let injectedToday: (() -> CalendarDate)?
   /// The minutes since midnight by the clock.
-  let minuteClock: () -> Int
+  let injectedMinutes: (() -> Int)?
+  /// The instant and time zone the system clock reads, for the day and minutes when none are injected.
+  let instant: () -> Date
+  let timeZone: TimeZone
   let unboundCommands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
   /// The highest Lamport counter of the log as last read or written here.
@@ -160,24 +164,41 @@ public final class LibraryViewModel {
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
 
-  /// `today` tells the day it is and `now` the minutes since midnight; the default is the system clock.
+  /// `today` tells the day it is and `now` the minutes since the day began; by default both come from the system
+  /// clock (`instant`, in `timeZone`) and the "Day changes at" setting.
   public init(
     log: any EventLog,
     commands: Commands,
     view: ViewID = .default,
-    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() },
-    now: @escaping () -> Int = { minutesSinceMidnight() }
+    today: (() -> CalendarDate)? = nil,
+    now: (() -> Int)? = nil,
+    instant: @escaping () -> Date = { Date() },
+    timeZone: TimeZone = .current
   ) {
     self.log = log
     unboundCommands = commands
-    clock = today
-    minuteClock = now
+    injectedToday = today
+    injectedMinutes = now
+    self.instant = instant
+    self.timeZone = timeZone
     currentView = view
-    let day = today()
+    let day = today?() ?? CalendarDate.today(at: instant(), in: timeZone, dayChangesAt: Settings.defaultDayChangesAt)
     self.today = day
     planDate = day
     plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
     review = LibraryState.replay([]).dayReview(for: view, on: day, today: day)
+  }
+
+  /// The day it is by the clock.
+  func clock() -> CalendarDate {
+    injectedToday?()
+      ?? CalendarDate.today(at: instant(), in: timeZone, dayChangesAt: globalSettings.dayChangesAt)
+  }
+
+  /// The minutes since the day began by the clock.
+  func minuteClock() -> Int {
+    injectedMinutes?()
+      ?? minutesSinceDayStart(at: instant(), in: timeZone, dayChangesAt: globalSettings.dayChangesAt)
   }
 
   /// Shows another view, at its inbox, with no task selected.
