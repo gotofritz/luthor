@@ -23,7 +23,8 @@ struct ColumnView: View {
       ListSortHeader(library: library, listID: column.id)
       list
     }
-    .frame(width: 320)
+    // The first column, of the top-level projects, is narrower than the ones that list a project.
+    .frame(width: position == 0 ? 192 : 440)
   }
 
   private var list: some View {

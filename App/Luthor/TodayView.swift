@@ -249,7 +249,9 @@ struct PlanRow: View {
           .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
       }
       if shows(.priority) {
-        Group {
+        // The clear colour keeps the cell's room when it is empty, as in the other lists.
+        ZStack {
+          Color.clear.frame(height: 1)
           if let priority = entry.task.priority {
             Image(systemName: priority.symbol)
               .foregroundStyle(.secondary)
@@ -259,7 +261,8 @@ struct PlanRow: View {
         .frame(width: TaskColumns.priority)
       }
       if shows(.when) {
-        Group {
+        ZStack(alignment: .leading) {
+          Color.clear.frame(height: 1)
           if let day = library.listedDate(of: entry.task.id) {
             Text(day.isoString)
               .font(.caption)
