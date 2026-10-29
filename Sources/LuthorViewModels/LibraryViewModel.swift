@@ -1,3 +1,4 @@
+import Foundation
 import LuthorDomain
 import LuthorStore
 import Observation
@@ -137,9 +138,9 @@ public final class LibraryViewModel {
   public var dragPreview: (taskID: TaskID, minute: Int)?
 
   let log: any EventLog
-  let clock: () -> CalendarDate
-  /// The minutes since midnight by the clock.
-  let minuteClock: () -> Int
+  let injectedToday: (() -> CalendarDate)?
+  let injectedMinutes: (() -> Int)?
+  let systemClock: SystemClock
   let unboundCommands: Commands
   @ObservationIgnored var state = LibraryState.replay([])
   /// The highest Lamport counter of the log as last read or written here.
@@ -160,20 +161,23 @@ public final class LibraryViewModel {
   /// tags, a review) reads this too, and the view is told when the log changes.
   var revision = 0
 
-  /// `today` tells the day it is and `now` the minutes since midnight; the default is the system clock.
+  /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
     log: any EventLog,
     commands: Commands,
     view: ViewID = .default,
-    today: @escaping () -> CalendarDate = { CalendarDate.systemToday() },
-    now: @escaping () -> Int = { minutesSinceMidnight() }
+    today: (() -> CalendarDate)? = nil,
+    now: (() -> Int)? = nil,
+    instant: @escaping () -> Date = { Date() },
+    timeZone: TimeZone = .current
   ) {
     self.log = log
     unboundCommands = commands
-    clock = today
-    minuteClock = now
+    injectedToday = today
+    injectedMinutes = now
+    systemClock = SystemClock(instant: instant, timeZone: timeZone)
     currentView = view
-    let day = today()
+    let day = today?() ?? systemClock.today(dayChangesAt: Settings.defaultDayChangesAt)
     self.today = day
     planDate = day
     plan = LibraryState.replay([]).plan(for: view, on: day, today: day)
