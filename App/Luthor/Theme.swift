@@ -114,9 +114,33 @@ private struct SelectionBackgroundModifier: ViewModifier {
 /// system's accent colour while the list has the focus and grey when it has not, so it alternates with the
 /// view's own; with it off, `selectionBackground` is the only one.
 private struct NoSystemHighlight: NSViewRepresentable {
+  /// Holds the observers that switch the highlight off again whenever the table changes its picked rows, which
+  /// SwiftUI may answer by restoring the system's inset highlight on top of the view's own.
+  final class Coordinator {
+    var observed: [ObjectIdentifier: NSObjectProtocol] = [:]
+
+    deinit {
+      for observer in observed.values { NotificationCenter.default.removeObserver(observer) }
+    }
+
+    func switchOff(_ table: NSTableView) {
+      table.selectionHighlightStyle = .none
+      let key = ObjectIdentifier(table)
+      guard observed[key] == nil else { return }
+      observed[key] = NotificationCenter.default.addObserver(
+        forName: NSTableView.selectionDidChangeNotification, object: table, queue: .main
+      ) { note in
+        MainActor.assumeIsolated { (note.object as? NSTableView)?.selectionHighlightStyle = .none }
+      }
+    }
+  }
+
+  func makeCoordinator() -> Coordinator { Coordinator() }
+
   func makeNSView(context: Context) -> NSView { NSView() }
 
   func updateNSView(_ view: NSView, context: Context) {
+    let coordinator = context.coordinator
     // The list is a sibling of this view, so look in the ancestors, once it is in the window, for the table
     // under this view. Columns side by side can share an ancestor, so only a table that covers this view counts.
     DispatchQueue.main.async {
@@ -125,7 +149,7 @@ private struct NoSystemHighlight: NSViewRepresentable {
       while let current = ancestor {
         let covering = Self.tables(in: current).filter { $0.convert($0.bounds, to: nil).intersects(here) }
         if !covering.isEmpty {
-          for table in covering { table.selectionHighlightStyle = .none }
+          for table in covering { coordinator.switchOff(table) }
           return
         }
         ancestor = current.superview
