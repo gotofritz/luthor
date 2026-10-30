@@ -176,8 +176,8 @@ struct ListSortHeader: View {
       if separated { DottedSeparator().offset(x: -TaskColumns.spacing / 2) }
     }
     .overlay(alignment: .trailing) {
-      // Past the end of the cell by half the gap, where the boundary with the next cell is.
-      if priorityFirst, let resizes { resizeHandle(resizes, label: label).offset(x: TaskColumns.spacing / 2) }
+      // The last few points of the cell, inside its bounds so the whole strip takes clicks, beside the next cell.
+      if priorityFirst, let resizes { resizeHandle(resizes, label: label) }
     }
     .help("Sort by \(label.lowercased())")
   }
@@ -191,12 +191,13 @@ struct ListSortHeader: View {
   /// double-clicking it fits the column to its widest content, header included, as in a spreadsheet.
   private func resizeHandle(_ column: ListColumn, label: String) -> some View {
     Color.clear
-      .frame(width: 6, height: 14)
+      .frame(width: 8)
+      .frame(maxHeight: .infinity)
       .contentShape(Rectangle())
       .onHover { inside in
         if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
       }
-      .gesture(
+      .highPriorityGesture(
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
           .onChanged { drag in
             let start = dragStartWidth ?? library.columnWidth(column, inList: listID)
@@ -205,7 +206,7 @@ struct ListSortHeader: View {
           }
           .onEnded { _ in dragStartWidth = nil }
       )
-      .onTapGesture(count: 2) { fit(column, label: label) }
+      .highPriorityGesture(TapGesture(count: 2).onEnded { fit(column, label: label) })
       .help("Drag to resize, double-click to fit")
   }
 
