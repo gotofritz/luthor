@@ -1,3 +1,4 @@
+import AppKit
 import LuthorViewModels
 import SwiftUI
 
@@ -23,17 +24,21 @@ struct ListSortHeader: View {
   /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
   var priorityFirst = true
   @State private var showsSettings = false
+  /// The width of the column when the drag in progress began.
+  @State private var dragStartWidth: Double?
 
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
       if shows(.status, showsStatus) { statusCell }
       if !priorityFirst { titleCell }
       if shows(.duration, showsDuration) {
-        cell(.duration, label: "Duration", symbol: "stopwatch", width: TaskColumns.duration, alignment: .trailing)
+        cell(
+          .duration, label: "Duration", symbol: "stopwatch", width: width(.duration), alignment: .trailing,
+          resizes: .duration)
       }
       if priorityFirst && shows(.priority, showsPriority) { priorityCell(separated: true) }
       if priorityFirst && library.showsWhenColumn(ofList: listID) {
-        cell(.due, label: "When", width: TaskColumns.date, alignment: .leading)
+        cell(.due, label: "When", width: width(.when), alignment: .leading, resizes: .when)
       }
       if shows(.priority, showsPriority) && !priorityFirst { priorityCell(separated: true) }
       if priorityFirst { titleCell }
@@ -103,7 +108,9 @@ struct ListSortHeader: View {
   }
 
   private func priorityCell(separated: Bool) -> some View {
-    cell(.priority, label: "Prio", width: TaskColumns.priority, alignment: .center, separated: separated)
+    cell(
+      .priority, label: "Prio", width: width(.priority), alignment: .center, separated: separated,
+      resizes: .priority)
   }
 
   /// The cell over the circles of the rows: a triangle, which is the arrow too once the list is sorted by it,
@@ -136,11 +143,11 @@ struct ListSortHeader: View {
   /// it when pointing down. Ascending points down.
   private func cell(
     _ key: ListSortKey, label: String, symbol: String? = nil, width: CGFloat?, alignment: Alignment,
-    firstCell: Bool = false, separated: Bool = true
+    firstCell: Bool = false, separated: Bool = true, resizes: ListColumn? = nil
   ) -> some View {
     let sort = library.sort(ofList: listID)
     let isSorted = sort.key == key
-    let stacked = symbol != nil || width == TaskColumns.priority
+    let stacked = symbol != nil || resizes == .priority
     return Button {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
@@ -168,7 +175,50 @@ struct ListSortHeader: View {
       // Half the gap between the cells, so the dots sit between them without moving them.
       if separated { DottedSeparator().offset(x: -TaskColumns.spacing / 2) }
     }
+    .overlay(alignment: .trailing) {
+      // Past the end of the cell by half the gap, where the boundary with the next cell is.
+      if priorityFirst, let resizes { resizeHandle(resizes, label: label).offset(x: TaskColumns.spacing / 2) }
+    }
     .help("Sort by \(label.lowercased())")
+  }
+
+  /// The width of the column in the rows: the one dragged to, in the lists whose columns can be resized.
+  private func width(_ column: ListColumn) -> CGFloat {
+    priorityFirst ? CGFloat(library.columnWidth(column, inList: listID)) : CGFloat(column.defaultWidth)
+  }
+
+  /// The strip over the boundary between a column and the next: dragging it resizes the column to its left,
+  /// double-clicking it fits the column to its widest content, header included, as in a spreadsheet.
+  private func resizeHandle(_ column: ListColumn, label: String) -> some View {
+    Color.clear
+      .frame(width: 6, height: 14)
+      .contentShape(Rectangle())
+      .onHover { inside in
+        if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+      }
+      .gesture(
+        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+          .onChanged { drag in
+            let start = dragStartWidth ?? library.columnWidth(column, inList: listID)
+            dragStartWidth = start
+            library.setColumnWidth(start + drag.translation.width, of: column, inList: listID)
+          }
+          .onEnded { _ in dragStartWidth = nil }
+      )
+      .onTapGesture(count: 2) { fit(column, label: label) }
+      .help("Drag to resize, double-click to fit")
+  }
+
+  /// Sets the column as wide as its widest text or its header, whichever is wider.
+  private func fit(_ column: ListColumn, label: String) {
+    let font = NSFont.preferredFont(forTextStyle: .caption1)
+    func measure(_ text: String?) -> Double {
+      text.map { Double(($0 as NSString).size(withAttributes: [.font: font]).width.rounded(.up)) } ?? 0
+    }
+    // The duration header is an icon, about this wide.
+    let header = column == .duration ? 16 : measure(label)
+    let content = measure(library.widestText(in: column, inList: listID))
+    library.setColumnWidth(max(header, content) + 2, of: column, inList: listID)
   }
 }
 
@@ -189,10 +239,8 @@ private struct DottedSeparator: View {
 enum TaskColumns {
   /// The done circle at the start of a row.
   static let checkbox: CGFloat = 14
+  /// The duration cell of the review rows, which are not resizable; the other lists take their widths from the view model.
   static let duration: CGFloat = 28
-  static let priority: CGFloat = 28
-  /// The date a row shows in Prios and Today, the day scheduled for else the due date.
-  static let date: CGFloat = 70
   /// The gap between the cells of a row.
   static let spacing: CGFloat = 4
 }

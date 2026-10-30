@@ -75,6 +75,8 @@ public final class LibraryViewModel {
 
   /// Called with every list's columns after a header turns one on or off, for the app to keep them per device.
   public var onListColumnsChanged: (([String: Set<ListColumn>]) -> Void)?
+  /// Called with every place's column widths after a header resizes one, for the app to keep them per device.
+  public var onColumnWidthsChanged: (([String: [String: Double]]) -> Void)?
 
   /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
@@ -85,7 +87,8 @@ public final class LibraryViewModel {
     now: (() -> Int)? = nil,
     instant: @escaping () -> Date = { Date() },
     timeZone: TimeZone = .current,
-    listColumns: [String: Set<ListColumn>] = [:]
+    listColumns: [String: Set<ListColumn>] = [:],
+    columnWidths: [String: [String: Double]] = [:]
   ) {
     self.log = log
     unboundCommands = commands
@@ -96,6 +99,7 @@ public final class LibraryViewModel {
     let day = today?() ?? systemClock.today(dayChangesAt: Settings.defaultDayChangesAt)
     dayModel = DayModel(view: view, day: day)
     browserModel.listColumns = listColumns
+    browserModel.columnWidths = columnWidths
   }
 
   /// Shows another view, at its inbox, with no task selected.

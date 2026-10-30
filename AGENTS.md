@@ -261,6 +261,7 @@ Sources/
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
     CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back the completed items listed reach (`LibraryViewModel.completedWindow`, chosen from a header's popover)
     LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
+    LibraryViewModel+ColumnWidths.swift  the width of each column of a list, dragged from its header (kept per device through `onColumnWidthsChanged`), and the widest text a column shows, for fitting it
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)
     LibraryViewModel+ListSort.swift  the sort of each list and the click on a header cell (`sortBy`), applied when presenting

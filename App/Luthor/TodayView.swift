@@ -230,6 +230,11 @@ struct PlanRow: View {
     library.isColumnShown(column, inList: LibraryViewModel.candidatesListID)
   }
 
+  /// How wide the column is, as the header over the candidates has been dragged to.
+  private func width(_ column: ListColumn) -> CGFloat {
+    CGFloat(library.columnWidth(column, inList: LibraryViewModel.candidatesListID))
+  }
+
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
       if shows(.status) {
@@ -246,7 +251,7 @@ struct PlanRow: View {
         Text(entry.isUnestimated ? "~\(entry.minutes)m" : "\(entry.minutes)m")
           .font(.caption)
           .foregroundStyle(.secondary)
-          .frame(width: TaskColumns.duration, alignment: .trailing)
+          .frame(width: width(.duration), alignment: .trailing)
           .help(entry.isUnestimated ? "Unestimated: counts at the default estimate" : "Estimate")
       }
       if shows(.priority) {
@@ -259,7 +264,7 @@ struct PlanRow: View {
               .help(priority.title)
           }
         }
-        .frame(width: TaskColumns.priority)
+        .frame(width: width(.priority))
       }
       if shows(.when) {
         ZStack(alignment: .leading) {
@@ -271,7 +276,7 @@ struct PlanRow: View {
               .help(library.scheduledDate(of: entry.task.id) == nil ? "Due" : "Scheduled")
           }
         }
-        .frame(width: TaskColumns.date, alignment: .leading)
+        .frame(width: width(.when), alignment: .leading)
       }
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.task.title)
