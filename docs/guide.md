@@ -472,7 +472,7 @@ action, so its order is its meaning.
 - **Move Up** and **Move Down** in the context menu of a task or a project
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
-- **The gear at the right end of a header** opens a small panel that stays open
+- **The sliders button at the right end of a header** opens a small panel that stays open
   until you click anywhere else. A tick beside Done, Duration,
   Priority and When turns each column on or off. Each place (Projects, Prios, Today, Inbox, a tag...) keeps its own
   choice, also after a restart; all the columns of Projects share theirs (the

@@ -50,13 +50,13 @@ struct ListSortHeader: View {
     .overlay(alignment: .trailing) { if priorityFirst { settingsButton } }
   }
 
-  /// The gear at the far end of the header, which opens the list's settings and keeps them open until a click
+  /// The sliders icon at the far end of the header, which opens the list's settings and keeps them open until a click
   /// lands anywhere else.
   private var settingsButton: some View {
     Button {
       showsSettings.toggle()
     } label: {
-      Image(systemName: "gearshape")
+      Image(systemName: "slider.horizontal.3")
         .padding(.horizontal, 6)
         .contentShape(Rectangle())
     }
