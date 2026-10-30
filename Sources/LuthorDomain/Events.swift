@@ -40,6 +40,7 @@ public enum EventPayload: Equatable, Sendable {
   case taskCaptured(TaskCaptured)
   case taskCompleted(TaskCompleted)
   case taskReopened(TaskReopened)
+  case completionDated(CompletionDated)
   case taskRenamed(TaskRenamed)
   case taskNoted(TaskNoted)
   case taskKindChanged(TaskKindChanged)
@@ -101,9 +102,24 @@ public struct EventEnvelope: Equatable, Sendable {
 /// Completes an item. A project takes the items still open in it along, all the way down.
 public struct TaskCompleted: Equatable, Codable, Sendable {
   public let taskID: TaskID
+  /// The day it was done on; `nil` in a log written before the day was kept.
+  public let completedOn: CalendarDate?
 
-  public init(taskID: TaskID) {
+  public init(taskID: TaskID, completedOn: CalendarDate? = nil) {
     self.taskID = taskID
+    self.completedOn = completedOn
+  }
+}
+
+/// Gives a completed item the day it was done on, for a completion written without one. Ignored for an item
+/// that is not completed.
+public struct CompletionDated: Equatable, Codable, Sendable {
+  public let taskID: TaskID
+  public let completedOn: CalendarDate
+
+  public init(taskID: TaskID, completedOn: CalendarDate) {
+    self.taskID = taskID
+    self.completedOn = completedOn
   }
 }
 

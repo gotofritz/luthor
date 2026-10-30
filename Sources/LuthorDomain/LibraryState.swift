@@ -99,6 +99,8 @@ public struct LibraryState: Equatable, Sendable {
   var filed: [TaskID: [TaskID]] = [:]
   /// The completed and dropped items, in the order they were; an item comes before those it took along.
   var finishedOrder: [TaskID] = []
+  /// The day each completed item was done on, when the log says; a dropped item or an older completion is not here.
+  var completedDays: [TaskID: CalendarDate] = [:]
   /// The position each item was captured at, so a reopened item goes back to its place among the others.
   var captureOrder: [TaskID: Int] = [:]
   /// Global setting values, by key; a key not here falls back to its built-in default.
@@ -175,7 +177,9 @@ public struct LibraryState: Equatable, Sendable {
     case .taskCaptured(let captured):
       capture(captured)
     case .taskCompleted(let completed):
-      complete(completed.taskID)
+      complete(completed.taskID, on: completed.completedOn)
+    case .completionDated(let dated):
+      date(dated.taskID, completedOn: dated.completedOn)
     case .taskReopened(let reopened):
       reopen(reopened.taskID)
     case .taskRenamed, .taskNoted, .taskKindChanged:

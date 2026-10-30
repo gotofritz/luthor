@@ -104,6 +104,7 @@ extension LibraryState {
     order.removeAll { doomed.contains($0) }
     finishedOrder.removeAll { doomed.contains($0) }
     for id in doomed {
+      completedDays.removeValue(forKey: id)
       items.removeValue(forKey: id)
       filed.removeValue(forKey: id)
       forgetPlanning(of: id)

@@ -76,7 +76,8 @@ struct ProjectListViewModelTests {
 
     library.completeProject(TaskID("p1"))
 
-    #expect(log.events.last?.payload == .taskCompleted(TaskCompleted(taskID: TaskID("p1"))))
+    #expect(
+      log.events.last?.payload == .taskCompleted(TaskCompleted(taskID: TaskID("p1"), completedOn: date("2026-10-19"))))
     #expect(library.projects == [])
     #expect(library.sidebarSelection == .inbox)
     #expect(library.tasks == [item("t3", "buy milk")])

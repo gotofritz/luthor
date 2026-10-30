@@ -27,13 +27,14 @@ public func completed(
   _ task: String,
   id: String? = nil,
   device: String = "mac",
+  on day: String? = nil,
   lamport: UInt64 = 2
 ) -> EventEnvelope {
   EventEnvelope(
     id: EventID(id ?? "complete-\(task)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .taskCompleted(TaskCompleted(taskID: TaskID(task)))
+    payload: .taskCompleted(TaskCompleted(taskID: TaskID(task), completedOn: day.map(date)))
   )
 }
 
@@ -376,5 +377,21 @@ public func dropped(
     deviceID: DeviceID(device),
     lamport: lamport,
     payload: .taskDropped(TaskDropped(taskID: TaskID(task)))
+  )
+}
+
+/// Builds a `CompletionDated` envelope with short, readable defaults.
+public func completionDated(
+  _ task: String,
+  on day: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 9
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "dated-\(task)-\(day)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .completionDated(CompletionDated(taskID: TaskID(task), completedOn: date(day)))
   )
 }

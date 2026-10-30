@@ -36,7 +36,7 @@ struct CompleteRepeatingViewModelTests {
 
     #expect(
       log.events.suffix(2) == [
-        completed("t1", id: "id-1", lamport: 4),
+        completed("t1", id: "id-1", on: "2026-10-19", lamport: 4),
         recurred("t1", as: nextID.rawValue, due: "2026-10-26", id: "id-2", lamport: 5),
       ])
     #expect(library.tasks.map(\.id) == [nextID])
@@ -50,7 +50,8 @@ struct CompleteRepeatingViewModelTests {
 
     library.complete(TaskID("t1"))
 
-    #expect(log.events == [captured("t1", "pay tax", lamport: 1), completed("t1", id: "id-1", lamport: 2)])
+    #expect(
+      log.events == [captured("t1", "pay tax", lamport: 1), completed("t1", id: "id-1", on: "2026-10-19", lamport: 2)])
   }
 }
 
@@ -213,13 +214,26 @@ struct ClearDueOfRepeatingTaskTests {
 struct DoneOccurrenceInPrioritiesTests {
   private let important = routine + [prioritized("t1", as: .important, lamport: 4)]
 
-  @Test("this occurrence stays listed as done, beside the next one, though completed tasks are hidden")
-  func theDoneOccurrenceStaysListed() {
+  @Test("this occurrence leaves the list when done, like any task, while completed tasks are hidden")
+  func theDoneOccurrenceLeaves() {
     let (library, _) = makeLibrary(important)
     library.show(.priorities)
     library.togglePriority(.important)
 
     library.complete(TaskID("t1"))
+
+    #expect(library.tasks.map(\.id) == [nextID])
+    #expect(library.completedTaskIDs.isEmpty)
+  }
+
+  @Test("it is listed as done, beside the next one, once completed tasks are shown")
+  func theDoneOccurrenceIsListedWhenShown() {
+    let (library, _) = makeLibrary(important)
+    library.show(.priorities)
+    library.togglePriority(.important)
+    library.complete(TaskID("t1"))
+
+    library.completedWindow = .all
 
     #expect(library.tasks.map(\.id) == [nextID, TaskID("t1")])
     #expect(library.completedTaskIDs == [TaskID("t1")])
@@ -238,8 +252,8 @@ struct DoneOccurrenceInPrioritiesTests {
     #expect(library.tasks.isEmpty)
   }
 
-  @Test("once the next one is done too, the earlier one goes")
-  func theEarlierOneGoes() {
+  @Test("only the open occurrence is listed as the series goes on")
+  func onlyTheOpenOneIsListed() {
     let (library, _) = makeLibrary(important)
     library.show(.priorities)
     library.togglePriority(.important)
@@ -247,6 +261,6 @@ struct DoneOccurrenceInPrioritiesTests {
 
     library.complete(nextID)
 
-    #expect(library.tasks.map(\.id) == [TaskID.recurring(after: nextID), nextID])
+    #expect(library.tasks.map(\.id) == [TaskID.recurring(after: nextID)])
   }
 }

@@ -29,7 +29,7 @@ struct SettingsColumnsView: View {
         ViewListColumn(library: library)
         Divider()
         ViewSettingsColumn(library: library, viewID: library.viewEdited)
-      case .thisMac: ThisMacSettingsColumn()
+      case .thisMac: ThisMacSettingsColumn(library: library)
       }
     }
     // Edit View… in the view switcher opens the settings place on the view picked.

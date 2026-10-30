@@ -124,7 +124,7 @@ func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEve
 
     inbox.complete(TaskID("t1"))
 
-    #expect(log.events.last == completed("t1", id: "id-1", lamport: 3))
+    #expect(log.events.last == completed("t1", id: "id-1", on: "2026-10-19", lamport: 3))
     #expect(inbox.tasks == [item("t2", "call mum")])
   }
 
@@ -195,7 +195,8 @@ func makeInbox(_ events: [EventEnvelope] = []) -> (LibraryViewModel, InMemoryEve
 
     inbox.completeSelected()
 
-    #expect(log.events.last?.payload == .taskCompleted(TaskCompleted(taskID: TaskID("t2"))))
+    #expect(
+      log.events.last?.payload == .taskCompleted(TaskCompleted(taskID: TaskID("t2"), completedOn: date("2026-10-19"))))
     #expect(inbox.selection == TaskID("t3"))
   }
 

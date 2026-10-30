@@ -111,6 +111,7 @@ private struct EventLineDTO: Codable {
     case taskCaptured = "TaskCaptured"
     case taskCompleted = "TaskCompleted"
     case taskReopened = "TaskReopened"
+    case completionDated = "CompletionDated"
     case taskRenamed = "TaskRenamed"
     case taskNoted = "TaskNoted"
     case taskKindChanged = "TaskKindChanged"
@@ -161,6 +162,7 @@ private struct EventLineDTO: Codable {
       case .taskCaptured: .taskCaptured(try container.decode(TaskCaptured.self, forKey: .data))
       case .taskCompleted: .taskCompleted(try container.decode(TaskCompleted.self, forKey: .data))
       case .taskReopened: .taskReopened(try container.decode(TaskReopened.self, forKey: .data))
+      case .completionDated: .completionDated(try container.decode(CompletionDated.self, forKey: .data))
       case .taskRenamed: .taskRenamed(try container.decode(TaskRenamed.self, forKey: .data))
       case .taskNoted: .taskNoted(try container.decode(TaskNoted.self, forKey: .data))
       case .taskKindChanged: .taskKindChanged(try container.decode(TaskKindChanged.self, forKey: .data))
@@ -238,6 +240,7 @@ private struct EventLineDTO: Codable {
     case .taskCaptured(let data): try write(.taskCaptured, data, to: &container)
     case .taskCompleted(let data): try write(.taskCompleted, data, to: &container)
     case .taskReopened(let data): try write(.taskReopened, data, to: &container)
+    case .completionDated(let data): try write(.completionDated, data, to: &container)
     case .taskRenamed(let data): try write(.taskRenamed, data, to: &container)
     case .taskNoted(let data): try write(.taskNoted, data, to: &container)
     case .taskKindChanged(let data): try write(.taskKindChanged, data, to: &container)
@@ -351,15 +354,6 @@ public struct JSONLinesEventLog: Sendable {
       throw .ioFailure("cannot rewrite \(fileURL.path): \(error)")
     }
     return rejected.count
-  }
-
-  private func readLines() throws(EventLogError) -> [Substring] {
-    try checkSize()
-    do {
-      return try String(contentsOf: fileURL, encoding: .utf8).split(separator: "\n", omittingEmptySubsequences: false)
-    } catch {
-      throw .ioFailure("cannot read \(fileURL.path): \(error)")
-    }
   }
 
   /// Appends the events in one `write`, with `O_APPEND`, so existing bytes are never rewritten. If the file

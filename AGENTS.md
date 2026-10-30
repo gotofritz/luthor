@@ -110,7 +110,7 @@ Package.swift                SwiftPM manifest: every module and test target
 Sources/
   LuthorDomain/              pure Swift, imports nothing
     Events.swift             event payloads + EventEnvelope (id, device, lamport), replay order;
-                             TaskCaptured carries the optional day created (`createdOn`), parent and kind (a
+                             TaskCompleted carries the optional day done (`completedOn`), CompletionDated gives an older completion its day; TaskCaptured carries the optional day created (`createdOn`), parent and kind (a
                              project is an item with a kind); TaskMoved, TaskKindChanged;
                              Priority (A, B, C, someday), TaskPrioritized and TaskEstimated
     PlanningEvents.swift     TaskScheduled/Unscheduled, DayPlanOrdered, DayCapacitySet,
@@ -134,7 +134,7 @@ Sources/
     Commands.swift           command → new events; IDGenerator protocol, CommandError; `after(_:lamport:)` binds
                              the held state, so a command is given only the events since and replays nothing
     Commands+Planning.swift  schedule, order, capacity, delegate, reclaim, drop, send to someday
-    Commands+Completion.swift  reopen a completed or dropped task or project
+    Commands+Completion.swift  reopen a completed or dropped task or project, and date the completions that have no day
     Commands+Blocks.swift    add, change and remove a block of untracked time on a day
     Commands+Sessions.swift  set apart, change and remove a session of a planned task
     Commands+Due.swift       set or clear a task's due date (hard deadline or target date)
@@ -259,6 +259,7 @@ Sources/
                              each in a class of its own, so a view reads one without being told of another's;
                              LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
+    CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back the completed items listed reach (`LibraryViewModel.completedWindow`, chosen from a header's popover)
     LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)
