@@ -211,8 +211,7 @@ struct ListSortHeader: View {
       onDoubleClick: { fit(column, label: label) }
     )
     // Wider than the gap it fills, so the strip reaches a little into the cells either side.
-    .frame(width: TaskColumns.spacing + 4)
-    .frame(maxHeight: .infinity)
+    .frame(width: TaskColumns.spacing + 4, height: 20)
     .padding(.horizontal, -2)
     .help("Drag to resize, double-click to fit")
   }
