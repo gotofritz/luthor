@@ -34,3 +34,12 @@ public enum CompletedWindow: String, CaseIterable, Codable, Sendable {
     return day >= today.adding(days: -days)
   }
 }
+
+extension LibraryViewModel {
+  /// Dates the completions that have no day (see `Commands.dateOldCompletions`), so the Completed Tasks window
+  /// reaches them. Meant to be run once.
+  public func dateOldCompletions() {
+    let day = clock()
+    perform { (log) throws(CommandError) in try commands.dateOldCompletions(today: day, log: log) }
+  }
+}

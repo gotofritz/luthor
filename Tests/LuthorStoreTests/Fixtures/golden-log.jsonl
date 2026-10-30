@@ -48,3 +48,4 @@
 {"data":{"tagID":"g2"},"device":"mac","id":"e48","lamport":48,"type":"TagDeleted"}
 {"data":{"taskID":"t9","title":"Pay rent"},"device":"mac","id":"e49","lamport":49,"type":"TaskCaptured"}
 {"data":{"completedOn":"2026-10-12","taskID":"t9"},"device":"mac","id":"e50","lamport":50,"type":"TaskCompleted"}
+{"data":{"completedOn":"2026-10-13","taskID":"t9"},"device":"mac","id":"e51","lamport":51,"type":"CompletionDated"}

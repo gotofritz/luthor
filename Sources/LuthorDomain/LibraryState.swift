@@ -178,6 +178,8 @@ public struct LibraryState: Equatable, Sendable {
       capture(captured)
     case .taskCompleted(let completed):
       complete(completed.taskID, on: completed.completedOn)
+    case .completionDated(let dated):
+      date(dated.taskID, completedOn: dated.completedOn)
     case .taskReopened(let reopened):
       reopen(reopened.taskID)
     case .taskRenamed, .taskNoted, .taskKindChanged:

@@ -4,7 +4,8 @@ extension EventPayload {
   /// A compaction carries these events over instead of dropping them.
   public var isBeyondExport: Bool {
     switch self {
-    case .dayPlanOrdered, .dayCapacitySet, .dayHoursSet, .taskStartSet, .dayBlockSet, .dayBlockRemoved,
+    case .completionDated, .dayPlanOrdered, .dayCapacitySet, .dayHoursSet, .taskStartSet, .dayBlockSet,
+      .dayBlockRemoved,
       .taskSessionSet, .taskSessionRemoved, .taskTimeLogged, .unplannedTimeLogged, .dayReviewed:
       true
     default:

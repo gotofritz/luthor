@@ -482,7 +482,9 @@ action, so its order is its meaning.
   Under the ticks, **Completed Tasks** shows or hides
   completed and dropped items: All, Past day, Past 3 days, Past week or None. Only a
   completion made since this feature has a day to count from, so older ones and dropped
-  items show under All only. The choice holds for every list until the app closes
+  items show under All only until you run **Settings → This Mac → Date Old Completions**
+  once: it gives each such completion the day it was due, else planned for, else three days
+  ago (run it again after Compact Log, which forgets the days). The choice holds for every list until the app closes
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the

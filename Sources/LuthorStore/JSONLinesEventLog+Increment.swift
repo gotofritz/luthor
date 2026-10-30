@@ -22,6 +22,15 @@ struct FileCursor: Equatable, Sendable {
 
 // Reading a log file whole or from where a cursor left off. Split from the type (SwiftLint file_length).
 extension JSONLinesEventLog {
+  func readLines() throws(EventLogError) -> [Substring] {
+    try checkSize()
+    do {
+      return try String(contentsOf: fileURL, encoding: .utf8).split(separator: "\n", omittingEmptySubsequences: false)
+    } catch {
+      throw .ioFailure("cannot read \(fileURL.path): \(error)")
+    }
+  }
+
   /// Throws if the file is larger than `maxBytes`.
   func checkSize() throws(EventLogError) {
     let size = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? NSNumber)?.intValue ?? 0

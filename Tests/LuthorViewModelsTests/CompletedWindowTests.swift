@@ -83,3 +83,18 @@ struct CompletedWindowTests {
     #expect(library.completedWindow == .none)
   }
 }
+
+@MainActor
+@Suite("When the old completions are dated from the settings")
+struct DateOldCompletionsViewModelTests {
+  @Test("a completion with no day is listed in the past 3 days afterwards, and only then")
+  func datedCompletionsAreListed() {
+    let (library, _) = makeInbox([captured("t1", "old", lamport: 1), completed("t1", lamport: 2)])
+    library.completedWindow = .past3Days
+    #expect(library.completedTaskIDs.isEmpty)
+
+    library.dateOldCompletions()
+
+    #expect(library.completedTaskIDs == [TaskID("t1")])
+  }
+}

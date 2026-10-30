@@ -61,6 +61,7 @@ struct StorageSetupSheet: View {
 /// The "This Mac" settings: the place of the log, changed here after the first start.
 struct ThisMacSettingsColumn: View {
   @Environment(StorageController.self) private var controller
+  let library: LibraryViewModel
   @State private var confirmingCompaction = false
   @State private var confirmingForce = false
   @State private var confirmingCancel = false
@@ -68,6 +69,12 @@ struct ThisMacSettingsColumn: View {
   private static let movingNote = """
     Moving to Dropbox copies the tasks of the Home Folder the first time. \
     Moving back copies nothing: the Home Folder keeps the tasks it had.
+    """
+
+  private static let datingNote = """
+    Completed tasks ticked before the day was kept have none, so only the Completed Tasks choice All lists them. \
+    This gives each the day it was due, else the day it was planned for, else three days ago. \
+    It only adds to the log and is meant to be run once; run it again after Compact Log.
     """
 
   private static let compactNote = """
@@ -118,6 +125,12 @@ struct ThisMacSettingsColumn: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+      }
+      Section("Completed tasks") {
+        Button("Date Old Completions") { library.dateOldCompletions() }
+        Text(Self.datingNote)
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
       Section("Log size") {
         compactionControls

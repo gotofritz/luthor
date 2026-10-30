@@ -28,6 +28,17 @@ extension LibraryState {
     finishTree(of: taskID, on: day) { .completed(with: $0) }
   }
 
+  /// The day a completed task was planned for, remembered when it was completed.
+  func plannedDay(of taskID: TaskID) -> CalendarDate? {
+    reviewRecords.plannedDays[taskID]
+  }
+
+  /// Gives a completed item the day it was done on; an item that is open or was dropped keeps none.
+  mutating func date(_ taskID: TaskID, completedOn day: CalendarDate) {
+    guard case .completed = items[taskID]?.status else { return }
+    completedDays[taskID] = day
+  }
+
   /// Gives the item up with the items open in it, all the way down; they come back when it is reopened.
   /// Ignores an item that is not open.
   mutating func drop(_ taskID: TaskID) {

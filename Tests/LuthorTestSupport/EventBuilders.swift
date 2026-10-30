@@ -379,3 +379,19 @@ public func dropped(
     payload: .taskDropped(TaskDropped(taskID: TaskID(task)))
   )
 }
+
+/// Builds a `CompletionDated` envelope with short, readable defaults.
+public func completionDated(
+  _ task: String,
+  on day: String,
+  id: String? = nil,
+  device: String = "mac",
+  lamport: UInt64 = 9
+) -> EventEnvelope {
+  EventEnvelope(
+    id: EventID(id ?? "dated-\(task)-\(day)"),
+    deviceID: DeviceID(device),
+    lamport: lamport,
+    payload: .completionDated(CompletionDated(taskID: TaskID(task), completedOn: date(day)))
+  )
+}
