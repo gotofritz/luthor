@@ -472,10 +472,15 @@ action, so its order is its meaning.
 - **Move Up** and **Move Down** in the context menu of a task or a project
   move it one place in the project it is in. At either end, or for an item in
   no project, nothing happens. Each is one step for Undo (⌘Z)
-- **Right-click a header** to choose its columns: a tick beside Done, Duration,
-  Priority and When turns each on or off. Each place (Projects, Prios, Today, Inbox, a tag...) keeps its own
+- **The gear at the right end of a header** opens a small panel that stays open
+  until you click anywhere else. A tick beside Done, Duration,
+  Priority and When turns each column on or off. Each place (Projects, Prios, Today, Inbox, a tag...) keeps its own
   choice, also after a restart; all the columns of Projects share theirs (the
-  reviews have fixed columns). When is off in Projects until you turn it on, and leaves *Due* out of the first cell once on
+  reviews have fixed columns). When is off in Projects until you turn it on, and leaves *Due* out of the first cell once on.
+  Under the ticks, **Completed Tasks** narrows what the Completed and dropped toggle brings back:
+  All, Past day, Past 3 days, Past week or None. Only a completion made since this
+  feature has a day to count from, so older ones and dropped items show under All only.
+  Each place keeps its own choice until the app closes
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the

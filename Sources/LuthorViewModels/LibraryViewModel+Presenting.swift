@@ -119,7 +119,8 @@ extension LibraryViewModel {
     defaultViewID = state.defaultViewID
     let view = state.view(currentView)
     projects = view.projects
-    let completed = showCompleted ? Completion(view) : Completion()
+    let completed =
+      showCompleted ? Completion(view, window: completedWindow(ofList: shownListID), today: clock()) : Completion()
     let known = projects + completed.projects.map(\.item)
     knownProjects = known
     if let projectID = shownProjectID, !known.contains(where: { $0.id == projectID }) {
@@ -159,9 +160,9 @@ extension LibraryViewModel {
 
     init() {}
 
-    init(_ view: ViewState) {
-      tasks = view.completedTasks
-      projects = view.completedProjects
+    init(_ view: ViewState, window: CompletedWindow, today: CalendarDate) {
+      tasks = view.completedTasks.filter { window.includes(completedOn: $0.completedOn, today: today) }
+      projects = view.completedProjects.filter { window.includes(completedOn: $0.completedOn, today: today) }
     }
 
     /// The completed sub-projects, then the completed tasks, filed in a project; the top level has no

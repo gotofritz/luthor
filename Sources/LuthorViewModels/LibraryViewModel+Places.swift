@@ -144,6 +144,10 @@ extension LibraryViewModel {
     get { browserModel.listColumns }
     set { browserModel.listColumns = newValue }
   }
+  var completedWindows: [String: CompletedWindow] {
+    get { browserModel.completedWindows }
+    set { browserModel.completedWindows = newValue }
+  }
   public internal(set) var tasks: [TaskItem] {
     get { listedModel.tasks }
     set { listedModel.tasks = newValue }

@@ -113,7 +113,7 @@ struct CompleteRepeatingCommandTests {
 
     #expect(
       events == [
-        completed("t1", id: "id-1", lamport: 4),
+        completed("t1", id: "id-1", on: "2026-10-19", lamport: 4),
         recurred("t1", as: nextID, due: "2026-10-26", id: "id-2", lamport: 5),
       ])
   }
@@ -159,7 +159,7 @@ struct CompleteRepeatingCommandTests {
 
     let events = try makeCommands().complete(taskID: TaskID("t1"), today: monday, log: log)
 
-    #expect(events == [completed("t1", id: "id-1", lamport: 3)])
+    #expect(events == [completed("t1", id: "id-1", on: "2026-10-19", lamport: 3)])
   }
 
   @Test("a task whose next task exists already writes only its completion")
@@ -172,7 +172,7 @@ struct CompleteRepeatingCommandTests {
 
     let events = try makeCommands().complete(taskID: TaskID("t1"), today: monday, log: log)
 
-    #expect(events == [completed("t1", id: "id-1", lamport: 7)])
+    #expect(events == [completed("t1", id: "id-1", on: "2026-10-19", lamport: 7)])
   }
 }
 

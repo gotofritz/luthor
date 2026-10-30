@@ -101,9 +101,12 @@ public struct EventEnvelope: Equatable, Sendable {
 /// Completes an item. A project takes the items still open in it along, all the way down.
 public struct TaskCompleted: Equatable, Codable, Sendable {
   public let taskID: TaskID
+  /// The day it was done on; `nil` in a log written before the day was kept.
+  public let completedOn: CalendarDate?
 
-  public init(taskID: TaskID) {
+  public init(taskID: TaskID, completedOn: CalendarDate? = nil) {
     self.taskID = taskID
+    self.completedOn = completedOn
   }
 }
 

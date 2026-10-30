@@ -36,7 +36,8 @@ extension LibraryState {
       guard let stored = items[id], (stored.item.kind != nil) == wanted else { return nil }
       switch stored.status {
       case .open: return nil
-      case .completed(let root): return Completed(item: make(stored.item), completedWith: root)
+      case .completed(let root):
+        return Completed(item: make(stored.item), completedWith: root, completedOn: completedDays[id])
       case .dropped(let root): return Completed(item: make(stored.item), completedWith: root, isDropped: true)
       }
     }

@@ -22,6 +22,7 @@ struct ListSortHeader: View {
   var isRow = false
   /// The order of every list but the reviews: done, duration, priority, date, title; false puts the title first.
   var priorityFirst = true
+  @State private var showsSettings = false
 
   var body: some View {
     HStack(spacing: TaskColumns.spacing) {
@@ -46,7 +47,24 @@ struct ListSortHeader: View {
     .background(isRow ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
     .overlay(alignment: .bottom) { Divider() }
     .contentShape(Rectangle())
-    .contextMenu { if priorityFirst { columnsMenu } }
+    .overlay(alignment: .trailing) { if priorityFirst { settingsButton } }
+  }
+
+  /// The gear at the far end of the header, which opens the list's settings and keeps them open until a click
+  /// lands anywhere else.
+  private var settingsButton: some View {
+    Button {
+      showsSettings.toggle()
+    } label: {
+      Image(systemName: "gearshape")
+        .padding(.horizontal, 6)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .padding(.trailing, isRow ? 0 : 5)
+    .help("Columns and completed tasks")
+    .accessibilityLabel("List settings")
+    .popover(isPresented: $showsSettings, arrowEdge: .bottom) { settingsPopover }
   }
 
   /// Whether a column of the rows is shown: the lists of the reviews have their own, fixed columns; the others
@@ -55,16 +73,29 @@ struct ListSortHeader: View {
     allowed && (!priorityFirst || library.isColumnShown(column, inList: listID))
   }
 
-  /// A tick beside each column, to turn it on and off; each list keeps its own.
-  @ViewBuilder
-  private var columnsMenu: some View {
-    ForEach(ListColumn.allCases, id: \.self) { column in
-      Toggle(
-        column.label,
-        isOn: Binding(
-          get: { library.isColumnShown(column, inList: listID) },
-          set: { _ in library.toggleColumn(column, inList: listID) }))
+  /// A tick beside each column, to turn it on and off, and how far back completed tasks reach; each list
+  /// keeps its own.
+  private var settingsPopover: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      ForEach(ListColumn.allCases, id: \.self) { column in
+        Toggle(
+          column.label,
+          isOn: Binding(
+            get: { library.isColumnShown(column, inList: listID) },
+            set: { _ in library.toggleColumn(column, inList: listID) }))
+      }
+      Divider()
+      Picker(
+        "Completed Tasks",
+        selection: Binding(
+          get: { library.completedWindow(ofList: listID) },
+          set: { library.setCompletedWindow($0, ofList: listID) })
+      ) {
+        ForEach(CompletedWindow.allCases, id: \.self) { Text($0.label).tag($0) }
+      }
+      .fixedSize()
     }
+    .padding(12)
   }
 
   private var titleCell: some View {

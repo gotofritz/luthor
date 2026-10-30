@@ -27,13 +27,14 @@ public func completed(
   _ task: String,
   id: String? = nil,
   device: String = "mac",
+  on day: String? = nil,
   lamport: UInt64 = 2
 ) -> EventEnvelope {
   EventEnvelope(
     id: EventID(id ?? "complete-\(task)"),
     deviceID: DeviceID(device),
     lamport: lamport,
-    payload: .taskCompleted(TaskCompleted(taskID: TaskID(task)))
+    payload: .taskCompleted(TaskCompleted(taskID: TaskID(task), completedOn: day.map(date)))
   )
 }
 

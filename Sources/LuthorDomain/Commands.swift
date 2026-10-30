@@ -119,7 +119,9 @@ public struct Commands {
   {
     let state = libraryState(from: log)
     guard state.isOpen(taskID) else { throw .noOpenTask(taskID.rawValue) }
-    let completion = [envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID)), log: log)]
+    let completion = [
+      envelope(EventID(ids.next()), .taskCompleted(TaskCompleted(taskID: taskID, completedOn: today)), log: log)
+    ]
     return completion + recurrence(of: taskID, on: today, state: state, log: log + completion)
   }
 

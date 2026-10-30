@@ -36,7 +36,7 @@ struct CompleteRepeatingViewModelTests {
 
     #expect(
       log.events.suffix(2) == [
-        completed("t1", id: "id-1", lamport: 4),
+        completed("t1", id: "id-1", on: "2026-10-19", lamport: 4),
         recurred("t1", as: nextID.rawValue, due: "2026-10-26", id: "id-2", lamport: 5),
       ])
     #expect(library.tasks.map(\.id) == [nextID])
@@ -50,7 +50,8 @@ struct CompleteRepeatingViewModelTests {
 
     library.complete(TaskID("t1"))
 
-    #expect(log.events == [captured("t1", "pay tax", lamport: 1), completed("t1", id: "id-1", lamport: 2)])
+    #expect(
+      log.events == [captured("t1", "pay tax", lamport: 1), completed("t1", id: "id-1", on: "2026-10-19", lamport: 2)])
   }
 }
 

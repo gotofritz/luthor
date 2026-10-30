@@ -46,3 +46,5 @@
 {"data":{"parentID":"p1","taskIDs":["t2","t1"]},"device":"mac","id":"e46","lamport":46,"type":"ChildrenOrdered"}
 {"data":{"name":"later","tagID":"g2","viewID":"work"},"device":"mac","id":"e47","lamport":47,"type":"TagCreated"}
 {"data":{"tagID":"g2"},"device":"mac","id":"e48","lamport":48,"type":"TagDeleted"}
+{"data":{"taskID":"t9","title":"Pay rent"},"device":"mac","id":"e49","lamport":49,"type":"TaskCaptured"}
+{"data":{"completedOn":"2026-10-12","taskID":"t9"},"device":"mac","id":"e50","lamport":50,"type":"TaskCompleted"}
