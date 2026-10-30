@@ -32,6 +32,10 @@ struct ColumnResizeHandle: NSViewRepresentable {
     var onDrag: (CGFloat) -> Void = { _ in }
     var onDoubleClick: () -> Void = {}
     private var dragStartX: CGFloat = 0
+    /// Whether the mouse is over the strip, when a line shows it can be dragged.
+    private var isHovered = false {
+      didSet { needsDisplay = true }
+    }
 
     override var mouseDownCanMoveWindow: Bool { false }
 
@@ -39,6 +43,35 @@ struct ColumnResizeHandle: NSViewRepresentable {
 
     override func resetCursorRects() {
       addCursorRect(bounds, cursor: .resizeLeftRight)
+    }
+
+    /// Cursor rects do not always reach a view hosted in SwiftUI, so a tracking area sets the pointer too.
+    override func updateTrackingAreas() {
+      super.updateTrackingAreas()
+      trackingAreas.forEach(removeTrackingArea)
+      addTrackingArea(
+        NSTrackingArea(
+          rect: .zero, options: [.cursorUpdate, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+          owner: self, userInfo: nil))
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+      NSCursor.resizeLeftRight.set()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+      isHovered = true
+      NSCursor.resizeLeftRight.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+      isHovered = false
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+      guard isHovered else { return }
+      NSColor.controlAccentColor.setFill()
+      NSRect(x: bounds.midX - 1, y: bounds.minY, width: 2, height: bounds.height).fill()
     }
 
     override func setFrameSize(_ newSize: NSSize) {
