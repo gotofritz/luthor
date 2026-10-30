@@ -28,7 +28,7 @@ struct ListSortHeader: View {
   @State private var dragStartWidth: Double?
 
   var body: some View {
-    HStack(spacing: TaskColumns.spacing) {
+    HStack(spacing: priorityFirst ? 0 : TaskColumns.spacing) {
       if shows(.status, showsStatus) { statusCell }
       if !priorityFirst { titleCell }
       if shows(.duration, showsDuration) {
@@ -54,6 +54,10 @@ struct ListSortHeader: View {
     .contentShape(Rectangle())
     .overlay(alignment: .trailing) { if priorityFirst { settingsButton } }
   }
+
+  /// The room after a cell that is not resizable, in the lists whose columns are: their cells sit side by side and a
+  /// strip to drag takes the gap between each pair, so the dots between the cells are in the middle of it.
+  private var gap: CGFloat { priorityFirst ? TaskColumns.spacing : 0 }
 
   /// The sliders icon at the far end of the header, which opens the list's settings and keeps them open until a click
   /// lands anywhere else.
@@ -104,7 +108,9 @@ struct ListSortHeader: View {
   private var titleCell: some View {
     cell(
       library.sortLabelKey(ofList: listID), label: library.firstCellLabel(ofList: listID), width: nil,
-      alignment: .leading, firstCell: true, separated: showsStatus || priorityFirst)
+      alignment: .leading, firstCell: true, separated: showsStatus || priorityFirst
+    )
+    .padding(.trailing, trailingInset > 0 ? gap : 0)
   }
 
   private func priorityCell(separated: Bool) -> some View {
@@ -131,6 +137,7 @@ struct ListSortHeader: View {
     .buttonStyle(.plain)
     .help("Sort by open and done")
     .accessibilityLabel("Sort by status")
+    .padding(.trailing, gap)
   }
 
   /// A small triangle, to go above or below a word.
@@ -141,6 +148,7 @@ struct ListSortHeader: View {
   /// A cell of the header, its text or, with `symbol`, its icon. The one the list is sorted by is in the accent
   /// colour with an arrow: after the word, or, in a `stacked` narrow cell, above it when pointing up and below
   /// it when pointing down. Ascending points down.
+  @ViewBuilder
   private func cell(
     _ key: ListSortKey, label: String, symbol: String? = nil, width: CGFloat?, alignment: Alignment,
     firstCell: Bool = false, separated: Bool = true, resizes: ListColumn? = nil
@@ -148,7 +156,7 @@ struct ListSortHeader: View {
     let sort = library.sort(ofList: listID)
     let isSorted = sort.key == key
     let stacked = symbol != nil || resizes == .priority
-    return Button {
+    let button = Button {
       if firstCell { library.sortByFirstCell(ofList: listID) } else { library.sortBy(key, ofList: listID) }
     } label: {
       Group {
@@ -175,11 +183,15 @@ struct ListSortHeader: View {
       // Half the gap between the cells, so the dots sit between them without moving them.
       if separated { DottedSeparator().offset(x: -TaskColumns.spacing / 2) }
     }
-    .overlay(alignment: .trailing) {
-      // The last few points of the cell, inside its bounds so the whole strip takes clicks, beside the next cell.
-      if priorityFirst, let resizes { resizeHandle(resizes, label: label) }
-    }
     .help("Sort by \(label.lowercased())")
+    if priorityFirst, let resizes {
+      HStack(spacing: 0) {
+        button
+        resizeHandle(resizes, label: label)
+      }
+    } else {
+      button.padding(.trailing, gap)
+    }
   }
 
   /// The width of the column in the rows: the one dragged to, in the lists whose columns can be resized.
@@ -198,8 +210,10 @@ struct ListSortHeader: View {
       },
       onDoubleClick: { fit(column, label: label) }
     )
-    .frame(width: 8)
+    // Wider than the gap it fills, so the strip reaches a little into the cells either side.
+    .frame(width: TaskColumns.spacing + 4)
     .frame(maxHeight: .infinity)
+    .padding(.horizontal, -2)
     .help("Drag to resize, double-click to fit")
   }
 
