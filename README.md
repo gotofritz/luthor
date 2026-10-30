@@ -61,8 +61,8 @@ Project). Next actions follow the whole tree: a task is one only if every
 project above it lets it be. Complete a project from the toolbar or its
 context menu; its sub-projects and open tasks go with it.
 
-Completed and dropped tasks and projects disappear, but the Completed and dropped toggle in the top
-bar lists them again, dimmed after the open ones, and Reopen brings one
+Completed and dropped tasks and projects disappear, but the Completed Tasks dropdown in a list header's settings
+(All, Past day, Past 3 days, Past week, None) lists them again, dimmed after the open ones, and Reopen brings one
 back. Click a task and a card opens in the next column; click a project and
 its column opens; the pencil on its row swaps that list for the project's card. A card has no edit mode: it
 shows the day it was created and every field, and a click on one edits it in
@@ -133,7 +133,7 @@ here, and Settings → Global sets the default for all of them. Its card shows t
 next review day and how often, and you can move the day on the card, to stagger
 projects made together. A project that
 is no longer wanted can be dropped (Drop Project: it and its open tasks leave
-the lists and the review; the Completed and dropped toggle lists them, and Reopen brings them back).
+the lists and the review; the Completed Tasks dropdown lists them, and Reopen brings them back).
 
 Settings has three families, Global, Views (a list of views, with overrides
 for the one picked; Edit View… in the view switcher opens it on the view

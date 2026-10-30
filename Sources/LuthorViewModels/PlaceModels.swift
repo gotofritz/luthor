@@ -87,7 +87,6 @@ final class BrowserModel {
   var path: [TaskID] = []
   var listSorts: [String: ListSort] = [:]
   var listColumns: [String: Set<ListColumn>] = [:]
-  var completedWindows: [String: CompletedWindow] = [:]
 }
 
 /// The tasks listed, those of them that can be worked on now, and the completed and dropped items listed beside

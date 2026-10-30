@@ -17,8 +17,7 @@ private let windowLog = [
 @MainActor
 private func listed(_ window: CompletedWindow) -> Set<TaskID> {
   let (library, _) = makeInbox(windowLog)
-  library.showCompleted = true
-  library.setCompletedWindow(window, ofList: library.taskListID)
+  library.completedWindow = window
   return library.completedTaskIDs
 }
 
@@ -53,19 +52,34 @@ struct CompletedWindowTests {
   @Test("the open tasks stay in every case")
   func openTasksStay() {
     let (library, _) = makeInbox(windowLog)
-    library.showCompleted = true
-    library.setCompletedWindow(.none, ofList: library.taskListID)
+    library.completedWindow = .past3Days
+    library.completedWindow = .none
 
     #expect(library.tasks.map(\.title) == ["open"])
   }
 
-  @Test("a list shows all of them until it is narrowed, and each place keeps its own")
-  func placesAreIndependent() {
+  @Test("completed tasks are hidden until a window is chosen, and choosing one shows them")
+  func hiddenUntilChosen() {
     let (library, _) = makeInbox(windowLog)
 
-    library.setCompletedWindow(.pastWeek, ofList: "project-p1")
+    #expect(library.completedWindow == .none)
+    #expect(!library.showCompleted)
+    #expect(library.completedTaskIDs.isEmpty)
 
-    #expect(library.completedWindow(ofList: "top") == .pastWeek)
-    #expect(library.completedWindow(ofList: library.taskListID) == .all)
+    library.completedWindow = .pastWeek
+
+    #expect(library.showCompleted)
+    #expect(library.completedTaskIDs.count == 3)
+  }
+
+  @Test("turning completed tasks on shows all of them, and off hides them")
+  func showCompletedStillWorks() {
+    let (library, _) = makeInbox(windowLog)
+
+    library.showCompleted = true
+    #expect(library.completedWindow == .all)
+
+    library.showCompleted = false
+    #expect(library.completedWindow == .none)
   }
 }

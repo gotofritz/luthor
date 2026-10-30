@@ -259,8 +259,7 @@ Sources/
                              each in a class of its own, so a view reads one without being told of another's;
                              LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
-    CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back a list's completed items reach
-    LibraryViewModel+CompletedWindow.swift  the window each place has, set from the header's popover
+    CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back the completed items listed reach (`LibraryViewModel.completedWindow`, chosen from a header's popover)
     LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)

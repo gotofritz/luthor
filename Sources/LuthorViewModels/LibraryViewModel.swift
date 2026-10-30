@@ -25,9 +25,15 @@ public final class LibraryViewModel {
   public var candidateFilter = TaskFilter() {
     didSet { present() }
   }
-  /// Whether completed and dropped tasks and projects are listed too, dimmed, after the open ones.
-  public var showCompleted = false {
+  /// How far back the completed and dropped tasks and projects listed too, dimmed, after the open ones,
+  /// reach; none until a window is chosen.
+  public var completedWindow = CompletedWindow.none {
     didSet { present() }
+  }
+  /// Whether any completed and dropped items are listed; turning it on lists all of them.
+  public var showCompleted: Bool {
+    get { completedWindow != .none }
+    set { if newValue != showCompleted { completedWindow = newValue ? .all : .none } }
   }
   public var draft = ""
   public internal(set) var errorMessage: String?

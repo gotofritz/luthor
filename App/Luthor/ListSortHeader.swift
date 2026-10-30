@@ -87,9 +87,7 @@ struct ListSortHeader: View {
       Divider()
       Picker(
         "Completed Tasks",
-        selection: Binding(
-          get: { library.completedWindow(ofList: listID) },
-          set: { library.setCompletedWindow($0, ofList: listID) })
+        selection: $library.completedWindow
       ) {
         ForEach(CompletedWindow.allCases, id: \.self) { Text($0.label).tag($0) }
       }

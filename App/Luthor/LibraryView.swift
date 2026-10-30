@@ -107,18 +107,13 @@ struct LibraryView: View {
     library.views.first { $0.id == library.currentView }?.name ?? ""
   }
 
-  /// The search box, which waits for its slice, the toggle for completed and dropped items and the view switcher.
+  /// The search box, which waits for its slice, and the view switcher.
   private var topBar: some View {
     HStack(spacing: 12) {
       TextField("Search", text: .constant(""))
         .textFieldStyle(.roundedBorder)
         .disabled(true)
         .help("Search comes in a later slice")
-      Toggle(isOn: $library.showCompleted) {
-        Label("Completed and dropped", systemImage: "checkmark.circle")
-      }
-      .toggleStyle(.button)
-      .help("Show completed and dropped tasks and projects")
       // In the window, not the toolbar: a toolbar that comes and goes with the project picked changes the
       // height of the title bar.
       if library.section == .projects, let projectID = shownProjectID {

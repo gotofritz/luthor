@@ -120,7 +120,7 @@ extension LibraryViewModel {
     let view = state.view(currentView)
     projects = view.projects
     let completed =
-      showCompleted ? Completion(view, window: completedWindow(ofList: shownListID), today: clock()) : Completion()
+      showCompleted ? Completion(view, window: completedWindow, today: clock()) : Completion()
     let known = projects + completed.projects.map(\.item)
     knownProjects = known
     if let projectID = shownProjectID, !known.contains(where: { $0.id == projectID }) {

@@ -130,11 +130,13 @@ unless you add your own.
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
 
-A completed or dropped task or project disappears from the lists. The Completed and dropped toggle
-in the bar above the columns, between the search box and the view switcher,
-brings them back: they show after the open ones, dimmed and struck through,
+A completed or dropped task or project disappears from the lists. The **Completed Tasks**
+dropdown in the settings panel of a list header (the sliders button) brings
+them back: they show after the open ones, dimmed and struck through,
 in the place they belong (the Inbox, their project's column, or the Prios
-that match). The toggle is off when the app opens.
+that match). Choose All, Past day, Past 3 days or Past week to say how far back
+to look, or None to hide them again. It is None when the app opens, and one
+choice holds for every list.
 
 Reopen a completed task by clicking its tick or choosing Reopen in its
 context menu. It goes back into its project if that is still open, else it
@@ -418,7 +420,7 @@ shows "Review off" and has no day to pick.
 
 **Dropping.** Drop Project (the button, or the project's context menu) gives
 up a project: it and its open tasks leave the lists and the review, and
-nothing is deleted. The Completed and dropped toggle lists it with a cross
+nothing is deleted. Choosing a Completed Tasks window lists it with a cross
 symbol, and Reopen brings it back with the tasks it took along.
 
 A project that was never reviewed counts from the day it was created, so a
@@ -477,10 +479,10 @@ action, so its order is its meaning.
   Priority and When turns each column on or off. Each place (Projects, Prios, Today, Inbox, a tag...) keeps its own
   choice, also after a restart; all the columns of Projects share theirs (the
   reviews have fixed columns). When is off in Projects until you turn it on, and leaves *Due* out of the first cell once on.
-  Under the ticks, **Completed Tasks** narrows what the Completed and dropped toggle brings back:
-  All, Past day, Past 3 days, Past week or None. Only a completion made since this
-  feature has a day to count from, so older ones and dropped items show under All only.
-  Each place keeps its own choice until the app closes
+  Under the ticks, **Completed Tasks** shows or hides
+  completed and dropped items: All, Past day, Past 3 days, Past week or None. Only a
+  completion made since this feature has a day to count from, so older ones and dropped
+  items show under All only. The choice holds for every list until the app closes
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the
@@ -563,7 +565,7 @@ the next due date. A project can repeat too: completing it makes the next
 project, holding fresh copies of its tasks, which have no due dates. The day it was planned for, a delegation and the time
 logged are not copied. The completed one stays in Completed. In the Priorities place the occurrence just done stays
 listed, ticked and in a lighter accent colour, beside the next one, until that one is done too, even with
-Completed and dropped off. Nothing is
+Completed Tasks on None. Nothing is
 planned by itself: the next task shows in the lists straight away (there is
 no start date), and as a candidate under the usual due-date rules. Editing
 the task that is open changes what the next ones copy.
