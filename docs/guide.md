@@ -565,9 +565,8 @@ Completing a task that repeats makes the next one at once, in the same
 project, with the same title, notes, priority, estimate, tags and repeat, and
 the next due date. A project can repeat too: completing it makes the next
 project, holding fresh copies of its tasks, which have no due dates. The day it was planned for, a delegation and the time
-logged are not copied. The completed one stays in Completed. In the Priorities place the occurrence just done stays
-listed, ticked and in a lighter accent colour, beside the next one, until that one is done too, even with
-Completed Tasks on None. Nothing is
+logged are not copied. The completed one leaves the lists like any completed task, and shows again
+(dimmed, beside the next one) under any Completed Tasks choice but None. Nothing is
 planned by itself: the next task shows in the lists straight away (there is
 no start date), and as a candidate under the usual due-date rules. Editing
 the task that is open changes what the next ones copy.
