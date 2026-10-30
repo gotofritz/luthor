@@ -296,7 +296,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              BulkCardViews: the card of several tasks selected together (fields greyed where they differ);
                              TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
-                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column;
+                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column, with ColumnResizeHandle (an AppKit strip on the boundary after a cell: resize pointer, drag, double click to fit);
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;

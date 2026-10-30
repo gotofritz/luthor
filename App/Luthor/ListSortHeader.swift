@@ -190,24 +190,17 @@ struct ListSortHeader: View {
   /// The strip over the boundary between a column and the next: dragging it resizes the column to its left,
   /// double-clicking it fits the column to its widest content, header included, as in a spreadsheet.
   private func resizeHandle(_ column: ListColumn, label: String) -> some View {
-    Color.clear
-      .frame(width: 8)
-      .frame(maxHeight: .infinity)
-      .contentShape(Rectangle())
-      .onHover { inside in
-        if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-      }
-      .highPriorityGesture(
-        DragGesture(minimumDistance: 1, coordinateSpace: .global)
-          .onChanged { drag in
-            let start = dragStartWidth ?? library.columnWidth(column, inList: listID)
-            dragStartWidth = start
-            library.setColumnWidth(start + drag.translation.width, of: column, inList: listID)
-          }
-          .onEnded { _ in dragStartWidth = nil }
-      )
-      .highPriorityGesture(TapGesture(count: 2).onEnded { fit(column, label: label) })
-      .help("Drag to resize, double-click to fit")
+    ColumnResizeHandle(
+      onBegin: { dragStartWidth = library.columnWidth(column, inList: listID) },
+      onDrag: { moved in
+        library.setColumnWidth(
+          (dragStartWidth ?? library.columnWidth(column, inList: listID)) + moved, of: column, inList: listID)
+      },
+      onDoubleClick: { fit(column, label: label) }
+    )
+    .frame(width: 8)
+    .frame(maxHeight: .infinity)
+    .help("Drag to resize, double-click to fit")
   }
 
   /// Sets the column as wide as its widest text or its header, whichever is wider.
