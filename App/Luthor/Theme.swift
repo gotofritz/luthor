@@ -116,22 +116,25 @@ private struct SelectionBackgroundModifier: ViewModifier {
 private struct NoSystemHighlight: NSViewRepresentable {
   /// Holds the observers that switch the highlight off again whenever the table changes its picked rows, which
   /// SwiftUI may answer by restoring the system's inset highlight on top of the view's own.
-  final class Coordinator {
-    var observed: [ObjectIdentifier: NSObjectProtocol] = [:]
+  @MainActor
+  final class Coordinator: NSObject {
+    private let watched = NSHashTable<NSTableView>.weakObjects()
 
     deinit {
-      for observer in observed.values { NotificationCenter.default.removeObserver(observer) }
+      NotificationCenter.default.removeObserver(self)
     }
 
     func switchOff(_ table: NSTableView) {
       table.selectionHighlightStyle = .none
-      let key = ObjectIdentifier(table)
-      guard observed[key] == nil else { return }
-      observed[key] = NotificationCenter.default.addObserver(
-        forName: NSTableView.selectionDidChangeNotification, object: table, queue: .main
-      ) { note in
-        MainActor.assumeIsolated { (note.object as? NSTableView)?.selectionHighlightStyle = .none }
-      }
+      guard !watched.contains(table) else { return }
+      watched.add(table)
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(selectionChanged(_:)), name: NSTableView.selectionDidChangeNotification,
+        object: table)
+    }
+
+    @objc private func selectionChanged(_ note: Notification) {
+      (note.object as? NSTableView)?.selectionHighlightStyle = .none
     }
   }
 
