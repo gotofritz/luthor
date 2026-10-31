@@ -87,6 +87,7 @@ final class BrowserModel {
   var path: [TaskID] = []
   var listSorts: [String: ListSort] = [:]
   var listColumns: [String: Set<ListColumn>] = [:]
+  var futureWindows: [String: FutureWindow] = [:]
   /// The widths the columns of the browser were dragged to, by column.
   var columnWidths: [String: Double] = [:]
 }
