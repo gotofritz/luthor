@@ -260,6 +260,7 @@ Sources/
                              LibraryViewModel+Places.swift forwards their properties, so callers are unchanged
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
     CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back the completed items listed reach (`LibraryViewModel.completedWindow`, chosen from a header's popover)
+    FutureWindow.swift       FutureWindow (all, 1 day, 1 week, 1 month, none): how far ahead the tasks of a place reach, by the sooner of due and scheduled (`futureWindow(ofList:)`, kept per place and per device through `onFutureWindowsChanged`)
     LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
     LibraryViewModel+ColumnWidths.swift  the width of each column of the browser, dragged from the grip at the foot of its edge (kept per device through `onColumnWidthsChanged`), and the widest title a column shows, for fitting it
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,

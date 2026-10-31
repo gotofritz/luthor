@@ -63,7 +63,7 @@ context menu; its sub-projects and open tasks go with it.
 
 Completed and dropped tasks and projects disappear, but the Completed Tasks dropdown in a list header's settings
 (All, Past day, Past 3 days, Past week, None) lists them again, dimmed after the open ones, and Reopen brings one
-back. Click a task and a card opens in the next column; click a project and
+back. The Future Tasks dropdown beside it (All, 1 day, 1 week, 1 month, None) hides tasks dated further ahead, by the sooner of due and scheduled date. Click a task and a card opens in the next column; click a project and
 its column opens; the pencil on its row swaps that list for the project's card. A card has no edit mode: it
 shows the day it was created and every field, and a click on one edits it in
 place. The notes are bullet points (web addresses are
