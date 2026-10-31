@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// The strip over the boundary between two cells of a list header. It is a view of AppKit, which sets the
-/// resize pointer over it and gets the mouse itself, as the cells' sort buttons around it would otherwise take
-/// the hover and the clicks. A drag reports how far the mouse has moved since it began, a double click asks to fit.
+/// The grip at the foot of a column's edge, like the one Finder has. It is a view of AppKit, which sets the resize
+/// pointer over it and gets the mouse itself. A drag reports how far the mouse has moved since it began, a double
+/// click asks to fit.
 struct ColumnResizeHandle: NSViewRepresentable {
   /// The mouse went down to start a drag.
   var onBegin: () -> Void
@@ -32,7 +32,7 @@ struct ColumnResizeHandle: NSViewRepresentable {
     var onDrag: (CGFloat) -> Void = { _ in }
     var onDoubleClick: () -> Void = {}
     private var dragStartX: CGFloat = 0
-    /// Whether the mouse is over the strip, when a line shows it can be dragged.
+    /// Whether the mouse is over the grip, which is then in the accent colour.
     private var isHovered = false {
       didSet { needsDisplay = true }
     }
@@ -69,9 +69,11 @@ struct ColumnResizeHandle: NSViewRepresentable {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-      guard isHovered else { return }
-      NSColor.controlAccentColor.setFill()
-      NSRect(x: bounds.midX - 1, y: bounds.minY, width: 2, height: bounds.height).fill()
+      (isHovered ? NSColor.controlAccentColor : NSColor.tertiaryLabelColor).setFill()
+      // Two short lines side by side, as on Finder's grip.
+      for left in [bounds.midX - 2, bounds.midX + 1] {
+        NSRect(x: left, y: bounds.midY - 5, width: 1, height: 10).fill()
+      }
     }
 
     override func setFrameSize(_ newSize: NSSize) {

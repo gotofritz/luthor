@@ -4,11 +4,6 @@ import SwiftUI
 
 /// The cells of a `TaskRow`, each of the width of its column in the header above.
 extension TaskRow {
-  /// How wide the column is in this row's list, as the header over it has been dragged to.
-  func width(_ column: ListColumn) -> CGFloat {
-    listID.map { CGFloat(library.columnWidth(column, inList: $0)) } ?? CGFloat(column.defaultWidth)
-  }
-
   var titleCells: some View {
     HStack(spacing: 8) {
       Text(task.title)
@@ -34,7 +29,7 @@ extension TaskRow {
           .help("Estimate")
       }
     }
-    .frame(width: width(.duration), alignment: .trailing)
+    .frame(width: TaskColumns.duration, alignment: .trailing)
   }
 
   var dateCell: some View {
@@ -47,7 +42,7 @@ extension TaskRow {
           .help(library.scheduledDate(of: task.id) == nil ? "Due" : "Scheduled")
       }
     }
-    .frame(width: width(.when), alignment: .leading)
+    .frame(width: TaskColumns.date, alignment: .leading)
   }
 
   var priorityCell: some View {
@@ -59,6 +54,6 @@ extension TaskRow {
           .help(priority.title)
       }
     }
-    .frame(width: width(.priority))
+    .frame(width: TaskColumns.priority)
   }
 }

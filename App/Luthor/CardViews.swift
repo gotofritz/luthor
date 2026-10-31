@@ -20,7 +20,7 @@ struct TaskCardColumn: View {
       card
         .padding(12)
     }
-    .frame(width: 300)
+    .resizableColumn(library, id: "task-card", usually: 300)
     .id(task.id)
   }
 
@@ -80,7 +80,7 @@ struct ProjectCardColumn: View {
     ScrollView {
       ProjectCard(library: library, project: project)
     }
-    .frame(width: 300)
+    .resizableColumn(library, id: "project-card", usually: 300)
   }
 }
 

@@ -95,9 +95,9 @@ struct LuthorApp: App {
   }
 
   /// The widths each list's columns were left with; none if nothing was saved or it cannot be read.
-  private static func savedColumnWidths() -> [String: [String: Double]] {
+  private static func savedColumnWidths() -> [String: Double] {
     guard let data = UserDefaults.standard.data(forKey: columnWidthsKey) else { return [:] }
-    return (try? JSONDecoder().decode([String: [String: Double]].self, from: data)) ?? [:]
+    return (try? JSONDecoder().decode([String: Double].self, from: data)) ?? [:]
   }
 
   private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {

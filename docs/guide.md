@@ -126,12 +126,13 @@ bank" with priority Critical and a 15-minute estimate, already clarified.
 Typed in a project's column, a task takes the project's priority and estimate
 unless you add your own.
 
-## Resizing the columns of a list
+## Resizing the columns
 
-Drag the boundary between two header cells to resize the column on its left
-(Duration, Prio or When). Double-click the boundary to fit the column to its
-widest content, header included, as in a spreadsheet. Each place (the Inbox,
-Projects, Prios, Today) keeps its own widths, and this Mac remembers them.
+Each column of the browser (the projects and their contents, the inbox, the
+priorities and tags, the cards) has a grip at the foot of its right edge, as in
+Finder. Drag it to make the column wider or narrower. Double-click it to fit the
+column to its longest title; a column with no titles, such as a card, goes back
+to its usual width. Each column keeps its width, and this Mac remembers it.
 
 ## Completing a task
 

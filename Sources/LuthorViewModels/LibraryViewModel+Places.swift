@@ -144,7 +144,7 @@ extension LibraryViewModel {
     get { browserModel.listColumns }
     set { browserModel.listColumns = newValue }
   }
-  public internal(set) var columnWidths: [String: [String: Double]] {
+  public internal(set) var columnWidths: [String: Double] {
     get { browserModel.columnWidths }
     set { browserModel.columnWidths = newValue }
   }

@@ -3,7 +3,7 @@
 /// and writes nothing to the log.
 extension LibraryViewModel {
   /// The place a list belongs to, which is what keeps the columns: every column of Projects is one place.
-  func place(ofList listID: String) -> String {
+  private func place(ofList listID: String) -> String {
     listID == "top" || listID.hasPrefix("project-") ? "projects" : listID
   }
 

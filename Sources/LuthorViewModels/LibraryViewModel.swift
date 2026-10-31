@@ -75,8 +75,8 @@ public final class LibraryViewModel {
 
   /// Called with every list's columns after a header turns one on or off, for the app to keep them per device.
   public var onListColumnsChanged: (([String: Set<ListColumn>]) -> Void)?
-  /// Called with every place's column widths after a header resizes one, for the app to keep them per device.
-  public var onColumnWidthsChanged: (([String: [String: Double]]) -> Void)?
+  /// Called with every column's width after one is resized, for the app to keep them per device.
+  public var onColumnWidthsChanged: (([String: Double]) -> Void)?
 
   /// `today` and `now` tell the day and the minutes since it began; by default the system clock and "Day changes at" do.
   public init(
@@ -88,7 +88,7 @@ public final class LibraryViewModel {
     instant: @escaping () -> Date = { Date() },
     timeZone: TimeZone = .current,
     listColumns: [String: Set<ListColumn>] = [:],
-    columnWidths: [String: [String: Double]] = [:]
+    columnWidths: [String: Double] = [:]
   ) {
     self.log = log
     unboundCommands = commands

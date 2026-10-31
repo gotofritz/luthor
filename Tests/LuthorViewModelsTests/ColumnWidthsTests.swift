@@ -5,71 +5,89 @@ import LuthorViewModels
 import Testing
 
 @MainActor
-@Suite("When a column of a list is resized from its header")
+@Suite("When a column of the browser is resized from its edge")
 struct ColumnWidthsTests {
   @Test("a column has its usual width until it is resized")
-  func defaultWidths() {
+  func usualWidth() {
     let (library, _) = makeInbox()
 
-    #expect(library.columnWidth(.duration, inList: "project-p1") == 28)
-    #expect(library.columnWidth(.when, inList: library.taskListID) == 70)
+    #expect(library.columnWidth(of: "top", usually: 192) == 192)
   }
 
-  @Test("the width is kept for the place the list is in, and for no other")
-  func widthBelongsToAPlace() {
+  @Test("each column keeps the width it was dragged to, and no other changes")
+  func widthBelongsToAColumn() {
     let (library, _) = makeInbox()
 
-    library.setColumnWidth(50, of: .duration, inList: "project-p1")
+    library.setColumnWidth(260, of: "top")
 
-    #expect(library.columnWidth(.duration, inList: "project-p2") == 50)
-    #expect(library.columnWidth(.duration, inList: "top") == 50)
-    #expect(library.columnWidth(.priority, inList: "project-p1") == 28)
-    #expect(library.columnWidth(.duration, inList: LibraryViewModel.prioritiesListID) == 28)
+    #expect(library.columnWidth(of: "top", usually: 192) == 260)
+    #expect(library.columnWidth(of: "project-p1", usually: 440) == 440)
   }
 
-  @Test("a width is held between a hand's breadth and a screen")
+  @Test("a width is held between a sliver and a screen")
   func widthIsClamped() {
     let (library, _) = makeInbox()
 
-    library.setColumnWidth(2, of: .priority, inList: "top")
-    #expect(library.columnWidth(.priority, inList: "top") == LibraryViewModel.columnWidthRange.lowerBound)
+    library.setColumnWidth(2, of: "top")
+    #expect(library.columnWidth(of: "top", usually: 192) == LibraryViewModel.columnWidthRange.lowerBound)
 
-    library.setColumnWidth(5000, of: .priority, inList: "top")
-    #expect(library.columnWidth(.priority, inList: "top") == LibraryViewModel.columnWidthRange.upperBound)
+    library.setColumnWidth(5000, of: "top")
+    #expect(library.columnWidth(of: "top", usually: 192) == LibraryViewModel.columnWidthRange.upperBound)
+  }
+
+  @Test("resetting a column gives it its usual width back")
+  func resetting() {
+    let (library, _) = makeInbox()
+    library.setColumnWidth(260, of: "top")
+
+    library.resetColumnWidth(of: "top")
+
+    #expect(library.columnWidth(of: "top", usually: 192) == 192)
   }
 
   @Test("each change is handed on to be kept, and widths kept before are the ones it starts with")
   func widthsAreKept() {
     let (library, _) = makeInbox()
-    var kept: [String: [String: Double]] = [:]
+    var kept: [String: Double] = [:]
     library.onColumnWidthsChanged = { kept = $0 }
 
-    library.setColumnWidth(44, of: .when, inList: "project-p1")
+    library.setColumnWidth(300, of: "project-p1")
 
-    #expect(kept == ["projects": ["when": 44]])
+    #expect(kept == ["project-p1": 300])
     let restored = LibraryViewModel(
       log: InMemoryEventLog([]), commands: Commands(deviceID: DeviceID("mac"), ids: SequentialIDs()),
       today: { date("2026-10-19") }, columnWidths: kept)
-    #expect(restored.columnWidth(.when, inList: "top") == 44)
+    #expect(restored.columnWidth(of: "project-p1", usually: 440) == 300)
   }
 
-  @Test("the widest text of the duration column is the longest estimate listed")
-  func widestDuration() {
+  @Test("the widest title of a project's column is the longest of its tasks and sub-projects")
+  func widestTitleOfAColumn() {
     let (library, _) = makeInbox([
       projectCreated("p1", "Garden", lamport: 1),
-      captured("t1", "a", under: "p1", lamport: 2), estimated("t1", as: 5, lamport: 3),
-      captured("t2", "b", under: "p1", lamport: 4), estimated("t2", as: 120, lamport: 5),
+      captured("t1", "mow", under: "p1", lamport: 2),
+      projectCreated("p2", "Roses and other flowers", under: "p1", lamport: 3),
     ])
     library.open(.project(TaskID("p1")))
 
-    #expect(library.widestText(in: .duration, inList: "project-p1") == "120m")
+    #expect(library.widestTitle(inColumn: "project-p1") == "Roses and other flowers")
+    #expect(library.widestTitle(inColumn: "top") == "Garden")
   }
 
-  @Test("a column with nothing to show has no widest text")
-  func widestTextOfAnEmptyColumn() {
-    let (library, _) = makeInbox([captured("t1", "a", lamport: 1)])
+  @Test("the widest title of the inbox is the longest of its tasks")
+  func widestTitleOfTheInbox() {
+    let (library, _) = makeInbox([captured("t1", "buy milk", lamport: 1), captured("t2", "call", lamport: 2)])
 
-    #expect(library.widestText(in: .duration, inList: library.taskListID) == nil)
-    #expect(library.widestText(in: .priority, inList: library.taskListID) == nil)
+    #expect(library.widestTitle(inColumn: library.taskListID) == "buy milk")
+  }
+
+  @Test("fitting a list adds the cells its rows show to the width of its title")
+  func fittedWidth() {
+    let (library, _) = makeInbox()
+    let withEverything = library.fittedWidth(forTitleWidth: 100, inList: library.taskListID)
+
+    library.toggleColumn(.duration, inList: library.taskListID)
+
+    #expect(withEverything - library.fittedWidth(forTitleWidth: 100, inList: library.taskListID) == 32)
+    #expect(library.fittedWidth(forTitleWidth: 150, inList: library.taskListID) > withEverything - 32)
   }
 }

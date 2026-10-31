@@ -24,7 +24,11 @@ struct ColumnView: View {
       list
     }
     // The first column, of the top-level projects, is narrower than the ones that list a project.
-    .frame(width: position == 0 ? 192 : 440)
+    .resizableColumn(library, id: column.id, usually: position == 0 ? 192 : 440) {
+      library.widestTitle(inColumn: column.id).map {
+        library.fittedWidth(forTitleWidth: titleWidth($0), inList: column.id)
+      }
+    }
   }
 
   private var list: some View {

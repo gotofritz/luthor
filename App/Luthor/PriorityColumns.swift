@@ -21,7 +21,7 @@ struct PriorityColumn: View {
       }
     }
     .accentSelectionOnly()
-    .frame(width: 200)
+    .resizableColumn(library, id: "priorities", usually: 200)
   }
 }
 
@@ -56,6 +56,10 @@ struct PriorityListsColumn: View {
       }
     }
     .accentSelectionOnly()
-    .frame(width: 440)
+    .resizableColumn(library, id: LibraryViewModel.prioritiesListID, usually: 440) {
+      library.widestTitle(inColumn: LibraryViewModel.prioritiesListID).map {
+        library.fittedWidth(forTitleWidth: titleWidth($0), inList: LibraryViewModel.prioritiesListID)
+      }
+    }
   }
 }

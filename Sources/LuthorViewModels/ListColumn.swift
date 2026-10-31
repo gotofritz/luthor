@@ -6,15 +6,6 @@ public enum ListColumn: String, CaseIterable, Codable, Sendable {
   /// The day a task is scheduled for, else its due date.
   case when
 
-  /// How wide the column is until its header is dragged.
-  public var defaultWidth: Double {
-    switch self {
-    case .status: 14
-    case .duration, .priority: 28
-    case .when: 70
-    }
-  }
-
   public var label: String {
     switch self {
     case .status: "Done"
