@@ -25,6 +25,7 @@ struct LuthorApp: App {
   private static let machineIDKey = "machineID"
   /// The `UserDefaults` key of the columns each list shows (JSON), per device like the place of the log.
   private static let listColumnsKey = "listColumns"
+  private static let columnWidthsKey = "columnWidths"
 
   private let home = FileManager.default.homeDirectoryForCurrentUser
   private let environment: [String: String]
@@ -93,13 +94,23 @@ struct LuthorApp: App {
     return (try? JSONDecoder().decode([String: Set<ListColumn>].self, from: data)) ?? [:]
   }
 
+  /// The widths each list's columns were left with; none if nothing was saved or it cannot be read.
+  private static func savedColumnWidths() -> [String: Double] {
+    guard let data = UserDefaults.standard.data(forKey: columnWidthsKey) else { return [:] }
+    return (try? JSONDecoder().decode([String: Double].self, from: data)) ?? [:]
+  }
+
   private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {
     let library = LibraryViewModel(
       log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view,
-      listColumns: savedListColumns())
+      listColumns: savedListColumns(), columnWidths: savedColumnWidths())
     library.onListColumnsChanged = { columns in
       guard let data = try? JSONEncoder().encode(columns) else { return }
       UserDefaults.standard.set(data, forKey: listColumnsKey)
+    }
+    library.onColumnWidthsChanged = { widths in
+      guard let data = try? JSONEncoder().encode(widths) else { return }
+      UserDefaults.standard.set(data, forKey: columnWidthsKey)
     }
     library.reload()
     return library

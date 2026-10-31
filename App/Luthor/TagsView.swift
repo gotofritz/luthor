@@ -42,7 +42,7 @@ struct TagColumn: View {
           .padding()
       }
     }
-    .frame(width: 220)
+    .resizableColumn(library, id: "tags", usually: 220)
   }
 }
 
