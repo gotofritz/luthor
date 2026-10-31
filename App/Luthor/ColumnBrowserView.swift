@@ -135,7 +135,11 @@ struct TaskListColumn: View {
         }
         .accentSelectionOnly()
       }
-      .frame(width: 320)
+      .resizableColumn(library, id: library.taskListID, usually: 320) {
+        library.widestTitle(inColumn: library.taskListID).map {
+          library.fittedWidth(forTitleWidth: titleWidth($0), inList: library.taskListID)
+        }
+      }
     }
   }
 

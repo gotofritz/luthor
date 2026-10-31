@@ -87,6 +87,8 @@ final class BrowserModel {
   var path: [TaskID] = []
   var listSorts: [String: ListSort] = [:]
   var listColumns: [String: Set<ListColumn>] = [:]
+  /// The widths the columns of the browser were dragged to, by column.
+  var columnWidths: [String: Double] = [:]
 }
 
 /// The tasks listed, those of them that can be worked on now, and the completed and dropped items listed beside

@@ -261,6 +261,7 @@ Sources/
     ListColumn.swift         ListColumn (done, duration, priority, when): a column of a list that its header can turn on and off
     CompletedWindow.swift    CompletedWindow (all, past day, 3 days, week, none): how far back the completed items listed reach (`LibraryViewModel.completedWindow`, chosen from a header's popover)
     LibraryViewModel+ListColumns.swift  the columns each place shows (kept per device by the app through `onListColumnsChanged`), `toggleColumn`
+    LibraryViewModel+ColumnWidths.swift  the width of each column of the browser, dragged from the grip at the foot of its edge (kept per device through `onColumnWidthsChanged`), and the widest title a column shows, for fitting it
     ListSort.swift           ListSortKey, ListSort: how a list is sorted from the header above it (title, created, due,
                              duration, priority; a way of showing the list, never written to the log)
     LibraryViewModel+ListSort.swift  the sort of each list and the click on a header cell (`sortBy`), applied when presenting
@@ -295,7 +296,7 @@ App/                         Xcode project for the SwiftUI Mac app (`make app`)
                              BulkCardViews: the card of several tasks selected together (fields greyed where they differ);
                              TagsView: the Tags place's tag column;
                              RepeatViews: the card's Repeat field and line and the Repeat context menu;
-                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column;
+                             TaskRowCells: the cells of a task row; ListSortHeader: the sticky table header above a list, a cell for each column; ResizableColumn: the grip at the foot of a column's edge that resizes it, with ColumnResizeHandle, its AppKit view (resize pointer, drag, double click to fit);
                              WeeklyReviewView: the weekly review's due list, project card with its
                              buttons, and the project review menu items;
                              StorageSetupView: the first-start modal and the This Mac settings;

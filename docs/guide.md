@@ -126,6 +126,14 @@ bank" with priority Critical and a 15-minute estimate, already clarified.
 Typed in a project's column, a task takes the project's priority and estimate
 unless you add your own.
 
+## Resizing the columns
+
+Each column of the browser (the projects and their contents, the inbox, the
+priorities and tags, the cards) has a grip at the foot of its right edge, as in
+Finder. Drag it to make the column wider or narrower. Double-click it to fit the
+column to its longest title; a column with no titles, such as a card, goes back
+to its usual width. Each column keeps its width, and this Mac remembers it.
+
 ## Completing a task
 
 Select a task with ↑ and ↓ and press ⌘Return, or click its circle.
