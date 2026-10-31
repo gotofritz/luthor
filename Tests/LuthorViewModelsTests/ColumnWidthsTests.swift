@@ -7,6 +7,16 @@ import Testing
 @MainActor
 @Suite("When a column of the browser is resized from its edge")
 struct ColumnWidthsTests {
+  @Test("in the priorities place the priority column and the list keep separate widths")
+  func prioritiesPlaceColumnsAreSeparate() {
+    let (library, _) = makeInbox()
+
+    library.setColumnWidth(600, of: LibraryViewModel.prioritiesListID)
+
+    #expect(LibraryViewModel.priorityPickerColumnID != LibraryViewModel.prioritiesListID)
+    #expect(library.columnWidth(of: LibraryViewModel.priorityPickerColumnID, usually: 200) == 200)
+  }
+
   @Test("a column has its usual width until it is resized")
   func usualWidth() {
     let (library, _) = makeInbox()
