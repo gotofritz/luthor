@@ -21,6 +21,10 @@ extension LibraryViewModel {
   /// The id of the one list the priorities place shows, whatever priorities are picked.
   public static let prioritiesListID = "priorities"
 
+  /// The id the width of the column that picks the priorities is kept under; apart from `prioritiesListID`, so
+  /// resizing the list does not resize the picker.
+  public static let priorityPickerColumnID = "priority-picker"
+
   /// The tasks of every priority picked as one list: by priority, the most urgent first, until a header sorts
   /// them all together.
   public var priorityList: [TaskItem] {

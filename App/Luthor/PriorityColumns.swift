@@ -21,7 +21,7 @@ struct PriorityColumn: View {
       }
     }
     .accentSelectionOnly()
-    .resizableColumn(library, id: "priorities", usually: 200)
+    .resizableColumn(library, id: LibraryViewModel.priorityPickerColumnID, usually: 200)
   }
 }
 
