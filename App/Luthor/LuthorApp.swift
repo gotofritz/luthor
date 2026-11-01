@@ -25,6 +25,8 @@ struct LuthorApp: App {
   private static let machineIDKey = "machineID"
   /// The `UserDefaults` key of the columns each list shows (JSON), per device like the place of the log.
   private static let listColumnsKey = "listColumns"
+  /// The key of the window on future tasks each place was left with (JSON).
+  private static let futureWindowsKey = "futureWindows"
   private static let columnWidthsKey = "columnWidths"
 
   private let home = FileManager.default.homeDirectoryForCurrentUser
@@ -88,30 +90,25 @@ struct LuthorApp: App {
       save: { UserDefaults.standard.set($0, forKey: machineIDKey) })
   }
 
-  /// The columns each list was left with; none if nothing was saved or it cannot be read.
-  private static func savedListColumns() -> [String: Set<ListColumn>] {
-    guard let data = UserDefaults.standard.data(forKey: listColumnsKey) else { return [:] }
-    return (try? JSONDecoder().decode([String: Set<ListColumn>].self, from: data)) ?? [:]
+  /// What was kept under the key, if it can be read.
+  private static func saved<Value: Decodable>(_ key: String) -> Value? {
+    UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(Value.self, from: $0) }
   }
 
-  /// The widths each list's columns were left with; none if nothing was saved or it cannot be read.
-  private static func savedColumnWidths() -> [String: Double] {
-    guard let data = UserDefaults.standard.data(forKey: columnWidthsKey) else { return [:] }
-    return (try? JSONDecoder().decode([String: Double].self, from: data)) ?? [:]
+  /// Keeps the value under the key in the app's defaults, which are not synced.
+  private static func keep(_ value: some Encodable, as key: String) {
+    guard let data = try? JSONEncoder().encode(value) else { return }
+    UserDefaults.standard.set(data, forKey: key)
   }
 
   private static func makeLibrary(log: any EventLog, deviceID: DeviceID, view: ViewID) -> LibraryViewModel {
     let library = LibraryViewModel(
       log: log, commands: Commands(deviceID: deviceID, ids: UUIDGenerator()), view: view,
-      listColumns: savedListColumns(), columnWidths: savedColumnWidths())
-    library.onListColumnsChanged = { columns in
-      guard let data = try? JSONEncoder().encode(columns) else { return }
-      UserDefaults.standard.set(data, forKey: listColumnsKey)
-    }
-    library.onColumnWidthsChanged = { widths in
-      guard let data = try? JSONEncoder().encode(widths) else { return }
-      UserDefaults.standard.set(data, forKey: columnWidthsKey)
-    }
+      listColumns: saved(Self.listColumnsKey) ?? [:], columnWidths: saved(Self.columnWidthsKey) ?? [:],
+      futureWindows: saved(Self.futureWindowsKey) ?? [:])
+    library.onListColumnsChanged = { keep($0, as: listColumnsKey) }
+    library.onFutureWindowsChanged = { keep($0, as: futureWindowsKey) }
+    library.onColumnWidthsChanged = { keep($0, as: columnWidthsKey) }
     library.reload()
     return library
   }

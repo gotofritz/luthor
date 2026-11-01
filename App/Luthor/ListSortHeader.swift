@@ -62,7 +62,7 @@ struct ListSortHeader: View {
     }
     .buttonStyle(.plain)
     .padding(.trailing, isRow ? 0 : 5)
-    .help("Columns and completed tasks")
+    .help("Columns, completed tasks and future tasks")
     .accessibilityLabel("List settings")
     .popover(isPresented: $showsSettings, arrowEdge: .bottom) { settingsPopover }
   }
@@ -90,6 +90,15 @@ struct ListSortHeader: View {
         selection: $library.completedWindow
       ) {
         ForEach(CompletedWindow.allCases, id: \.self) { Text($0.label).tag($0) }
+      }
+      .fixedSize()
+      Picker(
+        "Future Tasks",
+        selection: Binding(
+          get: { library.futureWindow(ofList: listID) },
+          set: { library.setFutureWindow($0, ofList: listID) })
+      ) {
+        ForEach(FutureWindow.allCases, id: \.self) { Text($0.label).tag($0) }
       }
       .fixedSize()
     }

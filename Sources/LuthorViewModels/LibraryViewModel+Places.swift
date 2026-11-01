@@ -144,6 +144,10 @@ extension LibraryViewModel {
     get { browserModel.listColumns }
     set { browserModel.listColumns = newValue }
   }
+  public internal(set) var futureWindows: [String: FutureWindow] {
+    get { browserModel.futureWindows }
+    set { browserModel.futureWindows = newValue }
+  }
   public internal(set) var columnWidths: [String: Double] {
     get { browserModel.columnWidths }
     set { browserModel.columnWidths = newValue }

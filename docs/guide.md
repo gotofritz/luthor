@@ -493,6 +493,10 @@ action, so its order is its meaning.
   items show under All only until you run **Settings → This Mac → Date Old Completions**
   once: it gives each such completion the day it was due, else planned for, else three days
   ago (run it again after Compact Log, which forgets the days). The choice holds for every list until the app closes
+  Below it, **Future Tasks** narrows a list to the tasks dated within All, 1 day, 1 week, 1 month or
+  None from today. A task counts by the sooner of its due and scheduled dates; an overdue one
+  stays, and a task with neither date is never hidden. Each place keeps its own choice, also
+  after a restart.
 - The **header** above a list (the Inbox, a tag, the top-level projects, the
   contents of a project, the one list of Prios, the candidates of Today
   and the tasks left over from earlier days with them, Done and Not done in the

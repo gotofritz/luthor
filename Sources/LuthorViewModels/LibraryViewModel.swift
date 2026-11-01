@@ -75,6 +75,8 @@ public final class LibraryViewModel {
 
   /// Called with every list's columns after a header turns one on or off, for the app to keep them per device.
   public var onListColumnsChanged: (([String: Set<ListColumn>]) -> Void)?
+  /// Called with every place's window on future tasks after a header chooses one, for the app to keep them per device.
+  public var onFutureWindowsChanged: (([String: FutureWindow]) -> Void)?
   /// Called with every column's width after one is resized, for the app to keep them per device.
   public var onColumnWidthsChanged: (([String: Double]) -> Void)?
 
@@ -88,7 +90,8 @@ public final class LibraryViewModel {
     instant: @escaping () -> Date = { Date() },
     timeZone: TimeZone = .current,
     listColumns: [String: Set<ListColumn>] = [:],
-    columnWidths: [String: Double] = [:]
+    columnWidths: [String: Double] = [:],
+    futureWindows: [String: FutureWindow] = [:]
   ) {
     self.log = log
     unboundCommands = commands
@@ -100,6 +103,7 @@ public final class LibraryViewModel {
     dayModel = DayModel(view: view, day: day)
     browserModel.listColumns = listColumns
     browserModel.columnWidths = columnWidths
+    browserModel.futureWindows = futureWindows
   }
 
   /// Shows another view, at its inbox, with no task selected.
