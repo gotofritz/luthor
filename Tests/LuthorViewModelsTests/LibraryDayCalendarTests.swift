@@ -77,11 +77,11 @@ struct PlacingInTheDayTests {
     #expect(log.events.count == before)
   }
 
-  @Test("on today the tasks that follow start no earlier than now, to the quarter hour")
-  func onTodayTheTasksThatFollowStartNoEarlierThanNow() {
+  @Test("on today the tasks that follow stay put as the clock moves on")
+  func onTodayTheTasksThatFollowStayPut() {
     let (library, _) = makeLibrary(Self.planned, now: 601)
 
-    #expect(library.planSlots.map(\.start) == [615])
+    #expect(library.planSlots.map(\.start) == [540])
   }
 
   @Test("another day is laid out from the start of its day whatever the time now")

@@ -49,7 +49,7 @@ private func gregorian(in timeZone: TimeZone) -> Calendar {
 }
 
 /// The day's layout as last worked out, so the slots, blocks, sessions and done tasks read one after another share
-/// it; `present()` drops it, a drag or the clock moving on is another key. And how many were worked out.
+/// it; `present()` drops it, a drag is another key. And how many were worked out.
 struct DayLayoutCache {
   var cached: (key: DayLayoutKey, layout: DayLayout)?
   var computed = 0
@@ -61,7 +61,6 @@ struct DayLayoutKey: Equatable {
   let minute: Int
   let block: DayBlock?
   let session: SessionID?
-  let notBefore: Int
 }
 
 // Today: choosing the day shown, planning it, and deciding on its tasks. In its own file (SwiftLint
@@ -107,8 +106,8 @@ extension LibraryViewModel {
     addToPlan(selected)
   }
 
-  /// The planned tasks of the day shown on its hours. On today the ones without a start of their own do not
-  /// begin before it is now, rounded up to the quarter hour.
+  /// The planned tasks of the day shown on its hours; the ones without a start of their own
+  /// follow one another from the start of the day.
   public var planSlots: [PlanSlot] {
     shownLayout.slots
   }
@@ -132,7 +131,7 @@ extension LibraryViewModel {
   private var shownLayout: DayLayout {
     let key = DayLayoutKey(
       moving: dragPreview?.taskID, minute: dragPreview?.minute ?? sessionPreview?.minute ?? 0, block: blockPreview,
-      session: sessionPreview?.sessionID, notBefore: notBefore)
+      session: sessionPreview?.sessionID)
     if let cached = layouts.cached, cached.key == key { return cached.layout }
     let layout = dayLayout(moving: key.moving, to: key.minute, block: key.block, session: key.session)
     layouts.cached = (key, layout)
@@ -154,7 +153,7 @@ extension LibraryViewModel {
       viewID: plan.viewID, date: plan.date, entries: entries, candidates: plan.candidates,
       capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks, sessions: plan.sessions, done: plan.done)
     return shown.layout(
-      notBefore: notBefore, moving: moving, to: minute, movingBlock: block, movingSession: session)
+      moving: moving, to: minute, movingBlock: block, movingSession: session)
   }
 
   /// The tasks with a time of their own and the blocks that a change moved, as the events that keep them where
@@ -185,10 +184,6 @@ extension LibraryViewModel {
       }
     }
     return events
-  }
-
-  var notBefore: Int {
-    planDate == today ? (minuteClock() + 14) / 15 * 15 : 0
   }
 
   /// The minutes since midnight by the clock, for the line that marks now on today's calendar.
