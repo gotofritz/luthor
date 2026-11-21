@@ -267,10 +267,10 @@ now filled in; while the task is under way it reads Stop Now, which adds the min
 since the start to the time logged for the task and turns the run, from its start to now, into a session of the
 task; see Sessions above), Set Times… (a start and an end, each with a Now button; the end sets the estimate),
 Follow the Other Tasks (drops its set time) and Back to Candidates; dragging a
-block back onto the candidates does the same. A task with no time of its own,
-such as one added with ⌘T, follows the others in the plan's order from the
-start of the day, or on today from now (to the quarter hour) if that is
-later, and goes round any task with a set time. A set time holds only while the
+block back onto the candidates does the same. A task added to today's plan,
+such as one added with ⌘T, takes the time now, or the first gap after it that is
+large enough, and stays there. On another day it follows the others in the plan's order from the
+start of the day, and goes round any task with a set time. A set time holds only while the
 task stays planned for that day. Click a block to select it; the other
 context-menu items move it in the order or decide on it.
 

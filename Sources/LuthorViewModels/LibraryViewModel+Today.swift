@@ -49,7 +49,7 @@ private func gregorian(in timeZone: TimeZone) -> Calendar {
 }
 
 /// The day's layout as last worked out, so the slots, blocks, sessions and done tasks read one after another share
-/// it; `present()` drops it, a drag or the clock moving on is another key. And how many were worked out.
+/// it; `present()` drops it, a drag is another key. And how many were worked out.
 struct DayLayoutCache {
   var cached: (key: DayLayoutKey, layout: DayLayout)?
   var computed = 0
@@ -61,7 +61,6 @@ struct DayLayoutKey: Equatable {
   let minute: Int
   let block: DayBlock?
   let session: SessionID?
-  let notBefore: Int
 }
 
 // Today: choosing the day shown, planning it, and deciding on its tasks. In its own file (SwiftLint
@@ -107,8 +106,8 @@ extension LibraryViewModel {
     addToPlan(selected)
   }
 
-  /// The planned tasks of the day shown on its hours. On today the ones without a start of their own do not
-  /// begin before it is now, rounded up to the quarter hour.
+  /// The planned tasks of the day shown on its hours; the ones without a start of their own
+  /// follow one another from the start of the day.
   public var planSlots: [PlanSlot] {
     shownLayout.slots
   }
@@ -132,7 +131,7 @@ extension LibraryViewModel {
   private var shownLayout: DayLayout {
     let key = DayLayoutKey(
       moving: dragPreview?.taskID, minute: dragPreview?.minute ?? sessionPreview?.minute ?? 0, block: blockPreview,
-      session: sessionPreview?.sessionID, notBefore: notBefore)
+      session: sessionPreview?.sessionID)
     if let cached = layouts.cached, cached.key == key { return cached.layout }
     let layout = dayLayout(moving: key.moving, to: key.minute, block: key.block, session: key.session)
     layouts.cached = (key, layout)
@@ -154,7 +153,7 @@ extension LibraryViewModel {
       viewID: plan.viewID, date: plan.date, entries: entries, candidates: plan.candidates,
       capacity: plan.capacity, hours: plan.hours, blocks: plan.blocks, sessions: plan.sessions, done: plan.done)
     return shown.layout(
-      notBefore: notBefore, moving: moving, to: minute, movingBlock: block, movingSession: session)
+      moving: moving, to: minute, movingBlock: block, movingSession: session)
   }
 
   /// The tasks with a time of their own and the blocks that a change moved, as the events that keep them where
@@ -187,10 +186,6 @@ extension LibraryViewModel {
     return events
   }
 
-  var notBefore: Int {
-    planDate == today ? (minuteClock() + 14) / 15 * 15 : 0
-  }
-
   /// The minutes since midnight by the clock, for the line that marks now on today's calendar.
   public var minuteOfDay: Int {
     minuteClock()
@@ -205,8 +200,10 @@ extension LibraryViewModel {
     dragPreview = nil
     let before = dayLayout(moving: nil, to: 0, block: nil)
     let after = minute.map { dayLayout(moving: taskID, to: $0, block: nil) } ?? before
+    // A done task holds its place, so the start kept is the one the calendar shows, not the one asked for.
+    let shown = minute == nil ? nil : after.slots.first { $0.entry.task.id == taskID }?.start ?? minute
     perform { (log) throws(CommandError) in
-      let placed = try commands.setStart(taskID: taskID, on: day, minute: minute, log: log)
+      let placed = try commands.setStart(taskID: taskID, on: day, minute: shown, log: log)
       return try placed + keepPushed(after, from: before, except: taskID.rawValue, on: day, log: log + placed)
     }
   }
@@ -359,7 +356,27 @@ extension LibraryViewModel {
   }
 
   /// Plans a task for another day than the one shown. A delegated task is taken back.
+  /// On today's plan the task is given the time now, or the first gap after it that is large enough, and keeps it.
   public func schedule(_ taskID: TaskID, on day: CalendarDate) {
-    perform { (log) throws(CommandError) in try commands.schedule(taskID: taskID, on: day, log: log) }
+    let start = day == today && planDate == today ? firstGap(for: taskID) : nil
+    perform { (log) throws(CommandError) in
+      guard let start else { return try commands.schedule(taskID: taskID, on: day, log: log) }
+      return try commands.setStart(taskID: taskID, on: day, minute: start, log: log)
+    }
+  }
+
+  /// The earliest minute, from now (or the start of the day, if that is later), at which the task fits among what
+  /// the day shown already holds; `nil` if it is not among the candidates or leftovers, or there is no room.
+  private func firstGap(for taskID: TaskID) -> Int? {
+    let entry =
+      plan.candidates.first { $0.task.id == taskID } ?? carryOver.first { $0.entry.task.id == taskID }?.entry
+    guard let length = entry?.minutes else { return nil }
+    let layout = dayLayout(moving: nil, to: 0, block: nil)
+    let taken =
+      layout.slots.map { ($0.start, $0.end) } + layout.done.map { ($0.start, $0.end) }
+      + layout.blocks.map { ($0.start, $0.end) } + layout.sessions.map { ($0.start, $0.end) }
+    var start = max(plan.hours.start, minuteOfDay)
+    while let clash = taken.first(where: { $0.0 < start + length && $0.1 > start }) { start = clash.1 }
+    return start + length <= dayLimit ? start : nil
   }
 }
