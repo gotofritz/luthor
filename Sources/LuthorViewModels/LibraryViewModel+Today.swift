@@ -361,7 +361,27 @@ extension LibraryViewModel {
   }
 
   /// Plans a task for another day than the one shown. A delegated task is taken back.
+  /// On today's plan the task is given the time now, or the first gap after it that is large enough, and keeps it.
   public func schedule(_ taskID: TaskID, on day: CalendarDate) {
-    perform { (log) throws(CommandError) in try commands.schedule(taskID: taskID, on: day, log: log) }
+    let start = day == today && planDate == today ? firstGap(for: taskID) : nil
+    perform { (log) throws(CommandError) in
+      guard let start else { return try commands.schedule(taskID: taskID, on: day, log: log) }
+      return try commands.setStart(taskID: taskID, on: day, minute: start, log: log)
+    }
+  }
+
+  /// The earliest minute, from now (or the start of the day, if that is later), at which the task fits among what
+  /// the day shown already holds; `nil` if it is not among the candidates or leftovers, or there is no room.
+  private func firstGap(for taskID: TaskID) -> Int? {
+    let entry =
+      plan.candidates.first { $0.task.id == taskID } ?? carryOver.first { $0.entry.task.id == taskID }?.entry
+    guard let length = entry?.minutes else { return nil }
+    let layout = dayLayout(moving: nil, to: 0, block: nil)
+    let taken =
+      layout.slots.map { ($0.start, $0.end) } + layout.done.map { ($0.start, $0.end) }
+      + layout.blocks.map { ($0.start, $0.end) } + layout.sessions.map { ($0.start, $0.end) }
+    var start = max(plan.hours.start, minuteOfDay)
+    while let clash = taken.first(where: { $0.0 < start + length && $0.1 > start }) { start = clash.1 }
+    return start + length <= dayLimit ? start : nil
   }
 }
