@@ -205,8 +205,10 @@ extension LibraryViewModel {
     dragPreview = nil
     let before = dayLayout(moving: nil, to: 0, block: nil)
     let after = minute.map { dayLayout(moving: taskID, to: $0, block: nil) } ?? before
+    // A done task holds its place, so the start kept is the one the calendar shows, not the one asked for.
+    let shown = minute == nil ? nil : after.slots.first { $0.entry.task.id == taskID }?.start ?? minute
     perform { (log) throws(CommandError) in
-      let placed = try commands.setStart(taskID: taskID, on: day, minute: minute, log: log)
+      let placed = try commands.setStart(taskID: taskID, on: day, minute: shown, log: log)
       return try placed + keepPushed(after, from: before, except: taskID.rawValue, on: day, log: log + placed)
     }
   }
